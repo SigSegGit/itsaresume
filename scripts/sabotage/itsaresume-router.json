@@ -1,0 +1,176 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "itsaresume-router",
+    "--no-fail-fast"
+  ],
+  "defences": {
+    "Other never allows fallback": {
+      "file": "crates/itsaresume-router/src/backend.rs",
+      "live": "Self::Other(_) => false,",
+      "dead": "Self::Other(_) => true,",
+      "expect": [
+        "only_quota_and_unreachable_allow_fallback"
+      ]
+    },
+    "Router stops on Other": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "let stop = !error.allows_fallback();",
+      "dead": "let stop = false;",
+      "expect": [
+        "other_error_stops_without_trying_the_next_backend"
+      ]
+    },
+    "Router falls back on quota and outage": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "let stop = !error.allows_fallback();",
+      "dead": "let stop = true;",
+      "expect": [
+        "quota_exceeded_falls_back_to_the_next_backend",
+        "unreachable_falls_back_to_the_next_backend",
+        "every_backend_failing_with_fallback_kinds_is_exhausted_with_attempts_in_order"
+      ]
+    },
+    "Router refuses an empty backend list": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "if backends.is_empty() {",
+      "dead": "if false {",
+      "expect": [
+        "an_empty_router_is_refused"
+      ]
+    },
+    "Journal keeps the prompt out": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "\"prompt_chars\": request.prompt.chars().count(),",
+      "dead": "\"prompt_chars\": request.prompt.chars().count(), \"prompt\": request.prompt,",
+      "expect": [
+        "the_prompt_and_answer_text_are_never_written_to_the_journal"
+      ]
+    },
+    "Journal truncates error messages": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "take(MESSAGE_CHARS)",
+      "dead": "take(usize::MAX)",
+      "expect": [
+        "error_messages_are_truncated_in_the_journal"
+      ]
+    },
+    "Router reports a journal it could not write": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "if let Err(error) = self.journal.record(request, &outcome, started.elapsed()) {",
+      "dead": "if let Err(error) = self.journal.record(request, &outcome, started.elapsed()).or(Ok::<(), std::io::Error>(())) {",
+      "expect": [
+        "an_unwritable_journal_does_not_lose_the_answer"
+      ]
+    },
+    "Claude: billing tripwire": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if billing != SUBSCRIPTION_BILLING_SOURCE {",
+      "dead": "if false {",
+      "expect": [
+        "the_observed_api_key_run_trips_the_billing_wire",
+        "a_successful_answer_billed_to_an_api_key_is_refused"
+      ]
+    },
+    "Claude: tool tripwire": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if !tools_empty {",
+      "dead": "if !tools_empty && false {",
+      "expect": [
+        "a_successful_answer_with_tools_enabled_is_refused"
+      ]
+    },
+    "Claude: init message required": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "message[\"type\"] == \"system\" && message[\"subtype\"] == \"init\"",
+      "dead": "message[\"type\"] == \"system\" || true",
+      "expect": [
+        "output_without_an_init_message_is_refused"
+      ]
+    },
+    "Claude: is_error decides, not subtype": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "(Some(false), Some(text)) => Ok(Completion {",
+      "dead": "(Some(_), Some(text)) => Ok(Completion {",
+      "expect": [
+        "the_observed_not_logged_in_output_is_other"
+      ]
+    },
+    "Claude: HTTP 429 is quota": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "Some(429) => BackendError::QuotaExceeded(detail),",
+      "dead": "Some(4290) => BackendError::QuotaExceeded(detail),",
+      "expect": [
+        "status_429_is_quota_exceeded_whatever_the_message",
+        "the_synthetic_usage_limit_is_quota_exceeded"
+      ]
+    },
+    "Claude: 5xx and 529 are unreachable": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "Some(500..=504 | 529) => BackendError::Unreachable(detail),",
+      "dead": "Some(0) => BackendError::Unreachable(detail),",
+      "expect": [
+        "server_side_failures_are_unreachable"
+      ]
+    },
+    "Claude: other statuses stop": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "Some(_) => BackendError::Other(detail),",
+      "dead": "Some(_) => BackendError::Unreachable(detail),",
+      "expect": [
+        "unrecognised_errors_are_other"
+      ]
+    },
+    "Claude: unknown wording stops": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "None => BackendError::Other(detail),",
+      "dead": "None => BackendError::Unreachable(detail),",
+      "expect": [
+        "unrecognised_errors_are_other",
+        "the_observed_not_logged_in_output_is_other"
+      ]
+    },
+    "Claude: wording 'usage limit'": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "message.contains(\"usage limit\")",
+      "dead": "message.contains(\"usage limit-never\")",
+      "expect": [
+        "usage_limit_wordings_without_a_status_are_quota_exceeded"
+      ]
+    },
+    "Claude: wording 'limit reached'": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "|| message.contains(\"limit reached\")",
+      "dead": "|| message.contains(\"limit reached-never\")",
+      "expect": [
+        "usage_limit_wordings_without_a_status_are_quota_exceeded"
+      ]
+    },
+    "Claude: wording 'hit your ... limit'": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "(message.contains(\"hit your\") && message.contains(\"limit\"))",
+      "dead": "(message.contains(\"hit your-never\") && message.contains(\"limit\"))",
+      "expect": [
+        "usage_limit_wordings_without_a_status_are_quota_exceeded"
+      ]
+    },
+    "Claude: context errors are not quota": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if message.contains(\"context\") || message.contains(\"too long\") {",
+      "dead": "if false {",
+      "expect": [
+        "context_and_login_errors_are_not_mistaken_for_quota"
+      ]
+    },
+    "Claude: connection wordings are unreachable": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".any(|needle| message.contains(needle))",
+      "dead": ".any(|needle| message.contains(needle) && false)",
+      "expect": [
+        "connection_errors_without_a_status_are_unreachable"
+      ]
+    }
+  }
+}

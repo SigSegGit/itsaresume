@@ -133,6 +133,7 @@ fn usage_limit_wordings_without_a_status_are_quota_exceeded() {
         "Weekly limit reached ∙ resets Mon 9am",
         "You've hit your limit · resets 5pm (Europe/Paris)",
         "You've hit your session limit",
+        "You've reached your usage limit",
     ] {
         let outcome = classify(&failure(Value::Null, message));
         assert_eq!(kind(&outcome), "quota_exceeded", "{message}: {outcome:?}");
