@@ -8,6 +8,7 @@
 pub mod backend;
 pub mod claude_code;
 pub mod journal;
+pub mod lm_studio;
 pub mod router;
 
 pub use backend::{Backend, BackendError, Completion, Request};
