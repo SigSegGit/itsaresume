@@ -1,0 +1,23 @@
+# itsaresume configuration for the container — EXAMPLE, placeholders only.
+#
+# Copy to docker/config.local.toml (ignored by git); compose.yaml mounts it
+# at /etc/itsaresume/config.toml. See ../config.example.toml for every key.
+
+# Inside the container; compose.yaml maps ./journal here.
+journal = "/home/node/journal/itsaresume-journal.jsonl"
+
+[[backend]]
+kind = "claude-code"
+# Installed in the image. It authenticates with CLAUDE_CODE_OAUTH_TOKEN from
+# .env (the subscription token), never with an API key.
+program = "claude"
+timeout_secs = 300
+
+[[backend]]
+kind = "lm-studio"
+# LM Studio on the Docker host. For LM Studio on another machine, use its
+# Tailscale name instead of host.docker.internal. The port is the one LM
+# Studio shows in its Developer tab (1234 unless changed).
+base_url = "http://host.docker.internal:1234/v1"
+model = "example-model-id"
+timeout_secs = 300

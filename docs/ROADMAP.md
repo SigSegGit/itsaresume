@@ -12,8 +12,8 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
 
 | | Milestone | Goal | Exit criterion | Status |
 |---|---|---|---|---|
-| **M0** | Scaffold | Workspace, docs, CI and guard scripts exist before any feature | CI green on the scaffold PR; `check-handover.py` passes | 🟨 |
-| **M1** | MVP router in Docker | A prompt sent over HTTP to a container goes to Claude Code (subscription), falls back to LM Studio on quota or outage, and every request leaves one journal line | Every M1 step of HANDOVER §8 ticked, merged, CI green (image build included); all fallback/error tests sabotage-verified in CI; one real answer from LM Studio through the container | ⬜ |
+| **M0** | Scaffold | Workspace, docs, CI and guard scripts exist before any feature | CI green on the scaffold PR; `check-handover.py` passes | 🟨 built; PR #1 open, CI not yet running on the new repository |
+| **M1** | MVP router in Docker | A prompt sent over HTTP to a container goes to Claude Code (subscription), falls back to LM Studio on quota or outage, and every request leaves one journal line | Every M1 step of HANDOVER §8 ticked, merged, CI green (image build included); all fallback/error tests sabotage-verified in CI; one real answer from LM Studio through the container | 🟨 built and verified locally (71 tests, 42 defences, a real LM Studio answer through the container); not merged: CI blocked |
 | **M2** | Micro-model | A small model on the Pi or the Freebox VM takes **classification** requests only | The router refuses to send a generation request to it, proved by a sabotage-verified test | ⬜ |
 | **M3** | CV integration | The Node.js CV generator calls the M1 HTTP endpoint; the contract is versioned and frozen | The Node project runs one end-to-end CV through it on Nicolas's machines | ⬜ |
 | **M4** | Plan observability | Nicolas can see whether his Pro/Max plan carries the load | A report answers "what share of today's requests did Claude answer, and when did it run out" from the journal alone | ⬜ |

@@ -167,7 +167,7 @@ There is no authentication: whoever reaches the port spends Nicolas's plan.
 It binds to `127.0.0.1` unless told otherwise, and the compose file publishes
 it on the host's loopback only.
 
-## Docker ⬜
+## Docker ✅
 
 One image: the router binary plus the `claude` CLI (pinned version) on a Node
 runtime, running as a non-root user. The Claude backend authenticates with
@@ -176,6 +176,9 @@ runtime, running as a non-root user. The Claude backend authenticates with
 is still removed from the child's environment, and the `apiKeySource`
 tripwire still applies. LM Studio on the Docker host is reached as
 `host.docker.internal:1234`; on another machine, through its Tailscale name.
+Observed on the XPS: Docker Desktop reaches LM Studio bound to `127.0.0.1`
+through `host.docker.internal` (answer in 2.0 s). `scripts/docker-smoke.sh`
+runs the image with the real `claude` CLI inside (TESTING.md).
 
 ## Code layout
 

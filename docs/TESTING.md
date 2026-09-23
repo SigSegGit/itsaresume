@@ -94,3 +94,5 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_slow_completion_does_not_block_other_requests` | `tests/server.rs` | A health check answers in under 1 s while a 3 s completion runs | Server: one thread per request |
 | `the_default_listen_address_is_loopback` | `tests/server.rs` | The default listen address is loopback (no authentication on the endpoint) | Server: loopback by default |
 | `the_serve_command_answers_on_the_given_address` | `tests/server.rs` | `itsaresume serve --listen` as a process answers `/healthz` | — |
+| `the_committed_docker_example_parses` | `tests/config.rs` | `docker/config.example.toml` stays valid and journals into the mounted directory | — |
+| `scripts/docker-smoke.sh` (CI job `docker`) | — | The image holds the pinned `claude` CLI and not the test double; `/healthz` answers; a real request through the **real** CLI with a bogus `ANTHROPIC_API_KEY` on the container returns 502 "Not logged in" — proving the key is stripped and the stop does not fall back | — (the script states what each other outcome would mean) |

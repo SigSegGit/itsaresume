@@ -7,6 +7,10 @@
 config.local.toml
 *.local.toml
 
+# The Docker run: the subscription token and the mounted journal.
+.env
+/journal/
+
 # The usage journal. It records which backend answered each request on this
 # machine; it is Nicolas's data, not the project's.
 *.jsonl

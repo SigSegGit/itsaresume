@@ -22,8 +22,8 @@ set -uo pipefail
 
 PR=${1:-}
 # The jobs in .github/workflows/ci.yml: fmt, clippy, test (ubuntu), test
-# (windows), doc, sabotage, handover. Change this with the workflow.
-MINIMUM=${2:-7}
+# (windows), doc, sabotage, docker, handover. Change this with the workflow.
+MINIMUM=${2:-8}
 
 [ -n "$PR" ] || { echo "usage: merge-when-green.sh <pr-number> [minimum-checks]"; exit 2; }
 

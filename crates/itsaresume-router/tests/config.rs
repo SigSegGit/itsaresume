@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 const EXAMPLE: &str = include_str!("../../../config.example.toml");
+const DOCKER_EXAMPLE: &str = include_str!("../../../docker/config.example.toml");
 
 /// The committed example must stay a valid configuration.
 #[test]
@@ -18,6 +19,14 @@ fn the_committed_example_parses() {
             BackendConfig::LmStudio { .. }
         ]
     ));
+}
+
+/// The configuration the container starts from must stay valid too.
+#[test]
+fn the_committed_docker_example_parses() {
+    let config = Config::parse(DOCKER_EXAMPLE).expect("docker/config.example.toml is valid");
+    assert!(config.journal.starts_with("/home/node/journal"));
+    assert!(config.router().is_ok());
 }
 
 #[test]
