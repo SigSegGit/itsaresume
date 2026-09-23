@@ -1,11 +1,44 @@
 {
-  "command": ["cargo", "test", "-p", "itsaresume-router"],
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "itsaresume-router"
+  ],
   "defences": {
     "Other never allows fallback": {
       "file": "crates/itsaresume-router/src/backend.rs",
       "live": "Self::Other(_) => false,",
       "dead": "Self::Other(_) => true,",
-      "expect": ["only_quota_and_unreachable_allow_fallback"]
+      "expect": [
+        "only_quota_and_unreachable_allow_fallback"
+      ]
+    },
+    "Router stops on Other": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "let stop = !error.allows_fallback();",
+      "dead": "let stop = false;",
+      "expect": [
+        "other_error_stops_without_trying_the_next_backend"
+      ]
+    },
+    "Router falls back on quota and outage": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "let stop = !error.allows_fallback();",
+      "dead": "let stop = true;",
+      "expect": [
+        "quota_exceeded_falls_back_to_the_next_backend",
+        "unreachable_falls_back_to_the_next_backend",
+        "every_backend_failing_with_fallback_kinds_is_exhausted_with_attempts_in_order"
+      ]
+    },
+    "Router refuses an empty backend list": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "if backends.is_empty() {",
+      "dead": "if false {",
+      "expect": [
+        "an_empty_router_is_refused"
+      ]
     }
   }
 }

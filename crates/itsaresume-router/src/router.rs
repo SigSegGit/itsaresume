@@ -76,15 +76,48 @@ pub struct Router {
 impl Router {
     /// A router over `backends`, tried in this order.
     pub fn new(backends: Vec<Box<dyn Backend>>) -> Result<Self, NoBackends> {
+        if backends.is_empty() {
+            return Err(NoBackends);
+        }
         Ok(Self { backends })
     }
 
     /// Answer `request` from the first backend that can.
     pub fn complete(&self, request: &Request) -> Outcome {
-        let _ = (&self.backends, request);
+        let mut attempts = Vec::new();
+        for backend in &self.backends {
+            let error = match backend.complete(request) {
+                Ok(completion) => {
+                    let answer = Answer {
+                        backend: backend.name().to_owned(),
+                        text: completion.text,
+                    };
+                    return Outcome {
+                        result: Ok(answer),
+                        attempts,
+                    };
+                }
+                Err(error) => error,
+            };
+            let stop = !error.allows_fallback();
+            attempts.push(Attempt {
+                backend: backend.name().to_owned(),
+                error: error.clone(),
+            });
+            if stop {
+                let stopped = RouteError::Stopped {
+                    backend: backend.name().to_owned(),
+                    error,
+                };
+                return Outcome {
+                    result: Err(stopped),
+                    attempts,
+                };
+            }
+        }
         Outcome {
             result: Err(RouteError::Exhausted),
-            attempts: Vec::new(),
+            attempts,
         }
     }
 }
