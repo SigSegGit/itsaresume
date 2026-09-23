@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.8
-TITLE: Configuration file and the complete CLI command
+NEXT: 8.10
+TITLE: Docker image and compose file
 WRITTEN-AT: 2026-09-23
 BASE: 5a852f6
 -->
@@ -27,6 +27,10 @@ Branches, stacked in this order, each ending with this pointer rewritten:
   `claude` binary). 37 tests, 27 defences, verified locally on Windows.
 - `m1-lmstudio`: 8.7 — `LmStudioBackend` over HTTP, observed bodies served
   by a fake server. 47 tests, 34 defences, verified locally.
+- `m1-cli`: 8.8–8.9 — TOML config, `itsaresume complete` and `serve`.
+  70 tests, 42 defences. **First real run** on the XPS: the real `claude`
+  stops (not logged in, exit 3, LM Studio untouched); the real LM Studio
+  (`qwen2.5-7b-instruct-1m`) answers in 5.3 s; journal lines correct.
 
 Nicolas then asked (same day) for autonomy to an MVP as fast as possible,
 ideally in Docker, with no decision handed back to him: M1 also covers an
@@ -169,10 +173,10 @@ branch with the local gates of §3 green.
   `Authorization` header, body shape, and the ARCHITECTURE status table. If
   LM Studio's server runs on this laptop, observe its real error for "no
   model loaded" first.
-- [ ] **8.8** `src/config.rs` + `src/main.rs`: TOML config (closed list of
+- [x] **8.8** `src/config.rs` + `src/main.rs`: TOML config (closed list of
   kinds: `claude-code`, `lm-studio`; unknown kind rejected), CLI reading stdin,
   exit codes 0/2/3/4.
-- [ ] **8.9** `itsaresume serve` (`tiny_http`): `POST /v1/complete`
+- [x] **8.9** `itsaresume serve` (`tiny_http`): `POST /v1/complete`
   `{prompt, system?}` → 200 `{backend, text, attempts}`, 502 stopped, 503
   exhausted, 400 bad body; `GET /healthz`. Default bind `127.0.0.1` — the
   endpoint has no authentication and spends Nicolas's plan.

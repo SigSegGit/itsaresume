@@ -1,6 +1,7 @@
 //! `itsaresume`: the command line.
 
 use itsaresume_router::config::Config;
+use itsaresume_router::server::{DEFAULT_LISTEN, Server};
 use itsaresume_router::{Request, RouteError};
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -10,6 +11,9 @@ const USAGE: &str = "\
 usage:
   itsaresume complete [--config FILE] [--system TEXT]
       prompt on stdin, answer on stdout, the answering backend on stderr
+  itsaresume serve [--config FILE] [--listen ADDRESS]
+      HTTP endpoint (POST /v1/complete, GET /healthz), on 127.0.0.1:8787
+      unless told otherwise: it has no authentication and spends the plan
 
 The configuration is --config FILE, else $ITSARESUME_CONFIG, else
 ./config.local.toml (see config.example.toml).
@@ -26,11 +30,12 @@ const EXIT_EXHAUSTED: u8 = 4;
 struct Options {
     config: Option<PathBuf>,
     system: Option<String>,
+    listen: Option<String>,
 }
 
 fn parse(args: &[String]) -> Result<(String, Options), String> {
     let (command, rest) = args.split_first().ok_or("no command given")?;
-    if command != "complete" {
+    if command != "complete" && command != "serve" {
         return Err(format!("unknown command {command:?}"));
     }
     let mut options = Options::default();
@@ -43,7 +48,8 @@ fn parse(args: &[String]) -> Result<(String, Options), String> {
         };
         match flag.as_str() {
             "--config" => options.config = Some(PathBuf::from(value()?)),
-            "--system" => options.system = Some(value()?),
+            "--system" if command == "complete" => options.system = Some(value()?),
+            "--listen" if command == "serve" => options.listen = Some(value()?),
             other => return Err(format!("unknown option {other:?}")),
         }
     }
@@ -60,7 +66,7 @@ fn config_path(options: &Options) -> PathBuf {
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let (_command, options) = match parse(&args) {
+    let (command, options) = match parse(&args) {
         Ok(parsed) => parsed,
         Err(message) => {
             eprintln!("itsaresume: {message}\n\n{USAGE}");
@@ -74,7 +80,31 @@ fn main() -> ExitCode {
             return ExitCode::from(EXIT_USAGE);
         }
     };
-    complete(&config, options.system)
+    if command == "serve" {
+        serve(&config, options.listen.as_deref().unwrap_or(DEFAULT_LISTEN))
+    } else {
+        complete(&config, options.system)
+    }
+}
+
+fn serve(config: &Config, listen: &str) -> ExitCode {
+    let router = match config.router() {
+        Ok(router) => router,
+        Err(error) => {
+            eprintln!("itsaresume: {error}");
+            return ExitCode::from(EXIT_USAGE);
+        }
+    };
+    let server = match Server::bind(router, listen) {
+        Ok(server) => server,
+        Err(error) => {
+            eprintln!("itsaresume: {error}");
+            return ExitCode::from(EXIT_USAGE);
+        }
+    };
+    eprintln!("itsaresume: listening on http://{}", server.local_addr());
+    server.run();
+    ExitCode::SUCCESS
 }
 
 fn complete(config: &Config, system: Option<String>) -> ExitCode {

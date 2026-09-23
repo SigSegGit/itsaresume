@@ -308,6 +308,46 @@
       "expect": [
         "an_empty_prompt_is_a_usage_error"
       ]
+    },
+    "Server: stopped is 502": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "            502,\n",
+      "dead": "            200,\n",
+      "expect": [
+        "a_stopped_request_is_502_with_the_reason"
+      ]
+    },
+    "Server: oversized is 413": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "        413,\n",
+      "dead": "        200,\n",
+      "expect": [
+        "an_oversized_request_is_413"
+      ]
+    },
+    "Server: blank prompt is 400": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "if prompt.trim().is_empty() {",
+      "dead": "if prompt.trim().is_empty() && false {",
+      "expect": [
+        "a_malformed_request_is_400"
+      ]
+    },
+    "Server: loopback by default": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "pub const DEFAULT_LISTEN: &str = \"127.0.0.1:8787\";",
+      "dead": "pub const DEFAULT_LISTEN: &str = \"0.0.0.0:8787\";",
+      "expect": [
+        "the_default_listen_address_is_loopback"
+      ]
+    },
+    "Server: one thread per request": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "std::thread::spawn(move || respond(&router, request));",
+      "dead": "respond(&router, request);",
+      "expect": [
+        "a_slow_completion_does_not_block_other_requests"
+      ]
     }
   }
 }

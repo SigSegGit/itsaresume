@@ -85,3 +85,12 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_config_path_can_come_from_the_environment` | `tests/cli.rs` | `ITSARESUME_CONFIG` names the configuration | — |
 | `a_bad_configuration_or_usage_exits_2` | `tests/cli.rs` | An invalid configuration or command line exits 2 with the reason | — |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |
+| `a_completion_returns_the_text_the_backend_and_the_failed_attempts` | `tests/server.rs` | 200 carries the text, the answering backend and the failed attempts | — |
+| `a_stopped_request_is_502_with_the_reason` | `tests/server.rs` | A stop (`Other`) is 502 with kind `stopped`, the backend and its message | Server: stopped is 502 |
+| `an_exhausted_request_is_503` | `tests/server.rs` | Every backend failing with a fallback kind is 503 `exhausted` with the attempts | — |
+| `a_malformed_request_is_400` | `tests/server.rs` | Non-JSON, missing/blank/non-string prompt, non-string system are 400 | Server: blank prompt is 400 |
+| `an_oversized_request_is_413` | `tests/server.rs` | A body over 1 MiB is 413 | Server: oversized is 413 |
+| `health_and_unknown_paths` | `tests/server.rs` | `/healthz` 200, unknown path 404, wrong method 405 | — |
+| `a_slow_completion_does_not_block_other_requests` | `tests/server.rs` | A health check answers in under 1 s while a 3 s completion runs | Server: one thread per request |
+| `the_default_listen_address_is_loopback` | `tests/server.rs` | The default listen address is loopback (no authentication on the endpoint) | Server: loopback by default |
+| `the_serve_command_answers_on_the_given_address` | `tests/server.rs` | `itsaresume serve --listen` as a process answers `/healthz` | — |

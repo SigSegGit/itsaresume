@@ -51,7 +51,7 @@ The cost is accepted: a `Claude` failure nobody anticipated stops the request
 instead of being rescued by LM Studio. The fix is to add the case to the
 classifier once it has been seen, with its fixture.
 
-## Billing guards (3–5 ✅, 1–2 ⬜ until LM Studio and configuration land)
+## Billing guards ✅
 
 No backend is billed per token, and that is enforced in code, not only
 promised (HANDOVER §1):
@@ -144,14 +144,14 @@ are never written**, only their lengths: prompts will carry CV data. Error
 messages are truncated to 200 characters. A journal that cannot be written
 does not cost the caller the answer; the failure is reported alongside it.
 
-## Configuration and CLI ⬜
+## Configuration and CLI ✅
 
 `config.local.toml` (git-ignored; `config.example.toml` shows the shape).
 `itsaresume complete` reads the prompt on stdin, prints the text on stdout and
 the answering backend on stderr. Exit codes: 0 answered, 2 configuration or
 usage error, 3 stopped (`Other`), 4 exhausted.
 
-## HTTP endpoint ⬜
+## HTTP endpoint ✅
 
 `itsaresume serve [--listen 127.0.0.1:8787]`:
 
@@ -188,6 +188,9 @@ crates/itsaresume-router/
   src/claude_code.rs    classify(), ClaudeCodeBackend, METERED_ENV
   src/bin/itsaresume-fake-claude.rs   test double of the claude CLI
   src/lm_studio.rs      LmStudioBackend (HTTP, no credential field)
+  src/config.rs         TOML configuration, closed kinds, no credentials
+  src/server.rs         HTTP endpoint (tiny_http, thread per request)
+  src/main.rs           the itsaresume binary: complete, serve
   tests/fixtures/claude CLI outputs, observed and synthetic
 scripts/
   sabotage.py           break a behaviour, see its tests go red, restore
