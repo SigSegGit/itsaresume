@@ -71,3 +71,17 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `gateway_statuses_are_unreachable` | `tests/lm_studio.rs` | 502, 503, 504 are `Unreachable` | LM Studio: gateway statuses are unreachable |
 | `other_error_statuses_stop_with_the_servers_message` | `tests/lm_studio.rs` | 400 (other than no model), 401, 404, 500 are `Other` carrying LM Studio's message | LM Studio: other statuses stop |
 | `a_success_without_an_answer_is_other` | `tests/lm_studio.rs` | A 2xx without an answer (empty choices, not JSON, no content) is `Other` | — |
+| `the_committed_example_parses` | `tests/config.rs` | `config.example.toml` stays a valid configuration | — |
+| `backends_keep_their_order_and_settings` | `tests/config.rs` | Backends keep file order; settings and the 300 s default timeout are applied | — |
+| `an_unknown_backend_kind_is_refused` | `tests/config.rs` | A kind outside `claude-code`/`lm-studio` (e.g. `anthropic-api`) is refused, naming it | — (closed enum: nothing to remove) |
+| `a_credential_field_is_refused` | `tests/config.rs` | `api_key` or `authorization` in a backend is an error, not an ignored line | Config: credential fields refused |
+| `a_configuration_without_backends_cannot_build_a_router` | `tests/config.rs` | An empty backend list is refused when building the router | Router refuses an empty backend list |
+| `a_valid_configuration_builds_a_router` | `tests/config.rs` | The example configuration builds a router | — |
+| `complete_prints_the_answer_on_stdout_and_exits_0` | `tests/cli.rs` | The answer alone goes to stdout, the backend name to stderr, exit 0, one journal line | — |
+| `a_spent_claude_plan_falls_back_to_lm_studio` | `tests/cli.rs` | **End to end**: Claude reports a usage limit, LM Studio answers, the journal records both | Router falls back on quota and outage |
+| `a_stopped_request_exits_3_and_never_reaches_lm_studio` | `tests/cli.rs` | **End to end**: not logged in exits 3 and LM Studio's listener sees no connection | CLI: stopped exits 3; Router stops on Other |
+| `every_backend_down_exits_4` | `tests/cli.rs` | Missing `claude` and refused LM Studio exit 4, journaled `exhausted` | — |
+| `the_system_option_reaches_the_backend` | `tests/cli.rs` | `--system` reaches the `claude` command line | — |
+| `the_config_path_can_come_from_the_environment` | `tests/cli.rs` | `ITSARESUME_CONFIG` names the configuration | — |
+| `a_bad_configuration_or_usage_exits_2` | `tests/cli.rs` | An invalid configuration or command line exits 2 with the reason | — |
+| `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |

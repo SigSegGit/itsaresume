@@ -284,6 +284,30 @@
       "expect": [
         "a_server_that_does_not_answer_in_time_is_unreachable"
       ]
+    },
+    "Config: credential fields refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "#[serde(tag = \"kind\", rename_all = \"kebab-case\", deny_unknown_fields)]",
+      "dead": "#[serde(tag = \"kind\", rename_all = \"kebab-case\")]",
+      "expect": [
+        "a_credential_field_is_refused"
+      ]
+    },
+    "CLI: stopped exits 3": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "ExitCode::from(EXIT_STOPPED)",
+      "dead": "ExitCode::from(EXIT_STOPPED + 1)",
+      "expect": [
+        "a_stopped_request_exits_3_and_never_reaches_lm_studio"
+      ]
+    },
+    "CLI: empty prompt refused": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "if prompt.trim().is_empty() {",
+      "dead": "if prompt.trim().is_empty() && false {",
+      "expect": [
+        "an_empty_prompt_is_a_usage_error"
+      ]
     }
   }
 }
