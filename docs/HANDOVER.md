@@ -57,7 +57,7 @@ consequences — before any code. Never a quiet decision.
    provider, no credential field in any backend. If the idea comes up, ask.
 2. **Backends and their order**: Claude Code on Nicolas's Pro/Max plan →
    LM Studio on the XPS 15 (RTX 4070) over Tailscale → a micro-model on the
-   Pi 4B or the Freebox VM (`itsworkstation`). The micro-model does light
+   Pi 4B or the Freebox Delta VM. The micro-model does light
    sorting/classification only, **never long text generation**.
 3. **`Other` never triggers a fallback.** Only `QuotaExceeded` and
    `Unreachable` hand over to the next backend (ARCHITECTURE explains why).

@@ -7,6 +7,7 @@
 
 pub mod backend;
 pub mod claude_code;
+pub mod config;
 pub mod journal;
 pub mod lm_studio;
 pub mod router;
