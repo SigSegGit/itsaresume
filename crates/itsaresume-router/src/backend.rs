@@ -51,12 +51,19 @@ impl BackendError {
     /// in, API-key billing, a changed output format). Falling back on it would
     /// turn a loud, fixable error into a silent, permanent downgrade.
     pub fn allows_fallback(&self) -> bool {
-        true
+        match self {
+            Self::QuotaExceeded(_) | Self::Unreachable(_) => true,
+            Self::Other(_) => false,
+        }
     }
 
     /// A stable machine name for the kind, as written in the journal.
     pub fn kind(&self) -> &'static str {
-        "other"
+        match self {
+            Self::QuotaExceeded(_) => "quota_exceeded",
+            Self::Unreachable(_) => "unreachable",
+            Self::Other(_) => "other",
+        }
     }
 
     /// The human-readable detail.
@@ -104,8 +111,14 @@ mod tests {
     /// The journal and the HTTP error bodies depend on these exact strings.
     #[test]
     fn kinds_have_stable_names() {
-        assert_eq!(BackendError::QuotaExceeded(String::new()).kind(), "quota_exceeded");
-        assert_eq!(BackendError::Unreachable(String::new()).kind(), "unreachable");
+        assert_eq!(
+            BackendError::QuotaExceeded(String::new()).kind(),
+            "quota_exceeded"
+        );
+        assert_eq!(
+            BackendError::Unreachable(String::new()).kind(),
+            "unreachable"
+        );
         assert_eq!(BackendError::Other(String::new()).kind(), "other");
     }
 }

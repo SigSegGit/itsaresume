@@ -22,7 +22,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 
 ## Catalogue
 
-*No tests yet — the scaffold (M0) holds none. Each M1 step adds its rows.*
-
 | Test | File | Property | Sabotage |
 |---|---|---|---|
+| `only_quota_and_unreachable_allow_fallback` | `src/backend.rs` | `QuotaExceeded` and `Unreachable` allow fallback; `Other` never does | Other never allows fallback |
+| `kinds_have_stable_names` | `src/backend.rs` | The kind names written to the journal and HTTP errors are `quota_exceeded`, `unreachable`, `other` | — (a rename is caught, nothing to sabotage) |

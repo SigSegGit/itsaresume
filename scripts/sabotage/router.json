@@ -1,0 +1,11 @@
+{
+  "command": ["cargo", "test", "-p", "itsaresume-router"],
+  "defences": {
+    "Other never allows fallback": {
+      "file": "crates/itsaresume-router/src/backend.rs",
+      "live": "Self::Other(_) => false,",
+      "dead": "Self::Other(_) => true,",
+      "expect": ["only_quota_and_unreachable_allow_fallback"]
+    }
+  }
+}
