@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.2
-TITLE: Backend trait and its three error kinds
+NEXT: 8.5
+TITLE: Claude Code backend, part 1 - classify the CLI output
 WRITTEN-AT: 2026-09-23
 BASE: 5a852f6
 -->
@@ -14,29 +14,34 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
-**2026-09-23 — scaffold (M0) written, nothing published yet.** The repository
-exists locally at `D:\GitHub\itsaresume`: a root commit on `main` (licence,
-README, ignore rules — the only commit ever made on `main` directly) and the
-scaffold on branch `m0-scaffold`. The GitHub repository `SigSegGit/itsaresume`
-does **not** exist yet; it is created at step 8.11, once M1 builds and passes
-locally (Nicolas's instruction).
+**2026-09-23.** Local repository `D:\GitHub\itsaresume`, not yet on GitHub
+(created at 8.11, once M1 builds and passes locally — Nicolas's instruction).
+Branches, stacked in this order, each ending with this pointer rewritten:
+
+- `main`: root commit only (licence, README, ignore rules).
+- `m0-scaffold`: workspace, docs, CI, guard scripts, observed CLI fixtures.
+- `m1-router`: 8.2–8.4 — `Backend`/`BackendError`, `Router`, JSONL journal.
+  13 tests, 7 sabotage defences, all verified locally.
 
 Nicolas then asked (same day) for autonomy to an MVP as fast as possible,
-ideally in Docker, with no decision handed back to him. M1 therefore also
-covers an HTTP endpoint and a Docker image (§8, 8.9–8.10).
+ideally in Docker, with no decision handed back to him: M1 also covers an
+HTTP endpoint and a Docker image (§8, 8.9–8.10).
 
-The `claude` CLI was observed before any parsing code (§4). Two findings shape
-the design: it is **not logged in** on this laptop (`claude auth status`:
-`loggedIn: false`), so no successful answer has been observed; and its first
-JSON message reports the billing source (`apiKeySource`), which turned a
-"zero pay-per-use" promise into something the code can check (ARCHITECTURE,
-"Billing guards").
+The `claude` CLI was observed before any parser (§4): not logged in on this
+laptop; its first JSON message reports the billing source (`apiKeySource`),
+which the backend will check. CI is written but has never run (no remote).
 
-CI is written (fmt, clippy, test on Ubuntu and Windows, doc, sabotage,
-handover) but has never run: there is no remote yet.
+Traps met, one line each:
+- `cargo test` stops at the first red test binary: sabotage plans must use
+  `--no-fail-fast` (now enforced by `sabotage.py`).
+- A sabotage that leaves a function unused does not build under
+  `-D warnings`: sabotage *inside* the function instead.
+- Git Bash heredocs eat `
+` in Python edit scripts: use the Edit tool for
+  lines holding backslashes.
 
-Where the truth is when documents disagree: the code and its tests, then
-`docs/TESTING.md`, then this file.
+Truth order when documents disagree: code and tests, then `docs/TESTING.md`,
+then this file.
 
 ## 1. Decisions never to reverse silently
 
@@ -127,19 +132,19 @@ branch with the local gates of §3 green.
 
 - [x] **8.0** Scaffold (M0): workspace, crate, docs, CI, guard scripts.
 - [x] **8.1** Observe the `claude` CLI output before writing a parser (§4).
-- [ ] **8.2** `src/backend.rs`: `Request { prompt, system: Option }`,
+- [x] **8.2** `src/backend.rs`: `Request { prompt, system: Option }`,
   `Completion { text }`, `trait Backend { name(); complete(&Request) }`,
   `BackendError::{QuotaExceeded, Unreachable, Other}(String)` with
   `allows_fallback()` (true only for the first two) and `kind()`
   (`quota_exceeded` / `unreachable` / `other`). Test: the truth table of
   `allows_fallback`. Sabotage: make `Other` allow fallback.
-- [ ] **8.3** `src/router.rs`: `Router::new(backends)` refuses an empty list;
+- [x] **8.3** `src/router.rs`: `Router::new(backends)` refuses an empty list;
   `complete` tries backends in order, falls back only when
   `allows_fallback()`, returns the answer with the answering backend's name
   and the failed attempts; `Other` stops (the next backend is **never
   called** — assert on a call counter); all failing → `Exhausted` with
   attempts in order. Test doubles: scripted fake backends counting calls.
-- [ ] **8.4** `src/journal.rs` + wire into `Router::new(backends, journal)`:
+- [x] **8.4** `src/journal.rs` + wire into `Router::new(backends, journal)`:
   one JSONL line per request (`ts`, `outcome`, `backend`, `attempts`,
   `duration_ms`, `prompt_chars`, `answer_chars`); prompt text never written
   (test with a sentinel prompt); messages truncated to 200 chars; a journal

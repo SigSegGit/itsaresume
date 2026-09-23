@@ -3,7 +3,8 @@
     "cargo",
     "test",
     "-p",
-    "itsaresume-router"
+    "itsaresume-router",
+    "--no-fail-fast"
   ],
   "defences": {
     "Other never allows fallback": {
@@ -38,6 +39,30 @@
       "dead": "if false {",
       "expect": [
         "an_empty_router_is_refused"
+      ]
+    },
+    "Journal keeps the prompt out": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "\"prompt_chars\": request.prompt.chars().count(),",
+      "dead": "\"prompt_chars\": request.prompt.chars().count(), \"prompt\": request.prompt,",
+      "expect": [
+        "the_prompt_and_answer_text_are_never_written_to_the_journal"
+      ]
+    },
+    "Journal truncates error messages": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "take(MESSAGE_CHARS)",
+      "dead": "take(usize::MAX)",
+      "expect": [
+        "error_messages_are_truncated_in_the_journal"
+      ]
+    },
+    "Router reports a journal it could not write": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "if let Err(error) = self.journal.record(request, &outcome, started.elapsed()) {",
+      "dead": "if let Err(error) = self.journal.record(request, &outcome, started.elapsed()).or(Ok::<(), std::io::Error>(())) {",
+      "expect": [
+        "an_unwritable_journal_does_not_lose_the_answer"
       ]
     }
   }

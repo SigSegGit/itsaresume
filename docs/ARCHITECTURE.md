@@ -26,7 +26,7 @@ sequenceDiagram
     R-->>C: text + which backend answered
 ```
 
-## Error kinds, and why `Other` never falls back ⬜
+## Error kinds, and why `Other` never falls back ✅
 
 Every backend failure is exactly one of three kinds:
 
@@ -120,7 +120,7 @@ then user) and `stream: false`; the answer is `choices[0].message.content`.
 | any other non-2xx (400 context too long, 401, 404 model unknown, 500) | `Other` |
 | 2xx without `choices[0].message.content` | `Other` |
 
-## Journal ⬜
+## Journal ✅
 
 One JSON object per line, appended to the configured file, one line per
 request whatever its outcome:
@@ -175,6 +175,9 @@ tripwire still applies. LM Studio on the Docker host is reached as
 ```
 crates/itsaresume-router/
   src/lib.rs            crate root
+  src/backend.rs        Request, Completion, BackendError, trait Backend
+  src/router.rs         Router: ordered fallback, Outcome, RouteError
+  src/journal.rs        JSONL journal (lengths, never text)
   tests/fixtures/claude CLI outputs, observed and synthetic
 scripts/
   sabotage.py           break a behaviour, see its tests go red, restore
