@@ -1,0 +1,19 @@
+[workspace]
+resolver = "3"
+members = ["crates/itsaresume-router"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/SigSegGit/itsaresume"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+print_stdout = "warn"
+unwrap_used = "warn"
