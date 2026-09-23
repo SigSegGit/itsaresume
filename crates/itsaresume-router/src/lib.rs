@@ -11,6 +11,7 @@ pub mod config;
 pub mod journal;
 pub mod lm_studio;
 pub mod router;
+pub mod server;
 
 pub use backend::{Backend, BackendError, Completion, Request};
 pub use journal::Journal;
