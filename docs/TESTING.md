@@ -51,3 +51,13 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `connection_errors_without_a_status_are_unreachable` | `tests/claude_classify.rs` | Connection-failure wordings without a status are `Unreachable` — **hypothesis** | Claude: connection wordings are unreachable |
 | `unrecognised_errors_are_other` | `tests/claude_classify.rs` | 400, 401 and unknown wordings are `Other` (stop loudly) | Claude: other statuses stop; Claude: unknown wording stops |
 | `output_that_is_not_the_expected_json_is_other` | `tests/claude_classify.rs` | Empty, non-JSON, object-shaped or result-less output is `Other` | — |
+| `the_prompt_goes_on_stdin_and_the_answer_comes_back` | `tests/claude_process.rs` | The prompt reaches the child on stdin, whole and never on the command line; the classified answer comes back | Claude process: prompt on stdin |
+| `the_cli_runs_with_json_output_and_no_tools` | `tests/claude_process.rs` | The child gets `-p`, JSON verbose output, `--tools ""`, no MCP, no slash commands, no session persistence, the request's system prompt and the model — and never `--bare` | Claude process: tools disabled |
+| `without_a_system_prompt_a_neutral_one_replaces_claude_codes_own` | `tests/claude_process.rs` | A system prompt is always passed, so Claude Code's agentic one is never used; no `--model` unless configured | — |
+| `metered_credentials_never_reach_the_child` | `tests/claude_process.rs` | None of `METERED_ENV` reaches the child (checked by the child itself); `CLAUDE_CODE_OAUTH_TOKEN` and `PATH` do | Claude process: metered env removed |
+| `the_metered_list_names_the_known_metered_switches` | `tests/claude_process.rs` | `METERED_ENV` names the API-key, auth-token, Bedrock and Vertex switches and not the subscription token | — |
+| `the_child_runs_in_the_dedicated_working_directory` | `tests/claude_process.rs` | The child's working directory is the dedicated one, created if missing | Claude process: dedicated workdir |
+| `a_missing_binary_is_unreachable` | `tests/claude_process.rs` | A `claude` that does not exist is `Unreachable` (falls back) | Claude process: missing binary is unreachable |
+| `a_cli_that_does_not_answer_in_time_is_killed_and_unreachable` | `tests/claude_process.rs` | A child still running at the timeout is killed within seconds and reported `Unreachable` | Claude process: timeout kills |
+| `an_error_printed_by_the_cli_is_classified_like_the_captured_one` | `tests/claude_process.rs` | The observed not-logged-in output, printed by a child exiting 1, is `Other` with its message | — |
+| `a_cli_that_prints_nothing_reports_its_stderr` | `tests/claude_process.rs` | A child that prints nothing on stdout yields `Other` carrying its stderr | Claude process: stderr reported |

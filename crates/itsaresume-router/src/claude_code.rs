@@ -5,9 +5,13 @@
 
 use crate::backend::{Backend, BackendError, Completion, Request};
 use serde_json::Value;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
+use std::io::{ErrorKind, Read, Write};
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
+use std::thread;
 use std::time::Duration;
+use wait_timeout::ChildExt;
 
 /// The only billing source accepted: the subscription (OAuth) path. Observed
 /// values: `"none"` logged out or on OAuth, `"ANTHROPIC_API_KEY"` when that
@@ -136,7 +140,21 @@ fn excerpt(text: &str) -> String {
 /// Environment variables that switch the `claude` CLI to per-token billing or
 /// to a metered provider. They are removed from the child's environment.
 /// `CLAUDE_CODE_OAUTH_TOKEN` (the subscription token) is deliberately absent.
-pub const METERED_ENV: &[&str] = &[];
+pub const METERED_ENV: &[&str] = &[
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
+    // A gateway or proxy is how a metered endpoint would slip in unseen.
+    "ANTHROPIC_BASE_URL",
+    "CLAUDE_CODE_USE_BEDROCK",
+    "CLAUDE_CODE_USE_VERTEX",
+    "CLAUDE_CODE_USE_FOUNDRY",
+    "AWS_BEARER_TOKEN_BEDROCK",
+];
+
+/// Used when a request has no system prompt, so that Claude Code's own
+/// (agentic, long) system prompt is never sent.
+pub const DEFAULT_SYSTEM_PROMPT: &str =
+    "You are a careful writing assistant. Reply with the requested text only.";
 
 /// The Claude Code backend: `claude -p` in a child process.
 #[derive(Debug, Clone)]
@@ -176,22 +194,140 @@ impl ClaudeCodeBackend {
         self
     }
 
+    /// The command-line arguments for `request`. The prompt is not among them:
+    /// it goes on stdin, which has no length limit.
+    pub fn arguments(&self, request: &Request) -> Vec<String> {
+        let system = request
+            .system
+            .clone()
+            .unwrap_or_else(|| DEFAULT_SYSTEM_PROMPT.to_owned());
+        let mut arguments: Vec<String> = vec![
+            "-p".into(),
+            "--output-format".into(),
+            "json".into(),
+            // The array form: its system/init message carries apiKeySource.
+            "--verbose".into(),
+            "--no-session-persistence".into(),
+            // An empty list disables every tool (observed: tools: []).
+            "--tools".into(),
+            String::new(),
+            "--strict-mcp-config".into(),
+            "--disable-slash-commands".into(),
+            // Replaces Claude Code's agentic system prompt.
+            "--system-prompt".into(),
+            system,
+        ];
+        if let Some(model) = &self.model {
+            arguments.push("--model".into());
+            arguments.push(model.clone());
+        }
+        arguments
+    }
+
     /// Run one request with `env` as the environment the child would inherit.
+    ///
+    /// [`Backend::complete`] passes the process environment; tests pass their
+    /// own, which is how the removal of [`METERED_ENV`] is proved without
+    /// touching the test process's global environment.
     pub fn complete_with_env(
         &self,
         request: &Request,
         env: impl IntoIterator<Item = (OsString, OsString)>,
     ) -> Result<Completion, BackendError> {
-        let _ = (
-            request,
-            env.into_iter().count(),
-            &self.program,
-            &self.model,
-            self.timeout,
-            &self.workdir,
-        );
-        Err(BackendError::Other("not written yet".into()))
+        std::fs::create_dir_all(&self.workdir).map_err(|error| {
+            BackendError::Other(format!(
+                "cannot create the claude working directory {}: {error}",
+                self.workdir.display()
+            ))
+        })?;
+
+        let mut command = Command::new(&self.program);
+        command
+            .args(self.arguments(request))
+            .current_dir(&self.workdir)
+            .env_clear()
+            .envs(env.into_iter().filter(|(name, _)| !is_metered(name)))
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+
+        let mut child = match command.spawn() {
+            Ok(child) => child,
+            Err(error) if error.kind() == ErrorKind::NotFound => {
+                return Err(BackendError::Unreachable(format!(
+                    "claude CLI not found at {}: {error}",
+                    self.program.display()
+                )));
+            }
+            Err(error) => {
+                return Err(BackendError::Other(format!(
+                    "cannot start {}: {error}",
+                    self.program.display()
+                )));
+            }
+        };
+
+        // Write and read on threads: a large prompt and a large answer would
+        // otherwise deadlock on full pipes.
+        let stdin = child.stdin.take();
+        let prompt = request.prompt.clone();
+        let writer = thread::spawn(move || {
+            if let Some(mut stdin) = stdin {
+                let _ = stdin.write_all(prompt.as_bytes());
+            }
+        });
+        let stdout = drain(child.stdout.take());
+        let stderr = drain(child.stderr.take());
+
+        let status = match child.wait_timeout(self.timeout) {
+            Ok(Some(status)) => status,
+            Ok(None) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(BackendError::Unreachable(format!(
+                    "claude did not answer within {} s and was killed",
+                    self.timeout.as_secs_f32()
+                )));
+            }
+            Err(error) => {
+                let _ = child.kill();
+                return Err(BackendError::Other(format!(
+                    "cannot wait for claude: {error}"
+                )));
+            }
+        };
+        let _ = writer.join();
+        let stdout = stdout.join().unwrap_or_default();
+        let stderr = stderr.join().unwrap_or_default();
+
+        if stdout.trim().is_empty() {
+            return Err(BackendError::Other(format!(
+                "claude exited with {status} and printed nothing on stdout; stderr: {}",
+                excerpt(stderr.trim())
+            )));
+        }
+        classify(&stdout)
     }
+}
+
+/// Whether an environment variable is one of [`METERED_ENV`] (names compared
+/// without case: Windows environment names are case-insensitive).
+fn is_metered(name: &OsStr) -> bool {
+    let name = name.to_string_lossy();
+    METERED_ENV
+        .iter()
+        .any(|metered| name.eq_ignore_ascii_case(metered))
+}
+
+/// Read a pipe to the end on its own thread.
+fn drain(pipe: Option<impl Read + Send + 'static>) -> thread::JoinHandle<String> {
+    thread::spawn(move || {
+        let mut text = String::new();
+        if let Some(mut pipe) = pipe {
+            let _ = pipe.read_to_string(&mut text);
+        }
+        text
+    })
 }
 
 impl Backend for ClaudeCodeBackend {

@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.5
-TITLE: Claude Code backend, part 1 - classify the CLI output
+NEXT: 8.7
+TITLE: LM Studio backend over HTTP
 WRITTEN-AT: 2026-09-23
 BASE: 5a852f6
 -->
@@ -22,6 +22,9 @@ Branches, stacked in this order, each ending with this pointer rewritten:
 - `m0-scaffold`: workspace, docs, CI, guard scripts, observed CLI fixtures.
 - `m1-router`: 8.2–8.4 — `Backend`/`BackendError`, `Router`, JSONL journal.
   13 tests, 7 sabotage defences, all verified locally.
+- `m1-claude`: 8.5–8.6 — `classify()` on the observed fixtures, billing and
+  tool tripwires, `ClaudeCodeBackend` spawning the CLI (tested against a fake
+  `claude` binary). 37 tests, 27 defences, verified locally on Windows.
 
 Nicolas then asked (same day) for autonomy to an MVP as fast as possible,
 ideally in Docker, with no decision handed back to him: M1 also covers an
@@ -148,10 +151,10 @@ branch with the local gates of §3 green.
   `duration_ms`, `prompt_chars`, `answer_chars`); prompt text never written
   (test with a sentinel prompt); messages truncated to 200 chars; a journal
   that cannot be written does not lose the answer.
-- [ ] **8.5** `src/claude_code.rs`: pure `classify(stdout) -> Result<Completion,
+- [x] **8.5** `src/claude_code.rs`: pure `classify(stdout) -> Result<Completion,
   BackendError>` per the ARCHITECTURE table, tested on every fixture; unknown
   shapes → `Other`; tripwires `apiKeySource != "none"` and non-empty `tools`.
-- [ ] **8.6** `ClaudeCodeBackend`: spawn with the flag set of ARCHITECTURE,
+- [x] **8.6** `ClaudeCodeBackend`: spawn with the flag set of ARCHITECTURE,
   prompt on stdin, dedicated empty working directory, timeout → kill →
   `Unreachable`, missing binary → `Unreachable`, metered env variables removed
   from the child. Tested against a fake `claude` binary built from this crate

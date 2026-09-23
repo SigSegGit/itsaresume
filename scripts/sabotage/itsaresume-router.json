@@ -171,6 +171,62 @@
       "expect": [
         "connection_errors_without_a_status_are_unreachable"
       ]
+    },
+    "Claude process: metered env removed": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".envs(env.into_iter().filter(|(name, _)| !is_metered(name)))",
+      "dead": ".envs(env.into_iter().filter(|(name, _)| !is_metered(name) || true))",
+      "expect": [
+        "metered_credentials_never_reach_the_child"
+      ]
+    },
+    "Claude process: missing binary is unreachable": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "Err(error) if error.kind() == ErrorKind::NotFound => {",
+      "dead": "Err(error) if error.kind() == ErrorKind::Interrupted => {",
+      "expect": [
+        "a_missing_binary_is_unreachable"
+      ]
+    },
+    "Claude process: timeout kills": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".wait_timeout(self.timeout)",
+      "dead": ".wait_timeout(self.timeout * 100)",
+      "expect": [
+        "a_cli_that_does_not_answer_in_time_is_killed_and_unreachable"
+      ]
+    },
+    "Claude process: tools disabled": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "            String::new(),\n",
+      "dead": "            \"default\".into(),\n",
+      "expect": [
+        "the_cli_runs_with_json_output_and_no_tools"
+      ]
+    },
+    "Claude process: prompt on stdin": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "let _ = stdin.write_all(prompt.as_bytes());",
+      "dead": "let _ = stdin.write_all(&prompt.as_bytes()[..0]);",
+      "expect": [
+        "the_prompt_goes_on_stdin_and_the_answer_comes_back"
+      ]
+    },
+    "Claude process: dedicated workdir": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".current_dir(&self.workdir)",
+      "dead": ".current_dir(std::env::temp_dir())",
+      "expect": [
+        "the_child_runs_in_the_dedicated_working_directory"
+      ]
+    },
+    "Claude process: stderr reported": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "excerpt(stderr.trim())",
+      "dead": "excerpt(&stderr.trim()[..0])",
+      "expect": [
+        "a_cli_that_prints_nothing_reports_its_stderr"
+      ]
     }
   }
 }

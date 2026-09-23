@@ -51,7 +51,7 @@ The cost is accepted: a `Claude` failure nobody anticipated stops the request
 instead of being rescued by LM Studio. The fix is to add the case to the
 classifier once it has been seen, with its fixture.
 
-## Billing guards ⬜
+## Billing guards (3–5 ✅, 1–2 ⬜ until LM Studio and configuration land)
 
 No backend is billed per token, and that is enforced in code, not only
 promised (HANDOVER §1):
@@ -72,7 +72,7 @@ promised (HANDOVER §1):
    billed; the tripwire makes sure it happens once and loudly, not for a month.
 5. **`--bare` is never used**: it forces API-key authentication.
 
-## Claude Code backend ⬜
+## Claude Code backend ✅
 
 Runs `claude -p` with the prompt on **stdin** (no command-line length limit),
 in a dedicated empty working directory (so no `CLAUDE.md` or project memory
@@ -178,6 +178,8 @@ crates/itsaresume-router/
   src/backend.rs        Request, Completion, BackendError, trait Backend
   src/router.rs         Router: ordered fallback, Outcome, RouteError
   src/journal.rs        JSONL journal (lengths, never text)
+  src/claude_code.rs    classify(), ClaudeCodeBackend, METERED_ENV
+  src/bin/itsaresume-fake-claude.rs   test double of the claude CLI
   tests/fixtures/claude CLI outputs, observed and synthetic
 scripts/
   sabotage.py           break a behaviour, see its tests go red, restore
