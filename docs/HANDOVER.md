@@ -36,9 +36,8 @@ Traps met, one line each:
   `--no-fail-fast` (now enforced by `sabotage.py`).
 - A sabotage that leaves a function unused does not build under
   `-D warnings`: sabotage *inside* the function instead.
-- Git Bash heredocs eat `
-` in Python edit scripts: use the Edit tool for
-  lines holding backslashes.
+- Git Bash heredocs eat backslash escapes in Python edit scripts: use the
+  Edit tool for lines holding backslashes.
 
 Truth order when documents disagree: code and tests, then `docs/TESTING.md`,
 then this file.

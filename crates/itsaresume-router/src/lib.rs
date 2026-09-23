@@ -6,6 +6,7 @@
 //! backends is closed on purpose — see `docs/HANDOVER.md` §1.
 
 pub mod backend;
+pub mod claude_code;
 pub mod journal;
 pub mod router;
 
