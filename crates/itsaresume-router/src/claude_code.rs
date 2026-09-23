@@ -3,8 +3,11 @@
 //! The output shapes this module relies on were observed before it was
 //! written (docs/HANDOVER.md §4; fixtures in `tests/fixtures/claude/`).
 
-use crate::backend::{BackendError, Completion};
+use crate::backend::{Backend, BackendError, Completion, Request};
 use serde_json::Value;
+use std::ffi::OsString;
+use std::path::PathBuf;
+use std::time::Duration;
 
 /// The only billing source accepted: the subscription (OAuth) path. Observed
 /// values: `"none"` logged out or on OAuth, `"ANTHROPIC_API_KEY"` when that
@@ -127,5 +130,76 @@ fn excerpt(text: &str) -> String {
         kept + "…"
     } else {
         kept
+    }
+}
+
+/// Environment variables that switch the `claude` CLI to per-token billing or
+/// to a metered provider. They are removed from the child's environment.
+/// `CLAUDE_CODE_OAUTH_TOKEN` (the subscription token) is deliberately absent.
+pub const METERED_ENV: &[&str] = &[];
+
+/// The Claude Code backend: `claude -p` in a child process.
+#[derive(Debug, Clone)]
+pub struct ClaudeCodeBackend {
+    program: PathBuf,
+    model: Option<String>,
+    timeout: Duration,
+    workdir: PathBuf,
+}
+
+impl ClaudeCodeBackend {
+    /// A backend running `program` (a path, or a name looked up on `PATH`).
+    pub fn new(program: impl Into<PathBuf>) -> Self {
+        Self {
+            program: program.into(),
+            model: None,
+            timeout: Duration::from_secs(300),
+            workdir: std::env::temp_dir().join("itsaresume-claude"),
+        }
+    }
+
+    /// Pass `--model <model>` to the CLI.
+    pub fn with_model(mut self, model: impl Into<String>) -> Self {
+        self.model = Some(model.into());
+        self
+    }
+
+    /// Kill the CLI and report `Unreachable` after this long.
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    /// The directory the CLI runs in (created if missing).
+    pub fn with_workdir(mut self, workdir: impl Into<PathBuf>) -> Self {
+        self.workdir = workdir.into();
+        self
+    }
+
+    /// Run one request with `env` as the environment the child would inherit.
+    pub fn complete_with_env(
+        &self,
+        request: &Request,
+        env: impl IntoIterator<Item = (OsString, OsString)>,
+    ) -> Result<Completion, BackendError> {
+        let _ = (
+            request,
+            env.into_iter().count(),
+            &self.program,
+            &self.model,
+            self.timeout,
+            &self.workdir,
+        );
+        Err(BackendError::Other("not written yet".into()))
+    }
+}
+
+impl Backend for ClaudeCodeBackend {
+    fn name(&self) -> &str {
+        "claude-code"
+    }
+
+    fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
+        self.complete_with_env(request, std::env::vars_os())
     }
 }
