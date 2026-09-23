@@ -1,0 +1,15 @@
+/target
+**/*.rs.bk
+*.pdb
+
+# Real configuration: machine names, Tailscale addresses, model ids. Only
+# `config.example.toml`, with placeholder values, is ever committed.
+config.local.toml
+*.local.toml
+
+# The usage journal. It records which backend answered each request on this
+# machine; it is Nicolas's data, not the project's.
+*.jsonl
+
+# Python bytecode from the CI check scripts.
+__pycache__/
