@@ -8,6 +8,18 @@ license.workspace = true
 repository.workspace = true
 publish = false
 
+[[bin]]
+name = "itsaresume"
+path = "src/main.rs"
+
+# Test double of the `claude` CLI, used by tests/claude_process.rs and
+# tests/cli.rs. Never shipped in the Docker image.
+[[bin]]
+name = "itsaresume-fake-claude"
+path = "src/bin/itsaresume-fake-claude.rs"
+test = false
+doc = false
+
 [dependencies]
 humantime = "2.4.0"
 serde = { version = "1.0.229", features = ["derive"] }
