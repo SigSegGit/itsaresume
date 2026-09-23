@@ -51,8 +51,8 @@
     },
     "Journal truncates error messages": {
       "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "take(MESSAGE_CHARS)",
-      "dead": "take(usize::MAX)",
+      "live": "excerpt(attempt.error.message(), MESSAGE_CHARS)",
+      "dead": "excerpt(attempt.error.message(), usize::MAX)",
       "expect": [
         "error_messages_are_truncated_in_the_journal"
       ]
@@ -222,10 +222,67 @@
     },
     "Claude process: stderr reported": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
-      "live": "excerpt(stderr.trim())",
-      "dead": "excerpt(&stderr.trim()[..0])",
+      "live": "excerpt(stderr.trim(), 160)",
+      "dead": "excerpt(stderr.trim(), 0)",
       "expect": [
         "a_cli_that_prints_nothing_reports_its_stderr"
+      ]
+    },
+    "LM Studio: no credential header": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": ".header(\"Content-Type\", \"application/json\")",
+      "dead": ".header(\"Content-Type\", \"application/json\").header(\"Authorization\", \"Bearer sabotage\")",
+      "expect": [
+        "the_request_is_a_chat_completion_without_any_credential"
+      ]
+    },
+    "LM Studio: no model loaded is unreachable": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "if status == 400 && message.contains(\"No models loaded\") {",
+      "dead": "if status == 400 && message.contains(\"No models loaded-never\") {",
+      "expect": [
+        "the_observed_no_models_loaded_is_unreachable"
+      ]
+    },
+    "LM Studio: 429 is quota": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "429 => BackendError::QuotaExceeded(detail),",
+      "dead": "4290 => BackendError::QuotaExceeded(detail),",
+      "expect": [
+        "status_429_is_quota_exceeded"
+      ]
+    },
+    "LM Studio: gateway statuses are unreachable": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "502..=504 => BackendError::Unreachable(detail),",
+      "dead": "5020..=5040 => BackendError::Unreachable(detail),",
+      "expect": [
+        "gateway_statuses_are_unreachable"
+      ]
+    },
+    "LM Studio: other statuses stop": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "        502..=504 => BackendError::Unreachable(detail),\n        _ => BackendError::Other(detail),",
+      "dead": "        502..=504 => BackendError::Unreachable(detail),\n        _ => BackendError::Unreachable(detail),",
+      "expect": [
+        "other_error_statuses_stop_with_the_servers_message"
+      ]
+    },
+    "LM Studio: transport failures are unreachable": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "| ureq::Error::Io(_) => BackendError::Unreachable(detail),",
+      "dead": "| ureq::Error::Io(_) => BackendError::Other(detail),",
+      "expect": [
+        "a_refused_connection_is_unreachable",
+        "a_server_that_does_not_answer_in_time_is_unreachable"
+      ]
+    },
+    "LM Studio: timeout honoured": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": ".timeout_global(Some(self.timeout))",
+      "dead": ".timeout_global(Some(self.timeout * 100))",
+      "expect": [
+        "a_server_that_does_not_answer_in_time_is_unreachable"
       ]
     }
   }

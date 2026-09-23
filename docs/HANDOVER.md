@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.7
-TITLE: LM Studio backend over HTTP
+NEXT: 8.8
+TITLE: Configuration file and the complete CLI command
 WRITTEN-AT: 2026-09-23
 BASE: 5a852f6
 -->
@@ -25,6 +25,8 @@ Branches, stacked in this order, each ending with this pointer rewritten:
 - `m1-claude`: 8.5–8.6 — `classify()` on the observed fixtures, billing and
   tool tripwires, `ClaudeCodeBackend` spawning the CLI (tested against a fake
   `claude` binary). 37 tests, 27 defences, verified locally on Windows.
+- `m1-lmstudio`: 8.7 — `LmStudioBackend` over HTTP, observed bodies served
+  by a fake server. 47 tests, 34 defences, verified locally.
 
 Nicolas then asked (same day) for autonomy to an MVP as fast as possible,
 ideally in Docker, with no decision handed back to him: M1 also covers an
@@ -78,7 +80,10 @@ consequences — before any code. Never a quiet decision.
 - `gh` is logged in as `SigSegGit` (scopes include `repo`, `workflow`).
 - `claude` CLI: `C:\Users\SigSeg\.local\bin\claude.exe` — on PowerShell's PATH,
   **not** on Git Bash's. Version 2.1.162 when observed.
-- LM Studio is installed on this laptop (`~/.lmstudio/bin` on PATH).
+- LM Studio is on this laptop (the XPS): `~/.lmstudio/bin/lms`, server on
+  **`127.0.0.1:54321`** (not 1234). `lms server start`, `lms load
+  qwen2.5-7b-instruct-1m -y` (4.7 GB, fits the 8 GB RTX 4070) were used for
+  the observations; other models are listed by `lms ls`.
 - Skill to resume: `~/.claude/skills/itsaresume/SKILL.md`.
 
 ## 3. Verify a clean tree
@@ -159,7 +164,7 @@ branch with the local gates of §3 green.
   `Unreachable`, missing binary → `Unreachable`, metered env variables removed
   from the child. Tested against a fake `claude` binary built from this crate
   that records its argv, stdin and environment variable names.
-- [ ] **8.7** `src/lm_studio.rs`: `LmStudioBackend` over HTTP (`ureq`), tested
+- [x] **8.7** `src/lm_studio.rs`: `LmStudioBackend` over HTTP (`ureq`), tested
   against a fake server on `127.0.0.1` that records the request: no
   `Authorization` header, body shape, and the ARCHITECTURE status table. If
   LM Studio's server runs on this laptop, observe its real error for "no

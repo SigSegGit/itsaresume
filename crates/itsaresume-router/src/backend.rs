@@ -82,6 +82,17 @@ impl fmt::Display for BackendError {
 
 impl std::error::Error for BackendError {}
 
+/// The first `max_chars` characters of `text`, with `…` when something was cut.
+pub(crate) fn excerpt(text: &str, max_chars: usize) -> String {
+    let mut chars = text.chars();
+    let kept: String = chars.by_ref().take(max_chars).collect();
+    if chars.next().is_some() {
+        kept + "…"
+    } else {
+        kept
+    }
+}
+
 /// An inference backend. The set of implementations is closed: every one of
 /// them is free at the point of use (docs/HANDOVER.md §1, decision 1).
 pub trait Backend: Send + Sync {

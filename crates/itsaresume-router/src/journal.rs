@@ -4,7 +4,7 @@
 //! contains the prompt or the answer — only their lengths — because prompts
 //! will carry personal CV data (docs/HANDOVER.md §1, decision 9).
 
-use crate::backend::Request;
+use crate::backend::{Request, excerpt};
 use crate::router::{Outcome, RouteError};
 use serde_json::{Value, json};
 use std::fs::OpenOptions;
@@ -62,7 +62,7 @@ impl Journal {
                 json!({
                     "backend": attempt.backend,
                     "kind": attempt.error.kind(),
-                    "message": truncate(attempt.error.message()),
+                    "message": excerpt(attempt.error.message(), MESSAGE_CHARS),
                 })
             })
             .collect();
@@ -91,16 +91,5 @@ impl Journal {
         // One write call per line, so concurrent appenders cannot interleave
         // inside a line.
         file.write_all(line.as_bytes())
-    }
-}
-
-/// At most [`MESSAGE_CHARS`] characters, with `…` when something was cut.
-fn truncate(message: &str) -> String {
-    let mut chars = message.chars();
-    let kept: String = chars.by_ref().take(MESSAGE_CHARS).collect();
-    if chars.next().is_some() {
-        kept + "…"
-    } else {
-        kept
     }
 }

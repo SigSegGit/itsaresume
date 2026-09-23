@@ -3,7 +3,7 @@
 //! The output shapes this module relies on were observed before it was
 //! written (docs/HANDOVER.md §4; fixtures in `tests/fixtures/claude/`).
 
-use crate::backend::{Backend, BackendError, Completion, Request};
+use crate::backend::{Backend, BackendError, Completion, Request, excerpt};
 use serde_json::Value;
 use std::ffi::{OsStr, OsString};
 use std::io::{ErrorKind, Read, Write};
@@ -28,7 +28,7 @@ pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
     let messages: Vec<Value> = serde_json::from_str(stdout.trim()).map_err(|error| {
         BackendError::Other(format!(
             "claude output is not the expected JSON array ({error}): {}",
-            excerpt(stdout)
+            excerpt(stdout, 160)
         ))
     })?;
 
@@ -78,7 +78,7 @@ pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
         )),
         _ => Err(BackendError::Other(format!(
             "claude result message is not understood: {}",
-            excerpt(&result.to_string())
+            excerpt(&result.to_string(), 160)
         ))),
     }
 }
@@ -124,17 +124,6 @@ fn looks_like_connection_failure(message: &str) -> bool {
     ]
     .iter()
     .any(|needle| message.contains(needle))
-}
-
-/// The start of an output, for error messages.
-fn excerpt(text: &str) -> String {
-    let mut chars = text.chars();
-    let kept: String = chars.by_ref().take(160).collect();
-    if chars.next().is_some() {
-        kept + "…"
-    } else {
-        kept
-    }
 }
 
 /// Environment variables that switch the `claude` CLI to per-token billing or
@@ -303,7 +292,7 @@ impl ClaudeCodeBackend {
         if stdout.trim().is_empty() {
             return Err(BackendError::Other(format!(
                 "claude exited with {status} and printed nothing on stdout; stderr: {}",
-                excerpt(stderr.trim())
+                excerpt(stderr.trim(), 160)
             )));
         }
         classify(&stdout)

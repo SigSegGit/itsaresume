@@ -107,17 +107,24 @@ Output classification (observed shapes in
 `is_error` decides, never `subtype`: the not-logged-in case is observed with
 `subtype: "success"`.
 
-## LM Studio backend ⬜
+## LM Studio backend ✅
 
 `POST {base_url}/chat/completions` with `model`, `messages` (optional system,
 then user) and `stream: false`; the answer is `choices[0].message.content`.
+Plain HTTP (`ureq` without TLS): Tailscale already encrypts the link between
+machines. Observed on the XPS (fixtures in `tests/fixtures/lm-studio/`): the
+server listens on `127.0.0.1:54321` there (the port is a setting, 1234 by
+default); with a model loaded, an unknown `model` id is ignored and the
+loaded model answers; a known but unloaded id is loaded on demand, which can
+take over a minute — hence the generous default timeout.
 
 | Condition | Kind |
 |---|---|
 | connection refused, DNS failure, timeout | `Unreachable` |
+| HTTP 400 "No models loaded" (observed: server up, nothing loaded) | `Unreachable` |
 | HTTP 502, 503, 504 | `Unreachable` |
 | HTTP 429 | `QuotaExceeded` |
-| any other non-2xx (400 context too long, 401, 404 model unknown, 500) | `Other` |
+| any other non-2xx (other 400s, 401, 404, 500) | `Other` |
 | 2xx without `choices[0].message.content` | `Other` |
 
 ## Journal ✅
@@ -180,6 +187,7 @@ crates/itsaresume-router/
   src/journal.rs        JSONL journal (lengths, never text)
   src/claude_code.rs    classify(), ClaudeCodeBackend, METERED_ENV
   src/bin/itsaresume-fake-claude.rs   test double of the claude CLI
+  src/lm_studio.rs      LmStudioBackend (HTTP, no credential field)
   tests/fixtures/claude CLI outputs, observed and synthetic
 scripts/
   sabotage.py           break a behaviour, see its tests go red, restore

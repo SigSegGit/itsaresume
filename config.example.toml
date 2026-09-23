@@ -29,7 +29,8 @@ timeout_secs = 300
 
 [[backend]]
 kind = "lm-studio"
-# LM Studio's OpenAI-compatible endpoint, including the /v1 suffix.
+# LM Studio's OpenAI-compatible endpoint, including the /v1 suffix. The port
+# is the one LM Studio shows in its Developer tab (1234 unless changed).
 base_url = "http://gpu-machine.example-tailnet.ts.net:1234/v1"
 # The model identifier as LM Studio lists it (GET /v1/models).
 model = "example-model-id"

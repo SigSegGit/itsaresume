@@ -61,3 +61,13 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_cli_that_does_not_answer_in_time_is_killed_and_unreachable` | `tests/claude_process.rs` | A child still running at the timeout is killed within seconds and reported `Unreachable` | Claude process: timeout kills |
 | `an_error_printed_by_the_cli_is_classified_like_the_captured_one` | `tests/claude_process.rs` | The observed not-logged-in output, printed by a child exiting 1, is `Other` with its message | — |
 | `a_cli_that_prints_nothing_reports_its_stderr` | `tests/claude_process.rs` | A child that prints nothing on stdout yields `Other` carrying its stderr | Claude process: stderr reported |
+| `the_observed_success_is_an_answer` | `tests/lm_studio.rs` | The **observed** 200 body yields `choices[0].message.content` | — |
+| `the_request_is_a_chat_completion_without_any_credential` | `tests/lm_studio.rs` | `POST /v1/chat/completions` with model, `stream: false`, system then user messages, and **no** `Authorization`/`x-api-key`/`api-key` header | LM Studio: no credential header |
+| `without_a_system_prompt_only_the_user_message_is_sent` | `tests/lm_studio.rs` | No system message is invented | — |
+| `the_observed_no_models_loaded_is_unreachable` | `tests/lm_studio.rs` | The **observed** 400 "No models loaded" is `Unreachable` (server state, falls back) | LM Studio: no model loaded is unreachable |
+| `a_refused_connection_is_unreachable` | `tests/lm_studio.rs` | Connection refused is `Unreachable` | LM Studio: transport failures are unreachable |
+| `a_server_that_does_not_answer_in_time_is_unreachable` | `tests/lm_studio.rs` | A server silent past the timeout is `Unreachable` within seconds | LM Studio: timeout honoured; LM Studio: transport failures are unreachable |
+| `status_429_is_quota_exceeded` | `tests/lm_studio.rs` | 429 is `QuotaExceeded` | LM Studio: 429 is quota |
+| `gateway_statuses_are_unreachable` | `tests/lm_studio.rs` | 502, 503, 504 are `Unreachable` | LM Studio: gateway statuses are unreachable |
+| `other_error_statuses_stop_with_the_servers_message` | `tests/lm_studio.rs` | 400 (other than no model), 401, 404, 500 are `Other` carrying LM Studio's message | LM Studio: other statuses stop |
+| `a_success_without_an_answer_is_other` | `tests/lm_studio.rs` | A 2xx without an answer (empty choices, not JSON, no content) is `Other` | — |
