@@ -1,7 +1,7 @@
 //! The fallback rules of `Router`, against scripted backends that count calls.
 
 use itsaresume_router::{
-    Answer, Backend, BackendError, Completion, NoBackends, Request, RouteError, Router,
+    Answer, Backend, BackendError, Completion, Journal, NoBackends, Request, RouteError, Router,
 };
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -41,13 +41,19 @@ fn request() -> Request {
     Request::new("write a summary")
 }
 
+/// A router journaling into a throwaway directory, kept alive with it.
+fn router(backends: Vec<Box<dyn Backend>>) -> (Router, tempfile::TempDir) {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let journal = Journal::new(dir.path().join("journal.jsonl"));
+    (Router::new(backends, journal).expect("backends"), dir)
+}
+
 #[test]
 fn first_backend_answers_and_the_next_is_not_called() {
     let (a, a_calls) = scripted("a", Ok("from a"));
     let (b, b_calls) = scripted("b", Ok("from b"));
-    let outcome = Router::new(vec![a, b])
-        .expect("two backends")
-        .complete(&request());
+    let (router, _dir) = router(vec![a, b]);
+    let outcome = router.complete(&request());
 
     assert_eq!(
         outcome.result,
@@ -69,9 +75,8 @@ fn first_backend_answers_and_the_next_is_not_called() {
 fn quota_exceeded_falls_back_to_the_next_backend() {
     let (a, _) = scripted("a", Err(BackendError::QuotaExceeded("plan limit".into())));
     let (b, b_calls) = scripted("b", Ok("from b"));
-    let outcome = Router::new(vec![a, b])
-        .expect("two backends")
-        .complete(&request());
+    let (router, _dir) = router(vec![a, b]);
+    let outcome = router.complete(&request());
 
     assert_eq!(outcome.result.map(|answer| answer.backend), Ok("b".into()));
     assert_eq!(b_calls.load(Ordering::SeqCst), 1);
@@ -84,9 +89,8 @@ fn quota_exceeded_falls_back_to_the_next_backend() {
 fn unreachable_falls_back_to_the_next_backend() {
     let (a, _) = scripted("a", Err(BackendError::Unreachable("refused".into())));
     let (b, b_calls) = scripted("b", Ok("from b"));
-    let outcome = Router::new(vec![a, b])
-        .expect("two backends")
-        .complete(&request());
+    let (router, _dir) = router(vec![a, b]);
+    let outcome = router.complete(&request());
 
     assert_eq!(outcome.result.map(|answer| answer.backend), Ok("b".into()));
     assert_eq!(b_calls.load(Ordering::SeqCst), 1);
@@ -98,9 +102,8 @@ fn unreachable_falls_back_to_the_next_backend() {
 fn other_error_stops_without_trying_the_next_backend() {
     let (a, _) = scripted("a", Err(BackendError::Other("not logged in".into())));
     let (b, b_calls) = scripted("b", Ok("from b"));
-    let outcome = Router::new(vec![a, b])
-        .expect("two backends")
-        .complete(&request());
+    let (router, _dir) = router(vec![a, b]);
+    let outcome = router.complete(&request());
 
     assert_eq!(
         outcome.result,
@@ -121,9 +124,8 @@ fn other_error_stops_without_trying_the_next_backend() {
 fn every_backend_failing_with_fallback_kinds_is_exhausted_with_attempts_in_order() {
     let (a, _) = scripted("a", Err(BackendError::QuotaExceeded("limit".into())));
     let (b, _) = scripted("b", Err(BackendError::Unreachable("timeout".into())));
-    let outcome = Router::new(vec![a, b])
-        .expect("two backends")
-        .complete(&request());
+    let (router, _dir) = router(vec![a, b]);
+    let outcome = router.complete(&request());
 
     assert_eq!(outcome.result, Err(RouteError::Exhausted));
     let tried: Vec<(&str, &str)> = outcome
@@ -136,5 +138,8 @@ fn every_backend_failing_with_fallback_kinds_is_exhausted_with_attempts_in_order
 
 #[test]
 fn an_empty_router_is_refused() {
-    assert!(matches!(Router::new(Vec::new()), Err(NoBackends)));
+    assert!(matches!(
+        Router::new(Vec::new(), Journal::new("unused.jsonl")),
+        Err(NoBackends)
+    ));
 }
