@@ -6,5 +6,7 @@
 //! backends is closed on purpose — see `docs/HANDOVER.md` §1.
 
 pub mod backend;
+pub mod router;
 
 pub use backend::{Backend, BackendError, Completion, Request};
+pub use router::{Answer, Attempt, NoBackends, Outcome, RouteError, Router};
