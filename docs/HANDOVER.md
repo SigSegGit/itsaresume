@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.11
-TITLE: Get CI running on the new repository, then merge the stacked PRs in order
-WRITTEN-AT: 2026-09-23
-BASE: 5a852f6
+NEXT: 8.13
+TITLE: Billing hardening (settings files, latching tripwire), then 8.14-8.16
+WRITTEN-AT: 2026-09-24
+BASE: 812b2d1
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -14,58 +14,28 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
-**2026-09-23, end of the first session.** All of M1 is built and verified
-**locally**; nothing is merged, because **GitHub Actions never started on the
-new repository** — the one blocker, and the first job of the next session.
+**2026-09-24.** M0 and M1 are **merged on `main`** with every check green:
+PR #1 (`m0-scaffold`, 7 jobs) and PR #2 (`m1-docker`, holding `m1-router` →
+`m1-cli`, 8 jobs), merge commits, red/green history intact.
 
-Published at `github.com/SigSegGit/itsaresume` (public). Branches, stacked in
-this order and pushed: `m0-scaffold` (PR #1, open) → `m1-router` →
-`m1-claude` → `m1-lmstudio` → `m1-cli` → `m1-docker`. `main` holds the root
-commit only. Merge them in that order, one PR each, base `main`, with
-`scripts/merge-when-green.sh` (merge commits: no rebase needed).
+**CI started** after PR #1 was closed and reopened on 2026-09-24; the same
+had not worked on 2026-09-23, and why it did now is not known (issue #4). The
+`sabotage` job of PR #2 failed once with "AFTER RESTORE THE TREE IS RED"
+(`tests/cli.rs`), then passed on an unchanged rerun: flaky or a stale
+artefact, not diagnosed (issue #3).
 
-**The CI blocker, as far as it was taken.** `ci.yml` is valid YAML and present
-on every branch, Actions is enabled (`actions/permissions`: enabled, all),
-GitHub status was green, `SigSegGit/itsanas` ran PR checks two days ago — yet
-this repository has **0 registered workflows and 0 runs**. Tried, without
-effect: closing/reopening PR #1; an empty commit on `m0-scaffold` (twice);
-making `m0-scaffold` the default branch during a push (restored to `main`).
-Not tried: waiting longer; a workflow file added through the GitHub web UI;
-the repository's Actions settings page as Nicolas sees it. **Never merge
-without CI.**
+**Claude Code is not logged in on this machine** ("Not logged in · Please run
+/login", observed again 2026-09-24, `authentication_failed` on the assistant
+message). By design that stops the request (ARCHITECTURE, "Other never falls
+back"); until Nicolas logs in, the generator uses LM Studio-only configs
+(`lm-qwen3coder.local.toml` on 8788, `lm-gemma.local.toml` on 8787).
 
-**Verified locally** (Windows, 2026-09-23): 71 tests, 42 sabotage defences
-(`RUSTFLAGS="-D warnings" python scripts/sabotage.py`), fmt, clippy and doc
-under `-D warnings`, `check-handover.py`. `bash scripts/docker-smoke.sh`
-green: the image holds `claude` 2.1.162 and not the test double; a real
-request through the real CLI with a bogus `ANTHROPIC_API_KEY` on the container
-returns 502 "Not logged in". **Real runs**: the real `claude` stops (not
-logged in, exit 3, LM Studio untouched); the real LM Studio
-(`qwen2.5-7b-instruct-1m`) answers in 5.3 s through the CLI and in **2.0 s
-through the container** (`host.docker.internal:54321` reaches LM Studio bound
-to `127.0.0.1`).
+**The generator** that uses this router is `D:\GitHub\itsaresume-cv`
+(private, Node.js): its own `docs/HANDOVER.md`; the `/itsaresume` skill
+covers both.
 
-**A read-only adversarial review** (3 lenses + 1 refuting verifier) found 14
-confirmed defects, none triggered today; the serious ones — settings files
-able to re-route Claude to a paid gateway, a tripwire that does not latch, an
-endpoint any web page can drive — are steps 8.13–8.16, in that order after
-8.11. Two Docker ones are already fixed on `m1-docker` (config mode in the
-smoke test, `init: true`).
-
-Traps met, one line each:
-- `cargo test` stops at the first red test binary: sabotage plans use
-  `--no-fail-fast` (enforced by `sabotage.py`).
-- A sabotage that leaves something unused does not build under `-D warnings`:
-  sabotage *inside* the expression.
-- Git Bash heredocs eat backslashes in Python edit scripts; Git Bash `curl -d`
-  sends non-ASCII as cp1252 (use `--data-binary @file.json`); `docker exec`
-  paths need `MSYS_NO_PATHCONV=1`.
-- Docker Desktop would not start (unreadable AF_UNIX sockets): §2 and §9.
-- `itsworkstation` is in early commits' history; it is already public in
-  `SigSegGit/itsanas`, so history was not rewritten. Current files are clean.
-
-Truth order when documents disagree: code and tests, then `docs/TESTING.md`,
-then this file.
+Next: 8.13 → 8.16 (hardening found by the 2026-09-23 review); 8.12 waits for
+Nicolas's login (§10).
 
 ## 1. Decisions never to reverse silently
 
@@ -207,7 +177,7 @@ branch with the local gates of §3 green.
   `.env.example` with `CLAUDE_CODE_OAUTH_TOKEN` (subscription token from
   `claude setup-token`), `docker/config.example.toml` pointing LM Studio at
   `host.docker.internal:1234`. CI job builds the image.
-- [ ] **8.11** Publish and merge. Done: the public repository exists and
+- [x] **8.11** Publish and merge (PR #1, PR #2, 2026-09-24). Done: the public repository exists and
   every branch up to `m1-docker` is pushed; PR #1 (`m0-scaffold`) is open.
   Left: (a) make GitHub Actions run on this repository (§0 lists what was
   tried; next: look at Settings → Actions on the web as Nicolas, or add the
