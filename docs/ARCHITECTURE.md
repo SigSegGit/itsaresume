@@ -26,7 +26,7 @@ sequenceDiagram
     R-->>C: text + which backend answered
 ```
 
-## Error kinds, and why `Other` never falls back ⬜
+## Error kinds, and why `Other` never falls back ✅
 
 Every backend failure is exactly one of three kinds:
 
@@ -51,7 +51,7 @@ The cost is accepted: a `Claude` failure nobody anticipated stops the request
 instead of being rescued by LM Studio. The fix is to add the case to the
 classifier once it has been seen, with its fixture.
 
-## Billing guards ⬜
+## Billing guards ✅
 
 No backend is billed per token, and that is enforced in code, not only
 promised (HANDOVER §1):
@@ -72,7 +72,7 @@ promised (HANDOVER §1):
    billed; the tripwire makes sure it happens once and loudly, not for a month.
 5. **`--bare` is never used**: it forces API-key authentication.
 
-## Claude Code backend ⬜
+## Claude Code backend ✅
 
 Runs `claude -p` with the prompt on **stdin** (no command-line length limit),
 in a dedicated empty working directory (so no `CLAUDE.md` or project memory
@@ -107,20 +107,27 @@ Output classification (observed shapes in
 `is_error` decides, never `subtype`: the not-logged-in case is observed with
 `subtype: "success"`.
 
-## LM Studio backend ⬜
+## LM Studio backend ✅
 
 `POST {base_url}/chat/completions` with `model`, `messages` (optional system,
 then user) and `stream: false`; the answer is `choices[0].message.content`.
+Plain HTTP (`ureq` without TLS): Tailscale already encrypts the link between
+machines. Observed on the XPS (fixtures in `tests/fixtures/lm-studio/`): the
+server listens on `127.0.0.1:54321` there (the port is a setting, 1234 by
+default); with a model loaded, an unknown `model` id is ignored and the
+loaded model answers; a known but unloaded id is loaded on demand, which can
+take over a minute — hence the generous default timeout.
 
 | Condition | Kind |
 |---|---|
 | connection refused, DNS failure, timeout | `Unreachable` |
+| HTTP 400 "No models loaded" (observed: server up, nothing loaded) | `Unreachable` |
 | HTTP 502, 503, 504 | `Unreachable` |
 | HTTP 429 | `QuotaExceeded` |
-| any other non-2xx (400 context too long, 401, 404 model unknown, 500) | `Other` |
+| any other non-2xx (other 400s, 401, 404, 500) | `Other` |
 | 2xx without `choices[0].message.content` | `Other` |
 
-## Journal ⬜
+## Journal ✅
 
 One JSON object per line, appended to the configured file, one line per
 request whatever its outcome:
@@ -137,14 +144,14 @@ are never written**, only their lengths: prompts will carry CV data. Error
 messages are truncated to 200 characters. A journal that cannot be written
 does not cost the caller the answer; the failure is reported alongside it.
 
-## Configuration and CLI ⬜
+## Configuration and CLI ✅
 
 `config.local.toml` (git-ignored; `config.example.toml` shows the shape).
 `itsaresume complete` reads the prompt on stdin, prints the text on stdout and
 the answering backend on stderr. Exit codes: 0 answered, 2 configuration or
 usage error, 3 stopped (`Other`), 4 exhausted.
 
-## HTTP endpoint ⬜
+## HTTP endpoint ✅
 
 `itsaresume serve [--listen 127.0.0.1:8787]`:
 
@@ -160,7 +167,7 @@ There is no authentication: whoever reaches the port spends Nicolas's plan.
 It binds to `127.0.0.1` unless told otherwise, and the compose file publishes
 it on the host's loopback only.
 
-## Docker ⬜
+## Docker ✅
 
 One image: the router binary plus the `claude` CLI (pinned version) on a Node
 runtime, running as a non-root user. The Claude backend authenticates with
@@ -169,12 +176,24 @@ runtime, running as a non-root user. The Claude backend authenticates with
 is still removed from the child's environment, and the `apiKeySource`
 tripwire still applies. LM Studio on the Docker host is reached as
 `host.docker.internal:1234`; on another machine, through its Tailscale name.
+Observed on the XPS: Docker Desktop reaches LM Studio bound to `127.0.0.1`
+through `host.docker.internal` (answer in 2.0 s). `scripts/docker-smoke.sh`
+runs the image with the real `claude` CLI inside (TESTING.md).
 
 ## Code layout
 
 ```
 crates/itsaresume-router/
   src/lib.rs            crate root
+  src/backend.rs        Request, Completion, BackendError, trait Backend
+  src/router.rs         Router: ordered fallback, Outcome, RouteError
+  src/journal.rs        JSONL journal (lengths, never text)
+  src/claude_code.rs    classify(), ClaudeCodeBackend, METERED_ENV
+  src/bin/itsaresume-fake-claude.rs   test double of the claude CLI
+  src/lm_studio.rs      LmStudioBackend (HTTP, no credential field)
+  src/config.rs         TOML configuration, closed kinds, no credentials
+  src/server.rs         HTTP endpoint (tiny_http, thread per request)
+  src/main.rs           the itsaresume binary: complete, serve
   tests/fixtures/claude CLI outputs, observed and synthetic
 scripts/
   sabotage.py           break a behaviour, see its tests go red, restore

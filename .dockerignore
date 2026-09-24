@@ -1,0 +1,11 @@
+# Only the sources the build stage needs; never local configuration, tokens
+# or the journal.
+target
+.git
+.github
+docs
+scripts
+journal
+.env
+*.local.toml
+*.jsonl

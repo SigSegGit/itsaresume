@@ -1,0 +1,28 @@
+# docker compose up -d        then: POST http://127.0.0.1:8787/v1/complete
+#
+# Before the first start:
+#   cp docker/config.example.toml docker/config.local.toml   (then edit it)
+#   cp .env.example .env                                      (then add the token)
+#   mkdir -p journal     (on Linux: created by Docker it would be root-owned,
+#                         and the router, uid 1000, could not write to it)
+services:
+  itsaresume:
+    build: .
+    image: itsaresume:local
+    # Loopback only: the endpoint has no authentication and spends the
+    # Claude plan of whoever's token is in .env.
+    ports:
+      - "127.0.0.1:8787:8787"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./docker/config.local.toml:/etc/itsaresume/config.toml:ro
+      - ./journal:/home/node/journal
+    # LM Studio on the Docker host, on Docker Desktop and on Linux alike.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # tini as PID 1: signals reach the router and orphans of a killed claude
+    # are reaped.
+    init: true
+    restart: unless-stopped

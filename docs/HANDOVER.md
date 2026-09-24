@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.2
-TITLE: Backend trait and its three error kinds
+NEXT: 8.11
+TITLE: Get CI running on the new repository, then merge the stacked PRs in order
 WRITTEN-AT: 2026-09-23
 BASE: 5a852f6
 -->
@@ -14,29 +14,58 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
-**2026-09-23 — scaffold (M0) written, nothing published yet.** The repository
-exists locally at `D:\GitHub\itsaresume`: a root commit on `main` (licence,
-README, ignore rules — the only commit ever made on `main` directly) and the
-scaffold on branch `m0-scaffold`. The GitHub repository `SigSegGit/itsaresume`
-does **not** exist yet; it is created at step 8.11, once M1 builds and passes
-locally (Nicolas's instruction).
+**2026-09-23, end of the first session.** All of M1 is built and verified
+**locally**; nothing is merged, because **GitHub Actions never started on the
+new repository** — the one blocker, and the first job of the next session.
 
-Nicolas then asked (same day) for autonomy to an MVP as fast as possible,
-ideally in Docker, with no decision handed back to him. M1 therefore also
-covers an HTTP endpoint and a Docker image (§8, 8.9–8.10).
+Published at `github.com/SigSegGit/itsaresume` (public). Branches, stacked in
+this order and pushed: `m0-scaffold` (PR #1, open) → `m1-router` →
+`m1-claude` → `m1-lmstudio` → `m1-cli` → `m1-docker`. `main` holds the root
+commit only. Merge them in that order, one PR each, base `main`, with
+`scripts/merge-when-green.sh` (merge commits: no rebase needed).
 
-The `claude` CLI was observed before any parsing code (§4). Two findings shape
-the design: it is **not logged in** on this laptop (`claude auth status`:
-`loggedIn: false`), so no successful answer has been observed; and its first
-JSON message reports the billing source (`apiKeySource`), which turned a
-"zero pay-per-use" promise into something the code can check (ARCHITECTURE,
-"Billing guards").
+**The CI blocker, as far as it was taken.** `ci.yml` is valid YAML and present
+on every branch, Actions is enabled (`actions/permissions`: enabled, all),
+GitHub status was green, `SigSegGit/itsanas` ran PR checks two days ago — yet
+this repository has **0 registered workflows and 0 runs**. Tried, without
+effect: closing/reopening PR #1; an empty commit on `m0-scaffold` (twice);
+making `m0-scaffold` the default branch during a push (restored to `main`).
+Not tried: waiting longer; a workflow file added through the GitHub web UI;
+the repository's Actions settings page as Nicolas sees it. **Never merge
+without CI.**
 
-CI is written (fmt, clippy, test on Ubuntu and Windows, doc, sabotage,
-handover) but has never run: there is no remote yet.
+**Verified locally** (Windows, 2026-09-23): 71 tests, 42 sabotage defences
+(`RUSTFLAGS="-D warnings" python scripts/sabotage.py`), fmt, clippy and doc
+under `-D warnings`, `check-handover.py`. `bash scripts/docker-smoke.sh`
+green: the image holds `claude` 2.1.162 and not the test double; a real
+request through the real CLI with a bogus `ANTHROPIC_API_KEY` on the container
+returns 502 "Not logged in". **Real runs**: the real `claude` stops (not
+logged in, exit 3, LM Studio untouched); the real LM Studio
+(`qwen2.5-7b-instruct-1m`) answers in 5.3 s through the CLI and in **2.0 s
+through the container** (`host.docker.internal:54321` reaches LM Studio bound
+to `127.0.0.1`).
 
-Where the truth is when documents disagree: the code and its tests, then
-`docs/TESTING.md`, then this file.
+**A read-only adversarial review** (3 lenses + 1 refuting verifier) found 14
+confirmed defects, none triggered today; the serious ones — settings files
+able to re-route Claude to a paid gateway, a tripwire that does not latch, an
+endpoint any web page can drive — are steps 8.13–8.16, in that order after
+8.11. Two Docker ones are already fixed on `m1-docker` (config mode in the
+smoke test, `init: true`).
+
+Traps met, one line each:
+- `cargo test` stops at the first red test binary: sabotage plans use
+  `--no-fail-fast` (enforced by `sabotage.py`).
+- A sabotage that leaves something unused does not build under `-D warnings`:
+  sabotage *inside* the expression.
+- Git Bash heredocs eat backslashes in Python edit scripts; Git Bash `curl -d`
+  sends non-ASCII as cp1252 (use `--data-binary @file.json`); `docker exec`
+  paths need `MSYS_NO_PATHCONV=1`.
+- Docker Desktop would not start (unreadable AF_UNIX sockets): §2 and §9.
+- `itsworkstation` is in early commits' history; it is already public in
+  `SigSegGit/itsanas`, so history was not rewritten. Current files are clean.
+
+Truth order when documents disagree: code and tests, then `docs/TESTING.md`,
+then this file.
 
 ## 1. Decisions never to reverse silently
 
@@ -48,7 +77,7 @@ consequences — before any code. Never a quiet decision.
    provider, no credential field in any backend. If the idea comes up, ask.
 2. **Backends and their order**: Claude Code on Nicolas's Pro/Max plan →
    LM Studio on the XPS 15 (RTX 4070) over Tailscale → a micro-model on the
-   Pi 4B or the Freebox VM (`itsworkstation`). The micro-model does light
+   Pi 4B or the Freebox Delta VM. The micro-model does light
    sorting/classification only, **never long text generation**.
 3. **`Other` never triggers a fallback.** Only `QuotaExceeded` and
    `Unreachable` hand over to the next backend (ARCHITECTURE explains why).
@@ -71,7 +100,15 @@ consequences — before any code. Never a quiet decision.
 - `gh` is logged in as `SigSegGit` (scopes include `repo`, `workflow`).
 - `claude` CLI: `C:\Users\SigSeg\.local\bin\claude.exe` — on PowerShell's PATH,
   **not** on Git Bash's. Version 2.1.162 when observed.
-- LM Studio is installed on this laptop (`~/.lmstudio/bin` on PATH).
+- Docker Desktop 4.63 (engine 29.2.1). It crashed at start on unreadable
+  AF_UNIX sockets (`%LOCALAPPDATA%\Docker\run\dockerInference`,
+  `%LOCALAPPDATA%\docker-secrets-engine\engine.sock`). Reversible fix used:
+  quit it, rename both directories to `*.stale-2026-09-23[b]`, recreate them
+  empty, restart. Nothing was deleted.
+- LM Studio is on this laptop (the XPS): `~/.lmstudio/bin/lms`, server on
+  **`127.0.0.1:54321`** (not 1234). `lms server start`, `lms load
+  qwen2.5-7b-instruct-1m -y` (4.7 GB, fits the 8 GB RTX 4070) were used for
+  the observations; other models are listed by `lms ls`.
 - Skill to resume: `~/.claude/skills/itsaresume/SKILL.md`.
 
 ## 3. Verify a clean tree
@@ -96,7 +133,8 @@ what was redacted). Findings, each one a trap for a naive parser:
   "Not logged in · Please run /login"`. So `is_error` decides; `subtype` lies.
 - `--verbose` turns the output into an **array**: `system/init`, then
   messages, then `result`. `system/init` carries **`apiKeySource`** (`"none"`
-  on the subscription path, `"ANTHROPIC_API_KEY"` when that variable is set),
+  when logged out — the logged-in subscription value is **not yet observed**;
+  `"ANTHROPIC_API_KEY"` when that variable is set),
   `tools`, `mcp_servers`, `model`.
 - With a bogus `ANTHROPIC_API_KEY`: ten `system/api_retry` messages
   (`error_status: 401`) over **183 s**, then `api_error_status: 401`. A hung
@@ -127,56 +165,107 @@ branch with the local gates of §3 green.
 
 - [x] **8.0** Scaffold (M0): workspace, crate, docs, CI, guard scripts.
 - [x] **8.1** Observe the `claude` CLI output before writing a parser (§4).
-- [ ] **8.2** `src/backend.rs`: `Request { prompt, system: Option }`,
+- [x] **8.2** `src/backend.rs`: `Request { prompt, system: Option }`,
   `Completion { text }`, `trait Backend { name(); complete(&Request) }`,
   `BackendError::{QuotaExceeded, Unreachable, Other}(String)` with
   `allows_fallback()` (true only for the first two) and `kind()`
   (`quota_exceeded` / `unreachable` / `other`). Test: the truth table of
   `allows_fallback`. Sabotage: make `Other` allow fallback.
-- [ ] **8.3** `src/router.rs`: `Router::new(backends)` refuses an empty list;
+- [x] **8.3** `src/router.rs`: `Router::new(backends)` refuses an empty list;
   `complete` tries backends in order, falls back only when
   `allows_fallback()`, returns the answer with the answering backend's name
   and the failed attempts; `Other` stops (the next backend is **never
   called** — assert on a call counter); all failing → `Exhausted` with
   attempts in order. Test doubles: scripted fake backends counting calls.
-- [ ] **8.4** `src/journal.rs` + wire into `Router::new(backends, journal)`:
+- [x] **8.4** `src/journal.rs` + wire into `Router::new(backends, journal)`:
   one JSONL line per request (`ts`, `outcome`, `backend`, `attempts`,
   `duration_ms`, `prompt_chars`, `answer_chars`); prompt text never written
   (test with a sentinel prompt); messages truncated to 200 chars; a journal
   that cannot be written does not lose the answer.
-- [ ] **8.5** `src/claude_code.rs`: pure `classify(stdout) -> Result<Completion,
+- [x] **8.5** `src/claude_code.rs`: pure `classify(stdout) -> Result<Completion,
   BackendError>` per the ARCHITECTURE table, tested on every fixture; unknown
   shapes → `Other`; tripwires `apiKeySource != "none"` and non-empty `tools`.
-- [ ] **8.6** `ClaudeCodeBackend`: spawn with the flag set of ARCHITECTURE,
+- [x] **8.6** `ClaudeCodeBackend`: spawn with the flag set of ARCHITECTURE,
   prompt on stdin, dedicated empty working directory, timeout → kill →
   `Unreachable`, missing binary → `Unreachable`, metered env variables removed
   from the child. Tested against a fake `claude` binary built from this crate
   that records its argv, stdin and environment variable names.
-- [ ] **8.7** `src/lm_studio.rs`: `LmStudioBackend` over HTTP (`ureq`), tested
+- [x] **8.7** `src/lm_studio.rs`: `LmStudioBackend` over HTTP (`ureq`), tested
   against a fake server on `127.0.0.1` that records the request: no
   `Authorization` header, body shape, and the ARCHITECTURE status table. If
   LM Studio's server runs on this laptop, observe its real error for "no
   model loaded" first.
-- [ ] **8.8** `src/config.rs` + `src/main.rs`: TOML config (closed list of
+- [x] **8.8** `src/config.rs` + `src/main.rs`: TOML config (closed list of
   kinds: `claude-code`, `lm-studio`; unknown kind rejected), CLI reading stdin,
   exit codes 0/2/3/4.
-- [ ] **8.9** `itsaresume serve` (`tiny_http`): `POST /v1/complete`
+- [x] **8.9** `itsaresume serve` (`tiny_http`): `POST /v1/complete`
   `{prompt, system?}` → 200 `{backend, text, attempts}`, 502 stopped, 503
   exhausted, 400 bad body; `GET /healthz`. Default bind `127.0.0.1` — the
   endpoint has no authentication and spends Nicolas's plan.
-- [ ] **8.10** Docker: multi-stage `Dockerfile` (Rust build → Node runtime with
+- [x] **8.10** Docker: multi-stage `Dockerfile` (Rust build → Node runtime with
   the `claude` CLI pinned), `compose.yaml` publishing on `127.0.0.1` only,
   `.env.example` with `CLAUDE_CODE_OAUTH_TOKEN` (subscription token from
   `claude setup-token`), `docker/config.example.toml` pointing LM Studio at
   `host.docker.internal:1234`. CI job builds the image.
-- [ ] **8.11** Publish: `gh repo create SigSegGit/itsaresume --public
-  --source=. --remote=origin`, push `main`, then one PR per branch in order,
-  each merged by `scripts/merge-when-green.sh` once every check is green.
-  Set `merge-when-green.sh` MINIMUM to the real job count if it differs.
-- [ ] **8.12** Real run in Docker on this laptop: LM Studio answering through
-  the container (no human needed); Claude once Nicolas has put his token in
-  `.env` (⏸ §10). Capture a real success and, when it happens, a real
-  usage-limit output; replace the synthetic fixtures.
+- [ ] **8.11** Publish and merge. Done: the public repository exists and
+  every branch up to `m1-docker` is pushed; PR #1 (`m0-scaffold`) is open.
+  Left: (a) make GitHub Actions run on this repository (§0 lists what was
+  tried; next: look at Settings → Actions on the web as Nicolas, or add the
+  workflow file through the web UI on a branch, and wait/recheck
+  `gh api repos/SigSegGit/itsaresume/actions/workflows`); (b) then merge, in
+  order and one at a time, `m0-scaffold` (7 jobs: `merge-when-green.sh 1 7`),
+  `m1-router`, `m1-claude`, `m1-lmstudio`, `m1-cli` (7 jobs each),
+  `m1-docker` (8 jobs, its `ci.yml` adds `docker`). Rewrite this pointer in
+  the last PR.
+- [ ] **8.12** Real run in Docker with Claude. The LM Studio half is done
+  (2.0 s through the container, §0). Left, once Nicolas has put his token in
+  `.env` (⏸ §10): `docker compose up -d` with `docker/config.local.toml`
+  (Claude first), one request answered by `claude-code`; capture that real
+  success output and replace `synthetic-success.verbose.json`; later, a real
+  usage-limit output replaces `synthetic-usage-limit.verbose.json`.
+
+- [ ] **8.13** Billing hardening — **high**, found by the 2026-09-23 review
+  (confirmed by reading the code; nothing triggers it today). (a) The child
+  still loads user/project settings: an `env` block in
+  `~/.claude/settings.json` or `<workdir>/.claude/settings.json` can set
+  `ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN` (a paid gateway) or
+  `CLAUDE_CODE_USE_BEDROCK` **after** the env scrub, and `apiKeySource` still
+  says `"none"`. Observe first which `--setting-sources` value loads no user
+  or project settings on 2.1.162 while OAuth still works (`""`? `local`?),
+  then pass it in `arguments()`; add `CLAUDE_CONFIG_DIR` to `METERED_ENV`;
+  red test in `tests/claude_process.rs` on argv and env. (b) The tripwire
+  does not latch: under `serve` every request is billed again. Add a latch in
+  `ClaudeCodeBackend` (an `AtomicBool`, plus a marker file next to the
+  journal so a restart keeps it); red test: two requests against a fake
+  reporting `apiKeySource=ANTHROPIC_API_KEY` spawn the fake once (count via
+  `FAKE_CLAUDE_RECORD`). (c) Correct ARCHITECTURE "Billing guards" 3–4: the
+  tripwire covers API-key sources only, not base-URL/auth-token/Bedrock/
+  Vertex routing. Each fix gets its sabotage defence.
+- [ ] **8.14** Endpoint hardening (`src/server.rs`, all confirmed): (a) a web
+  page can POST `text/plain` to `127.0.0.1:8787` with no CORS preflight, and
+  read answers through DNS rebinding → require `Content-Type:
+  application/json`, reject any `Origin` header, accept only a `Host` whose
+  name is `127.0.0.1`, `localhost` or `[::1]` (any port: compose may remap
+  it); (b) a huge declared `Content-Length` answered 413 makes tiny_http
+  drain it into one zero-filled buffer and abort the process → read and
+  discard in bounded chunks, or answer and close the connection; (c) one
+  `accept()` error ends `serve` with exit 0 and no message → log it and keep
+  serving, exit non-zero only on a fatal error; (d) cap concurrent
+  completions (thread per request is unbounded). Red tests in
+  `tests/server.rs` for each.
+- [ ] **8.15** System prompt off the command line (`claude_code.rs`
+  `arguments()`): a long or NUL-containing `system` fails to spawn (`Other`),
+  and argv is visible in process listings. Observe `--system-prompt-file` on
+  2.1.162, write the prompt to a private file in the workdir, pass the path;
+  red test: a 100 KB system prompt reaches the fake intact.
+- [ ] **8.16** Test and doc honesty (all confirmed, low): TESTING.md cites
+  defences whose `expect` lists do not name those tests — make each row match
+  `scripts/sabotage/itsaresume-router.json` exactly (a small gate script can
+  check it); the timeout test must prove the child is dead (fake writes its
+  pid; assert the process is gone); `claude_code.rs` says `apiKeySource:
+  "none"` was observed on the OAuth path — it was observed logged-out only,
+  fix the comment; `check-handover.py`'s BASE check is vacuous while `main`
+  is the root commit (it becomes meaningful after the first merge — note it).
 
 ## 9. Deliberately open
 
@@ -191,6 +280,22 @@ branch with the local gates of §3 green.
   prevention; the tripwire only stops it from repeating.
 - **`CLAUDE.md` in parent directories** of the Claude working directory would
   be loaded; none exist today (`C:\Users\SigSeg`, `C:\Users` checked).
+- **Docker Desktop sockets on this laptop.** Probable cause, not proved:
+  HKCU `Shell Folders\Local AppData` still says `C:\Users\_\AppData\Local`
+  (the symlink left by the profile rename) while `User Shell Folders` says
+  `C:\Users\SigSeg`; sockets created through the link cannot be reopened.
+  Fixing the registry is Nicolas's call (his profile-rename work); until
+  then, the §2 workaround may be needed after each Docker restart.
+- **`docker-smoke.sh` check 4 is not sabotage-verified**: its discrimination
+  (key not stripped → tripwire message or 503 timeout) is argued in the
+  script, not demonstrated by breaking the image.
+- **From the 2026-09-23 review, not confirmed (uncertain):** extra usage
+  (overage) billed per token on the OAuth path is not detectable from the CLI
+  output; a `base_url` with `user:pass@` would be sent as Basic auth and
+  echoed in errors (reject userinfo in config); the default Claude workdir in
+  the temp directory is predictable and never checked; `merge-when-green.sh`
+  does not pin the head sha it counted checks for; a truncated answer
+  (`finish_reason: "length"`, empty content) counts as success.
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 - **Contract with the Node.js generator** — M3.
 

@@ -32,12 +32,12 @@ Usage
 -----
 
     python scripts/sabotage.py                      # every scripts/sabotage/*.json
-    python scripts/sabotage.py scripts/sabotage/router.json
+    python scripts/sabotage.py scripts/sabotage/itsaresume-router.json
 
 A plan file::
 
     {
-      "command": ["cargo", "test", "-p", "itsaresume-router"],
+      "command": ["cargo", "test", "-p", "itsaresume-router", "--no-fail-fast"],
       "defences": {
         "Other stops the request": {
           "file": "crates/itsaresume-router/src/router.rs",
@@ -160,6 +160,15 @@ def main():
     for plan_path, plan in plans:
         command = plan['command']
         print('== %s' % os.path.relpath(plan_path, root))
+
+        # Found the first day: `cargo test` stops at the first test binary
+        # that fails, so a sabotage that reddens tests/journal.rs never runs
+        # tests/router.rs at all. The named-victims check caught it; this
+        # makes it impossible to write the plan that way again.
+        if command[:2] == ['cargo', 'test'] and '--no-fail-fast' not in command:
+            print('REFUSED: a cargo test command without --no-fail-fast hides every')
+            print('test binary after the first red one.')
+            return 1
 
         code, output = run(command, root)
         if code != 0:

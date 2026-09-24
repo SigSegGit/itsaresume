@@ -75,6 +75,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: python3 scripts/sabotage.py
 
+  # The image, with the real claude CLI inside: see scripts/docker-smoke.sh
+  # for what each check proves.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/docker-smoke.sh
+
   # The resume pointer: full history, because BASE must be an ancestor of HEAD.
   handover:
     runs-on: ubuntu-latest
