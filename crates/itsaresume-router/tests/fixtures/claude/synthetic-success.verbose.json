@@ -1,0 +1,96 @@
+[
+ {
+  "type": "system",
+  "subtype": "init",
+  "session_id": "REDACTED",
+  "tools": [],
+  "mcp_servers": [],
+  "model": "claude-opus-4-8[1m]",
+  "permissionMode": "default",
+  "apiKeySource": "none",
+  "claude_code_version": "2.1.162",
+  "output_style": "default",
+  "analytics_disabled": false,
+  "product_feedback_disabled": false,
+  "uuid": "REDACTED",
+  "fast_mode_state": "off"
+ },
+ {
+  "type": "assistant",
+  "message": {
+   "id": "REDACTED",
+   "container": null,
+   "model": "claude-sonnet-5",
+   "role": "assistant",
+   "stop_details": null,
+   "stop_reason": "stop_sequence",
+   "stop_sequence": "",
+   "type": "message",
+   "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "server_tool_use": {
+     "web_search_requests": 0,
+     "web_fetch_requests": 0
+    },
+    "service_tier": null,
+    "cache_creation": {
+     "ephemeral_1h_input_tokens": 0,
+     "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": null,
+    "iterations": null,
+    "speed": null
+   },
+   "content": [
+    {
+     "type": "text",
+     "text": "Synthetic answer."
+    }
+   ],
+   "context_management": null
+  },
+  "parent_tool_use_id": null,
+  "session_id": "REDACTED",
+  "uuid": "REDACTED",
+  "error": "authentication_failed"
+ },
+ {
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "api_error_status": null,
+  "duration_ms": 568,
+  "duration_api_ms": 1200,
+  "num_turns": 1,
+  "result": "Synthetic answer.",
+  "stop_reason": "end_turn",
+  "session_id": "REDACTED",
+  "total_cost_usd": 0,
+  "usage": {
+   "input_tokens": 12,
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 3,
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 0,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "",
+   "iterations": [],
+   "speed": "standard"
+  },
+  "modelUsage": {},
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "uuid": "REDACTED"
+ }
+]

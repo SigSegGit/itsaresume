@@ -1,0 +1,36 @@
+# itsaresume configuration — EXAMPLE, every value below is a placeholder.
+#
+# Copy this file to `config.local.toml` (ignored by git) and put the real
+# values there. Never commit a real machine name, Tailscale address or model
+# path: the repository is public.
+#
+# The CLI reads `$ITSARESUME_CONFIG` if set, otherwise `config.local.toml` in
+# the current directory.
+
+# Where one JSON line per request is appended: which backend answered, which
+# ones failed and why. The prompt text is never written here.
+journal = "itsaresume-journal.jsonl"
+
+# Backends, tried in the order they appear. A backend that is out of quota or
+# unreachable hands over to the next one; any other error stops the request
+# (see docs/ARCHITECTURE.md, "Why Other never falls back").
+#
+# Only two kinds exist, and neither can carry an API key. That is deliberate:
+# no backend of this project is ever billed per token.
+
+[[backend]]
+kind = "claude-code"
+# The `claude` executable. A bare name is looked up on PATH; on Windows the
+# installer puts it in %USERPROFILE%\.local\bin\claude.exe.
+program = "claude"
+# Optional: a model alias understood by `claude --model`.
+# model = "sonnet"
+timeout_secs = 300
+
+[[backend]]
+kind = "lm-studio"
+# LM Studio's OpenAI-compatible endpoint, including the /v1 suffix.
+base_url = "http://gpu-machine.example-tailnet.ts.net:1234/v1"
+# The model identifier as LM Studio lists it (GET /v1/models).
+model = "example-model-id"
+timeout_secs = 300

@@ -1,0 +1,6 @@
+# One line ending everywhere. The working copy is on Windows with
+# core.autocrlf=true and CI runs `cargo fmt --check` on Linux: without this,
+# the same file is "formatted" on one side and not the other.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
