@@ -348,6 +348,22 @@
       "expect": [
         "a_slow_completion_does_not_block_other_requests"
       ]
+    },
+    "A truncated answer is not a success": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "if parsed[\"choices\"][0][\"finish_reason\"] == \"length\" {",
+      "dead": "if parsed[\"choices\"][0][\"finish_reason\"] == \"never\" {",
+      "expect": [
+        "a_truncated_or_empty_answer_is_other"
+      ]
+    },
+    "An empty answer is not a success": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "Some(\"\") => Err(BackendError::Other(format!(",
+      "dead": "Some(\"never empty\") => Err(BackendError::Other(format!(",
+      "expect": [
+        "a_truncated_or_empty_answer_is_other"
+      ]
     }
   }
 }
