@@ -4,7 +4,7 @@
 mod support;
 
 use serde_json::Value;
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
@@ -45,12 +45,22 @@ fn run(args: &[&str], stdin: &str, env: &[(&str, String)]) -> Output {
         .stderr(Stdio::piped())
         .spawn()
         .expect("the CLI starts");
-    child
+    // A CLI that stops before reading stdin (bad configuration, usage error)
+    // closes the pipe, and whether it has already done so when this write
+    // happens is up to the scheduler: BrokenPipe is not a failure here. The
+    // exit code and stderr are what the tests check.
+    let written = child
         .stdin
         .take()
         .expect("stdin")
-        .write_all(stdin.as_bytes())
-        .expect("write the prompt");
+        .write_all(stdin.as_bytes());
+    if let Err(error) = written {
+        assert_eq!(
+            error.kind(),
+            ErrorKind::BrokenPipe,
+            "write the prompt: {error}"
+        );
+    }
     child.wait_with_output().expect("the CLI finishes")
 }
 

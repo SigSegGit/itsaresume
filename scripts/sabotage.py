@@ -86,6 +86,28 @@ def matches(expected, red):
     return any(name == expected or name.endswith('::' + expected) for name in red)
 
 
+def why_red(output, tail=15):
+    """Why a run is red: the failed tests' names and their own output.
+
+    cargo prints each failed test's captured output in a ``---- name stdout
+    ----`` block on *stdout*, and its summary on *stderr*. ``run`` puts
+    stdout first, so the last lines alone show the summary and never the
+    panic (issue #3). With no such block (a build error), the tail says why.
+    """
+    lines = output.splitlines()
+    blocks, inside = [], False
+    for line in lines:
+        if line.startswith('---- ') and line.rstrip().endswith(' ----'):
+            inside = True
+        elif line.startswith('failures:') or line.startswith('test result:'):
+            inside = False
+        if inside:
+            blocks.append(line)
+    red = red_tests(output)
+    head = 'red: ' + (', '.join(red) if red else 'no test reported red')
+    return '\n'.join([head] + blocks + lines[-tail:])
+
+
 def run(command, root):
     completed = subprocess.run(command, cwd=root, capture_output=True, text=True,
                                encoding='utf-8', errors='replace')
@@ -174,7 +196,7 @@ def main():
         if code != 0:
             print('BASELINE RED -- the tree fails before any sabotage, so no')
             print('sabotage can prove anything. Fix the tree first.')
-            print('\n'.join(output.strip().splitlines()[-15:]))
+            print(why_red(output))
             return 1
 
         for name, defence in plan['defences'].items():
@@ -188,7 +210,7 @@ def main():
         code, output = run(command, root)
         if code != 0:
             print('AFTER RESTORE THE TREE IS RED -- a restore went wrong.')
-            print('\n'.join(output.strip().splitlines()[-15:]))
+            print(why_red(output))
             return 1
 
     print('')
