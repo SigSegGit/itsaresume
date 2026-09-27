@@ -178,3 +178,18 @@ fn a_success_without_an_answer_is_other() {
         assert_eq!(kind(&outcome), "other", "{body}: {outcome:?}");
     }
 }
+
+/// A 2xx answer cut at the token or context limit (`finish_reason: length`)
+/// is half a JSON document, and an empty answer is none: neither may reach
+/// the caller as a success.
+#[test]
+fn a_truncated_or_empty_answer_is_other() {
+    for body in [
+        r#"{"choices":[{"message":{"content":"{\"cv\": \"half"},"finish_reason":"length"}]}"#,
+        r#"{"choices":[{"message":{"content":""},"finish_reason":"stop"}]}"#,
+    ] {
+        let (base_url, _) = serve(200, body);
+        let outcome = backend(&base_url).complete(&Request::new("hi"));
+        assert_eq!(kind(&outcome), "other", "{body}: {outcome:?}");
+    }
+}
