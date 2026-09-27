@@ -364,6 +364,14 @@
       "expect": [
         "a_truncated_or_empty_answer_is_other"
       ]
+    },
+    "No proxy from the environment": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": ".proxy(None)",
+      "dead": ".proxy(ureq::Proxy::try_from_env())",
+      "expect": [
+        "a_proxy_in_the_environment_is_never_used"
+      ]
     }
   }
 }

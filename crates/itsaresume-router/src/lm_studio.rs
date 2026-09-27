@@ -55,6 +55,9 @@ impl Backend for LmStudioBackend {
         let url = format!("{}/chat/completions", self.base_url.trim_end_matches('/'));
         let agent: ureq::Agent = ureq::Agent::config_builder()
             .timeout_global(Some(self.timeout))
+            // The prompts hold a whole CV: never through a proxy taken from
+            // the environment (ureq reads HTTP_PROXY and ALL_PROXY by default).
+            .proxy(None)
             // Statuses are classified below, with the server's own message.
             .http_status_as_error(false)
             .build()
