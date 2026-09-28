@@ -3,8 +3,8 @@
 <!-- ITSARESUME-STATE
 NEXT: 8.13
 TITLE: Billing hardening (settings files, latching tripwire), then 8.14-8.16
-WRITTEN-AT: 2026-09-24
-BASE: 812b2d1
+WRITTEN-AT: 2026-09-27
+BASE: 7b4250f
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -14,28 +14,42 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
-**2026-09-24.** M0 and M1 are **merged on `main`** with every check green:
-PR #1 (`m0-scaffold`, 7 jobs) and PR #2 (`m1-docker`, holding `m1-router` →
-`m1-cli`, 8 jobs), merge commits, red/green history intact.
+**2026-09-27.** M0 and M1 are merged on `main` (PR #1, PR #2). `main` was
+**red** after the two M1 merges (sabotage job, `tests/cli.rs` at baseline):
+`a_bad_configuration_or_usage_exits_2` was flaky, because the CLI exits 2
+before reading stdin and the test's write of the prompt raised `BrokenPipe`
+depending on scheduling (reproduced 70/200 under WSL, 0/200 after the fix).
+The earlier "stale artefact" guess (issue #3) was wrong. `scripts/sabotage.py`
+hid the cause: it printed the stderr tail, never the failed test's own output;
+it now does (`why_red`).
 
-**CI started** after PR #1 was closed and reopened on 2026-09-24; the same
-had not worked on 2026-09-23, and why it did now is not known (issue #4). The
-`sabotage` job of PR #2 failed once with "AFTER RESTORE THE TREE IS RED"
-(`tests/cli.rs`), then passed on an unchanged rerun: flaky or a stale
-artefact, not diagnosed (issue #3).
+Also fixed on 2026-09-27, each red then green, sabotage-verified: a 2xx answer
+cut at the token limit (`finish_reason: length`) or empty was taken as a
+success; `ureq` sent the prompts (a whole CV) through any proxy set in
+`HTTP_PROXY`/`ALL_PROXY` (now `.proxy(None)`).
 
-**Claude Code is not logged in on this machine** ("Not logged in · Please run
-/login", observed again 2026-09-24, `authentication_failed` on the assistant
-message). By design that stops the request (ARCHITECTURE, "Other never falls
-back"); until Nicolas logs in, the generator uses LM Studio-only configs
-(`lm-qwen3coder.local.toml` on 8788, `lm-gemma.local.toml` on 8787).
+**Claude Code answers** since 2026-09-27 (`claude auth status`: logged in,
+`pro`): `sonnet-qwen.local.toml` served both real offers through
+`claude-code` in 288 s, first attempt each. The Pro quota is the one the
+owner's own Claude sessions use.
+
+**The local model is now "Bionic"**, an OpenAI-compatible server on the same
+`127.0.0.1:54321/v1`, serving `qwen/qwen3-coder-next` (Q4_K_M, 32k context,
+**one request at a time**, slow on this laptop; off when the laptop is).
+The `lm-studio` backend speaks to it unchanged (no `/api/v0` endpoint is
+used). Configs, git-ignored: `bionic.local.toml` (Bionic only) and
+`sonnet-qwen.local.toml` (Claude, then Bionic). Nothing in CI may depend on
+it. Keep each backend's `timeout_secs` **below** the generator's client
+timeout: the router never cancels a call, and an abandoned one keeps
+Bionic's single slot busy.
 
 **The generator** that uses this router is `D:\GitHub\itsaresume-cv`
 (private, Node.js): its own `docs/HANDOVER.md`; the `/itsaresume` skill
 covers both.
 
-Next: 8.13 → 8.16 (hardening found by the 2026-09-23 review); 8.12 waits for
-Nicolas's login (§10).
+Next: 8.13 → 8.16 (hardening found by the 2026-09-23 review); 8.14(d) (one
+completion at a time per `lm-studio` backend) matters more now that the local
+server has a single slot.
 
 ## 1. Decisions never to reverse silently
 

@@ -4,7 +4,7 @@
 mod support;
 
 use serde_json::Value;
-use std::io::Write;
+use std::io::{ErrorKind, Write};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
@@ -45,12 +45,22 @@ fn run(args: &[&str], stdin: &str, env: &[(&str, String)]) -> Output {
         .stderr(Stdio::piped())
         .spawn()
         .expect("the CLI starts");
-    child
+    // A CLI that stops before reading stdin (bad configuration, usage error)
+    // closes the pipe, and whether it has already done so when this write
+    // happens is up to the scheduler: BrokenPipe is not a failure here. The
+    // exit code and stderr are what the tests check.
+    let written = child
         .stdin
         .take()
         .expect("stdin")
-        .write_all(stdin.as_bytes())
-        .expect("write the prompt");
+        .write_all(stdin.as_bytes());
+    if let Err(error) = written {
+        assert_eq!(
+            error.kind(),
+            ErrorKind::BrokenPipe,
+            "write the prompt: {error}"
+        );
+    }
     child.wait_with_output().expect("the CLI finishes")
 }
 
@@ -115,6 +125,34 @@ fn a_spent_claude_plan_falls_back_to_lm_studio() {
     assert_eq!(line["backend"], "lm-studio");
     assert_eq!(line["attempts"][0]["backend"], "claude-code");
     assert_eq!(line["attempts"][0]["kind"], "quota_exceeded");
+}
+
+/// The prompts hold a whole CV: a proxy set in the environment must never
+/// see them. Nothing listens on port 1, so a request sent through it fails.
+#[test]
+fn a_proxy_in_the_environment_is_never_used() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (lm_url, _) = support::serve(200, LM_SUCCESS);
+    let config = config(dir.path(), FAKE_CLAUDE, &lm_url);
+    let dead = String::from("http://127.0.0.1:1");
+
+    let output = run(
+        &["complete", "--config", config.to_str().expect("utf-8")],
+        "a prompt",
+        &[
+            (
+                "FAKE_CLAUDE_STDOUT",
+                claude_fixture("synthetic-usage-limit.verbose.json"),
+            ),
+            ("HTTP_PROXY", dead.clone()),
+            ("http_proxy", dead.clone()),
+            ("HTTPS_PROXY", dead.clone()),
+            ("ALL_PROXY", dead),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "Hello!");
 }
 
 /// Not logged in is for a human to fix: exit 3, and LM Studio is never

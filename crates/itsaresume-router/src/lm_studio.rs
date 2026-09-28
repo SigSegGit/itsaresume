@@ -55,6 +55,9 @@ impl Backend for LmStudioBackend {
         let url = format!("{}/chat/completions", self.base_url.trim_end_matches('/'));
         let agent: ureq::Agent = ureq::Agent::config_builder()
             .timeout_global(Some(self.timeout))
+            // The prompts hold a whole CV: never through a proxy taken from
+            // the environment (ureq reads HTTP_PROXY and ALL_PROXY by default).
+            .proxy(None)
             // Statuses are classified below, with the server's own message.
             .http_status_as_error(false)
             .build()
@@ -90,7 +93,17 @@ fn transport(url: &str, error: ureq::Error) -> BackendError {
 fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
     let parsed: Value = serde_json::from_str(body).unwrap_or(Value::Null);
     if (200..300).contains(&status) {
+        // Cut at the token or context limit, the answer is half a document;
+        // empty, it is none. Both would pass for a success otherwise.
+        if parsed["choices"][0]["finish_reason"] == "length" {
+            return Err(BackendError::Other(format!(
+                "LM Studio answer truncated at the token or context limit (finish_reason length, {status})"
+            )));
+        }
         return match parsed["choices"][0]["message"]["content"].as_str() {
+            Some("") => Err(BackendError::Other(format!(
+                "LM Studio answered {status} with an empty answer"
+            ))),
             Some(text) => Ok(Completion {
                 text: text.to_owned(),
             }),
