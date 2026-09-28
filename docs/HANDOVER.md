@@ -48,9 +48,9 @@ Bionic's single slot busy.
 covers both.
 
 **2026-09-28.** PR #6 (the flaky-test fix above) is merged. PR #7 (8.13)
-is green but **not merged**: the auto-mode classifier refused merges
-("merge without review"); it waits for Nicolas's `Bash(gh pr merge:*)`
-permission (§10). Merge it before starting 8.14.
+was **not merged**: the auto-mode classifier refused merges ("merge without
+review"); it waits for Nicolas's `Bash(gh pr merge:*)` permission (§10).
+If it is still open: check its CI, merge it, then start 8.14.
 
 Next: 8.14 → 8.16 (hardening found by the 2026-09-23 review); 8.14(d) (one
 completion at a time per `lm-studio` backend) matters more now that the local
@@ -291,7 +291,7 @@ it is an interactive login to his account:
 - **Merges** (2026-09-28): the auto-mode classifier refuses `gh pr merge`
   ("merge without review"). The rule that lets the session merge its own
   green PRs is `Bash(gh pr merge:*)` in his Claude Code permissions; until
-  then green PRs stay open (PR #7).
+  then they stay open (PR #7).
 - `claude setup-token` in a terminal, then put the printed token in `.env` as
   `CLAUDE_CODE_OAUTH_TOKEN=…` (git-ignored). That is the subscription path;
   it is not an API key and is not billed per token.
