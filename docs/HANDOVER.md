@@ -47,7 +47,12 @@ Bionic's single slot busy.
 (private, Node.js): its own `docs/HANDOVER.md`; the `/itsaresume` skill
 covers both.
 
-Next: 8.13 → 8.16 (hardening found by the 2026-09-23 review); 8.14(d) (one
+**2026-09-28.** PR #6 (the flaky-test fix above) is merged. PR #7 (8.13)
+is green but **not merged**: the auto-mode classifier refused merges
+("merge without review"); it waits for Nicolas's `Bash(gh pr merge:*)`
+permission (§10). Merge it before starting 8.14.
+
+Next: 8.14 → 8.16 (hardening found by the 2026-09-23 review); 8.14(d) (one
 completion at a time per `lm-studio` backend) matters more now that the local
 server has a single slot.
 
@@ -102,7 +107,7 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-targets
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
-python scripts/sabotage.py
+RUSTFLAGS="-D warnings" python scripts/sabotage.py   # as CI: a sabotage that leaves dead code must still compile
 python scripts/check-handover.py
 ```
 
@@ -215,7 +220,10 @@ branch with the local gates of §3 green.
   scrubbed. (b) The tripwire latches in memory and in
   `<journal>.billing-tripped`; a restarted process refuses too. (c)
   ARCHITECTURE "Billing guards" says what the tripwire does not see.
-  Red then green, 6 defences.
+  Red then green, 6 defences. CI's sabotage job was first red: three
+  `dead` snippets left an unused binding, a compile error under CI's
+  `RUSTFLAGS=-D warnings` (locally run without it); each now keeps the
+  binding used (`let _ = …`), verified with the CI flags.
 - [ ] **8.14** Endpoint hardening (`src/server.rs`, all confirmed): (a) a web
   page can POST `text/plain` to `127.0.0.1:8787` with no CORS preflight, and
   read answers through DNS rebinding → require `Content-Type:
@@ -280,6 +288,10 @@ Nothing blocks M1 code, and LM Studio runs on this laptop (the XPS), so the
 LM Studio half of 8.12 needs nobody. One action only Nicolas can do, because
 it is an interactive login to his account:
 
+- **Merges** (2026-09-28): the auto-mode classifier refuses `gh pr merge`
+  ("merge without review"). The rule that lets the session merge its own
+  green PRs is `Bash(gh pr merge:*)` in his Claude Code permissions; until
+  then green PRs stay open (PR #7).
 - `claude setup-token` in a terminal, then put the printed token in `.env` as
   `CLAUDE_CODE_OAUTH_TOKEN=…` (git-ignored). That is the subscription path;
   it is not an API key and is not billed per token.

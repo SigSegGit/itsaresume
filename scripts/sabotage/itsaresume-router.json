@@ -392,7 +392,7 @@
     "Billing latch: a latched backend does not start claude": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": "        if let Some(error) = self.latched() {\n            return Err(error);\n        }\n",
-      "dead": "",
+      "dead": "        let _ = self.latched();\n",
       "expect": [
         "a_fired_billing_tripwire_latches_even_across_a_restart",
         "a_fired_billing_tripwire_stops_the_next_process_too"
@@ -409,7 +409,7 @@
     "Billing latch: written down for a restart": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": "                let _ = std::fs::write(file, \"the billing tripwire fired; see the journal\\n\");\n",
-      "dead": "",
+      "dead": "                let _ = file;\n",
       "expect": [
         "a_fired_billing_tripwire_latches_even_across_a_restart",
         "a_fired_billing_tripwire_stops_the_next_process_too"
@@ -418,7 +418,7 @@
     "Billing latch: beside the journal": {
       "file": "crates/itsaresume-router/src/config.rs",
       "live": "                    .with_latch_file(journal.with_extension(\"billing-tripped\"));",
-      "dead": ";",
+      "dead": ";\n                let _ = journal;",
       "expect": [
         "a_fired_billing_tripwire_stops_the_next_process_too"
       ]
