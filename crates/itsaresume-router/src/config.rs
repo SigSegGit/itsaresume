@@ -63,7 +63,8 @@ impl BackendConfig {
         Duration::from_secs(seconds)
     }
 
-    fn build(&self) -> Box<dyn Backend> {
+    /// The backend; `journal` is where the Claude Code billing latch goes, beside it.
+    fn build(&self, journal: &Path) -> Box<dyn Backend> {
         match self {
             Self::ClaudeCode {
                 program,
@@ -71,7 +72,9 @@ impl BackendConfig {
                 workdir,
                 ..
             } => {
-                let mut backend = ClaudeCodeBackend::new(program).with_timeout(self.timeout());
+                let mut backend = ClaudeCodeBackend::new(program)
+                    .with_timeout(self.timeout())
+                    .with_latch_file(journal.with_extension("billing-tripped"));
                 if let Some(model) = model {
                     backend = backend.with_model(model);
                 }
@@ -114,7 +117,11 @@ impl Config {
 
     /// The router this configuration describes.
     pub fn router(&self) -> Result<Router, ConfigError> {
-        let backends = self.backends.iter().map(BackendConfig::build).collect();
+        let backends = self
+            .backends
+            .iter()
+            .map(|backend| backend.build(&self.journal))
+            .collect();
         Router::new(backends, Journal::new(&self.journal))
             .map_err(|error| ConfigError(format!("invalid configuration: {error}")))
     }

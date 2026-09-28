@@ -1,9 +1,9 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.13
-TITLE: Billing hardening (settings files, latching tripwire), then 8.14-8.16
-WRITTEN-AT: 2026-09-27
+NEXT: 8.14
+TITLE: Endpoint hardening (server.rs), then 8.15-8.16
+WRITTEN-AT: 2026-09-28
 BASE: 7b4250f
 -->
 
@@ -208,23 +208,14 @@ branch with the local gates of §3 green.
   success output and replace `synthetic-success.verbose.json`; later, a real
   usage-limit output replaces `synthetic-usage-limit.verbose.json`.
 
-- [ ] **8.13** Billing hardening — **high**, found by the 2026-09-23 review
-  (confirmed by reading the code; nothing triggers it today). (a) The child
-  still loads user/project settings: an `env` block in
-  `~/.claude/settings.json` or `<workdir>/.claude/settings.json` can set
-  `ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN` (a paid gateway) or
-  `CLAUDE_CODE_USE_BEDROCK` **after** the env scrub, and `apiKeySource` still
-  says `"none"`. Observe first which `--setting-sources` value loads no user
-  or project settings on 2.1.162 while OAuth still works (`""`? `local`?),
-  then pass it in `arguments()`; add `CLAUDE_CONFIG_DIR` to `METERED_ENV`;
-  red test in `tests/claude_process.rs` on argv and env. (b) The tripwire
-  does not latch: under `serve` every request is billed again. Add a latch in
-  `ClaudeCodeBackend` (an `AtomicBool`, plus a marker file next to the
-  journal so a restart keeps it); red test: two requests against a fake
-  reporting `apiKeySource=ANTHROPIC_API_KEY` spawn the fake once (count via
-  `FAKE_CLAUDE_RECORD`). (c) Correct ARCHITECTURE "Billing guards" 3–4: the
-  tripwire covers API-key sources only, not base-URL/auth-token/Bedrock/
-  Vertex routing. Each fix gets its sabotage defence.
+- [x] **8.13** Billing hardening (2026-09-28, branch `m1/billing-hardening`).
+  (a) `--setting-sources ""` (observed on 2.1.162: accepted, OAuth answers;
+  a hostile project `settings.json` did not reroute `-p` even without it, so
+  it is defence in depth for user settings too), `CLAUDE_CONFIG_DIR`
+  scrubbed. (b) The tripwire latches in memory and in
+  `<journal>.billing-tripped`; a restarted process refuses too. (c)
+  ARCHITECTURE "Billing guards" says what the tripwire does not see.
+  Red then green, 6 defences.
 - [ ] **8.14** Endpoint hardening (`src/server.rs`, all confirmed): (a) a web
   page can POST `text/plain` to `127.0.0.1:8787` with no CORS preflight, and
   read answers through DNS rebinding → require `Content-Type:

@@ -64,12 +64,21 @@ promised (HANDOVER §1):
 3. **The Claude child process never sees metered credentials.** Claude Code
    prefers `ANTHROPIC_API_KEY` over the subscription when it is set (observed:
    `apiKeySource: "ANTHROPIC_API_KEY"`). The backend removes it, and the other
-   variables that switch the CLI to a metered provider, from the child's
-   environment.
-4. **Tripwire on the CLI's own report.** The CLI's first message states its
-   billing source (`apiKeySource`). Anything but `"none"` (subscription) is an
-   `Other` error and the answer is discarded. The call may already have been
-   billed; the tripwire makes sure it happens once and loudly, not for a month.
+   variables that switch the CLI to a metered provider or another
+   configuration directory (`CLAUDE_CONFIG_DIR`), from the child's
+   environment; and it passes `--setting-sources ""`, so no user or project
+   settings file can set them back through an `env` block (observed on
+   2.1.162: the empty list is accepted and OAuth still answers).
+4. **Tripwire on the CLI's own report, latched.** The CLI's first message
+   states its billing source (`apiKeySource`). Anything but `"none"`
+   (subscription) is an `Other` error and the answer is discarded. The call
+   may already have been billed: the tripwire then **latches**, in memory and
+   in a marker file beside the journal (`<journal>.billing-tripped`), so no
+   later request, nor a restarted server, starts claude again until the owner
+   fixes the billing source and deletes the file. Scope: it sees API-key
+   sources only; a paid gateway set through `ANTHROPIC_BASE_URL` or an auth
+   token, or Bedrock/Vertex routing, is not reported there — guards 3 keep
+   those variables and settings away instead.
 5. **`--bare` is never used**: it forces API-key authentication.
 
 ## Claude Code backend ✅

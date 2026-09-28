@@ -333,4 +333,15 @@ fn a_fired_billing_tripwire_latches_even_across_a_restart() {
         !scene.record.join("args.json").exists(),
         "claude was never started again"
     );
+
+    // Without a marker file, the latch still holds for this process.
+    let in_memory = backend(&scene);
+    let _ = in_memory.complete_with_env(&Request::new("p"), metered_env(&scene));
+    std::fs::remove_file(scene.record.join("args.json")).expect("spawned once");
+    let again = in_memory.complete_with_env(&Request::new("p"), success_env(&scene));
+    assert!(
+        matches!(&again, Err(BackendError::Other(m)) if m.contains("latched")),
+        "{again:?}"
+    );
+    assert!(!scene.record.join("args.json").exists());
 }

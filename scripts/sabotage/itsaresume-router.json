@@ -198,8 +198,8 @@
     },
     "Claude process: tools disabled": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
-      "live": "            String::new(),\n",
-      "dead": "            \"default\".into(),\n",
+      "live": "            \"--tools\".into(),\n            String::new(),\n",
+      "dead": "            \"--tools\".into(),\n            \"default\".into(),\n",
       "expect": [
         "the_cli_runs_with_json_output_and_no_tools"
       ]
@@ -387,6 +387,40 @@
       "dead": "",
       "expect": [
         "the_metered_list_names_the_known_metered_switches"
+      ]
+    },
+    "Billing latch: a latched backend does not start claude": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "        if let Some(error) = self.latched() {\n            return Err(error);\n        }\n",
+      "dead": "",
+      "expect": [
+        "a_fired_billing_tripwire_latches_even_across_a_restart",
+        "a_fired_billing_tripwire_stops_the_next_process_too"
+      ]
+    },
+    "Billing latch: set in memory when the tripwire fires": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "            self.tripped.store(true, Ordering::SeqCst);\n",
+      "dead": "",
+      "expect": [
+        "a_fired_billing_tripwire_latches_even_across_a_restart"
+      ]
+    },
+    "Billing latch: written down for a restart": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "                let _ = std::fs::write(file, \"the billing tripwire fired; see the journal\\n\");\n",
+      "dead": "",
+      "expect": [
+        "a_fired_billing_tripwire_latches_even_across_a_restart",
+        "a_fired_billing_tripwire_stops_the_next_process_too"
+      ]
+    },
+    "Billing latch: beside the journal": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "                    .with_latch_file(journal.with_extension(\"billing-tripped\"));",
+      "dead": ";",
+      "expect": [
+        "a_fired_billing_tripwire_stops_the_next_process_too"
       ]
     }
   }
