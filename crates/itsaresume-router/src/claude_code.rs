@@ -138,6 +138,8 @@ pub const METERED_ENV: &[&str] = &[
     "CLAUDE_CODE_USE_VERTEX",
     "CLAUDE_CODE_USE_FOUNDRY",
     "AWS_BEARER_TOKEN_BEDROCK",
+    // Another configuration directory brings its own settings file.
+    "CLAUDE_CONFIG_DIR",
 ];
 
 /// Used when a request has no system prompt, so that Claude Code's own
@@ -202,6 +204,11 @@ impl ClaudeCodeBackend {
             String::new(),
             "--strict-mcp-config".into(),
             "--disable-slash-commands".into(),
+            // No user or project settings: their `env` block could route the
+            // child to a paid gateway after the scrub (observed on 2.1.162:
+            // the empty list is accepted and OAuth still answers).
+            "--setting-sources".into(),
+            String::new(),
             // Replaces Claude Code's agentic system prompt.
             "--system-prompt".into(),
             system,

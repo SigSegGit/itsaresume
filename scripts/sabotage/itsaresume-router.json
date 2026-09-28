@@ -372,6 +372,22 @@
       "expect": [
         "a_proxy_in_the_environment_is_never_used"
       ]
+    },
+    "No user or project settings in the child": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "            \"--setting-sources\".into(),\n            String::new(),\n",
+      "dead": "",
+      "expect": [
+        "the_cli_runs_with_json_output_and_no_tools"
+      ]
+    },
+    "CLAUDE_CONFIG_DIR is scrubbed": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "    \"CLAUDE_CONFIG_DIR\",\n",
+      "dead": "",
+      "expect": [
+        "the_metered_list_names_the_known_metered_switches"
+      ]
     }
   }
 }
