@@ -9,6 +9,8 @@ use std::ffi::{OsStr, OsString};
 use std::io::{ErrorKind, Read, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 use wait_timeout::ChildExt;
@@ -154,6 +156,10 @@ pub struct ClaudeCodeBackend {
     model: Option<String>,
     timeout: Duration,
     workdir: PathBuf,
+    /// Set when the billing tripwire fires: no request starts claude again.
+    tripped: Arc<AtomicBool>,
+    /// Where the latch is written down, so that a restart keeps it.
+    latch_file: Option<PathBuf>,
 }
 
 impl ClaudeCodeBackend {
@@ -164,7 +170,15 @@ impl ClaudeCodeBackend {
             model: None,
             timeout: Duration::from_secs(300),
             workdir: std::env::temp_dir().join("itsaresume-claude"),
+            tripped: Arc::new(AtomicBool::new(false)),
+            latch_file: None,
         }
+    }
+
+    /// Write the billing latch to `file` (and honour it at start).
+    pub fn with_latch_file(mut self, file: impl Into<PathBuf>) -> Self {
+        self.latch_file = Some(file.into());
+        self
     }
 
     /// Pass `--model <model>` to the CLI.
@@ -230,6 +244,9 @@ impl ClaudeCodeBackend {
         request: &Request,
         env: impl IntoIterator<Item = (OsString, OsString)>,
     ) -> Result<Completion, BackendError> {
+        if let Some(error) = self.latched() {
+            return Err(error);
+        }
         std::fs::create_dir_all(&self.workdir).map_err(|error| {
             BackendError::Other(format!(
                 "cannot create the claude working directory {}: {error}",
@@ -302,7 +319,29 @@ impl ClaudeCodeBackend {
                 excerpt(stderr.trim(), 160)
             )));
         }
-        classify(&stdout)
+        let outcome = classify(&stdout);
+        if matches!(&outcome, Err(BackendError::Other(message)) if message.starts_with("billing tripwire"))
+        {
+            self.tripped.store(true, Ordering::SeqCst);
+            if let Some(file) = &self.latch_file {
+                let _ = std::fs::write(file, "the billing tripwire fired; see the journal\n");
+            }
+        }
+        outcome
+    }
+
+    /// Latched: the billing tripwire fired, in this process or before a restart.
+    fn latched(&self) -> Option<BackendError> {
+        let marked = self.latch_file.as_ref().is_some_and(|file| file.exists());
+        (self.tripped.load(Ordering::SeqCst) || marked).then(|| {
+            BackendError::Other(format!(
+                "billing tripwire latched: claude reported a per-token billing source earlier, \
+                 so it is not started again; fix the billing source, then delete {} and restart",
+                self.latch_file
+                    .as_ref()
+                    .map_or_else(|| "nothing".into(), |file| file.display().to_string())
+            ))
+        })
     }
 }
 
