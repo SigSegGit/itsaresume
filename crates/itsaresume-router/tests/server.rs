@@ -239,3 +239,154 @@ fn the_serve_command_answers_on_the_given_address() {
     let _ = child.wait();
     assert_eq!(status, Some(200));
 }
+
+/// Send `head` (request line and headers, no final blank line) and `body`
+/// over a raw socket; the status of the answer, or None if none came.
+fn raw(address: SocketAddr, head: &str, body: &[u8]) -> Option<u16> {
+    use std::io::{Read, Write};
+    let mut stream = std::net::TcpStream::connect(address).expect("connect");
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .expect("timeout");
+    stream
+        .write_all(format!("{head}\r\n\r\n").as_bytes())
+        .expect("write head");
+    let _ = stream.write_all(body);
+    let mut answer = [0u8; 12];
+    stream.read_exact(&mut answer).ok()?;
+    std::str::from_utf8(&answer[9..12]).ok()?.parse().ok()
+}
+
+fn complete_head(host: &str, extra: &str, length: usize) -> String {
+    format!("POST /v1/complete HTTP/1.1\r\nHost: {host}\r\nContent-Length: {length}{extra}")
+}
+
+/// 8.14(a): a web page can POST `text/plain` without a CORS preflight; the
+/// endpoint only takes JSON.
+#[test]
+fn a_completion_that_is_not_json_is_415() {
+    let (address, _dir) = start(vec![answers("lm-studio", "x")]);
+    let body = br#"{"prompt": "hi"}"#;
+    let head = complete_head("127.0.0.1", "\r\nContent-Type: text/plain", body.len());
+    assert_eq!(raw(address, &head, body), Some(415));
+    let head = complete_head("127.0.0.1", "", body.len());
+    assert_eq!(raw(address, &head, body), Some(415), "no Content-Type");
+    let head = complete_head(
+        "127.0.0.1",
+        "\r\nContent-Type: application/json; charset=utf-8",
+        body.len(),
+    );
+    assert_eq!(raw(address, &head, body), Some(200), "JSON with a charset");
+}
+
+/// 8.14(a): no browser page may drive the endpoint, whatever its origin.
+#[test]
+fn a_completion_from_a_browser_origin_is_403() {
+    let (address, _dir) = start(vec![answers("lm-studio", "x")]);
+    let body = br#"{"prompt": "hi"}"#;
+    for origin in ["http://evil.example", "null", "http://127.0.0.1:8787"] {
+        let extra = format!("\r\nContent-Type: application/json\r\nOrigin: {origin}");
+        let head = complete_head("127.0.0.1", &extra, body.len());
+        assert_eq!(raw(address, &head, body), Some(403), "{origin}");
+    }
+}
+
+/// 8.14(a): DNS rebinding reaches the loopback under a foreign name; only
+/// loopback names are served, on any port.
+#[test]
+fn a_foreign_host_is_403_and_loopback_names_are_served() {
+    let (address, _dir) = start(vec![answers("lm-studio", "x")]);
+    let body = br#"{"prompt": "hi"}"#;
+    let extra = "\r\nContent-Type: application/json";
+    for host in [
+        "evil.example",
+        "evil.example:8787",
+        "127.0.0.1.evil.example",
+        "localhost.evil",
+    ] {
+        assert_eq!(
+            raw(address, &complete_head(host, extra, body.len()), body),
+            Some(403),
+            "{host}"
+        );
+        let health = format!("GET /healthz HTTP/1.1\r\nHost: {host}");
+        assert_eq!(raw(address, &health, b""), Some(403), "healthz {host}");
+    }
+    for host in [
+        "127.0.0.1",
+        "127.0.0.1:1",
+        "localhost",
+        "LOCALHOST:8787",
+        "[::1]",
+        "[::1]:8787",
+    ] {
+        assert_eq!(
+            raw(address, &complete_head(host, extra, body.len()), body),
+            Some(200),
+            "{host}"
+        );
+    }
+}
+
+/// 8.14(b): a huge declared body is refused without the process allocating
+/// it, and the server keeps serving.
+#[test]
+fn a_huge_declared_body_is_413_and_the_server_lives() {
+    let (address, _dir) = start(vec![answers("lm-studio", "x")]);
+    let head = complete_head(
+        "127.0.0.1",
+        "\r\nContent-Type: application/json",
+        usize::MAX / 2,
+    );
+    assert_eq!(raw(address, &head, b"{"), Some(413));
+    thread::sleep(Duration::from_millis(300));
+    assert_eq!(get(address, "/healthz"), 200);
+}
+
+/// 8.14(c): the serve loop reports the error that ends it instead of
+/// returning as if all went well.
+#[test]
+fn the_serve_loop_returns_the_error_that_ended_it() {
+    use itsaresume_router::server::drive;
+    let mut left = vec![Ok(1), Ok(2), Err(std::io::Error::other("accept failed"))];
+    left.reverse();
+    let mut seen = Vec::new();
+    let error = drive(
+        || left.pop().expect("drive stops at the error"),
+        |n| seen.push(n),
+    );
+    assert_eq!(seen, [1, 2]);
+    assert_eq!(error.to_string(), "accept failed");
+}
+
+/// 8.14(d): completions beyond the cap are refused at once, not queued on
+/// an unbounded number of threads; health checks are not counted.
+#[test]
+fn completions_beyond_the_cap_are_503_busy() {
+    use itsaresume_router::server::MAX_CONCURRENT_COMPLETIONS;
+    let (address, _dir) = start(vec![Box::new(Scripted {
+        name: "claude-code",
+        reply: Ok(Completion {
+            text: "slow".into(),
+        }),
+        delay: Duration::from_secs(3),
+    })]);
+    let slow: Vec<_> = (0..MAX_CONCURRENT_COMPLETIONS)
+        .map(|_| thread::spawn(move || post(address, r#"{"prompt": "hi"}"#).0))
+        .collect();
+    thread::sleep(Duration::from_millis(500));
+    let started = Instant::now();
+    let (status, body) = post(address, r#"{"prompt": "hi"}"#);
+    assert_eq!(status, 503);
+    assert_eq!(body["error"]["kind"], "busy");
+    assert!(started.elapsed() < Duration::from_secs(1));
+    assert_eq!(get(address, "/healthz"), 200);
+    for handle in slow {
+        assert_eq!(handle.join().expect("slow request"), 200);
+    }
+    assert_eq!(
+        post(address, r#"{"prompt": "hi"}"#).0,
+        200,
+        "the slots come back"
+    );
+}

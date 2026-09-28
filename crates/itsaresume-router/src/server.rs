@@ -182,3 +182,16 @@ fn too_large() -> (u16, Value) {
 fn error(status: u16, kind: &str, message: &str) -> (u16, Value) {
     (status, json!({"error": {"kind": kind, "message": message}}))
 }
+
+/// The most completions running at once (8.14(d)).
+pub const MAX_CONCURRENT_COMPLETIONS: usize = 4;
+
+/// Take items from `next` and hand each to `handle` until `next` fails;
+/// return that error (8.14(c)).
+pub fn drive<T>(
+    mut next: impl FnMut() -> std::io::Result<T>,
+    mut handle: impl FnMut(T),
+) -> std::io::Error {
+    let _ = (&mut next, &mut handle);
+    std::io::Error::other("not yet")
+}
