@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.14
-TITLE: Endpoint hardening (server.rs), then 8.15-8.16
+NEXT: 8.15
+TITLE: System prompt off the command line, then 8.16-8.17
 WRITTEN-AT: 2026-09-28
 BASE: 7b4250f
 -->
@@ -47,14 +47,17 @@ Bionic's single slot busy.
 (private, Node.js): its own `docs/HANDOVER.md`; the `/itsaresume` skill
 covers both.
 
-**2026-09-28.** PR #6 (the flaky-test fix above) is merged. PR #7 (8.13)
-was **not merged**: the auto-mode classifier refused merges ("merge without
-review"); it waits for Nicolas's `Bash(gh pr merge:*)` permission (§10).
-If it is still open: check its CI, merge it, then start 8.14.
+**2026-09-28.** PR #6 and PR #7 (8.13) are merged. 8.14 (endpoint
+hardening) is done on `m1/endpoint-hardening`: JSON only (415), any `Origin`
+refused (403), loopback `Host` only (403, `/healthz` included), a declared
+body above 64 MiB answered 413 without being read (it used to abort the
+process: measured, `memory allocation … failed`), `serve` exits 1 with the
+error that stopped tiny_http, at most 4 completions at once (503 `busy`).
+Each has a red test and a sabotage defence.
 
-Next: 8.14 → 8.16 (hardening found by the 2026-09-23 review); 8.14(d) (one
-completion at a time per `lm-studio` backend) matters more now that the local
-server has a single slot.
+Next: 8.15 → 8.16. Still open from 8.14(d)'s note: the cap is global (4),
+not **one at a time per `lm-studio` backend**; with Bionic's single slot, a
+second local request still waits on Bionic, not on the router (8.17).
 
 ## 1. Decisions never to reverse silently
 
@@ -224,7 +227,7 @@ branch with the local gates of §3 green.
   `dead` snippets left an unused binding, a compile error under CI's
   `RUSTFLAGS=-D warnings` (locally run without it); each now keeps the
   binding used (`let _ = …`), verified with the CI flags.
-- [ ] **8.14** Endpoint hardening (`src/server.rs`, all confirmed): (a) a web
+- [x] **8.14** Endpoint hardening (`src/server.rs`, all confirmed): (a) a web
   page can POST `text/plain` to `127.0.0.1:8787` with no CORS preflight, and
   read answers through DNS rebinding → require `Content-Type:
   application/json`, reject any `Origin` header, accept only a `Host` whose
@@ -249,6 +252,15 @@ branch with the local gates of §3 green.
   "none"` was observed on the OAuth path — it was observed logged-out only,
   fix the comment; `check-handover.py`'s BASE check is vacuous while `main`
   is the root commit (it becomes meaningful after the first merge — note it).
+  TESTING.md must also gain the six 8.14 defences (`Endpoint …`, `Serve loop
+  returns the error that ends it`).
+- [ ] **8.17** One completion at a time per `lm-studio` backend: the local
+  server (Bionic) has one slot; today the router sends it every request and
+  lets them queue there, past the generator's timeout. A per-backend limit
+  (`max_concurrent`, default 1 for `lm-studio`, none for `claude-code`) that
+  makes a second request wait in the router, bounded by the backend's
+  `timeout_secs`, then fall back as an outage. Red test: two slow requests
+  to a scripted one-slot backend, the second never overlaps the first.
 
 ## 9. Deliberately open
 

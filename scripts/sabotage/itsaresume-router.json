@@ -343,8 +343,8 @@
     },
     "Server: one thread per request": {
       "file": "crates/itsaresume-router/src/server.rs",
-      "live": "std::thread::spawn(move || respond(&router, request));",
-      "dead": "respond(&router, request);",
+      "live": "std::thread::spawn(move || respond(&router, &running, request));",
+      "dead": "respond(&router, &running, request);",
       "expect": [
         "a_slow_completion_does_not_block_other_requests"
       ]
@@ -421,6 +421,54 @@
       "dead": ";\n                let _ = journal;",
       "expect": [
         "a_fired_billing_tripwire_stops_the_next_process_too"
+      ]
+    },
+    "Endpoint serves loopback host names only": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "if !loopback_host(request) {",
+      "dead": "if false && !loopback_host(request) {",
+      "expect": [
+        "a_foreign_host_is_403_and_loopback_names_are_served"
+      ]
+    },
+    "Endpoint refuses browser origins": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "if header(request, \"Origin\").is_some() {",
+      "dead": "if false && header(request, \"Origin\").is_some() {",
+      "expect": [
+        "a_completion_from_a_browser_origin_is_403"
+      ]
+    },
+    "Endpoint takes JSON only": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": ".is_some_and(|kind| kind.trim().eq_ignore_ascii_case(\"application/json\"))",
+      "dead": ".is_some_and(|_| true)",
+      "expect": [
+        "a_completion_that_is_not_json_is_415"
+      ]
+    },
+    "Endpoint caps concurrent completions": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "(n < MAX_CONCURRENT_COMPLETIONS).then_some(n + 1)",
+      "dead": "Some(n + 1)",
+      "expect": [
+        "completions_beyond_the_cap_are_503_busy"
+      ]
+    },
+    "Endpoint never drains a huge declared body": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": ".is_some_and(|length| length > MAX_DRAIN_BYTES)",
+      "dead": ".is_some_and(|length| length == 0 && length > MAX_DRAIN_BYTES)",
+      "expect": [
+        "a_huge_declared_body_is_413_and_the_server_lives"
+      ]
+    },
+    "Serve loop returns the error that ends it": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "Err(error) => return error,",
+      "dead": "Err(error) => drop(error),",
+      "expect": [
+        "the_serve_loop_returns_the_error_that_ended_it"
       ]
     }
   }

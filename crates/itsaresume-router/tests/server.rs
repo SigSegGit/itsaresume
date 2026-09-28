@@ -195,25 +195,24 @@ fn the_default_listen_address_is_loopback() {
     assert!(address.ip().is_loopback(), "{DEFAULT_LISTEN}");
 }
 
-/// `itsaresume serve` itself, as a process.
-#[test]
-fn the_serve_command_answers_on_the_given_address() {
-    let dir = tempfile::tempdir().expect("temp dir");
+/// `itsaresume serve` itself, as a process, once it answers `/healthz`
+/// (None if it never did within 10 s).
+fn serve_process(dir: &std::path::Path) -> (std::process::Child, SocketAddr, Option<u16>) {
     let port = std::net::TcpListener::bind("127.0.0.1:0")
         .expect("bind")
         .local_addr()
         .expect("address")
         .port();
-    let config = dir.path().join("config.toml");
+    let config = dir.join("config.toml");
     std::fs::write(
         &config,
         format!(
             "journal = {}\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"http://127.0.0.1:9/v1\"\nmodel = \"m\"\n",
-            Value::String(dir.path().join("j.jsonl").to_string_lossy().into_owned())
+            Value::String(dir.join("j.jsonl").to_string_lossy().into_owned())
         ),
     )
     .expect("write config");
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_itsaresume"))
+    let child = std::process::Command::new(env!("CARGO_BIN_EXE_itsaresume"))
         .args([
             "serve",
             "--config",
@@ -235,6 +234,13 @@ fn the_serve_command_answers_on_the_given_address() {
         }
         thread::sleep(Duration::from_millis(100));
     }
+    (child, address, status)
+}
+
+#[test]
+fn the_serve_command_answers_on_the_given_address() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (mut child, _, status) = serve_process(dir.path());
     let _ = child.kill();
     let _ = child.wait();
     assert_eq!(status, Some(200));
@@ -332,15 +338,23 @@ fn a_foreign_host_is_403_and_loopback_names_are_served() {
 /// it, and the server keeps serving.
 #[test]
 fn a_huge_declared_body_is_413_and_the_server_lives() {
-    let (address, _dir) = start(vec![answers("lm-studio", "x")]);
+    // A process of its own: the failure this guards against is an abort,
+    // which would take the whole test binary down with it.
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (mut child, address, status) = serve_process(dir.path());
+    assert_eq!(status, Some(200));
     let head = complete_head(
         "127.0.0.1",
         "\r\nContent-Type: application/json",
         usize::MAX / 2,
     );
-    assert_eq!(raw(address, &head, b"{"), Some(413));
+    let refused = raw(address, &head, b"{");
     thread::sleep(Duration::from_millis(300));
-    assert_eq!(get(address, "/healthz"), 200);
+    let alive = child.try_wait().expect("child status").is_none();
+    let _ = child.kill();
+    let _ = child.wait();
+    assert_eq!(refused, Some(413));
+    assert!(alive, "the server died on a huge declared body");
 }
 
 /// 8.14(c): the serve loop reports the error that ends it instead of
