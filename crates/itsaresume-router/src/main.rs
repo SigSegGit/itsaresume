@@ -103,8 +103,13 @@ fn serve(config: &Config, listen: &str) -> ExitCode {
         }
     };
     eprintln!("itsaresume: listening on http://{}", server.local_addr());
-    server.run();
-    ExitCode::SUCCESS
+    match server.run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("itsaresume: {error}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn complete(config: &Config, system: Option<String>) -> ExitCode {
