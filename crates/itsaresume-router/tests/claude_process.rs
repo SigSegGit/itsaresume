@@ -118,6 +118,10 @@ fn the_cli_runs_with_json_output_and_no_tools() {
     );
     assert!(has_pair("--system-prompt", "You write CVs."), "{args:?}");
     assert!(has_pair("--model", "sonnet"), "{args:?}");
+    // No user or project settings: an `env` block there could route the child
+    // to a paid gateway after the environment scrub. Observed on 2.1.162: the
+    // empty list is accepted and OAuth still answers.
+    assert!(has_pair("--setting-sources", ""), "{args:?}");
     assert!(
         !args.contains(&"--bare".to_owned()),
         "--bare forces API-key billing: {args:?}"
@@ -189,6 +193,8 @@ fn the_metered_list_names_the_known_metered_switches() {
         "ANTHROPIC_AUTH_TOKEN",
         "CLAUDE_CODE_USE_BEDROCK",
         "CLAUDE_CODE_USE_VERTEX",
+        // Another configuration directory brings its own settings file.
+        "CLAUDE_CONFIG_DIR",
     ] {
         assert!(METERED_ENV.contains(&name), "{name} missing");
     }
