@@ -118,6 +118,10 @@ fn the_cli_runs_with_json_output_and_no_tools() {
     );
     assert!(has_pair("--system-prompt", "You write CVs."), "{args:?}");
     assert!(has_pair("--model", "sonnet"), "{args:?}");
+    // No user or project settings: an `env` block there could route the child
+    // to a paid gateway after the environment scrub. Observed on 2.1.162: the
+    // empty list is accepted and OAuth still answers.
+    assert!(has_pair("--setting-sources", ""), "{args:?}");
     assert!(
         !args.contains(&"--bare".to_owned()),
         "--bare forces API-key billing: {args:?}"
@@ -189,6 +193,8 @@ fn the_metered_list_names_the_known_metered_switches() {
         "ANTHROPIC_AUTH_TOKEN",
         "CLAUDE_CODE_USE_BEDROCK",
         "CLAUDE_CODE_USE_VERTEX",
+        // Another configuration directory brings its own settings file.
+        "CLAUDE_CONFIG_DIR",
     ] {
         assert!(METERED_ENV.contains(&name), "{name} missing");
     }
@@ -282,4 +288,60 @@ fn a_cli_that_prints_nothing_reports_its_stderr() {
         }
         other => panic!("expected Other with stderr, got {other:?}"),
     }
+}
+
+fn metered_env(scene: &Scene) -> Vec<(OsString, OsString)> {
+    let stdout = fixture("observed-api-key-invalid.verbose.json");
+    env_with(&[
+        (
+            "FAKE_CLAUDE_RECORD",
+            scene.record.to_str().expect("utf-8 path"),
+        ),
+        ("FAKE_CLAUDE_STDOUT", stdout.to_str().expect("utf-8 path")),
+    ])
+}
+
+/// Once the billing tripwire has fired, no later request starts claude again:
+/// under `serve`, each one would be billed per token too. The latch survives
+/// a restart through a marker file.
+#[test]
+fn a_fired_billing_tripwire_latches_even_across_a_restart() {
+    let scene = scene();
+    let marker = scene.workdir.with_file_name("billing-tripped");
+    let latched = backend(&scene).with_latch_file(&marker);
+
+    let first = latched.complete_with_env(&Request::new("p"), metered_env(&scene));
+    assert!(
+        matches!(&first, Err(BackendError::Other(m)) if m.starts_with("billing tripwire")),
+        "{first:?}"
+    );
+    assert!(marker.exists(), "the latch is written down");
+
+    std::fs::remove_file(scene.record.join("args.json")).expect("spawned once");
+    let second = latched.complete_with_env(&Request::new("p"), success_env(&scene));
+    assert!(
+        matches!(&second, Err(BackendError::Other(m)) if m.contains("latched")),
+        "{second:?}"
+    );
+    let restarted = backend(&scene).with_latch_file(&marker);
+    let third = restarted.complete_with_env(&Request::new("p"), success_env(&scene));
+    assert!(
+        matches!(&third, Err(BackendError::Other(m)) if m.contains("latched")),
+        "{third:?}"
+    );
+    assert!(
+        !scene.record.join("args.json").exists(),
+        "claude was never started again"
+    );
+
+    // Without a marker file, the latch still holds for this process.
+    let in_memory = backend(&scene);
+    let _ = in_memory.complete_with_env(&Request::new("p"), metered_env(&scene));
+    std::fs::remove_file(scene.record.join("args.json")).expect("spawned once");
+    let again = in_memory.complete_with_env(&Request::new("p"), success_env(&scene));
+    assert!(
+        matches!(&again, Err(BackendError::Other(m)) if m.contains("latched")),
+        "{again:?}"
+    );
+    assert!(!scene.record.join("args.json").exists());
 }

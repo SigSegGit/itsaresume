@@ -289,3 +289,34 @@ fn an_empty_prompt_is_a_usage_error() {
 
     assert_eq!(output.status.code(), Some(2), "{output:?}");
 }
+
+/// The billing latch is written next to the journal, so a new process (the
+/// next CLI call, a restarted server) refuses before starting claude.
+#[test]
+fn a_fired_billing_tripwire_stops_the_next_process_too() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let args = ["complete", "--config", config.to_str().expect("utf-8")];
+
+    let first = run(
+        &args,
+        "a prompt",
+        &[(
+            "FAKE_CLAUDE_STDOUT",
+            claude_fixture("observed-api-key-invalid.verbose.json"),
+        )],
+    );
+    assert_eq!(first.status.code(), Some(3), "{first:?}");
+    assert!(dir.path().join("journal.billing-tripped").exists());
+
+    let second = run(
+        &args,
+        "a prompt",
+        &[(
+            "FAKE_CLAUDE_STDOUT",
+            claude_fixture("synthetic-success.verbose.json"),
+        )],
+    );
+    assert_eq!(second.status.code(), Some(3), "{second:?}");
+    assert!(String::from_utf8_lossy(&second.stderr).contains("latched"));
+}
