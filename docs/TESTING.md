@@ -52,8 +52,13 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `unrecognised_errors_are_other` | `tests/claude_classify.rs` | 400, 401 and unknown wordings are `Other` (stop loudly) | Claude: other statuses stop; Claude: unknown wording stops |
 | `output_that_is_not_the_expected_json_is_other` | `tests/claude_classify.rs` | Empty, non-JSON, object-shaped or result-less output is `Other` | — |
 | `the_prompt_goes_on_stdin_and_the_answer_comes_back` | `tests/claude_process.rs` | The prompt reaches the child on stdin, whole and never on the command line; the classified answer comes back | Claude process: prompt on stdin |
-| `the_cli_runs_with_json_output_and_no_tools` | `tests/claude_process.rs` | The child gets `-p`, JSON verbose output, `--tools ""`, no MCP, no slash commands, no session persistence, the request's system prompt and the model — and never `--bare` | Claude process: tools disabled |
+| `the_cli_runs_with_json_output_and_no_tools` | `tests/claude_process.rs` | The child gets `-p`, JSON verbose output, `--tools ""`, no MCP, no slash commands, no session persistence, the request's system prompt (through its file) and the model — and never `--bare` | Claude process: tools disabled |
 | `without_a_system_prompt_a_neutral_one_replaces_claude_codes_own` | `tests/claude_process.rs` | A system prompt is always passed, so Claude Code's agentic one is never used; no `--model` unless configured | — |
+| `a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line` | `tests/claude_process.rs` | A 100 KB system prompt holding a NUL reaches the child whole through `--system-prompt-file`, and no part of it is on the command line (it failed the spawn as `Other`) | Claude process: system prompt whole in its file |
+| `the_system_prompt_file_is_removed_once_the_cli_has_answered` | `tests/claude_process.rs` | The system prompt file is gone once the call returns | Claude process: system prompt file removed |
+| `the_system_prompt_file_is_removed_when_the_cli_is_killed` | `tests/claude_process.rs` | The system prompt file is gone after a timeout kill too | Claude process: system prompt file removed |
+| `concurrent_requests_each_get_their_own_system_prompt` | `tests/claude_process.rs` | Two overlapping requests in one working directory each get their own file and system prompt | Claude process: one system prompt file per request |
+| `the_system_prompt_file_is_readable_by_its_owner_only` | `tests/claude_process.rs` | Unix only: the file is 0600 | — (Unix only; local sabotage runs on Windows) |
 | `metered_credentials_never_reach_the_child` | `tests/claude_process.rs` | None of `METERED_ENV` reaches the child (checked by the child itself); `CLAUDE_CODE_OAUTH_TOKEN` and `PATH` do | Claude process: metered env removed |
 | `the_metered_list_names_the_known_metered_switches` | `tests/claude_process.rs` | `METERED_ENV` names the API-key, auth-token, Bedrock and Vertex switches and not the subscription token | — |
 | `the_child_runs_in_the_dedicated_working_directory` | `tests/claude_process.rs` | The child's working directory is the dedicated one, created if missing | Claude process: dedicated workdir |
@@ -81,7 +86,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_spent_claude_plan_falls_back_to_lm_studio` | `tests/cli.rs` | **End to end**: Claude reports a usage limit, LM Studio answers, the journal records both | Router falls back on quota and outage |
 | `a_stopped_request_exits_3_and_never_reaches_lm_studio` | `tests/cli.rs` | **End to end**: not logged in exits 3 and LM Studio's listener sees no connection | CLI: stopped exits 3; Router stops on Other |
 | `every_backend_down_exits_4` | `tests/cli.rs` | Missing `claude` and refused LM Studio exit 4, journaled `exhausted` | — |
-| `the_system_option_reaches_the_backend` | `tests/cli.rs` | `--system` reaches the `claude` command line | — |
+| `the_system_option_reaches_the_backend` | `tests/cli.rs` | `--system` reaches `claude` through its system prompt file | — |
+| `a_relative_workdir_still_hands_claude_its_system_prompt` | `tests/cli.rs` | With a relative `workdir`, the file's path stays valid inside the child's working directory (passed absolute) | Claude process: system prompt file path absolute |
 | `the_config_path_can_come_from_the_environment` | `tests/cli.rs` | `ITSARESUME_CONFIG` names the configuration | — |
 | `a_bad_configuration_or_usage_exits_2` | `tests/cli.rs` | An invalid configuration or command line exits 2 with the reason | — |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |

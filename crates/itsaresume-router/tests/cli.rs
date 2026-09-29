@@ -37,7 +37,13 @@ fn config(dir: &Path, claude_program: &str, lm_url: &str) -> PathBuf {
 }
 
 fn run(args: &[&str], stdin: &str, env: &[(&str, String)]) -> Output {
+    run_in(Path::new("."), args, stdin, env)
+}
+
+/// `run`, from the working directory `cwd`.
+fn run_in(cwd: &Path, args: &[&str], stdin: &str, env: &[(&str, String)]) -> Output {
     let mut child = Command::new(CLI)
+        .current_dir(cwd)
         .args(args)
         .envs(env.iter().map(|(name, value)| (*name, value.as_str())))
         .stdin(Stdio::piped())
@@ -228,8 +234,58 @@ fn the_system_option_reaches_the_backend() {
     );
 
     assert_eq!(output.status.code(), Some(0), "{output:?}");
-    let args = std::fs::read_to_string(record.join("args.json")).expect("args");
-    assert!(args.contains("You write CVs."), "{args}");
+    // Through the system prompt file, never the child's command line.
+    let system = std::fs::read_to_string(record.join("system.txt")).expect("system recorded");
+    assert_eq!(system, "You write CVs.");
+}
+
+/// The child runs inside `workdir`: a relative `workdir` in the configuration
+/// must not make the system prompt file's path relative to it a second time.
+#[test]
+fn a_relative_workdir_still_hands_claude_its_system_prompt() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let record = dir.path().join("record");
+    std::fs::create_dir(&record).expect("record dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let absolute = std::fs::read_to_string(&config).expect("config");
+    let workdir = Value::String(
+        dir.path()
+            .join("claude-workdir")
+            .to_string_lossy()
+            .into_owned(),
+    );
+    let relative = absolute.replace(
+        &format!("workdir = {workdir}"),
+        "workdir = \"claude-workdir\"",
+    );
+    assert_ne!(
+        relative, absolute,
+        "the configuration names a relative workdir"
+    );
+    std::fs::write(&config, relative).expect("rewrite config");
+
+    let output = run_in(
+        dir.path(),
+        &[
+            "complete",
+            "--config",
+            config.to_str().expect("utf-8"),
+            "--system",
+            "You write CVs.",
+        ],
+        "a prompt",
+        &[
+            (
+                "FAKE_CLAUDE_STDOUT",
+                claude_fixture("synthetic-success.verbose.json"),
+            ),
+            ("FAKE_CLAUDE_RECORD", record.to_string_lossy().into_owned()),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    let system = std::fs::read_to_string(record.join("system.txt")).expect("system recorded");
+    assert_eq!(system, "You write CVs.");
 }
 
 #[test]

@@ -204,7 +204,6 @@ fn the_system_prompt_file_is_removed_once_the_cli_has_answered() {
         .expect("the fake answers");
 
     let file = system_file_arg(&recorded_args(&scene));
-    assert!(file.is_absolute(), "{file:?}");
     assert!(!file.exists(), "left behind: {file:?}");
 }
 

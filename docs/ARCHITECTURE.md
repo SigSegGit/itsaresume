@@ -90,9 +90,17 @@ is pulled into the prompt), with:
 ```
 --output-format json --verbose --no-session-persistence
 --tools "" --strict-mcp-config --disable-slash-commands
---system-prompt <request system prompt, or a neutral default>
+--system-prompt-file <request system prompt, or a neutral default>
 [--model <configured alias>]
 ```
+
+The system prompt goes through a file, never the command line: argv is
+length-limited (32 767 characters on Windows), cannot hold a NUL, and is
+readable by every local process, while a system prompt may carry a whole
+profile. The file is created new (`create_new`, 0600 on Unix) in the working
+directory, one per request (process id and a counter), passed by absolute
+path, and deleted when the call returns, answered or killed. A crash
+mid-request leaves it behind in that directory.
 
 `--tools ""` matters beyond cost: CV prompts will contain job descriptions
 copied from the web, and a prompt-injected instruction must have no tool to
