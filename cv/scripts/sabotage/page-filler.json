@@ -1,0 +1,81 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Page: an unpicked short mission fills only what the main missions leave open": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) === 'short' && pick < 0 && !fills(bullet)) return;",
+      "dead": "void fills;",
+      "expect": [
+        "an unpicked short mission does not fill the page with a requirement the main missions already back"
+      ]
+    },
+    "Page: a short mission the model picked stands": {
+      "file": "src/tailor.js",
+      "live": "kindOf(experience) === 'short' && pick < 0 && !fills(bullet)",
+      "dead": "kindOf(experience) === 'short' && !fills(bullet)",
+      "expect": [
+        "a short mission the model picked stays, even beside a main mission backing the same requirement"
+      ]
+    },
+    "Page: a requirement no main mission backs is open": {
+      "file": "src/tailor.js",
+      "live": "&& !main.some((bullet) => backed(requirement, bullet)));",
+      "dead": "&& false);",
+      "expect": [
+        "an unpicked short mission still backs a requirement no main mission backs"
+      ]
+    },
+    "Headline: a must the CV would not show brings its title": {
+      "file": "src/normalize.js",
+      "live": "headed.splice(1, 1, title.id);",
+      "dead": "void title;",
+      "expect": [
+        "a must met only through a hidden skill puts the profile's title naming it second in the headline"
+      ]
+    },
+    "Headline: a headline already naming the must is kept": {
+      "file": "src/normalize.js",
+      "live": "untold.filter((must) => !headed.some((id) => naming(id, must)));",
+      "dead": "untold;",
+      "expect": [
+        "a headline already naming that must is left as chosen"
+      ]
+    },
+    "Headline: a must no title names is said": {
+      "file": "src/normalize.js",
+      "live": "if (title && index === 0 && free) {",
+      "dead": "if (true) {",
+      "expect": [
+        "a must met only through a hidden skill that no title names is reported as absent from the page"
+      ]
+    },
+    "Headline: a must the picked text names is on the page": {
+      "file": "src/normalize.js",
+      "live": "musts.filter((must) => !must.names.some((name) => mentions(shownText, name)));",
+      "dead": "musts;",
+      "expect": [
+        "a must the picked bullets already name leaves the headline as chosen"
+      ]
+    },
+    "Headline: a title naming another hidden must stays": {
+      "file": "src/normalize.js",
+      "live": "(headed.length === 2 && !untold.some((must) => naming(headed[1], must)))",
+      "dead": "headed.length === 2",
+      "expect": [
+        "a title naming one hidden must is not pushed out for another"
+      ]
+    },
+    "Headline: only a must met through hidden skills": {
+      "file": "src/normalize.js",
+      "live": ".filter((requirement) => requirement.skills.every((id) => hidden.has(skills.get(id)?.group)))",
+      "dead": ".filter(() => true)",
+      "expect": [
+        "a must met through a visible skill never takes the headline: the skills column is its place"
+      ]
+    }
+  }
+}

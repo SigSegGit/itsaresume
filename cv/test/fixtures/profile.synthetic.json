@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "identity": {
+    "name": "Alex MARTIN",
+    "email": "alex.martin@example.org",
+    "phone": "+33 6 00 00 00 00",
+    "location": { "fr": "Région parisienne, France", "en": "Paris Area, France" },
+    "company": "EURL Example"
+  },
+  "glance": [
+    { "fr": "Disponible : immédiatement", "en": "Available: immediately" },
+    { "fr": "Astreintes : oui", "en": "On-call duty: yes" }
+  ],
+  "profile_facts": [
+    { "id": "years", "kind": "hook", "fr": "Ingénieur SRE avec 10 ans en production critique.", "en": "SRE engineer with 10 years in critical production." },
+    { "id": "pg", "kind": "fact", "fr": "Exploitation de flottes PostgreSQL à haute volumétrie.", "en": "Runs high-volume PostgreSQL fleets." }
+  ],
+  "skill_groups": [
+    { "id": "db", "title": { "fr": "Bases de données", "en": "Databases" } },
+    { "id": "iac", "title": { "fr": "Automatisation / IaC", "en": "Automation / IaC" } },
+    { "id": "cloud", "title": { "fr": "Cloud", "en": "Cloud" } }
+  ],
+  "skills": [
+    { "id": "postgresql", "name": "PostgreSQL", "group": "db", "level": "expert", "aliases": ["Postgres"] },
+    { "id": "oracle", "name": "Oracle", "group": "db", "level": "proficient", "aliases": [] },
+    { "id": "terraform", "name": "Terraform", "group": "iac", "level": "expert", "aliases": [] },
+    { "id": "python", "name": "Python", "group": "iac", "level": "expert", "aliases": [] },
+    { "id": "docker", "name": "Docker", "group": "iac", "level": "proficient", "aliases": [] },
+    { "id": "aws", "name": "AWS", "group": "cloud", "level": "proficient", "aliases": ["Amazon Web Services"] },
+    { "id": "gcp", "name": "GCP", "group": "cloud", "level": "notions", "aliases": ["Google Cloud"] }
+  ],
+  "experiences": [
+    {
+      "id": "acme",
+      "title": { "fr": "Ingénieur SRE senior", "en": "Senior SRE" },
+      "org": { "fr": "Acme Paiements", "en": "Acme Payments" },
+      "start": "2019",
+      "end": "2025",
+      "bullets": [
+        { "id": "acme-pg", "fr": "Exploitation d'une flotte PostgreSQL.", "en": "Ran a PostgreSQL fleet.", "skills": ["postgresql"] },
+        { "id": "acme-iac", "fr": "Industrialisation avec Terraform.", "en": "Industrialised with Terraform.", "skills": ["terraform"] },
+        { "id": "acme-py", "fr": "Automatisation en Python.", "en": "Automation in Python.", "skills": ["python"] }
+      ],
+      "env": ["PostgreSQL", "Terraform", "Python"]
+    },
+    {
+      "id": "bank",
+      "title": { "fr": "Support applicatif", "en": "Application support" },
+      "org": { "fr": "Banque Exemple", "en": "Example Bank" },
+      "start": "2015",
+      "end": "2019",
+      "bullets": [
+        { "id": "bank-oracle", "fr": "Optimisation de requêtes Oracle.", "en": "Tuned Oracle queries.", "skills": ["oracle"] },
+        { "id": "bank-oncall", "fr": "Astreintes sur flux critiques.", "en": "On-call on critical flows.", "skills": [] }
+      ],
+      "env": ["Oracle"]
+    }
+  ],
+  "education": [
+    {
+      "id": "school",
+      "title": { "fr": "Master — École Exemple", "en": "Master's degree — Example School" },
+      "details": [{ "fr": "Pédagogie par projets", "en": "Project-based learning" }]
+    }
+  ],
+  "certifications": [{ "fr": "ITIL v4 — expirée", "en": "ITIL v4 — expired" }],
+  "languages": [
+    { "fr": "Français — natif", "en": "French — native" },
+    { "fr": "Anglais — bilingue", "en": "English — bilingual" }
+  ],
+  "to_confirm": []
+}

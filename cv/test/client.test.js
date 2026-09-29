@@ -1,0 +1,120 @@
+// The client of itsaresume's endpoint, against the ways an answer goes wrong
+// on a slow single-slot model: it never comes (a timeout the owner can set
+// above the router's own), it comes cut (the connection drops mid-body), or
+// it comes as a refusal whose real reason is in each backend's attempt.
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { complete } from '../src/llm.js';
+
+/** A stand-in for itsaresume whose every POST gets `answer(request, response)`. */
+async function router(answer) {
+  const server = createServer((request, response) => {
+    request.resume();
+    request.on('end', () => answer(request, response));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  return { server, url: `http://127.0.0.1:${server.address().port}` };
+}
+
+const stop = (server) => {
+  server.closeAllConnections();
+  server.close();
+};
+
+test('a connection cut mid-answer is an error at once, not a wait for the timer', async () => {
+  const { server, url } = await router((request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': '5000' });
+    response.write('{"backend":"stub","text":"{\\"langu');
+    setTimeout(() => response.socket.destroy(), 50);
+  });
+  try {
+    const started = Date.now();
+    await assert.rejects(complete({ url, system: 's', prompt: 'p', timeoutMs: 5000 }), /itsaresume.*connection cut mid-answer/);
+    assert.ok(Date.now() - started < 2000, `gave up after ${Date.now() - started} ms`);
+  } finally {
+    stop(server);
+  }
+});
+
+test("a router refusal carries each backend's own reason", async () => {
+  const { server, url } = await router((request, response) => {
+    response.writeHead(503, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify({ error: {
+      kind: 'exhausted',
+      message: 'every backend failed with a quota or an outage',
+      attempts: [
+        { backend: 'claude-code', kind: 'quota_exceeded', message: 'usage limit reached' },
+        { backend: 'lm-studio', kind: 'timeout', message: 'no answer within 600 s' },
+      ],
+    } }));
+  });
+  try {
+    await assert.rejects(
+      complete({ url, system: 's', prompt: 'p' }),
+      /503: every backend failed with a quota or an outage \(claude-code: usage limit reached; lm-studio: no answer within 600 s\)/,
+    );
+  } finally {
+    stop(server);
+  }
+});
+
+const CLI = new URL('../bin/itsacv.js', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
+const PROFILE = new URL('./fixtures/profile.synthetic.json', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
+
+/** The CLI, killed if still running after 20 s. */
+function runCli(args, env = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [CLI, ...args], { env: { ...process.env, ITSACV_TIMEOUT: '', ...env } });
+    const deadline = setTimeout(() => child.kill(), 20_000);
+    let stderr = '';
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    child.on('close', (status) => {
+      clearTimeout(deadline);
+      resolve({ status, stderr });
+    });
+  });
+}
+
+/** A local model can take 40 minutes; the router gives up on a backend after
+ * its own timeout_secs. The client must wait longer than that, so its limit
+ * is the owner's to set. */
+test('--timeout and ITSACV_TIMEOUT set how long one answer may take', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-timeout-'));
+  const offer = join(dir, 'offer.txt');
+  writeFileSync(offer, 'Senior SRE wanted. Must: PostgreSQL.');
+  // Answers, but after 2 s: a client waiting 1 s never sees it.
+  const { server, url } = await router((request, response) => setTimeout(() => {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify({ backend: 'slow', text: 'too late' }));
+  }, 2000));
+  const base = ['tailor', offer, '--profile', PROFILE, '--out', dir, '--url', url, '--no-layout'];
+  try {
+    const flag = await runCli([...base, '--timeout', '1']);
+    assert.equal(flag.status, 4, flag.stderr);
+    assert.match(flag.stderr, /timed out after 1 s/);
+    const env = await runCli(base, { ITSACV_TIMEOUT: '1' });
+    assert.equal(env.status, 4, env.stderr);
+    assert.match(env.stderr, /timed out after 1 s/);
+    for (const bad of ['soon', '0', '-5']) {
+      const refused = await runCli([...base, '--timeout', bad]);
+      assert.equal(refused.status, 2, bad);
+      assert.match(refused.stderr, /--timeout/);
+    }
+  } finally {
+    stop(server);
+  }
+});
+
+test("the usage says the client's timeout must exceed the router backend's", () => {
+  const { stderr } = spawnSync(process.execPath, [CLI], { encoding: 'utf8' });
+  assert.match(stderr, /tailor .*\[--timeout SECONDS\]/);
+  assert.match(stderr, /serve .*\[--timeout SECONDS\]/);
+  assert.match(stderr, /ITSACV_TIMEOUT/);
+  assert.match(stderr, /must exceed the router backend's timeout_secs/);
+});

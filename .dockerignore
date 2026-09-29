@@ -9,3 +9,4 @@ journal
 .env
 *.local.toml
 *.jsonl
+cv

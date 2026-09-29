@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="__CSRF_TOKEN__">
+  <meta name="color-scheme" content="light dark">
+  <title>itsaresume — CV sur mesure</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">&gt;_</span>
+      <div>
+        <h1>itsa<span class="accent">resume</span></h1>
+        <p class="tagline">CV sur mesure, vérifié ligne à ligne contre ton profil</p>
+      </div>
+    </div>
+    <ul class="status" id="status" aria-label="État du système">
+      <li class="pill" data-state="pending" id="status-profile">Profil…</li>
+      <li class="pill" data-state="pending" id="status-router">Modèle…</li>
+      <li class="pill" data-state="pending" id="status-layout">Mise en page…</li>
+    </ul>
+  </header>
+
+  <main class="grid">
+    <section class="card" aria-labelledby="offers-title">
+      <h2 id="offers-title"><span class="step">1</span> Offres</h2>
+      <label class="label" for="paste">Colle une offre, ou un mail d'ESN qui en contient plusieurs</label>
+      <textarea id="paste" rows="10" spellcheck="false" placeholder="Architecte Solutions Infrastructure…"></textarea>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="drop-help">
+        <span>Ou dépose des fichiers <code>.txt</code> / <code>.md</code> ici</span>
+        <input type="file" id="files" accept=".txt,.md,text/plain,text/markdown" multiple hidden>
+      </div>
+      <p class="help" id="drop-help">Un fichier = une offre. L’offre et ton profil ne vont qu’au modèle : local, ou Claude via ton abonnement (Anthropic les reçoit alors). Rien n’est envoyé à un recruteur.</p>
+      <div class="actions">
+        <button type="button" class="secondary" id="add">Ajouter tel quel</button>
+        <button type="button" class="secondary" id="split">Détecter plusieurs offres</button>
+      </div>
+      <ol class="offers" id="offers" aria-live="polite"></ol>
+      <button type="button" class="primary" id="generate" disabled>Générer les CV</button>
+      <p class="error" id="offers-error" role="alert" hidden></p>
+    </section>
+
+    <section class="card" aria-labelledby="jobs-title">
+      <h2 id="jobs-title"><span class="step">2</span> CV générés</h2>
+      <p class="empty" id="jobs-empty">Les CV apparaîtront ici, un par offre, avec leur rapport : qualification, exigences couvertes, preuves.</p>
+      <div class="jobs" id="jobs" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>100 % local · aucun envoi automatique · zéro facturation au token</span>
+    <span>Chaque ligne du CV provient de ton profil v4 ; les compétences <em>lab</em> et <em>jamais</em> sont appliquées par le code.</span>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Fit: a safety margin under a full page": {
+      "file": "src/fit.js",
+      "live": "export const SAFETY = 0.015;",
+      "dead": "export const SAFETY = 0;",
+      "expect": [
+        "a layout that only just fills the page is not accepted"
+      ]
+    },
+    "Listing: requirements left out are added": {
+      "file": "src/listing.js",
+      "live": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()));",
+      "dead": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && false);",
+      "expect": [
+        "requirements the analysis left out are added from a focused listing"
+      ]
+    }
+  }
+}

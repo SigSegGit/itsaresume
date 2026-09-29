@@ -1,0 +1,275 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Rules: main missions, then short, then R&D": {
+      "file": "src/profile.js",
+      "live": "need(kinds.every((kind, i) => i === 0 || KINDS.indexOf(kinds[i - 1]) <= KINDS.indexOf(kind)), 'experiences: main",
+      "dead": "need(true, 'experiences: main",
+      "expect": [
+        "main missions come first, then short missions, then R&D, with one reference among the main ones"
+      ]
+    },
+    "Rules: one reference, a main mission": {
+      "file": "src/profile.js",
+      "live": "need(references.length <= 1 && references.every((experience) => kindOf(experience) === 'main'), ",
+      "dead": "need(true, ",
+      "expect": [
+        "main missions come first, then short missions, then R&D, with one reference among the main ones"
+      ]
+    },
+    "Rules: a lab skill is R&D only": {
+      "file": "src/profile.js",
+      "live": "need(skill.where.every((id) => kindById.get(id) === 'rnd'), `skill ${skill.id}: a lab skill",
+      "dead": "need(true, `skill ${skill.id}: a lab skill",
+      "expect": [
+        "a lab skill belongs to R&D only"
+      ]
+    },
+    "Rules: a bullet names only its experience's tools": {
+      "file": "src/profile.js",
+      "live": "need(attributed(byId.get(skill), experience.id), `bullet",
+      "dead": "need(true, `bullet",
+      "expect": [
+        "a bullet or an environment line may only name tools used in that experience"
+      ]
+    },
+    "Rules: an environment line names only its experience's tools": {
+      "file": "src/profile.js",
+      "live": "if (own.length && !own.some((skill) => attributed(skill, experience.id))) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a bullet or an environment line may only name tools used in that experience"
+      ]
+    },
+    "Rules: short and R&D bullets must back a requirement": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) !== 'main' && !backs(bullet)) return;",
+      "dead": "void 0;",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: a main mission always shows": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) === 'main' && ids.length < UNSELECTED_BULLETS) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the main missions are always on the CV, in order, before anything else"
+      ]
+    },
+    "Rules: short missions with nothing to show are left out": {
+      "file": "src/tailor.js",
+      "live": "if (kind === 'short' && ids.length === 0) return [];",
+      "dead": "void 0;",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: R&D with nothing to show is one sober line": {
+      "file": "src/tailor.js",
+      "live": "title: t(sober && experience.title_empty ? experience.title_empty : experience.title),",
+      "dead": "title: t(experience.title),",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: the reference is the most developed": {
+      "file": "src/tailor.js",
+      "live": ".slice(0, experience === reference ? Infinity : most);",
+      "dead": ".slice(0, Infinity);",
+      "expect": [
+        "the reference experience is the most developed"
+      ]
+    },
+    "Rules: a lab skill is labelled on the CV": {
+      "file": "src/tailor.js",
+      "live": "return skill.level === 'lab' ? `${name} (lab)` : name;",
+      "dead": "return name;",
+      "expect": [
+        "a lab skill says so on the CV"
+      ]
+    },
+    "Rules: a lab-only match counts half": {
+      "file": "src/score.js",
+      "live": "met += weight * (labOnly(requirement, lab) ? Math.min(value, LAB_VALUE) : value);",
+      "dead": "met += weight * value;",
+      "expect": [
+        "a requirement met by lab skills only counts half"
+      ]
+    },
+    "Rules: normalisation scores with the lab skills": {
+      "file": "src/normalize.js",
+      "live": "const score = scoreOf(analysis.requirements ?? [], { lab });",
+      "dead": "const score = scoreOf(analysis.requirements ?? []);",
+      "expect": [
+        "a requirement met by lab skills only counts half"
+      ]
+    },
+    "Rules: a never-claimed must is a core gap": {
+      "file": "src/score.js",
+      "live": "if (isNever(requirement, never)) gaps.push(",
+      "dead": "if (false) gaps.push(",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed"
+      ]
+    },
+    "Rules: a lab-only must is a core gap": {
+      "file": "src/score.js",
+      "live": "else if (labOnly(requirement, lab)) gaps.push(",
+      "dead": "else if (false) gaps.push(",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed"
+      ]
+    },
+    "Rules: half the musts missed is the core missed": {
+      "file": "src/score.js",
+      "live": "gaps.length / musts.length >= CORE_MISSED ? 'not-qualified' : 'partial'",
+      "dead": "false ? 'not-qualified' : 'partial'",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed",
+        "the normalised fit carries the qualification"
+      ]
+    },
+    "Rules: only must-haves are the core": {
+      "file": "src/score.js",
+      "live": "const musts = requirements.filter((requirement) => requirement.importance === 'must');",
+      "dead": "const musts = requirements;",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed"
+      ]
+    },
+    "Rules: a never-claimed requirement stays no": {
+      "file": "src/normalize.js",
+      "live": "if (isNever(requirement, profile.never)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a never-claimed skill stays a gap and may not be written"
+      ]
+    },
+    "Rules: normalisation says why a short or R&D bullet went": {
+      "file": "src/normalize.js",
+      "live": "if (kindOf(experience) === 'main') continue;",
+      "dead": "continue;",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: the fit carries the qualification": {
+      "file": "src/normalize.js",
+      "live": "qualification: qualification(analysis.requirements ?? [], { lab, never: profile.never }),",
+      "dead": "qualification: undefined,",
+      "expect": [
+        "the normalised fit carries the qualification",
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: a never-claimed name may not be written": {
+      "file": "src/analysis.js",
+      "live": "if (named) errors.push(`the headline or summary claims ${named}, which the profile says",
+      "dead": "if (false) errors.push(`the headline or summary claims ${named}, which the profile says",
+      "expect": [
+        "a never-claimed skill stays a gap and may not be written"
+      ]
+    },
+    "Provenance: a line is found in the truth document": {
+      "file": "src/evidence.js",
+      "live": "if (!truth.includes(flat(quote))) errors.push(`${label}:",
+      "dead": "if (false) errors.push(`${label}:",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: a composed line brings no number of its own": {
+      "file": "src/evidence.js",
+      "live": "if (!cited.has(number)) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: the English text brings no number of its own": {
+      "file": "src/evidence.js",
+      "live": "if (!french.has(number)) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: Markdown emphasis is not text": {
+      "file": "src/evidence.js",
+      "live": ".replace(/\\*\\*|`/g, '')",
+      "dead": ".replace(/(?!)/g, '')",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: confidence marks are not text": {
+      "file": "src/evidence.js",
+      "live": ".replace(/\\s*\\[(?:✔|~|✘|LAB)[^\\]]*\\]/g, '')",
+      "dead": ".replace(/(?!)/g, '')",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Rules: never-claimed skills are not suggested back": {
+      "file": "src/evidence.js",
+      "live": "if (requirement.match !== 'no' || isNever(requirement, profile.never)) continue;",
+      "dead": "if (requirement.match !== 'no') continue;",
+      "expect": [
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: the prompt marks lab skills": {
+      "file": "src/prompt.js",
+      "live": "const level = skill.level === 'lab' ? 'lab (personal R&D only)' : skill.level;",
+      "dead": "const level = skill.level;",
+      "expect": [
+        "the model is told which skills are lab-only and which are never to be claimed"
+      ]
+    },
+    "Rules: the prompt lists what is never claimed": {
+      "file": "src/prompt.js",
+      "live": "if (never.length) lines.push('', `Never claim",
+      "dead": "if (false) lines.push('', `Never claim",
+      "expect": [
+        "the model is told which skills are lab-only and which are never to be claimed"
+      ]
+    },
+    "Rules: the report states the qualification": {
+      "file": "src/report.js",
+      "live": "...describeQualification(analysis.fit),",
+      "dead": "...[],",
+      "expect": [
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: the report lists what older CVs named": {
+      "file": "src/report.js",
+      "live": "if (older.length) {\n    lines.push('', '**Named in older CVs",
+      "dead": "if (false) {\n    lines.push('', '**Named in older CVs",
+      "expect": [
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: a picked project of a met group stays": {
+      "file": "src/tailor.js",
+      "live": "matched.has(skill) || (picks.has(bullet.id) && groups.has(groupOf.get(skill))));",
+      "dead": "matched.has(skill));",
+      "expect": [
+        "a picked R&D project stays when its skills share a group with a met requirement"
+      ]
+    },
+    "Rules: the group grace is for the model's picks only": {
+      "file": "src/tailor.js",
+      "live": "matched.has(skill) || (picks.has(bullet.id) && groups.has(groupOf.get(skill))));",
+      "dead": "matched.has(skill) || groups.has(groupOf.get(skill)));",
+      "expect": [
+        "a picked R&D project stays when its skills share a group with a met requirement"
+      ]
+    }
+  }
+}

@@ -1,0 +1,70 @@
+# The CV generator (cv/). A pull request is merged only when every job of
+# this workflow and of ci.yml is green (scripts/merge-when-green.sh counts
+# them). No job needs Word, a model or the owner's profile: tests use a
+# fictitious profile and fake models; Word is Windows-desktop only and optional.
+name: CV
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cv-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: cv
+
+jobs:
+  cv-test:
+    name: cv-test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cv/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  cv-catalogue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python scripts/catalogue.py --check
+      # The micro-AI gateway's own logic; no model, no network.
+      - run: python -m unittest -q
+        working-directory: cv/deploy/micro-ai/gateway
+      # tools/esco.py's reading of the ESCO API; no network.
+      - run: python -m unittest discover -q -s tools -p "test_*.py"
+
+  # Break each defence in scripts/sabotage/*.json, check its tests go red,
+  # restore it byte for byte. A test that stays green is decoration.
+  cv-sabotage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cv/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python scripts/sabotage.py

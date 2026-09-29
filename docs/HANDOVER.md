@@ -43,9 +43,10 @@ it. Keep each backend's `timeout_secs` **below** the generator's client
 timeout: the router never cancels a call, and an abandoned one keeps
 Bionic's single slot busy.
 
-**The generator** that uses this router is `D:\GitHub\itsaresume-cv`
-(private, Node.js): its own `docs/HANDOVER.md`; the `/itsaresume` skill
-covers both.
+**The generator** that uses this router is `cv/` in this repository
+(Node.js; moved here from the private `itsaresume-cv` on 2026-09-30): its
+own `cv/docs/HANDOVER.md`; the `/itsaresume` skill covers both. The owner's
+private notes are in `~/.itsaresume/HANDOVER-prive.md`, never here.
 
 **2026-09-28.** PR #6 and PR #7 (8.13) are merged. 8.14 (endpoint
 hardening) is done on `m1/endpoint-hardening`: JSON only (415), any `Origin`

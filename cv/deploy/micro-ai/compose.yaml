@@ -1,0 +1,35 @@
+# A micro-AI for small tasks: read a short request, find equivalences in a
+# list, classify a line, answer a basic question from a simple web search.
+# CPU only, the lightest setup that answers: llama.cpp's server with a 1.5B
+# model, and a gateway in plain Python (gateway/ask.py). Nothing listens
+# beyond this machine's 127.0.0.1.
+#
+#   mkdir -p models && curl -L -o models/model.gguf <a GGUF, see README>
+#   THREADS=4 docker compose up -d        # THREADS = the machine's cores
+#   curl -s localhost:8095/ask -d '{"question":"Que fait Michelin ?","web":true}'
+services:
+  llm:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    restart: unless-stopped
+    command: >
+      -m /models/${MODEL:-model.gguf} --host 0.0.0.0 --port 8080
+      -c ${CONTEXT:-4096} -t ${THREADS:-4} --parallel 1
+    volumes:
+      - ./models:/models:ro
+    ports:
+      - "127.0.0.1:8096:8080"
+    mem_limit: ${LLM_MEMORY:-2500m}
+
+  ask:
+    image: python:3.13-alpine
+    restart: unless-stopped
+    command: python /app/ask.py
+    environment:
+      LLM_URL: http://llm:8080
+    volumes:
+      - ./gateway/ask.py:/app/ask.py:ro
+    ports:
+      - "127.0.0.1:8095:8095"
+    depends_on:
+      - llm
+    mem_limit: 64m

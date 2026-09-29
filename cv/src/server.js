@@ -1,0 +1,262 @@
+// The local web page: paste an email, get one tailored, checked CV per offer.
+//
+// It serves one person on one machine, so it listens on 127.0.0.1 only, and
+// treats every request as possibly forged by another page in the same browser:
+//   - Host must be this server (a DNS-rebinding page sends its own name);
+//   - a POST must come from this origin, carry the page's CSRF token in a
+//     header (a form or a cross-origin page cannot set one), be JSON, and
+//     stay under MAX_BODY;
+//   - every response forbids framing, sniffing and any script not ours (CSP);
+//   - files are served from a fixed list, never from a path in the URL.
+// The page itself only ever sets textContent (test/web.test.js checks it).
+
+import { createServer } from 'node:http';
+import { readFileSync, existsSync, createReadStream } from 'node:fs';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { cleanName } from './guard.js';
+import { looksLikeOffer, OFFER_CHARS } from './intake.js';
+
+export const MAX_BODY = 256 * 1024;
+export const MAX_OFFERS = 6;
+export const MAX_TEXT = 60_000;
+
+const WEB = fileURLToPath(new URL('../web/', import.meta.url));
+const STATIC = {
+  '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  '/style.css': ['style.css', 'text/css; charset=utf-8'],
+};
+const DOWNLOADS = {
+  'cv.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'cv.pdf': 'application/pdf',
+  'report.md': 'text/markdown; charset=utf-8',
+};
+export const HEADERS = {
+  'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+  'X-Frame-Options': 'DENY',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Resource-Policy': 'same-origin',
+  'Cache-Control': 'no-store',
+};
+
+class HttpError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function send(response, status, body, type = 'application/json; charset=utf-8', extra = {}) {
+  response.writeHead(status, { ...HEADERS, 'Content-Type': type, ...extra });
+  response.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
+}
+
+function readBody(request) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    request.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > MAX_BODY) {
+        reject(new HttpError(413, `the request is larger than ${MAX_BODY} bytes`));
+        request.destroy();
+      } else chunks.push(chunk);
+    });
+    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    request.on('error', reject);
+  });
+}
+
+const sameToken = (given, token) =>
+  typeof given === 'string' && given.length === token.length && timingSafeEqual(Buffer.from(given), Buffer.from(token));
+
+/** What a public visitor sees of a finished run: never the owner's notes. */
+const PUBLIC_FILES = new Set(['cv.pdf', 'cv.docx']);
+
+/** A job as the page sees it. */
+function view(job, { detail = false, publicMode = null } = {}) {
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error: job.error ?? null };
+  if (!job.result) return base;
+  const { fit } = job.result.view;
+  base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
+  if (!detail) return base;
+  const full = { ...base, ...job.result.view, fit, report: job.result.report };
+  if (!publicMode) return full;
+  // Past applications, sources, what the owner must confirm, the model's
+  // comment and the report are the owner's working notes.
+  return {
+    ...full,
+    fit: { ...fit, rationale: '' },
+    older: [],
+    flags: [],
+    verification: [],
+    report: undefined,
+    files: full.files.filter((name) => PUBLIC_FILES.has(name)),
+  };
+}
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+/** Page loads remembered in public mode (each is a visitor with its own jobs). */
+const MAX_VISITORS = 10_000;
+
+/**
+ * The server, not yet listening. Everything that touches a model, Word or the
+ * disk comes in through `deps`, so the tests run it with fakes.
+ */
+export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null }) {
+  const jobs = new Map();
+  const queue = [];
+  let running = false;
+
+  // Public mode (behind a reverse proxy, open to anyone): each page load is a
+  // visitor with its own token and sees only its own jobs; generations are
+  // capped per visitor per hour, per day for everyone, and in the queue, so
+  // nobody can spend the owner's model quota beyond a known bound.
+  const visitors = new Map();
+  const accepted = [];
+  const pageToken = () => {
+    if (!publicMode) return token;
+    const fresh = randomBytes(24).toString('hex');
+    visitors.set(fresh, new Set());
+    if (visitors.size > MAX_VISITORS) visitors.delete(visitors.keys().next().value);
+    return fresh;
+  };
+  const visitorOf = (request) => {
+    const given = request.headers['x-csrf-token'];
+    return typeof given === 'string' && visitors.has(given) ? given : null;
+  };
+  // The proxy sets X-Forwarded-For to the client's address; the last entry is its own.
+  const clientOf = (request) => String(request.headers['x-forwarded-for'] ?? '').split(',').pop().trim() || request.socket.remoteAddress;
+  function admit(request, count) {
+    const now = publicMode.now();
+    while (accepted.length && accepted[0].at <= now - DAY) accepted.shift();
+    const client = clientOf(request);
+    if (queue.length + (running ? 1 : 0) + count > publicMode.maxQueued) {
+      throw new HttpError(429, 'Trop de CV en cours de génération : réessaie dans quelques minutes.');
+    }
+    if (accepted.filter((entry) => entry.client === client && entry.at > now - HOUR).length + count > publicMode.perVisitorPerHour) {
+      throw new HttpError(429, `Au plus ${publicMode.perVisitorPerHour} CV par heure et par visiteur : réessaie plus tard.`);
+    }
+    if (accepted.length + count > publicMode.perDay) {
+      throw new HttpError(429, `Le plafond de ${publicMode.perDay} CV par jour est atteint aujourd’hui : réessaie demain.`);
+    }
+    for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });
+  }
+
+  async function work() {
+    if (running) return;
+    running = true;
+    while (queue.length) {
+      const job = queue.shift();
+      job.status = 'running';
+      try {
+        job.result = await deps.tailor({ offer: job.text, onStep: (step, detail = {}) => job.steps.push({ step, ...detail }) });
+        job.status = 'done';
+      } catch (error) {
+        job.status = 'failed';
+        job.error = String(error.message ?? error).slice(0, 2000);
+      }
+    }
+    running = false;
+  }
+
+  const server = createServer(async (request, response) => {
+    try {
+      const { port } = server.address();
+      const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
+      const origins = hosts.map((host) => `http://${host}`);
+      if (publicMode) {
+        hosts.push(publicMode.host);
+        origins.push(`https://${publicMode.host}`);
+      }
+      if (!hosts.includes(request.headers.host)) throw new HttpError(421, 'this server only answers to its own address');
+      const url = new URL(request.url, `http://${request.headers.host}`);
+      const path = url.pathname;
+
+      if (request.method === 'GET') {
+        if (path === '/') {
+          const html = readFileSync(join(WEB, 'index.html'), 'utf8').replace('__CSRF_TOKEN__', pageToken());
+          return send(response, 200, html, 'text/html; charset=utf-8');
+        }
+        if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
+        if (path === '/api/status') return send(response, 200, { ...(await deps.status()), ...(publicMode ? { public: true } : {}) });
+        if (path === '/api/jobs') {
+          const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
+          return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job)));
+        }
+        const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+))?$/);
+        const job = match && jobs.get(match[1]);
+        if (!job) throw new HttpError(404, 'not found');
+        if (!match[2]) return send(response, 200, view(job, { detail: true, publicMode }));
+        const type = DOWNLOADS[match[2]];
+        const listed = type && job.result?.view.files.includes(match[2]) && (!publicMode || PUBLIC_FILES.has(match[2]));
+        const file = listed && join(job.result.dir, match[2]);
+        if (!file || !existsSync(file)) throw new HttpError(404, 'not found');
+        response.writeHead(200, { ...HEADERS, 'Content-Type': type, 'Content-Disposition': `attachment; filename="${job.result.name}-${match[2]}"` });
+        return createReadStream(file).pipe(response);
+      }
+
+      if (request.method !== 'POST') throw new HttpError(405, 'GET or POST only');
+      if (!origins.includes(request.headers.origin)) throw new HttpError(403, 'a request from another origin');
+      const visitor = publicMode ? visitorOf(request) : null;
+      if (publicMode ? !visitor : !sameToken(request.headers['x-csrf-token'], token)) throw new HttpError(403, 'a missing or wrong CSRF token');
+      if (!/^application\/json\b/.test(request.headers['content-type'] ?? '')) throw new HttpError(415, 'JSON only');
+      let body;
+      try {
+        body = JSON.parse(await readBody(request));
+      } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError(400, 'the body is not JSON');
+      }
+
+      if (path === '/api/split') {
+        // A free text sent to the model on the owner's quota: the owner's alone.
+        if (publicMode) throw new HttpError(403, 'le découpage de mails n’est pas disponible en accès public : colle une offre à la fois');
+        if (typeof body?.text !== 'string' || !body.text.trim() || body.text.length > MAX_TEXT) {
+          throw new HttpError(400, `text: a non-empty string of at most ${MAX_TEXT} characters`);
+        }
+        return send(response, 200, await deps.split(body.text));
+      }
+      if (path === '/api/jobs') {
+        const offers = body?.offers;
+        if (!Array.isArray(offers) || offers.length === 0 || offers.length > MAX_OFFERS) {
+          throw new HttpError(400, `offers: from 1 to ${MAX_OFFERS}`);
+        }
+        const created = offers.map((offer) => {
+          if (typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT) {
+            throw new HttpError(400, `offer text: a non-empty string of at most ${MAX_TEXT} characters`);
+          }
+          if (publicMode && !looksLikeOffer(offer.text)) {
+            throw new HttpError(400, `Ce texte ne ressemble pas à une offre d’emploi (entre ${OFFER_CHARS.min} et ${OFFER_CHARS.max} caractères) : colle le texte d’une offre.`);
+          }
+          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [] };
+        });
+        // An offer already answered is answered from its run: no model call, not counted.
+        const reused = created.map((job) => (publicMode && deps.reuse ? deps.reuse(job.text) : null));
+        if (publicMode) admit(request, reused.filter((result) => !result).length);
+        created.forEach((job, index) => {
+          jobs.set(job.id, job);
+          visitors.get(visitor)?.add(job.id);
+          if (reused[index]) {
+            job.result = reused[index];
+            job.status = 'done';
+          } else {
+            queue.push(job);
+          }
+        });
+        work();
+        return send(response, 202, created.map((job) => view(job)));
+      }
+      throw new HttpError(404, 'not found');
+    } catch (error) {
+      const status = error instanceof HttpError ? error.status : 500;
+      if (!response.headersSent) send(response, status, { error: status === 500 ? 'internal error' : error.message });
+      if (status === 500) process.stderr.write(`itsacv serve: ${error.stack ?? error}\n`);
+    }
+  });
+  return { server, token, jobs };
+}

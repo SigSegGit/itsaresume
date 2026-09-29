@@ -1,0 +1,25 @@
+# The public front, on an always-on machine (the owner's Freebox VM): Caddy
+# terminates HTTPS for each sub-domain and passes cv.<domain> to the laptop
+# through an SSH tunnel the laptop opens (deploy/laptop/public.sh), so the
+# laptop itself is never reachable from the Internet.
+#
+#   cp .env.example .env    # then set CV_HOST, ACME_EMAIL
+#   docker compose up -d
+#
+# Host networking: Caddy listens on the VM's 80/443 and reaches the tunnel on
+# the VM's own 127.0.0.1:18790.
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    network_mode: host
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./offline:/srv/offline:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,337 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Web: only this server's own host name": {
+      "file": "src/server.js",
+      "live": "if (!hosts.includes(request.headers.host)) throw new HttpError(421,",
+      "dead": "if (false) throw new HttpError(421,",
+      "expect": [
+        "a request naming another host is refused"
+      ]
+    },
+    "Web: a POST comes from this origin": {
+      "file": "src/server.js",
+      "live": "if (!origins.includes(request.headers.origin)) throw new HttpError(403, ",
+      "dead": "if (false) throw new HttpError(403, ",
+      "expect": [
+        "a POST from another origin, without the token, or not in JSON is refused"
+      ]
+    },
+    "Web: a POST carries the CSRF token": {
+      "file": "src/server.js",
+      "live": "if (publicMode ? !visitor : !sameToken(request.headers['x-csrf-token'], token)) throw new HttpError(403, ",
+      "dead": "if (false) throw new HttpError(403, ",
+      "expect": [
+        "a POST from another origin, without the token, or not in JSON is refused"
+      ]
+    },
+    "Web: a POST is JSON": {
+      "file": "src/server.js",
+      "live": "if (!/^application\\/json\\b/.test(request.headers['content-type'] ?? '')) throw new HttpError(415,",
+      "dead": "if (false) throw new HttpError(415,",
+      "expect": [
+        "a POST from another origin, without the token, or not in JSON is refused"
+      ]
+    },
+    "Web: a body is bounded": {
+      "file": "src/server.js",
+      "live": "if (size > MAX_BODY) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a POST from another origin, without the token, or not in JSON is refused"
+      ]
+    },
+    "Web: only our own scripts run (CSP)": {
+      "file": "src/server.js",
+      "live": "'Content-Security-Policy': \"default-src 'none'; script-src 'self';",
+      "dead": "'Content-Security-Policy': \"default-src *; script-src *;",
+      "expect": [
+        "the page carries its CSRF token, and every response forbids framing, sniffing and foreign scripts"
+      ]
+    },
+    "Web: no MIME sniffing": {
+      "file": "src/server.js",
+      "live": "'X-Content-Type-Options': 'nosniff',",
+      "dead": "'X-Content-Type-Options': 'sniff',",
+      "expect": [
+        "the page carries its CSRF token, and every response forbids framing, sniffing and foreign scripts"
+      ]
+    },
+    "Web: no framing": {
+      "file": "src/server.js",
+      "live": "'X-Frame-Options': 'DENY',",
+      "dead": "'X-Frame-Options': 'SAMEORIGIN',",
+      "expect": [
+        "the page carries its CSRF token, and every response forbids framing, sniffing and foreign scripts"
+      ]
+    },
+    "Web: the page carries the token": {
+      "file": "src/server.js",
+      "live": ".replace('__CSRF_TOKEN__', pageToken())",
+      "dead": ".replace('__CSRF_TOKEN__', '')",
+      "expect": [
+        "the page carries its CSRF token, and every response forbids framing, sniffing and foreign scripts"
+      ]
+    },
+    "Web: one run at a time": {
+      "file": "src/server.js",
+      "live": "if (running) return;",
+      "dead": "void running;",
+      "expect": [
+        "offers are split, then tailored one after the other, with their progress"
+      ]
+    },
+    "Web: a failed run does not stop the queue": {
+      "file": "src/server.js",
+      "live": "job.status = 'failed';",
+      "dead": "throw error;",
+      "expect": [
+        "a failed run shows its error, and the next one still runs"
+      ]
+    },
+    "Web: only the run's listed files download": {
+      "file": "src/server.js",
+      "live": "const listed = type && job.result?.view.files.includes(match[2]) && (!publicMode || PUBLIC_FILES.has(match[2]));",
+      "dead": "const listed = type && (!publicMode || PUBLIC_FILES.has(match[2]));",
+      "expect": [
+        "a CV downloads as an attachment, and nothing outside the run's listed files does"
+      ]
+    },
+    "Web: a download is an attachment": {
+      "file": "src/server.js",
+      "live": "'Content-Disposition': `attachment; filename=",
+      "dead": "'Content-Disposition': `inline; filename=",
+      "expect": [
+        "a CV downloads as an attachment, and nothing outside the run's listed files does"
+      ]
+    },
+    "Web: a split text is bounded": {
+      "file": "src/server.js",
+      "live": "if (typeof body?.text !== 'string' || !body.text.trim() || body.text.length > MAX_TEXT) {",
+      "dead": "if (typeof body?.text !== 'string' || !body.text.trim()) {",
+      "expect": [
+        "what a job may carry is bounded, and its title is a plain name"
+      ]
+    },
+    "Web: a batch is bounded": {
+      "file": "src/server.js",
+      "live": "offers.length > MAX_OFFERS",
+      "dead": "offers.length > Infinity",
+      "expect": [
+        "what a job may carry is bounded, and its title is a plain name"
+      ]
+    },
+    "Web: a job title is a plain name": {
+      "file": "src/server.js",
+      "live": "title: cleanName(offer.title ?? '') ?? 'Offre',",
+      "dead": "title: String(offer.title ?? 'Offre'),",
+      "expect": [
+        "what a job may carry is bounded, and its title is a plain name"
+      ]
+    },
+    "Web: the view lists existing files only": {
+      "file": "src/view.js",
+      "live": "files: FILES.filter((name) => existsSync(join(dir, name))),",
+      "dead": "files: FILES,",
+      "expect": [
+        "the page's view of a run lists only the files that exist"
+      ]
+    },
+    "Web: the script writes text only": {
+      "file": "web/app.js",
+      "live": "const POLL_MS = 1500;",
+      "dead": "const POLL_MS = 1500; document.body.innerHTML = '';",
+      "expect": [
+        "the script never parses HTML nor evaluates code"
+      ]
+    },
+    "Web: the page has no inline script": {
+      "file": "web/index.html",
+      "live": "<script type=\"module\" src=\"/app.js\"></script>",
+      "dead": "<script type=\"module\" src=\"/app.js\"></script><script>alert(1)</script>",
+      "expect": [
+        "the page holds no inline script, style or handler, and loads nothing from elsewhere"
+      ]
+    },
+    "Split: a range stays inside the text": {
+      "file": "src/split.js",
+      "live": "if (!isRange(range, lines.length)) return { reason:",
+      "dead": "if (false) return { reason:",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: an offer holds a few lines": {
+      "file": "src/split.js",
+      "live": "if (filled < MIN_LINES) return",
+      "dead": "if (false) return",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: the shared range stays inside the text": {
+      "file": "src/split.js",
+      "live": "if (shared !== null && !isRange(shared, lines.length)) return",
+      "dead": "if (false) return",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: ranges do not overlap": {
+      "file": "src/split.js",
+      "live": "if (all[i][0] <= all[i - 1][1]) return { reason:",
+      "dead": "if (false) return { reason:",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: the shared context comes first": {
+      "file": "src/split.js",
+      "live": "const context = checked.shared ? [...cut(checked.shared), ''] : [];",
+      "dead": "const context = [];",
+      "expect": [
+        "each offer is cut from the lines the model points at, with the shared context first"
+      ]
+    },
+    "Split: a title is a plain name": {
+      "file": "src/split.js",
+      "live": "title: cleanName(title ?? '') ?? firstLine(cut(range)),",
+      "dead": "title: title || firstLine(cut(range)),",
+      "expect": [
+        "a title is a plain, short name, or the first line of the offer"
+      ]
+    },
+    "Split: the text is fenced": {
+      "file": "src/split.js",
+      "live": "return fence(numbered).join('\\n');",
+      "dead": "return numbered;",
+      "expect": [
+        "the model is shown numbered lines inside a fence it cannot close"
+      ]
+    },
+    "CLI: --split tailors each offer found": {
+      "file": "bin/itsacv.js",
+      "live": "offers.push(...found.offers.map((offer) => offer.text));",
+      "dead": "offers.push(text);",
+      "expect": [
+        "itsacv tailor takes several offer files, and --split finds several offers in one"
+      ]
+    },
+    "CLI: the worst exit code wins": {
+      "file": "bin/itsacv.js",
+      "live": "if (worst) process.exit(worst);",
+      "dead": "void worst;",
+      "expect": [
+        "itsacv tailor writes no CV when the answer stays invalid"
+      ]
+    },
+    "Run: every CV line traces to the truth document": {
+      "file": "src/run.js",
+      "live": "const quotes = [...checkQuotes(full, texts), ...checkProvenance(full, texts)];",
+      "dead": "const quotes = [...checkQuotes(full, texts)];",
+      "expect": [
+        "itsacv tailor refuses a CV line its truth document does not hold"
+      ]
+    },
+    "Run: the report lists what older CVs named": {
+      "file": "src/run.js",
+      "live": "const older = olderMentions(analysis, full, texts);",
+      "dead": "const older = [];",
+      "expect": [
+        "itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why"
+      ]
+    },
+    "Public: another host is refused": {
+      "file": "src/server.js",
+      "live": "        hosts.push(publicMode.host);\n",
+      "dead": "",
+      "expect": [
+        "public mode answers to its public name and origin, not to another"
+      ]
+    },
+    "Public: a visitor sees only its jobs": {
+      "file": "src/server.js",
+      "live": "filter((job) => !mine || mine.has(job.id))",
+      "dead": "filter(() => true)",
+      "expect": [
+        "in public mode a visitor sees only the jobs of its own page"
+      ]
+    },
+    "Public: one token per page load": {
+      "file": "src/server.js",
+      "live": "    if (!publicMode) return token;\n    const fresh = randomBytes(24).toString('hex');",
+      "dead": "    const fresh = token;",
+      "expect": [
+        "in public mode a visitor sees only the jobs of its own page"
+      ]
+    },
+    "Public: the hourly cap per visitor": {
+      "file": "src/server.js",
+      "live": ".length + count > publicMode.perVisitorPerHour) {",
+      "dead": ".length + count > Infinity) {",
+      "expect": [
+        "in public mode generations are capped per visitor per hour and per day, and the queue is bounded"
+      ]
+    },
+    "Public: the daily cap": {
+      "file": "src/server.js",
+      "live": "if (accepted.length + count > publicMode.perDay) {",
+      "dead": "if (false) {",
+      "expect": [
+        "in public mode generations are capped per visitor per hour and per day, and the queue is bounded"
+      ]
+    },
+    "Public: the bounded queue": {
+      "file": "src/server.js",
+      "live": "if (queue.length + (running ? 1 : 0) + count > publicMode.maxQueued) {",
+      "dead": "if (false) {",
+      "expect": [
+        "in public mode generations are capped per visitor per hour and per day, and the queue is bounded"
+      ]
+    },
+    "Public: the owner notes are hidden": {
+      "file": "src/server.js",
+      "live": "  if (!publicMode) return full;\n",
+      "dead": "  return full;\n",
+      "expect": [
+        "in public mode the owner's internal notes and the report are not served, and splitting is off"
+      ]
+    },
+    "Public: no report download": {
+      "file": "src/server.js",
+      "live": "&& (!publicMode || PUBLIC_FILES.has(match[2]));",
+      "dead": "&& true;",
+      "expect": [
+        "in public mode the owner's internal notes and the report are not served, and splitting is off"
+      ]
+    },
+    "Public: no split": {
+      "file": "src/server.js",
+      "live": "        if (publicMode) throw new HttpError(403, 'le découpage",
+      "dead": "        if (false) throw new HttpError(403, 'le découpage",
+      "expect": [
+        "in public mode the owner's internal notes and the report are not served, and splitting is off"
+      ]
+    },
+    "Page: the token goes with reads": {
+      "file": "web/app.js",
+      "live": "    ? { headers: { 'X-CSRF-Token': token } }",
+      "dead": "    ? {}",
+      "expect": [
+        "the page sends its token with every call, reads included (in public mode it names the visitor)"
+      ]
+    },
+    "Page: public mode hides splitting": {
+      "file": "web/app.js",
+      "live": "      $('split').hidden = true;",
+      "dead": "      void 0;",
+      "expect": [
+        "in public mode the page offers one offer at a time, with no email splitting"
+      ]
+    }
+  }
+}

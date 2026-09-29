@@ -1,0 +1,220 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Client: the timeout is the owner's to set": {
+      "file": "bin/itsacv.js",
+      "live": "complete({ url: options.url, system, prompt, timeoutMs })",
+      "dead": "complete({ url: options.url, system, prompt })",
+      "expect": [
+        "--timeout and ITSACV_TIMEOUT set how long one answer may take"
+      ]
+    },
+    "Client: ITSACV_TIMEOUT sets the default": {
+      "file": "bin/itsacv.js",
+      "live": "timeout: process.env.ITSACV_TIMEOUT || String(TIMEOUT_MS / 1000),",
+      "dead": "timeout: String(TIMEOUT_MS / 1000),",
+      "expect": [
+        "--timeout and ITSACV_TIMEOUT set how long one answer may take"
+      ]
+    },
+    "Client: a timeout is a number of seconds above 0": {
+      "file": "bin/itsacv.js",
+      "live": "if (!/^\\d+(\\.\\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "--timeout and ITSACV_TIMEOUT set how long one answer may take"
+      ]
+    },
+    "Client: the usage ties the timeout to the router's": {
+      "file": "bin/itsacv.js",
+      "live": "must exceed the router backend's timeout_secs",
+      "dead": "should be long enough",
+      "expect": [
+        "the usage says the client's timeout must exceed the router backend's"
+      ]
+    },
+    "Client: a cut answer fails at once": {
+      "file": "src/llm.js",
+      "live": "          if (!ended) {",
+      "dead": "          if (false) {",
+      "expect": [
+        "a connection cut mid-answer is an error at once, not a wait for the timer"
+      ]
+    },
+    "Client: a refusal carries each backend's reason": {
+      "file": "src/llm.js",
+      "live": "${reason}${attemptsOf(parsed.error)}",
+      "dead": "${reason}",
+      "expect": [
+        "a router refusal carries each backend's own reason"
+      ]
+    },
+    "Word: a request has its own timeout": {
+      "file": "src/word.js",
+      "live": "      }, timeoutMs);",
+      "dead": "      }, timeoutMs * 20);",
+      "expect": [
+        "a Word request left unanswered fails after its timeout, and the helper is stopped with all it started"
+      ]
+    },
+    "Word: a helper that times out is killed with all it started": {
+      "file": "src/word.js",
+      "live": "        killTree(child);",
+      "dead": "        child.kill();",
+      "expect": [
+        "a Word request left unanswered fails after its timeout, and the helper is stopped with all it started"
+      ]
+    },
+    "Word: a stopped helper refuses at once": {
+      "file": "src/word.js",
+      "live": "      if (exited) return reject(new Error(exited));",
+      "dead": "      if (false) return reject(new Error(exited));",
+      "expect": [
+        "once the helper has exited, every request fails at once, saying so"
+      ]
+    },
+    "Run: Word failing leaves the CV, unfitted": {
+      "file": "src/run.js",
+      "live": "      return unfitted(`Word failed (${error.message}); cv.docx is not fitted to the page`, true);",
+      "dead": "      throw error;",
+      "expect": [
+        "Word failing while fitting the page still gives the CV, unfitted, and says why",
+        "Word failing half-way through the PDF export leaves no PDF behind",
+        "itsacv tailor: Word failing on an offer costs neither its CV nor the next offers, and the exit code says so"
+      ]
+    },
+    "Run: a half-written PDF is removed": {
+      "file": "src/run.js",
+      "live": "      rmSync(pdf, { force: true });",
+      "dead": "      void pdf;",
+      "expect": [
+        "Word failing half-way through the PDF export leaves no PDF behind"
+      ]
+    },
+    "Run: an unreadable PDF text skips the ATS check only": {
+      "file": "src/run.js",
+      "live": "return { layout, ats: null, skipped: {",
+      "dead": "return { layout, ats: null, skipped: null, lost: {",
+      "expect": [
+        "a PDF whose text cannot be read keeps the fitted CV and its PDF, and says the ATS check was skipped"
+      ]
+    },
+    "Run: the report says what was not done": {
+      "file": "src/report.js",
+      "live": "if (skipped) lines.push('', `**Not done:** ${line(skipped.reason)}`);",
+      "dead": "void skipped;",
+      "expect": [
+        "Word failing while fitting the page still gives the CV, unfitted, and says why",
+        "without Word, or with the layout turned off, the report says which"
+      ]
+    },
+    "Web: the view carries what was skipped": {
+      "file": "src/view.js",
+      "live": "    skipped: skipped ?? null,",
+      "dead": "    skipped: null,",
+      "expect": [
+        "Word failing while fitting the page still gives the CV, unfitted, and says why"
+      ]
+    },
+    "Web: the card says what was not done": {
+      "file": "web/app.js",
+      "live": "detail.skipped ? h('p', { class: 'gaps', text: `Non fait",
+      "dead": "null ? h('p', { class: 'gaps', text: `Non fait",
+      "expect": [
+        "a card whose layout was skipped says what was not done, and why"
+      ]
+    },
+    "CLI: a Word failure is in the exit code": {
+      "file": "bin/itsacv.js",
+      "live": "        worst = Math.max(worst, 5);",
+      "dead": "        void worst;",
+      "expect": [
+        "itsacv tailor: Word failing on an offer costs neither its CV nor the next offers, and the exit code says so"
+      ]
+    },
+    "CLI: an unexpected error costs only its offer": {
+      "file": "bin/itsacv.js",
+      "live": "      worst = Math.max(worst, error instanceof RunError ? error.code : 1);",
+      "dead": "      if (!(error instanceof RunError)) throw error; worst = Math.max(worst, error.code);",
+      "expect": [
+        "itsacv tailor: an unexpected error in one offer does not stop the offers after it"
+      ]
+    },
+    "Page: no null part on a card": {
+      "file": "web/app.js",
+      "live": "children.push(...resultOf(job, detail).filter(Boolean));",
+      "dead": "children.push(...resultOf(job, detail));",
+      "expect": [
+        "a finished card never shows a literal null"
+      ]
+    },
+    "Page: the pill names the router": {
+      "file": "web/app.js",
+      "live": "router.up ? 'Routeur joignable' : 'Routeur injoignable'",
+      "dead": "router.up ? 'Modèle joignable' : 'Routeur injoignable'",
+      "expect": [
+        "the status pill says the router answers, not that the model does"
+      ]
+    },
+    "Page: qualities are listed apart": {
+      "file": "web/app.js",
+      "live": "const qualities = detail.requirements.filter((r) => r.kind === 'quality');",
+      "dead": "const qualities = [];",
+      "expect": [
+        "a personal quality is never shown as a failed requirement"
+      ]
+    },
+    "View: the kind reaches the page": {
+      "file": "src/view.js",
+      "live": "kind: requirement.kind === 'quality' ? 'quality' : 'skill',",
+      "dead": "kind: 'skill',",
+      "expect": [
+        "the job view says which rows are personal qualities and which matches are the model reading"
+      ]
+    },
+    "Page: an unbacked quality is for the interview, not a no": {
+      "file": "web/app.js",
+      "live": ": `${r.name} — à montrer en entretien : ton profil n’en dit rien encore`,",
+      "dead": ": `${r.name} — non`,",
+      "expect": [
+        "a personal quality is never shown as a failed requirement"
+      ]
+    },
+    "Page: two offers in one text are refused": {
+      "file": "web/app.js",
+      "live": "  if (repeatedHeading(clean)) {",
+      "dead": "  if (false) {",
+      "expect": [
+        "a text holding two offers is not added as one"
+      ]
+    },
+    "Page: gap labels in French": {
+      "file": "web/app.js",
+      "live": "${gaps.map(gapLabel).join(",
+      "dead": "${gaps.join(",
+      "expect": [
+        "a match the profile does not name is shown as the model reading, to verify, in French"
+      ]
+    },
+    "Page: a judged match shows its note, to verify": {
+      "file": "web/app.js",
+      "live": "const judged = r.judged ? h('div'",
+      "dead": "const judged = false ? h('div'",
+      "expect": [
+        "a match the profile does not name is shown as the model reading, to verify, in French"
+      ]
+    },
+    "View: a judged match reaches the page": {
+      "file": "src/view.js",
+      "live": "      judged: requirement.judged === true,",
+      "dead": "      judged: false,",
+      "expect": [
+        "the job view says which rows are personal qualities and which matches are the model reading"
+      ]
+    }
+  }
+}
