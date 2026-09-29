@@ -1,7 +1,7 @@
 //! `ClaudeCodeBackend` driving a real child process: the fake `claude` built
 //! from `src/bin/itsaresume-fake-claude.rs`, which records what it received.
 
-use itsaresume_router::claude_code::{ClaudeCodeBackend, METERED_ENV};
+use itsaresume_router::claude_code::{ClaudeCodeBackend, DEFAULT_SYSTEM_PROMPT, METERED_ENV};
 use itsaresume_router::{BackendError, Completion, Request};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -54,6 +54,20 @@ fn backend(scene: &Scene) -> ClaudeCodeBackend {
 fn recorded_args(scene: &Scene) -> Vec<String> {
     let raw = std::fs::read_to_string(scene.record.join("args.json")).expect("args recorded");
     serde_json::from_str(&raw).expect("args are a JSON list")
+}
+
+/// The system prompt as the fake read it from `--system-prompt-file`.
+fn recorded_system(scene: &Scene) -> String {
+    std::fs::read_to_string(scene.record.join("system.txt"))
+        .expect("the fake read a --system-prompt-file")
+}
+
+fn system_file_arg(args: &[String]) -> PathBuf {
+    let position = args
+        .iter()
+        .position(|arg| arg == "--system-prompt-file")
+        .expect("--system-prompt-file is passed");
+    PathBuf::from(&args[position + 1])
 }
 
 fn success_env(scene: &Scene) -> Vec<(OsString, OsString)> {
@@ -116,7 +130,7 @@ fn the_cli_runs_with_json_output_and_no_tools() {
         args.contains(&"--no-session-persistence".to_owned()),
         "{args:?}"
     );
-    assert!(has_pair("--system-prompt", "You write CVs."), "{args:?}");
+    assert_eq!(recorded_system(&scene), "You write CVs.");
     assert!(has_pair("--model", "sonnet"), "{args:?}");
     // No user or project settings: an `env` block there could route the child
     // to a paid gateway after the environment scrub. Observed on 2.1.162: the
@@ -137,15 +151,125 @@ fn without_a_system_prompt_a_neutral_one_replaces_claude_codes_own() {
         .expect("the fake answers");
 
     let args = recorded_args(&scene);
-    let position = args
-        .iter()
-        .position(|arg| arg == "--system-prompt")
-        .expect("a system prompt is always passed");
-    assert!(!args[position + 1].is_empty());
+    assert_eq!(recorded_system(&scene), DEFAULT_SYSTEM_PROMPT);
     assert!(
         !args.contains(&"--model".to_owned()),
         "no model unless configured"
     );
+}
+
+/// The system prompt goes through a file, never argv (observed on 2.1.162:
+/// `--system-prompt-file` is read as UTF-8). On the command line, a long one
+/// (a whole profile) or one holding a NUL failed the spawn as `Other`, and
+/// argv is readable by every local process.
+#[test]
+fn a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line() {
+    let scene = scene();
+    let system = format!(
+        "Profil : {}\0fin — é",
+        "ingénieur SRE, 25 ans. ".repeat(4_500)
+    );
+    assert!(system.len() > 100_000);
+    let request = Request {
+        prompt: "p".into(),
+        system: Some(system.clone()),
+    };
+
+    let outcome = backend(&scene).complete_with_env(&request, success_env(&scene));
+
+    assert_eq!(
+        outcome,
+        Ok(Completion {
+            text: "Synthetic answer.".into()
+        })
+    );
+    assert!(
+        recorded_system(&scene) == system,
+        "the system prompt arrives whole"
+    );
+    let args = recorded_args(&scene);
+    assert!(!args.contains(&"--system-prompt".to_owned()), "{args:?}");
+    assert!(
+        args.iter().all(|arg| !arg.contains("ingénieur SRE")),
+        "the system prompt must not be on the command line"
+    );
+}
+
+#[test]
+fn the_system_prompt_file_is_removed_once_the_cli_has_answered() {
+    let scene = scene();
+
+    backend(&scene)
+        .complete_with_env(&Request::new("p"), success_env(&scene))
+        .expect("the fake answers");
+
+    let file = system_file_arg(&recorded_args(&scene));
+    assert!(file.is_absolute(), "{file:?}");
+    assert!(!file.exists(), "left behind: {file:?}");
+}
+
+#[test]
+fn the_system_prompt_file_is_removed_when_the_cli_is_killed() {
+    let scene = scene();
+    let mut env = success_env(&scene);
+    env.push(("FAKE_CLAUDE_SLEEP_MS".into(), "5000".into()));
+
+    let outcome = backend(&scene)
+        .with_timeout(Duration::from_millis(500))
+        .complete_with_env(&Request::new("p"), env);
+
+    assert!(
+        matches!(outcome, Err(BackendError::Unreachable(_))),
+        "{outcome:?}"
+    );
+    let file = system_file_arg(&recorded_args(&scene));
+    assert!(!file.exists(), "left behind: {file:?}");
+}
+
+/// The server runs up to four completions at once, in one working directory:
+/// each must get its own file.
+#[test]
+fn concurrent_requests_each_get_their_own_system_prompt() {
+    let workdir = tempfile::tempdir().expect("temp dir");
+    let calls: Vec<_> = ["System A.", "System B."]
+        .into_iter()
+        .map(|system| {
+            let scene = scene();
+            let workdir = workdir.path().to_owned();
+            std::thread::spawn(move || {
+                let mut env = success_env(&scene);
+                env.push(("FAKE_CLAUDE_SLEEP_MS".into(), "300".into()));
+                let request = Request {
+                    prompt: "p".into(),
+                    system: Some(system.into()),
+                };
+                let outcome = backend(&scene)
+                    .with_workdir(workdir)
+                    .complete_with_env(&request, env);
+                (outcome, recorded_system(&scene), system)
+            })
+        })
+        .collect();
+
+    for call in calls {
+        let (outcome, received, sent) = call.join().expect("no panic");
+        assert!(outcome.is_ok(), "{outcome:?}");
+        assert_eq!(received, sent);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn the_system_prompt_file_is_readable_by_its_owner_only() {
+    let scene = scene();
+
+    backend(&scene)
+        .complete_with_env(&Request::new("p"), success_env(&scene))
+        .expect("the fake answers");
+
+    let mode =
+        std::fs::read_to_string(scene.record.join("system-mode.txt")).expect("mode recorded");
+    assert_eq!(mode, "600");
 }
 
 /// Claude Code prefers `ANTHROPIC_API_KEY` over the subscription when it is
