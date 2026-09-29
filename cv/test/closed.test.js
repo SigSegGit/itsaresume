@@ -204,6 +204,13 @@ test('a title naming one hidden must is not pushed out for another', () => {
 test('a must met through a visible skill never takes the headline: the skills column is its place', () => {
   const p = withMeta();
   p.titles.push({ id: 'ora', fr: 'DBA Oracle', en: 'Oracle DBA' });
-  const { analysis } = normalize(withMust('Oracle', 'oracle'), p, { offer: 'Must have: PostgreSQL, Oracle.' });
+  // Five met fillers before Oracle in the visible db group: the column's cap
+  // (MAX_GROUP_SKILLS) cuts Oracle, so only the hidden-group rule keeps its
+  // title out of the headline.
+  const fillers = ['etcd', 'consul', 'vault', 'nats', 'minio'];
+  p.skills.push(...[...fillers, 'oracle'].map((id) => ({ id, name: id, group: 'db', level: 'proficient', aliases: [] })));
+  const model = withMust('Oracle', 'oracle');
+  model.requirements.splice(1, 0, ...fillers.map((id) => ({ name: id, importance: 'nice', match: 'yes', skills: [id], note: '' })));
+  const { analysis } = normalize(model, p, { offer: 'Must have: PostgreSQL, Oracle. Nice: etcd, consul, vault, nats, minio.' });
   assert.equal(analysis.headline, 'Senior SRE engineer · PostgreSQL administrator');
 });
