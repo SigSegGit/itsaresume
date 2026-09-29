@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.15
-TITLE: System prompt off the command line, then 8.16-8.17
-WRITTEN-AT: 2026-09-28
-BASE: 7b4250f
+NEXT: 8.16
+TITLE: Test and doc honesty, then 8.17 (one completion at a time per lm-studio backend)
+WRITTEN-AT: 2026-09-29
+BASE: acc5284
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -55,7 +55,16 @@ process: measured, `memory allocation … failed`), `serve` exits 1 with the
 error that stopped tiny_http, at most 4 completions at once (503 `busy`).
 Each has a red test and a sabotage defence.
 
-Next: 8.15 → 8.16. Still open from 8.14(d)'s note: the cap is global (4),
+**2026-09-29.** 8.14 merged (PR #10). 8.15 done on
+`m1/system-prompt-file`: the system prompt reaches `claude` through
+`--system-prompt-file` (hidden option, observed on 2.1.162: UTF-8, missing
+file → exit 1 and nothing on stdout), a private file per request deleted on
+return; a 100 KB prompt with a NUL used to fail the spawn. Same observation:
+`apiKeySource: "none"` on the logged-in OAuth path. Trap: `sabotage.py` needs
+its plan on the repository's drive (`relpath`); put a partial plan in
+`target/`.
+
+Next: 8.16 → 8.17. Still open from 8.14(d)'s note: the cap is global (4),
 not **one at a time per `lm-studio` backend**; with Bionic's single slot, a
 second local request still waits on Bionic, not on the router (8.17).
 
@@ -239,18 +248,19 @@ branch with the local gates of §3 green.
   serving, exit non-zero only on a fatal error; (d) cap concurrent
   completions (thread per request is unbounded). Red tests in
   `tests/server.rs` for each.
-- [ ] **8.15** System prompt off the command line (`claude_code.rs`
+- [x] **8.15** System prompt off the command line (`claude_code.rs`
   `arguments()`): a long or NUL-containing `system` fails to spawn (`Other`),
   and argv is visible in process listings. Observe `--system-prompt-file` on
   2.1.162, write the prompt to a private file in the workdir, pass the path;
-  red test: a 100 KB system prompt reaches the fake intact.
+  red test: a 100 KB system prompt reaches the fake intact. Done: `SystemFile`
+  in `claude_code.rs` (`create_new`, 0600 on Unix, pid + counter, absolute
+  path, removed on drop); six tests, four sabotage defences.
 - [ ] **8.16** Test and doc honesty (all confirmed, low): TESTING.md cites
   defences whose `expect` lists do not name those tests — make each row match
   `scripts/sabotage/itsaresume-router.json` exactly (a small gate script can
   check it); the timeout test must prove the child is dead (fake writes its
-  pid; assert the process is gone); `claude_code.rs` says `apiKeySource:
-  "none"` was observed on the OAuth path — it was observed logged-out only,
-  fix the comment; `check-handover.py`'s BASE check is vacuous while `main`
+  pid; assert the process is gone); (the `apiKeySource: "none"` comment
+  is now true: observed on OAuth on 2026-09-29, done in 8.15); `check-handover.py`'s BASE check is vacuous while `main`
   is the root commit (it becomes meaningful after the first merge — note it).
   TESTING.md must also gain the six 8.14 defences (`Endpoint …`, `Serve loop
   returns the error that ends it`).
@@ -291,6 +301,18 @@ branch with the local gates of §3 green.
   the temp directory is predictable and never checked; `merge-when-green.sh`
   does not pin the head sha it counted checks for; a truncated answer
   (`finish_reason: "length"`, empty content) counts as success.
+- **The system prompt file on disk** (8.15): a crash mid-request leaves it
+  in the working directory; its 0600 test runs on Unix only, with no sabotage
+  defence (the local sabotage runs on Windows). It sharpens the item above:
+  on a shared Unix `/tmp`, another user could own `itsaresume-claude` and swap
+  the file before `claude` reads it; on Windows `%TEMP%` is per user. Fix
+  when the router runs on a shared Unix host: check the working directory is
+  ours and 0700. `itsaresume complete --system` still takes the text on the
+  router's own command line (the caller's choice; `serve` does not).
+- **Local sabotage on Windows**: "Endpoint never drains a huge declared
+  body" stays green there (seen 2026-09-29, 60 of 61 verified); the Linux CI
+  verifies it (PR #10). Not investigated: tiny_http's drain probably does not
+  abort on Windows. Trust the CI's sabotage job for that defence.
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 - **Contract with the Node.js generator** — M3.
 

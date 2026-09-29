@@ -21,3 +21,18 @@ classifier in `src/claude_code.rs`. Two kinds, and the name says which:
 | `synthetic-success.verbose.json` | — | From `observed-not-logged-in.verbose.json`: `is_error: false`, `result` text, assistant content, usage counts |
 | `synthetic-usage-limit.verbose.json` | — | Same base: `is_error: true`, `api_error_status: 429`, a limit message |
 | `synthetic-overloaded.verbose.json` | — | Same base: `is_error: true`, `api_error_status: 529` |
+
+## Observed without a fixture (2026-09-29, 2.1.162, logged in, `pro`)
+
+`--system-prompt-file <path>` is not listed by `--help` (only named in the
+help of `--bare`), but it works with the backend's flag set:
+
+- a file saying "reply with exactly PAMPLEMOUSSE" → `result: "PAMPLEMOUSSE"`,
+  `is_error: false`, and `apiKeySource: "none"` **on the OAuth path** (logged
+  in; until then "none" had been seen logged out only);
+- the file is read as UTF-8: accents, guillemets and an em dash came back
+  intact;
+- a missing file: exit 1, nothing on stdout, stderr `Error: System prompt
+  file not found: <path>` (the backend then reports `Other`);
+- with `--system-prompt` as well: exit 1, `Error: Cannot use both
+  --system-prompt and --system-prompt-file`.

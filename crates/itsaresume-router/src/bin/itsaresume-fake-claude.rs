@@ -6,7 +6,9 @@
 //! they are not metered credentials):
 //!
 //! - `FAKE_CLAUDE_RECORD=<dir>`: write `args.json`, `stdin.txt`,
-//!   `env-names.txt` (one name per line) and `cwd.txt` there;
+//!   `env-names.txt` (one name per line) and `cwd.txt` there, and, given
+//!   `--system-prompt-file`, that file's content in `system.txt` (and, on
+//!   Unix, its permission bits in octal in `system-mode.txt`);
 //! - `FAKE_CLAUDE_SLEEP_MS=<n>`: sleep before answering;
 //! - `FAKE_CLAUDE_STDOUT=<file>`: print that file on stdout;
 //! - `FAKE_CLAUDE_STDERR=<text>`: print that text on stderr;
@@ -50,6 +52,24 @@ fn number(name: &str) -> Option<u64> {
 
 fn record(dir: &Path, stdin: &str) {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(file) = args
+        .windows(2)
+        .find(|pair| pair[0] == "--system-prompt-file")
+        .map(|pair| Path::new(&pair[1]))
+    {
+        let system = std::fs::read(file).expect("the system prompt file is readable");
+        std::fs::write(dir.join("system.txt"), system).expect("record system");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = std::fs::metadata(file)
+                .expect("metadata")
+                .permissions()
+                .mode();
+            std::fs::write(dir.join("system-mode.txt"), format!("{:o}", mode & 0o777))
+                .expect("record system mode");
+        }
+    }
     let args = serde_json::to_string(&args).expect("argv serialises");
     let mut names: Vec<String> = std::env::vars_os()
         .map(|(name, _)| name.to_string_lossy().into_owned())

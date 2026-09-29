@@ -470,6 +470,39 @@
       "expect": [
         "the_serve_loop_returns_the_error_that_ended_it"
       ]
+    },
+    "Claude process: system prompt whole in its file": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".write_all(system.as_bytes())",
+      "dead": ".write_all(&system.as_bytes()[..system.len().min(64)])",
+      "expect": [
+        "a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line"
+      ]
+    },
+    "Claude process: system prompt file removed": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "let _ = std::fs::remove_file(&self.path);",
+      "dead": "let _ = std::fs::metadata(&self.path);",
+      "expect": [
+        "the_system_prompt_file_is_removed_once_the_cli_has_answered",
+        "the_system_prompt_file_is_removed_when_the_cli_is_killed"
+      ]
+    },
+    "Claude process: one system prompt file per request": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "SYSTEM_FILES.fetch_add(1, Ordering::Relaxed)",
+      "dead": "SYSTEM_FILES.load(Ordering::Relaxed)",
+      "expect": [
+        "concurrent_requests_each_get_their_own_system_prompt"
+      ]
+    },
+    "Claude process: system prompt file path absolute": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "let path = std::path::absolute(workdir.join(name)).map_err(|error| {",
+      "dead": "let path = Ok::<PathBuf, std::io::Error>(workdir.join(name)).map_err(|error| {",
+      "expect": [
+        "a_relative_workdir_still_hands_claude_its_system_prompt"
+      ]
     }
   }
 }

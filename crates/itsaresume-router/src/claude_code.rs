@@ -7,16 +7,17 @@ use crate::backend::{Backend, BackendError, Completion, Request, excerpt};
 use serde_json::Value;
 use std::ffi::{OsStr, OsString};
 use std::io::{ErrorKind, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::thread;
 use std::time::Duration;
 use wait_timeout::ChildExt;
 
 /// The only billing source accepted: the subscription (OAuth) path. Observed
-/// values: `"none"` logged out or on OAuth, `"ANTHROPIC_API_KEY"` when that
+/// values: `"none"` logged out (2026-09-23) and logged in on OAuth
+/// (2026-09-29, `pro`), `"ANTHROPIC_API_KEY"` when that
 /// variable is set. Claude Code also knows `"apiKeyHelper"` and
 /// `"/login managed key"`; both are metered and refused.
 pub const SUBSCRIPTION_BILLING_SOURCE: &str = "none";
@@ -199,13 +200,11 @@ impl ClaudeCodeBackend {
         self
     }
 
-    /// The command-line arguments for `request`. The prompt is not among them:
-    /// it goes on stdin, which has no length limit.
-    pub fn arguments(&self, request: &Request) -> Vec<String> {
-        let system = request
-            .system
-            .clone()
-            .unwrap_or_else(|| DEFAULT_SYSTEM_PROMPT.to_owned());
+    /// The command-line arguments, `system_file` holding the system prompt.
+    /// No request text is among them: the prompt goes on stdin and the system
+    /// prompt in that file, since argv is length-limited, cannot hold a NUL,
+    /// and is readable by every local process.
+    pub fn arguments(&self, system_file: &Path) -> Vec<String> {
         let mut arguments: Vec<String> = vec![
             "-p".into(),
             "--output-format".into(),
@@ -223,9 +222,11 @@ impl ClaudeCodeBackend {
             // the empty list is accepted and OAuth still answers).
             "--setting-sources".into(),
             String::new(),
-            // Replaces Claude Code's agentic system prompt.
-            "--system-prompt".into(),
-            system,
+            // Replaces Claude Code's agentic system prompt (observed on
+            // 2.1.162: read as UTF-8; a missing file exits 1 with "System
+            // prompt file not found" on stderr and nothing on stdout).
+            "--system-prompt-file".into(),
+            system_file.to_string_lossy().into_owned(),
         ];
         if let Some(model) = &self.model {
             arguments.push("--model".into());
@@ -253,10 +254,13 @@ impl ClaudeCodeBackend {
                 self.workdir.display()
             ))
         })?;
+        let system = request.system.as_deref().unwrap_or(DEFAULT_SYSTEM_PROMPT);
+        // Removed when this function returns, whatever the outcome.
+        let system_file = SystemFile::write(&self.workdir, system)?;
 
         let mut command = Command::new(&self.program);
         command
-            .args(self.arguments(request))
+            .args(self.arguments(&system_file.path))
             .current_dir(&self.workdir)
             .env_clear()
             .envs(env.into_iter().filter(|(name, _)| !is_metered(name)))
@@ -347,6 +351,58 @@ impl ClaudeCodeBackend {
 
 /// Whether an environment variable is one of [`METERED_ENV`] (names compared
 /// without case: Windows environment names are case-insensitive).
+/// Tells apart the system prompt files of one process's concurrent requests.
+static SYSTEM_FILES: AtomicU64 = AtomicU64::new(0);
+
+/// The system prompt of one request, in a file of the working directory that
+/// only its owner can read (0600 on Unix; on Windows the default working
+/// directory is in the user's own temp folder). Deleted on drop; a crash
+/// mid-request leaves it behind (docs/HANDOVER.md §9).
+struct SystemFile {
+    path: PathBuf,
+}
+
+impl SystemFile {
+    fn write(workdir: &Path, system: &str) -> Result<Self, BackendError> {
+        let name = format!(
+            "system-{}-{}.txt",
+            std::process::id(),
+            SYSTEM_FILES.fetch_add(1, Ordering::Relaxed)
+        );
+        // Absolute: the child runs in `workdir`, so a relative path would be
+        // resolved twice.
+        let path = std::path::absolute(workdir.join(name)).map_err(|error| {
+            BackendError::Other(format!(
+                "cannot resolve the claude working directory: {error}"
+            ))
+        })?;
+        let mut options = std::fs::OpenOptions::new();
+        // A new file: never one someone put there first.
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+        let cannot = |path: &Path, error: std::io::Error| {
+            BackendError::Other(format!(
+                "cannot write the system prompt file {}: {error}",
+                path.display()
+            ))
+        };
+        let mut handle = options.open(&path).map_err(|error| cannot(&path, error))?;
+        // Ours from here on, so removed on drop even if the write fails.
+        let file = Self { path };
+        handle
+            .write_all(system.as_bytes())
+            .map_err(|error| cannot(&file.path, error))?;
+        Ok(file)
+    }
+}
+
+impl Drop for SystemFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
 fn is_metered(name: &OsStr) -> bool {
     let name = name.to_string_lossy();
     METERED_ENV
