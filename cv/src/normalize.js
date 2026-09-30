@@ -142,12 +142,17 @@ function languageMatch(name, named) {
  * (yes, then adjacent; client experience before lab): a never-claimed
  * example is said so in the report, and adds no must of its own.
  */
-function mergeExamples(requirements, offer, profile, repairs) {
+function mergeExamples(requirements, offer, profile, repairs, lang) {
   const lab = new Set(profile.skills.filter((skill) => skill.level === 'lab').map((skill) => skill.id));
   const parent = requirements.map((_, index) => index);
   const root = (index) => (parent[index] === index ? index : (parent[index] = root(parent[index])));
   for (const inside of enumerations(offer)) {
-    const named = requirements.flatMap((requirement, index) => (requirement.kind !== 'quality' && mentions(inside, requirement.name) ? [index] : []));
+    // A language the profile names is settled on its own, level included,
+    // never merged (seen 2026-09-30: "English, Spanish, and French or
+    // Italian" became one row no longer read as a language, and the run was
+    // refused twice).
+    const named = requirements.flatMap((requirement, index) =>
+      requirement.kind !== 'quality' && languageOf(requirement, profile, lang) === null && mentions(inside, requirement.name) ? [index] : []);
     for (const index of named.slice(1)) parent[root(index)] = root(named[0]);
   }
   const groups = new Map();
@@ -404,7 +409,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     if (count > 1) repairs.push(`requirement ${row.name}: listed ${count} times, counted once`);
   }
   if (analysis.requirements) analysis.requirements = [...merged.values()].map(({ row }) => row);
-  if (offer !== undefined && analysis.requirements) analysis.requirements = mergeExamples(analysis.requirements, offer, profile, repairs);
+  if (offer !== undefined && analysis.requirements) analysis.requirements = mergeExamples(analysis.requirements, offer, profile, repairs, analysis.language);
 
   // Experiences: every bullet goes under the experience that owns it, in the
   // order the model gave; an experience id that is really a bullet id counts
