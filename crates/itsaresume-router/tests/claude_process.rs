@@ -496,3 +496,72 @@ fn a_fired_billing_tripwire_latches_even_across_a_restart() {
     );
     assert!(!scene.record.join("args.json").exists());
 }
+
+/// The working directory holds the system prompt file and is where `claude`
+/// starts: one another local user could write into, or a link to elsewhere,
+/// is refused before the child runs (Unix; `%TEMP%` is per user on Windows).
+#[cfg(unix)]
+mod workdir {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    fn mode(path: &Path) -> u32 {
+        std::fs::metadata(path).expect("metadata").permissions().mode() & 0o777
+    }
+
+    fn refused(scene: &Scene) {
+        let outcome = backend(scene).complete_with_env(&Request::new("p"), success_env(scene));
+        match outcome {
+            Err(BackendError::Other(message)) => assert!(
+                message.contains(&scene.workdir.display().to_string()),
+                "{message}"
+            ),
+            other => panic!("expected Other, got {other:?}"),
+        }
+        assert!(
+            !scene.record.join("args.json").exists(),
+            "the CLI ran in a refused working directory"
+        );
+    }
+
+    #[test]
+    fn a_missing_working_directory_is_created_private() {
+        let scene = scene();
+        backend(&scene)
+            .complete_with_env(&Request::new("p"), success_env(&scene))
+            .expect("the fake answers");
+        assert_eq!(mode(&scene.workdir), 0o700);
+    }
+
+    #[test]
+    fn a_working_directory_others_could_write_into_is_refused() {
+        let scene = scene();
+        std::fs::create_dir(&scene.workdir).expect("workdir");
+        std::fs::set_permissions(&scene.workdir, std::fs::Permissions::from_mode(0o777))
+            .expect("chmod");
+        refused(&scene);
+    }
+
+    #[test]
+    fn a_working_directory_that_is_a_link_is_refused() {
+        let scene = scene();
+        let elsewhere = scene.record.parent().expect("root").join("elsewhere");
+        std::fs::create_dir(&elsewhere).expect("target");
+        std::fs::set_permissions(&elsewhere, std::fs::Permissions::from_mode(0o700))
+            .expect("chmod");
+        std::os::unix::fs::symlink(&elsewhere, &scene.workdir).expect("symlink");
+        refused(&scene);
+    }
+
+    #[test]
+    fn a_readable_working_directory_of_ours_is_made_private() {
+        let scene = scene();
+        std::fs::create_dir(&scene.workdir).expect("workdir");
+        std::fs::set_permissions(&scene.workdir, std::fs::Permissions::from_mode(0o755))
+            .expect("chmod");
+        backend(&scene)
+            .complete_with_env(&Request::new("p"), success_env(&scene))
+            .expect("the fake answers");
+        assert_eq!(mode(&scene.workdir), 0o700);
+    }
+}
