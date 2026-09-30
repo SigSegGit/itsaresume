@@ -12,6 +12,7 @@ is a claim nobody checked. This checks both directions:
 """
 
 import io
+import glob
 import json
 import os
 import re
@@ -19,7 +20,7 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 DOC = os.path.join(ROOT, 'docs', 'TESTING.md')
-PLAN = os.path.join(ROOT, 'scripts', 'sabotage', 'itsaresume-router.json')
+PLANS = os.path.join(ROOT, 'scripts', 'sabotage', '*.json')
 
 
 def rows(text):
@@ -61,7 +62,9 @@ def problems(text, defences):
 
 def main():
     text = io.open(DOC, encoding='utf-8').read()
-    defences = json.load(io.open(PLAN, encoding='utf-8'))['defences']
+    defences = {}
+    for plan in sorted(glob.glob(PLANS)):
+        defences.update(json.load(io.open(plan, encoding='utf-8'))['defences'])
     found = problems(text, defences)
     for p in found:
         print('FAIL', p)

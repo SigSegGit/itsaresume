@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.19
-TITLE: merge-when-green.sh pins the head sha it counted checks for
+NEXT: 8.20
+TITLE: The default Claude working directory is checked before use
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -67,7 +67,8 @@ backend lets `max_concurrent` completions reach the server (1 when absent;
 (a `Condvar` slot shared by clones), the wait counts against `timeout_secs`,
 and past it the request is `Unreachable` (falls back) without ever reaching
 Bionic. Seven tests, six sabotage defences. 8.18: a `base_url` with
-userinfo is refused (never echoed).
+userinfo is refused (never echoed). 8.19: `merge-when-green.sh` merges only
+the head it counted (`--match-head-commit`), tested with a fake `gh`.
 
 ## 1. Decisions never to reverse silently
 
@@ -282,9 +283,20 @@ branch with the local gates of §3 green.
   URLs (`user:pass@`, `user@`) refused, the message holds neither `pass`
   nor `user`; a normal URL and one with `@` only in the path still build.
   Done: `has_userinfo` in `config.rs`; one test, two defences.
-- [ ] **8.19** `scripts/merge-when-green.sh` pins the head sha it counted
+- [x] **8.19** `scripts/merge-when-green.sh` pins the head sha it counted
   checks for (§9, 2026-09-23 review): a push between the count and the merge
   must abort the merge (`gh pr merge --match-head-commit <sha>`).
+  Done: `scripts/test-merge-when-green.sh` (fake `gh`, four cases, CI job
+  `handover`), plan `scripts/sabotage/merge-when-green.json` (three
+  defences); `check-testing.py` now reads every plan.
+- [ ] **8.20** The default Claude working directory is checked before use
+  (§9, 2026-09-23 review, and the 8.15 system-prompt-file note): today it is
+  a fixed name under the temp directory (`itsaresume-claude`), created if
+  missing and used as found. On Unix, refuse it unless it is a directory (not
+  a symlink) owned by us with mode 0700 (create it 0700); on Windows `%TEMP%`
+  is per user, keep the check to "a directory, not a link". Red tests (Unix
+  only for the mode/owner; the link test on both): a pre-created 0777
+  directory and a symlink are refused as `Other` naming the path.
 
 ## 9. Deliberately open
 
@@ -310,11 +322,9 @@ branch with the local gates of §3 green.
   script, not demonstrated by breaking the image.
 - **From the 2026-09-23 review, not confirmed (uncertain):** extra usage
   (overage) billed per token on the OAuth path is not detectable from the CLI
-  output; a `base_url` with `user:pass@` would be sent as Basic auth and
-  echoed in errors (reject userinfo in config); the default Claude workdir in
-  the temp directory is predictable and never checked; `merge-when-green.sh`
-  does not pin the head sha it counted checks for (8.19). The truncated
-  answer (2026-09-27) and userinfo in `base_url` (8.18) are fixed.
+  output; the default Claude workdir in the temp directory is predictable and
+  never checked (8.20). Fixed since: the truncated answer (2026-09-27),
+  userinfo in `base_url` (8.18), the unpinned merge (8.19).
 - **The system prompt file on disk** (8.15): a crash mid-request leaves it
   in the working directory; its 0600 test runs on Unix only, with no sabotage
   defence (the local sabotage runs on Windows). It sharpens the item above:

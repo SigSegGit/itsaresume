@@ -27,8 +27,15 @@ FAKE
 chmod +x "$work/bin/gh"
 export FAKE_DIR=$work PATH="$work/bin:$PATH"
 
+# Output in cargo's shape (`test <name> ... ok|FAILED`) so that
+# scripts/sabotage.py can name the case a sabotage turned red.
 failures=0
-fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
+case_ok=1
+fail() { echo "  $1"; case_ok=0; }
+report() {
+    if [ "$case_ok" -eq 1 ]; then echo "test $1 ... ok"; else echo "test $1 ... FAILED"; failures=$((failures + 1)); fi
+    case_ok=1
+}
 
 green() {
     : > "$work/checks"
@@ -40,16 +47,19 @@ green; echo aaa111 > "$work/head"; rm -f "$work/merged" "$work/head-after"
 bash "$here/merge-when-green.sh" 7 >/dev/null
 grep -q -- "--match-head-commit aaa111" "$work/merged" 2>/dev/null \
     || fail "a green merge is not pinned to the counted head: $(cat "$work/merged" 2>/dev/null)"
+report a_green_pr_is_merged_pinned_to_its_head
 
 # 2. One pending: no merge.
 green; printf 'job13\tpending\t0\thttps://x\n' >> "$work/checks"; rm -f "$work/merged"
 bash "$here/merge-when-green.sh" 7 >/dev/null && fail "a pending check did not stop the merge"
 [ -f "$work/merged" ] && fail "merged with a pending check"
+report a_pending_check_stops_the_merge
 
 # 3. Too few checks: no merge.
 : > "$work/checks"; printf 'job1\tpass\t1m\thttps://x\n' > "$work/checks"; rm -f "$work/merged"
 bash "$here/merge-when-green.sh" 7 >/dev/null && fail "one check out of twelve was enough"
 [ -f "$work/merged" ] && fail "merged with too few checks"
+report too_few_checks_stop_the_merge
 
 # 4. The head is read before the checks: a push in between is not merged
 #    under the old head's green (the merge names the counted sha, gh refuses).
@@ -57,5 +67,6 @@ green; echo bbb222 > "$work/head"; echo ccc333 > "$work/head-after"; rm -f "$wor
 bash "$here/merge-when-green.sh" 7 >/dev/null
 grep -q -- "--match-head-commit bbb222" "$work/merged" 2>/dev/null \
     || fail "the merge did not name the head read before the checks: $(cat "$work/merged" 2>/dev/null)"
+report the_head_is_read_before_the_checks
 
 [ "$failures" -eq 0 ] && echo "merge-when-green: 4 cases pass" || exit 1

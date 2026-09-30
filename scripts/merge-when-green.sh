@@ -28,6 +28,12 @@ MINIMUM=${2:-12}
 
 [ -n "$PR" ] || { echo "usage: merge-when-green.sh <pr-number> [minimum-checks]"; exit 2; }
 
+# The head is read *before* the checks are counted, and the merge names it:
+# a push in between makes GitHub refuse the merge instead of merging a head
+# whose checks were never counted.
+head=$(gh pr view "$PR" --json headRefOid --jq .headRefOid 2>/dev/null) || true
+[ -n "$head" ] || { echo "PR $PR: could not read its head commit."; exit 1; }
+
 checks=$(gh pr checks "$PR" 2>&1) || true
 
 if printf '%s' "$checks" | grep -q "no checks reported"; then
@@ -51,5 +57,5 @@ if [ "$passing" -ne "$total" ]; then
     exit 1
 fi
 
-echo "PR $PR: $passing of $total checks passed. Merging."
-gh pr merge "$PR" --merge --delete-branch
+echo "PR $PR: $passing of $total checks passed. Merging $head."
+gh pr merge "$PR" --merge --delete-branch --match-head-commit "$head"
