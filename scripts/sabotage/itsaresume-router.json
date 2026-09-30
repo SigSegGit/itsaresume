@@ -188,6 +188,14 @@
         "a_missing_binary_is_unreachable"
       ]
     },
+    "Claude process: the timed-out child is killed, not abandoned": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "let _ = child.kill();\n                let _ = child.wait();\n                return Err(BackendError::Unreachable(",
+      "dead": "drop(child);\n                return Err(BackendError::Unreachable(",
+      "expect": [
+        "a_timed_out_cli_is_dead_not_abandoned"
+      ]
+    },
     "Claude process: timeout kills": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": ".wait_timeout(self.timeout)",
