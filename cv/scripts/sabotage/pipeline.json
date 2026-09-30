@@ -56,8 +56,8 @@
     },
     "Client: a backend name is sent only when asked": {
       "file": "src/llm.js",
-      "live": "const body = JSON.stringify(backend ? { prompt, system, backend } : { prompt, system });",
-      "dead": "const body = JSON.stringify({ prompt, system });",
+      "live": "const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}) });",
+      "dead": "const body = JSON.stringify({ prompt, system, ...(schema ? { schema } : {}) });",
       "expect": [
         "the client names a backend only when asked (router 8.22)"
       ]
@@ -84,6 +84,14 @@
       "dead": "void calls;",
       "expect": [
         "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
+    },
+    "Client: a schema is sent only when asked": {
+      "file": "src/llm.js",
+      "live": "const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}) });",
+      "dead": "const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}) });",
+      "expect": [
+        "the client sends a schema only when asked (router 8.24)"
       ]
     }
   }

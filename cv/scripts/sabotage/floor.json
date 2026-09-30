@@ -76,6 +76,14 @@
       "expect": [
         "a denied must that the offer still wants stays, and so does a plain mention"
       ]
+    },
+    "Listing: the schema only when asked": {
+      "file": "src/listing.js",
+      "live": "const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });",
+      "dead": "const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), schema: LISTING_SCHEMA });",
+      "expect": [
+        "the listing call sends its schema only when asked"
+      ]
     }
   }
 }
