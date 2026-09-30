@@ -187,8 +187,8 @@
     },
     "Listing: a failed call fails the run": {
       "file": "src/listing.js",
-      "live": "  const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer) });\n  try {",
-      "dead": "  try {\n    var { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer) });",
+      "live": "  const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });\n  try {",
+      "dead": "  try {\n    var { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });",
       "expect": [
         "a failed listing call fails the run; only an unreadable answer lists nothing"
       ]

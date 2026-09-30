@@ -73,3 +73,18 @@ test('a denied must that the offer still wants stays, and so does a plain mentio
   const plain = await listRequirements({ offer: 'Vous déployez sur Kubernetes. Terraform is not required.', llm: answering([{ name: 'Kubernetes', importance: 'must' }, { name: 'Terraform', importance: 'must' }]) });
   assert.deepEqual(plain.map((item) => item.name), ['Kubernetes']);
 });
+
+// 8.25: the listing asks for structured output (router 8.24), so no answer
+// is lost to a JSON document wrapped in prose.
+// Measured on the corpus (2026-09-30, three runs each): with the schema the
+// local model lists less (61-66/75 against 68-70/75 without); Sonnet is at
+// 75/75 either way. So the schema is sent only when asked.
+test('the listing call sends its schema only when asked', async () => {
+  const requests = [];
+  const llm = async (request) => (requests.push(request), { text: '{"requirements": []}' });
+  await listRequirements({ offer: 'Kafka.', llm });
+  await listRequirements({ offer: 'Kafka.', llm, structured: true });
+  assert.equal(requests[0].schema, undefined);
+  assert.equal(requests[1].schema?.properties?.requirements?.type, 'array');
+  assert.deepEqual(requests[1].schema.properties.requirements.items.properties.importance.enum, ['must', 'nice']);
+});

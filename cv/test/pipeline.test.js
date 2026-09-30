@@ -141,6 +141,21 @@ test('the client names a backend only when asked (router 8.22)', async () => {
   }
 });
 
+test('the client sends a schema only when asked (router 8.24)', async () => {
+  const { server, seen, url } = await fakeRouter([
+    [200, { backend: 'qwen', text: '{}', attempts: [] }],
+    [200, { backend: 'qwen', text: 'b', attempts: [] }],
+  ]);
+  try {
+    await complete({ url, system: 's', prompt: 'p', schema: { type: 'object' } });
+    await complete({ url, system: 's', prompt: 'p' });
+    assert.deepEqual(seen[0].body, { prompt: 'p', system: 's', schema: { type: 'object' } });
+    assert.deepEqual(seen[1].body, { prompt: 'p', system: 's' });
+  } finally {
+    server.close();
+  }
+});
+
 test('an unreachable router is a clear error', async () => {
   await assert.rejects(complete({ url: 'http://127.0.0.1:9', system: 's', prompt: 'p' }), /itsaresume/);
 });

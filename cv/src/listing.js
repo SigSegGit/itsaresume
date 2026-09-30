@@ -19,6 +19,28 @@ One entry per item: an offer naming five tools gives five entries. Use the offer
 
 ${UNTRUSTED}`;
 
+/**
+ * The listing's answer as a JSON Schema (8.25): the router asks the model
+ * for exactly this document (router 8.24), so none is lost to prose around
+ * it. `extractJson` still reads it, and still reads an older router's text.
+ */
+export const LISTING_SCHEMA = {
+  type: 'object',
+  properties: {
+    requirements: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { name: { type: 'string' }, importance: { type: 'string', enum: ['must', 'nice'] } },
+        required: ['name', 'importance'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['requirements'],
+  additionalProperties: false,
+};
+
 export function listingPrompt(offer) {
   return fence(offer).join('\n');
 }
@@ -28,8 +50,9 @@ export function listingPrompt(offer) {
  * call throws: swallowed, it took the requirement floor with it and the
  * score rose with no trace.
  */
-export async function listRequirements({ offer, llm }) {
-  const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer) });
+export async function listRequirements({ offer, llm, structured = false }) {
+  // Not by default: with the schema the local model listed less (8.25).
+  const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });
   try {
     const seen = new Set();
     const listed = [];

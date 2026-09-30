@@ -159,8 +159,15 @@ Traps met, each cost time once:
   - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
 - [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.
-- [ ] **2.3** Router contract: structured output, a model per call (router
-  M3). Carries 2.7's step (5): the code settles each requirement it can
+- [~] **2.3** Router contract: structured output, a model per call (router
+  M3). A model per call: done (router 8.22, cv 8.23). Structured output:
+  the router takes a schema (8.24) and the client sends one when asked
+  (8.25, `complete({schema})`, `listRequirements({structured})`,
+  `measure-listing.mjs --schema`). **Measured, 2026-09-30, three runs
+  each: with the listing schema the local model finds 61-66/75, without
+  68-70/75; Sonnet 75/75 either way. So the listing does not send it by
+  default.** The analysis call's schema (closed skill ids) is the next
+  measure: send it only if it does not cost recall or verdicts. Carries 2.7's step (5): the code settles each requirement it can
   *before* the model, and only the rest goes to a narrow question with a
   shortlist ("which of these skills, or none"), maybe read as option
   probabilities (ADR-10). `relate()` in `src/lexicon.js` is its building
