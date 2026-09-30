@@ -534,3 +534,35 @@ fn an_overage_answer_latches_the_next_process_too() {
     assert_eq!(second.status.code(), Some(3), "{second:?}");
     assert!(String::from_utf8_lossy(&second.stderr).contains("latched"));
 }
+
+/// 8.30: `stats` reads the configured journal and writes nothing.
+#[test]
+fn the_stats_command_sums_up_the_journal() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let journal = dir.path().join("journal.jsonl");
+    std::fs::write(
+        &journal,
+        "{\"outcome\":\"answered\",\"backend\":\"lm-studio\",\"attempts\":[],\"duration_ms\":10}\n",
+    )
+    .expect("journal");
+
+    let output = run(
+        &["stats", "--config", config.to_str().expect("utf-8")],
+        "",
+        &[],
+    );
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stdout).starts_with("requests: 1\n"),
+        "{output:?}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&journal)
+            .expect("journal")
+            .lines()
+            .count(),
+        1,
+        "nothing appended"
+    );
+}

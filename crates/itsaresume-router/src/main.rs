@@ -14,6 +14,8 @@ usage:
       prompt on stdin, answer on stdout, the answering backend on stderr;
       --backend tries that configured backend alone (no fallback);
       --schema asks for an answer following that JSON Schema
+  itsaresume stats [--config FILE]
+      the journal summed up: per backend and outcome, fallbacks, structured
   itsaresume serve [--config FILE] [--listen ADDRESS]
       HTTP endpoint (POST /v1/complete, GET /healthz), on 127.0.0.1:8787
       unless told otherwise: it has no authentication and spends the plan
@@ -40,7 +42,7 @@ struct Options {
 
 fn parse(args: &[String]) -> Result<(String, Options), String> {
     let (command, rest) = args.split_first().ok_or("no command given")?;
-    if command != "complete" && command != "serve" {
+    if command != "complete" && command != "serve" && command != "stats" {
         return Err(format!("unknown command {command:?}"));
     }
     let mut options = Options::default();
@@ -87,6 +89,9 @@ fn main() -> ExitCode {
             return ExitCode::from(EXIT_USAGE);
         }
     };
+    if command == "stats" {
+        return stats(&config);
+    }
     if command == "serve" {
         serve(&config, options.listen.as_deref().unwrap_or(DEFAULT_LISTEN))
     } else {
@@ -97,6 +102,31 @@ fn main() -> ExitCode {
             options.schema.as_deref(),
         )
     }
+}
+
+/// The journal summed up on stdout; a missing journal is an empty one.
+fn stats(config: &Config) -> ExitCode {
+    let text = match std::fs::read_to_string(&config.journal) {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => {
+            eprintln!(
+                "itsaresume: cannot read the journal {}: {error}",
+                config.journal.display()
+            );
+            return ExitCode::FAILURE;
+        }
+    };
+    let summary = itsaresume_router::stats::summarize(&text);
+    let mut stdout = std::io::stdout().lock();
+    if stdout
+        .write_all(summary.as_bytes())
+        .and_then(|()| stdout.flush())
+        .is_err()
+    {
+        return ExitCode::FAILURE;
+    }
+    ExitCode::SUCCESS
 }
 
 fn serve(config: &Config, listen: &str) -> ExitCode {

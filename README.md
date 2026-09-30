@@ -37,6 +37,13 @@ Without Docker: `cargo build --release`, copy `config.example.toml` to
 `config.local.toml`, then `echo "prompt" | target/release/itsaresume complete`
 or `target/release/itsaresume serve`.
 
+A request may name one configured backend (`--backend NAME`, or `"backend"`
+in `POST /v1/complete`): only that one is tried, no fallback. It may ask for
+structured output (`--schema FILE`, or `"schema"`: a JSON Schema object):
+the answer is then a JSON document following it, or the request fails.
+`itsaresume stats` sums the journal up: per backend and outcome, the
+fallbacks, the share of structured requests.
+
 The endpoint has no authentication and spends the plan of whoever's token it
 holds: it listens on `127.0.0.1` only, in and out of Docker.
 
