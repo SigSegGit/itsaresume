@@ -91,9 +91,9 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'analysis.json'), JSON.stringify(analysis, null, 2));
   writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));
-  const { layout, ats, skipped } = await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
+  const { model, layout, ats, skipped } = await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
   const older = olderMentions(analysis, full, texts);
-  const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older });
+  const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older, rendered: model.experiences });
   writeFileSync(join(dir, 'report.md'), text);
   // The offer and what the run did, so that the same offer can be answered
   // from this run later (public mode, src/intake.js), with no model call.
@@ -134,8 +134,9 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep })
   const pdf = join(dir, 'cv.pdf');
   /** The CV as with --no-layout: not fitted to the page, no PDF, no ATS check. */
   const unfitted = (why, failed) => {
-    writeFileSync(docx, render(buildModel(profile, analysis, { bullets: defaultBullets(profile, analysis) })));
-    return { skipped: { reason: `layout, PDF and ATS check skipped: ${why}`, failed } };
+    const plain = buildModel(profile, analysis, { bullets: defaultBullets(profile, analysis) });
+    writeFileSync(docx, render(plain));
+    return { model: plain, skipped: { reason: `layout, PDF and ATS check skipped: ${why}`, failed } };
   };
   if (!useWord) return unfitted('--no-layout', false);
   const word = await startLayout();
@@ -167,9 +168,9 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep })
     onStep('ats');
     const layout = { pages: final.pages, layouts };
     try {
-      return { layout, ats: atsCheck(model, pdfText(pdf)) };
+      return { model, layout, ats: atsCheck(model, pdfText(pdf)) };
     } catch (error) {
-      return { layout, ats: null, skipped: { reason: `ATS check skipped: the PDF text could not be read (${error.message})`, failed: true } };
+      return { model, layout, ats: null, skipped: { reason: `ATS check skipped: the PDF text could not be read (${error.message})`, failed: true } };
     }
   } finally {
     word.close();

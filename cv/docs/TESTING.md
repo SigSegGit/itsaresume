@@ -283,7 +283,7 @@ property it proves.
 | the client names a backend only when asked (router 8.22) | Client: a backend name is sent only when asked |
 | the client sends a schema only when asked (router 8.24) | Client: a schema is sent only when asked |
 | an unreachable router is a clear error | — |
-| itsacv tailor writes the CV, the report and the analysis | — |
+| itsacv tailor writes the CV, the report and the analysis | Run: the report gets the rendered CV |
 | itsacv tailor keeps every raw model answer, in call order, in raw.json | Raw: every call is recorded; Raw: the analysis calls are labelled; Raw: raw.json is written |
 | itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why | Evidence: the CLI draws the CV from the restricted profile; Evidence: the report has its Verification section; Run: the report lists what older CVs named |
 | itsacv tailor takes several offer files, and --split finds several offers in one | CLI: --split tailors each offer found |
@@ -367,6 +367,7 @@ property it proves.
 | each example of a merged requirement is still held to the honesty rule in the free text | — |
 | a failed listing call fails the run; only an unreadable answer lists nothing | Listing: a failed call fails the run |
 | learning fast is a personal quality; machine learning stays a skill | Quality: learning fast is a quality |
+| the report counts the bullets the CV shows, not the model's picks | Report: the bullets the CV shows; Report: rendered, when there is a CV |
 
 ## `test/server.test.js`
 
@@ -436,6 +437,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**282 tests, 234 of them covered by at least one sabotage defence.**
+**283 tests, 236 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -212,10 +212,11 @@ Traps met, each cost time once:
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
 shown by the CLI and the page; the page's message no longer claims "kept as
-one offer" for it, untested: the browser script has no harness);
-the report lists the model's bullet picks, not the rendered ones; no
-elapsed time on the page; 413 as a cut socket; the 6-letter stem
-("product" vs "production").
+one offer" for it, untested: the browser script has no harness; the report
+listing the model's bullet picks instead of the rendered ones: fixed the
+same day, "Experiences on the CV" counts what `buildModel` rendered; the
+6-letter stem: fixed in 2.9). Still open: no elapsed time on the page; 413
+as a cut socket.
 
 ## 9. Open on purpose
 

@@ -97,8 +97,8 @@
     },
     "Run: an unreadable PDF text skips the ATS check only": {
       "file": "src/run.js",
-      "live": "return { layout, ats: null, skipped: {",
-      "dead": "return { layout, ats: null, skipped: null, lost: {",
+      "live": "return { model, layout, ats: null, skipped: {",
+      "dead": "return { model, layout, ats: null, skipped: null, lost: {",
       "expect": [
         "a PDF whose text cannot be read keeps the fitted CV and its PDF, and says the ATS check was skipped"
       ]
@@ -214,6 +214,14 @@
       "dead": "      judged: false,",
       "expect": [
         "the job view says which rows are personal qualities and which matches are the model reading"
+      ]
+    },
+    "Run: the report gets the rendered CV": {
+      "file": "src/run.js",
+      "live": "assessment, removed, older, rendered: model.experiences });",
+      "dead": "assessment, removed, older });",
+      "expect": [
+        "itsacv tailor writes the CV, the report and the analysis"
       ]
     }
   }
