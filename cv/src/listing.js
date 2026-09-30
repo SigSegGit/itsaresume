@@ -7,6 +7,8 @@
 
 import { extractJson } from './llm.js';
 import { cleanName, fence, UNTRUSTED } from './guard.js';
+import { MUST, NICE } from './importance.js';
+import { canonical, mentions } from './text.js';
 
 export const LISTING_SYSTEM = `List every skill, technology, tool, product, method or personal quality that the job offer asks for or names.
 
@@ -39,9 +41,9 @@ export async function listRequirements({ offer, llm }) {
       seen.add(key);
       listed.push({ name, importance: item.importance === 'nice' ? 'nice' : 'must' });
     }
-    return listed;
+    return withFloor(listed, offer);
   } catch {
-    return [];
+    return withFloor([], offer);
   }
 }
 
@@ -64,7 +66,53 @@ export function mergeListed(analysis, listed) {
   };
 }
 
-/** The requirement floor (2.1e): stub for the red commit. */
-export function floorItems() {
-  return [];
+/** A header line: a short head, ":", and maybe its own enumeration. */
+const HEADER = /^([^:.!?]{1,80}):(.*)$/;
+/** A list item: a bullet, then the item. */
+const BULLET = /^(?:[-*•·–]|\d+[.)])\s+(.+)$/;
+/** Longer, an item is a sentence, not a requirement's name. */
+const FLOOR_WORDS = 6;
+
+/**
+ * The requirement floor (2.1e): the items the offer lists under a header
+ * that says must or nice ("Nice to have:" above a list, "Atouts : Airflow,
+ * dbt."), with that importance. The model may drop them (the local model
+ * dropped a whole "Nice to have" list on the corpus, twice); the offer's
+ * layout does not. A header without a cue, or a denied one ("Not
+ * required:"), gives nothing.
+ */
+export function floorItems(offer) {
+  const items = [];
+  let section = null;
+  const add = (raw, importance) => {
+    const name = cleanName(String(raw).replace(/[.;,]+$/, '').trim());
+    if (!name || name.split(/\s+/).length > FLOOR_WORDS) return;
+    if (!items.some((item) => item.name.toLowerCase() === name.toLowerCase())) items.push({ name, importance });
+  };
+  for (const raw of canonical(String(offer ?? '')).split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) {
+      section = null;
+      continue;
+    }
+    const bullet = BULLET.exec(line);
+    if (bullet) {
+      if (section) add(bullet[1], section);
+      continue;
+    }
+    section = null;
+    const header = HEADER.exec(line);
+    if (!header) continue;
+    const own = MUST.test(header[1]) ? 'must' : NICE.test(header[1]) ? 'nice' : null;
+    if (!own) continue;
+    if (header[2].trim() === '') section = own;
+    else for (const part of header[2].split(/,|;|\bet\b|\band\b/)) add(part, own);
+  }
+  return items;
+}
+
+/** `listed`, plus the floor items no listed name names or is named by. */
+function withFloor(listed, offer) {
+  const missing = floorItems(offer).filter((item) => !listed.some((known) => mentions(item.name, known.name) || mentions(known.name, item.name)));
+  return [...listed, ...missing];
 }

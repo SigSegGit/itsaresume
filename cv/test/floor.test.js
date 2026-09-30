@@ -34,6 +34,7 @@ test("a header's own enumeration is floor items", () => {
 
 test('a header without a cue, or a denied one, adds nothing', () => {
   assert.deepEqual(floorItems('Missions :\n- Kubernetes\n- Terraform\n'), []);
+  assert.deepEqual(floorItems('Stack : Kubernetes, Terraform'), []);
   assert.deepEqual(floorItems('Not required:\n- Kubernetes\n'), []);
 });
 

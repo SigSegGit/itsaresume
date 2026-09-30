@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1e
-TITLE: a deterministic listing floor: items under an explicit header are requirements even when the model drops them
+NEXT: 2.1c
+TITLE: listing recall through Sonnet (the router's claude-code backend), to compare with Bionic's 92 % with the floor
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -42,7 +42,8 @@ the decisions waiting for him, how to reach his machines — are in
   silent on 36 (no cue: the model decides), wrong on 0; a label it gets
   wrong must say so (`known`), `test/corpus.test.js` holds the code to
   exactly that list. The listing model (Bionic) finds 84-88 % of the labels
-  and drops whole "Nice to have" lists (2.1c): 2.1e next.
+  and dropped whole "Nice to have" lists (2.1c); with the floor of 2.1e,
+  92 % (69/75).
 - 290 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
@@ -127,7 +128,7 @@ Traps met, each cost time once:
     Spanish), OpenShift, Rigueur; it also listed the excluded "Kubernetes is
     not required" once. Still to do: Sonnet through the router (≈ 8 calls
     on the owner's Pro quota), then 2.1e.
-  - [ ] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
+  - [x] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
     the items of a list under a header (`Nice to have:`, `Must have:`,
     `Atouts :`, `Pré-requis :`...) and of a header line's own enumeration
     are requirements even when the model's listing drops them; added with
@@ -135,6 +136,12 @@ Traps met, each cost time once:
     corpus's `en-platform-startup` listing without its nice list gets it
     back. Measure again with 2.1c: recall must rise, excluded names stay
     out (a negated line adds nothing).
+    Done 2026-09-30: `floorItems` and `withFloor` in `src/listing.js` (at
+    most 6 words an item; also when the listing cannot be read); 7 tests, 7
+    defences (`scripts/sabotage/floor.json`). Bionic with the floor: 69/75
+    (92 %), `en-platform-startup` 12/13; still missed: GCP, the languages
+    (Anglais, Spanish, permis B: language.js handles languages later),
+    Rigueur, "open source".
   - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
 - [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.
