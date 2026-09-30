@@ -578,6 +578,42 @@
       "expect": [
         "userinfo_in_a_base_url_is_refused_without_echoing_it"
       ]
+    },
+    "Claude workdir: others cannot write into it": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if mode & 0o022 != 0 {",
+      "dead": "if false {",
+      "expect": [
+        "a_working_directory_others_could_write_into_is_refused"
+      ],
+      "unix_only": true
+    },
+    "Claude workdir: not a link": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "let metadata = std::fs::symlink_metadata(workdir)",
+      "dead": "let metadata = std::fs::metadata(workdir)",
+      "expect": [
+        "a_working_directory_that_is_a_link_is_refused"
+      ],
+      "unix_only": true
+    },
+    "Claude workdir: left 0700": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if mode != 0o700 {",
+      "dead": "if false {",
+      "expect": [
+        "a_readable_working_directory_of_ours_is_made_private"
+      ],
+      "unix_only": true
+    },
+    "System prompt file: owner only": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);",
+      "dead": "std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o644);",
+      "expect": [
+        "the_system_prompt_file_is_readable_by_its_owner_only"
+      ],
+      "unix_only": true
     }
   }
 }

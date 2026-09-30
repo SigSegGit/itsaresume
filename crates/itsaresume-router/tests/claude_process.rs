@@ -506,7 +506,11 @@ mod workdir {
     use std::os::unix::fs::PermissionsExt;
 
     fn mode(path: &Path) -> u32 {
-        std::fs::metadata(path).expect("metadata").permissions().mode() & 0o777
+        std::fs::metadata(path)
+            .expect("metadata")
+            .permissions()
+            .mode()
+            & 0o777
     }
 
     fn refused(scene: &Scene) {

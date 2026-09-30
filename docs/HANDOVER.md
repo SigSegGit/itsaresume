@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.20
-TITLE: The default Claude working directory is checked before use
+NEXT: 8.21
+TITLE: Run the whole sabotage plan under WSL before pushing
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -69,6 +69,8 @@ and past it the request is `Unreachable` (falls back) without ever reaching
 Bionic. Seven tests, six sabotage defences. 8.18: a `base_url` with
 userinfo is refused (never echoed). 8.19: `merge-when-green.sh` merges only
 the head it counted (`--match-head-commit`), tested with a fake `gh`.
+8.20: the Claude workdir is a private directory of ours, not a link (Unix
+tests, verified under WSL: `cargo` is installed there).
 
 ## 1. Decisions never to reverse silently
 
@@ -289,7 +291,7 @@ branch with the local gates of §3 green.
   Done: `scripts/test-merge-when-green.sh` (fake `gh`, four cases, CI job
   `handover`), plan `scripts/sabotage/merge-when-green.json` (three
   defences); `check-testing.py` now reads every plan.
-- [ ] **8.20** The default Claude working directory is checked before use
+- [x] **8.20** The default Claude working directory is checked before use
   (§9, 2026-09-23 review, and the 8.15 system-prompt-file note): today it is
   a fixed name under the temp directory (`itsaresume-claude`), created if
   missing and used as found. On Unix, refuse it unless it is a directory (not
@@ -297,6 +299,15 @@ branch with the local gates of §3 green.
   is per user, keep the check to "a directory, not a link". Red tests (Unix
   only for the mode/owner; the link test on both): a pre-created 0777
   directory and a symlink are refused as `Other` naming the path.
+  Done: `private_workdir` in `claude_code.rs` (a 0755 dir of ours is
+  tightened, `chmod` fails on someone else's); four Unix tests; defences
+  marked `unix_only` (`sabotage.py` skips them on Windows, loudly), verified
+  under WSL; the 8.15 0600 file gained its defence the same way.
+- [ ] **8.21** A `scripts/sabotage-wsl.sh` (or a `--wsl` note in §3) that
+  runs the whole plan under WSL (`CARGO_TARGET_DIR=$HOME/.cache/...`, cargo
+  1.98 is there) so `unix_only` defences are verified before a push, not
+  only by the CI; and an `unix_only` defence that the Linux CI job reports as
+  skipped must fail the job (a guard: `os.name == 'nt'` only).
 
 ## 9. Deliberately open
 
@@ -323,15 +334,14 @@ branch with the local gates of §3 green.
 - **From the 2026-09-23 review, not confirmed (uncertain):** extra usage
   (overage) billed per token on the OAuth path is not detectable from the CLI
   output; the default Claude workdir in the temp directory is predictable and
-  never checked (8.20). Fixed since: the truncated answer (2026-09-27),
+  never checked (fixed in 8.20). Fixed since: the truncated answer (2026-09-27),
   userinfo in `base_url` (8.18), the unpinned merge (8.19).
 - **The system prompt file on disk** (8.15): a crash mid-request leaves it
-  in the working directory; its 0600 test runs on Unix only, with no sabotage
-  defence (the local sabotage runs on Windows). It sharpens the item above:
+  in the working directory; its 0600 test runs on Unix only (its
+  defence is `unix_only`, verified under WSL and in CI). It sharpens the item above:
   on a shared Unix `/tmp`, another user could own `itsaresume-claude` and swap
-  the file before `claude` reads it; on Windows `%TEMP%` is per user. Fix
-  when the router runs on a shared Unix host: check the working directory is
-  ours and 0700. `itsaresume complete --system` still takes the text on the
+  the file before `claude` reads it: closed by 8.20 (the working directory
+  must be ours and 0700). `itsaresume complete --system` still takes the text on the
   router's own command line (the caller's choice; `serve` does not).
 - **Local sabotage on Windows**: "Endpoint never drains a huge declared
   body" stays green there (seen 2026-09-29, 60 of 61 verified); the Linux CI

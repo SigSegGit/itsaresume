@@ -179,6 +179,7 @@ def main():
         return 0
 
     failures = 0
+    skipped = 0
     for plan_path, plan in plans:
         command = plan['command']
         print('== %s' % os.path.relpath(plan_path, root))
@@ -200,6 +201,14 @@ def main():
             return 1
 
         for name, defence in plan['defences'].items():
+            # Tests under #[cfg(unix)] cannot go red on Windows: such a
+            # defence is skipped there, loudly, and counted as unverified
+            # here (the Linux CI job, or WSL, verifies it).
+            if defence.get('unix_only') and os.name == 'nt':
+                print('SKIP %s' % name)
+                print('       unix_only: verify it under Linux (CI, or WSL)')
+                skipped += 1
+                continue
             verdict, detail = verify(defence, command, root)
             print('%-4s %s' % ('ok' if verdict == 'ok' else 'FAIL', name))
             for line in detail.splitlines():
@@ -217,7 +226,9 @@ def main():
     if failures:
         print('%d of %d defence(s) are NOT verified by any test.' % (failures, total))
         return 1
-    print('%d defence(s) verified: each turned its named tests red, every file was' % total)
+    if skipped:
+        print('%d unix_only defence(s) skipped on Windows: NOT verified here.' % skipped)
+    print('%d defence(s) verified: each turned its named tests red, every file was' % (total - skipped))
     print('restored from a byte-for-byte copy, and the tree is green again.')
     return 0
 
