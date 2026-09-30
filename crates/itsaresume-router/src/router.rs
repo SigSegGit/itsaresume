@@ -73,6 +73,28 @@ impl fmt::Display for NoBackends {
 
 impl std::error::Error for NoBackends {}
 
+/// A request named a backend the router does not have.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnknownBackend {
+    /// The name asked for.
+    pub name: String,
+    /// The names the router has, in order.
+    pub configured: Vec<String>,
+}
+
+impl fmt::Display for UnknownBackend {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "unknown backend \"{}\"; configured: {}",
+            self.name,
+            self.configured.join(", ")
+        )
+    }
+}
+
+impl std::error::Error for UnknownBackend {}
+
 /// Sends each request to the first backend able to answer it.
 pub struct Router {
     backends: Vec<Box<dyn Backend>>,
@@ -91,8 +113,13 @@ impl Router {
 
     /// Answer `request` from the first backend that can, and journal it.
     pub fn complete(&self, request: &Request) -> Outcome {
+        let all: Vec<&dyn Backend> = self.backends.iter().map(AsRef::as_ref).collect();
+        self.journaled(request, &all)
+    }
+
+    fn journaled(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {
         let started = Instant::now();
-        let mut outcome = self.route(request);
+        let mut outcome = self.route(request, backends);
         if let Err(error) = self.journal.record(request, &outcome, started.elapsed()) {
             outcome.journal_error = Some(format!(
                 "could not append to {}: {error}",
@@ -102,9 +129,33 @@ impl Router {
         outcome
     }
 
-    fn route(&self, request: &Request) -> Outcome {
+    /// Answer `request`, from the backend named `only` alone when given.
+    ///
+    /// Named, there is no fallback: the caller asked for that backend (to
+    /// measure one model, say), so its quota or outage is the answer.
+    pub fn complete_on(
+        &self,
+        request: &Request,
+        only: Option<&str>,
+    ) -> Result<Outcome, UnknownBackend> {
+        let chosen: Vec<&dyn Backend> = match only {
+            None => self.backends.iter().map(AsRef::as_ref).collect(),
+            Some(name) => match self.backends.iter().find(|b| b.name() == name) {
+                Some(backend) => vec![backend.as_ref()],
+                None => {
+                    return Err(UnknownBackend {
+                        name: name.to_owned(),
+                        configured: self.backends.iter().map(|b| b.name().to_owned()).collect(),
+                    });
+                }
+            },
+        };
+        Ok(self.journaled(request, &chosen))
+    }
+
+    fn route(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {
         let mut attempts = Vec::new();
-        for backend in &self.backends {
+        for backend in backends {
             let error = match backend.complete(request) {
                 Ok(completion) => {
                     let answer = Answer {
