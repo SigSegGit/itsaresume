@@ -114,12 +114,23 @@ Traps met, each cost time once:
     alternation misses "be a big plus"). Drop each `known` it fixes; add a
     corpus offer for each new phrase; replay the rules on real runs
     (`~/.itsaresume/migrations/rules-replay.mjs`) before shipping.
-  - [ ] **2.1c** Listing recall per model: `scripts/measure-listing.mjs`
-    sends each corpus offer through `listRequirements` (router at
-    `--url`, Bionic alone first: free) and prints recall per offer and the
-    missed names; then Sonnet through the router (≈ 8 calls on the owner's
-    Pro quota). Record the numbers here; a recall floor test only once a
-    model's numbers are stable across two runs.
+  - [~] **2.1c** Listing recall per model: `scripts/measure-listing.mjs
+    --url <router>` sends each corpus offer through `listRequirements` and
+    prints recall and misses. **Bionic (`qwen3-coder-next`), 2026-09-30,
+    two runs: 66/75 (88 %) then 63/75 (84 %)**, 10-108 s per offer. Missed
+    in both runs: the whole "Nice to have:" list of `en-platform-startup`
+    (Rust, Datadog, SOC 2, open source), GCP, the languages (Anglais,
+    Spanish), OpenShift, Rigueur; it also listed the excluded "Kubernetes is
+    not required" once. Still to do: Sonnet through the router (≈ 8 calls
+    on the owner's Pro quota), then 2.1e.
+  - [ ] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
+    the items of a list under a header (`Nice to have:`, `Must have:`,
+    `Atouts :`, `Pré-requis :`...) and of a header line's own enumeration
+    are requirements even when the model's listing drops them; added with
+    the header's importance, named by the offer's own words. Red test: the
+    corpus's `en-platform-startup` listing without its nice list gets it
+    back. Measure again with 2.1c: recall must rise, excluded names stay
+    out (a negated line adds nothing).
   - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
 - [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.
