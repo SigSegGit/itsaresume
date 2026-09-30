@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.17
-TITLE: One completion at a time per lm-studio backend
+NEXT: 8.23
+TITLE: The generator names its backend per call (cv --backend), measuring Sonnet and Bionic from one router
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -48,16 +48,10 @@ Bionic's single slot busy.
 own `cv/docs/HANDOVER.md`; the `/itsaresume` skill covers both. The owner's
 private notes are in `~/.itsaresume/HANDOVER-prive.md`, never here.
 
-**2026-09-29.** 8.14 (endpoint hardening: JSON only, no `Origin`, loopback
-`Host` only, huge bodies 413 unread, `serve` exits 1 on error, 4 completions
-at most) merged (PR #10). 8.15 done on
-`m1/system-prompt-file`: the system prompt reaches `claude` through
-`--system-prompt-file` (hidden option, observed on 2.1.162: UTF-8, missing
-file → exit 1 and nothing on stdout), a private file per request deleted on
-return; a 100 KB prompt with a NUL used to fail the spawn. Same observation:
-`apiKeySource: "none"` on the logged-in OAuth path. Trap: `sabotage.py` needs
-its plan on the repository's drive (`relpath`); put a partial plan in
-`target/`.
+**2026-09-29.** 8.14 (endpoint hardening) and 8.15 (system prompt through
+`--system-prompt-file`, a private file per request) merged; details in §8.
+Trap: `sabotage.py` needs its plan on the repository's drive (`relpath`);
+put a partial plan in `target/`.
 
 **2026-09-30.** 8.16 done on `m1/test-doc-honesty`:
 `scripts/check-testing.py` (CI job with `check-handover.py`) holds every
@@ -67,9 +61,16 @@ timeout test now proves the child dead: the fake creates a file if it
 outlives its sleep, and the defence that drops `child.kill()` turns it red.
 `check-handover.py`'s BASE check is no longer vacuous (`main` has merges).
 
-Next: 8.17. Still open from 8.14(d)'s note: the cap is global (4),
-not **one at a time per `lm-studio` backend**; with Bionic's single slot, a
-second local request still waits on Bionic, not on the router (8.17).
+**2026-09-30.** 8.17 done on `m1/lm-studio-one-slot`: an `lm-studio`
+backend lets `max_concurrent` completions reach the server (1 when absent;
+`0` refused; unknown on `claude-code`). A second request waits in the router
+(a `Condvar` slot shared by clones), the wait counts against `timeout_secs`,
+and past it the request is `Unreachable` (falls back) without ever reaching
+Bionic. Seven tests, six sabotage defences. 8.18: a `base_url` with
+userinfo is refused (never echoed). 8.19: `merge-when-green.sh` merges only
+the head it counted (`--match-head-commit`), tested with a fake `gh`.
+8.20: the Claude workdir is a private directory of ours, not a link (Unix
+tests, verified under WSL: `cargo` is installed there).
 
 ## 1. Decisions never to reverse silently
 
@@ -267,13 +268,65 @@ branch with the local gates of §3 green.
   is the root commit (it becomes meaningful after the first merge — note it).
   TESTING.md must also gain the six 8.14 defences (`Endpoint …`, `Serve loop
   returns the error that ends it`).
-- [ ] **8.17** One completion at a time per `lm-studio` backend: the local
+- [x] **8.17** One completion at a time per `lm-studio` backend: the local
   server (Bionic) has one slot; today the router sends it every request and
   lets them queue there, past the generator's timeout. A per-backend limit
   (`max_concurrent`, default 1 for `lm-studio`, none for `claude-code`) that
   makes a second request wait in the router, bounded by the backend's
   `timeout_secs`, then fall back as an outage. Red test: two slow requests
   to a scripted one-slot backend, the second never overlaps the first.
+  Done: `Slots` in `lm_studio.rs`, `max_concurrent` in `config.rs`; seven
+  tests, six defences.
+- [x] **8.18** Reject userinfo in an `lm-studio` `base_url` (from the
+  2026-09-23 review, §9): `http://user:pass@host/v1` would be sent as Basic
+  auth (a credential, against decision 1) and echoed in every error and
+  journal line. `Config::router()` refuses a `base_url` with `@` in its
+  authority, naming the field but never echoing the value. Red test: two
+  URLs (`user:pass@`, `user@`) refused, the message holds neither `pass`
+  nor `user`; a normal URL and one with `@` only in the path still build.
+  Done: `has_userinfo` in `config.rs`; one test, two defences.
+- [x] **8.19** `scripts/merge-when-green.sh` pins the head sha it counted
+  checks for (§9, 2026-09-23 review): a push between the count and the merge
+  must abort the merge (`gh pr merge --match-head-commit <sha>`).
+  Done: `scripts/test-merge-when-green.sh` (fake `gh`, four cases, CI job
+  `handover`), plan `scripts/sabotage/merge-when-green.json` (three
+  defences); `check-testing.py` now reads every plan.
+- [x] **8.20** The default Claude working directory is checked before use
+  (§9, 2026-09-23 review, and the 8.15 system-prompt-file note): today it is
+  a fixed name under the temp directory (`itsaresume-claude`), created if
+  missing and used as found. On Unix, refuse it unless it is a directory (not
+  a symlink) owned by us with mode 0700 (create it 0700); on Windows `%TEMP%`
+  is per user, keep the check to "a directory, not a link". Red tests (Unix
+  only for the mode/owner; the link test on both): a pre-created 0777
+  directory and a symlink are refused as `Other` naming the path.
+  Done: `private_workdir` in `claude_code.rs` (a 0755 dir of ours is
+  tightened, `chmod` fails on someone else's); four Unix tests; defences
+  marked `unix_only` (`sabotage.py` skips them on Windows, loudly), verified
+  under WSL; the 8.15 0600 file gained its defence the same way.
+- [x] **8.21** `scripts/sabotage-wsl.sh` runs the whole plan under WSL
+  (`unix_only` defences verified before a push; first run 2026-09-30: 76 of
+  77, the 77th a real anchor break, fixed on PR #14; the "huge declared
+  body" defence Windows cannot verify passes there). The Linux CI job never
+  skips `unix_only` (`os.name == 'nt'` only), so no guard was needed.
+  `check-testing.py` (fast CI job `handover`) now also fails when a
+  defence's `live` anchor is not exactly once in its file: the anchor break
+  above took 16 minutes of the sabotage job to show.
+- [x] **8.22** A request may name its backend (M3's first step, the
+  generator's 2.1c/2.3 need it): `POST /v1/complete` and `complete` take an
+  optional `backend` (a configured backend's `name`, a new optional config
+  field, unique; default the kind); named, only that backend is tried (no
+  fallback: the caller asked for it) and an unknown name is 400 / exit 2
+  listing the names. Red tests: two lm-studio backends named `a` and `b`
+  (scripted servers), a request naming `b` reaches only `b`; unknown `c` is
+  400 with `a, b`; without a name the order and fallback are unchanged.
+  Done: `Router::complete_on`, `UnknownBackend`, config `name` (unique,
+  wrapped as `Named`), `"backend"` in the endpoint, `--backend` on the CLI;
+  five tests, six defences (verified with `-D warnings`).
+- [ ] **8.23** The generator side (in `cv/`): `complete()` in
+  `cv/src/llm.js` sends an optional `backend`; `measure-listing.mjs` takes
+  `--backend`, so one router (`sonnet-qwen.local.toml` with names
+  `sonnet` and `qwen`) measures both models (cv 2.1c). Red test: the fake
+  router in the cv tests receives `"backend": "qwen"`.
 
 ## 9. Deliberately open
 
@@ -299,18 +352,15 @@ branch with the local gates of §3 green.
   script, not demonstrated by breaking the image.
 - **From the 2026-09-23 review, not confirmed (uncertain):** extra usage
   (overage) billed per token on the OAuth path is not detectable from the CLI
-  output; a `base_url` with `user:pass@` would be sent as Basic auth and
-  echoed in errors (reject userinfo in config); the default Claude workdir in
-  the temp directory is predictable and never checked; `merge-when-green.sh`
-  does not pin the head sha it counted checks for; a truncated answer
-  (`finish_reason: "length"`, empty content) counts as success.
+  output; the default Claude workdir in the temp directory is predictable and
+  never checked (fixed in 8.20). Fixed since: the truncated answer (2026-09-27),
+  userinfo in `base_url` (8.18), the unpinned merge (8.19).
 - **The system prompt file on disk** (8.15): a crash mid-request leaves it
-  in the working directory; its 0600 test runs on Unix only, with no sabotage
-  defence (the local sabotage runs on Windows). It sharpens the item above:
+  in the working directory; its 0600 test runs on Unix only (its
+  defence is `unix_only`, verified under WSL and in CI). It sharpens the item above:
   on a shared Unix `/tmp`, another user could own `itsaresume-claude` and swap
-  the file before `claude` reads it; on Windows `%TEMP%` is per user. Fix
-  when the router runs on a shared Unix host: check the working directory is
-  ours and 0700. `itsaresume complete --system` still takes the text on the
+  the file before `claude` reads it: closed by 8.20 (the working directory
+  must be ours and 0700). `itsaresume complete --system` still takes the text on the
   router's own command line (the caller's choice; `serve` does not).
 - **Local sabotage on Windows**: "Endpoint never drains a huge declared
   body" stays green there (seen 2026-09-29, 60 of 61 verified); the Linux CI

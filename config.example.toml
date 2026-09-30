@@ -29,9 +29,17 @@ timeout_secs = 300
 
 [[backend]]
 kind = "lm-studio"
+# Optional: the name a request gives to use this backend alone
+# ("backend" in POST /v1/complete, --backend on the CLI) and the journal
+# records; the kind when absent. Names are unique.
+# name = "local"
 # LM Studio's OpenAI-compatible endpoint, including the /v1 suffix. The port
 # is the one LM Studio shows in its Developer tab (1234 unless changed).
 base_url = "http://gpu-machine.example-tailnet.ts.net:1234/v1"
 # The model identifier as LM Studio lists it (GET /v1/models).
 model = "example-model-id"
+# Waiting for a free slot counts against this timeout.
 timeout_secs = 300
+# Completions on the server at once (1 when absent: a local server usually
+# has one slot, and a request queued there outlives the caller's timeout).
+# max_concurrent = 1

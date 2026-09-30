@@ -53,6 +53,7 @@ fn backends_keep_their_order_and_settings() {
                 base_url,
                 model,
                 timeout_secs,
+                ..
             },
             BackendConfig::ClaudeCode {
                 program,
@@ -115,4 +116,114 @@ fn a_configuration_without_backends_cannot_build_a_router() {
 fn a_valid_configuration_builds_a_router() {
     let config = Config::parse(EXAMPLE).expect("valid");
     assert!(config.router().is_ok());
+}
+
+/// Bionic serves one request at a time: an `lm-studio` backend takes one
+/// completion at a time unless `max_concurrent` says otherwise; `claude-code`
+/// has no such limit (each request is its own process).
+#[test]
+fn lm_studio_takes_one_completion_at_a_time_by_default() {
+    let config = Config::parse(
+        "journal = \"j.jsonl\"
+[[backend]]
+kind = \"lm-studio\"
+base_url = \"http://h/v1\"
+model = \"m\"
+[[backend]]
+kind = \"lm-studio\"
+base_url = \"http://h/v1\"
+model = \"m\"
+max_concurrent = 3
+[[backend]]
+kind = \"claude-code\"
+program = \"claude\"
+",
+    )
+    .expect("valid");
+    assert_eq!(config.backends[0].max_concurrent(), Some(1));
+    assert_eq!(config.backends[1].max_concurrent(), Some(3));
+    assert_eq!(config.backends[2].max_concurrent(), None);
+}
+
+#[test]
+fn max_concurrent_zero_or_on_claude_code_is_refused() {
+    let zero = Config::parse(
+        "journal = \"j.jsonl\"
+[[backend]]
+kind = \"lm-studio\"
+base_url = \"http://h/v1\"
+model = \"m\"
+max_concurrent = 0
+",
+    )
+    .expect("parses");
+    let Err(error) = zero.router() else {
+        panic!("zero slots would never answer")
+    };
+    assert!(error.to_string().contains("max_concurrent"), "{error}");
+
+    let claude = "journal = \"j.jsonl\"
+[[backend]]
+kind = \"claude-code\"
+program = \"claude\"
+max_concurrent = 1
+";
+    assert!(Config::parse(claude).is_err());
+}
+
+/// A `base_url` with userinfo would be sent as Basic auth (a credential) and
+/// echoed in every error and journal line: refused, without echoing it.
+#[test]
+fn userinfo_in_a_base_url_is_refused_without_echoing_it() {
+    for url in ["http://alice:s3cret@h:1234/v1", "http://alice@h:1234/v1"] {
+        let text = format!(
+            "journal = \"j.jsonl\"\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{url}\"\nmodel = \"m\"\n"
+        );
+        let config = Config::parse(&text).expect("parses");
+        let Err(error) = config.router() else {
+            panic!("{url}: userinfo must not build a router")
+        };
+        let message = error.to_string();
+        assert!(message.contains("base_url"), "{message}");
+        assert!(
+            !message.contains("alice") && !message.contains("s3cret"),
+            "{message}"
+        );
+    }
+    for url in ["http://h:1234/v1", "http://h:1234/v1/@x"] {
+        let text = format!(
+            "journal = \"j.jsonl\"\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{url}\"\nmodel = \"m\"\n"
+        );
+        assert!(
+            Config::parse(&text).expect("parses").router().is_ok(),
+            "{url}"
+        );
+    }
+}
+
+/// 8.22: a backend may carry a `name` (two local models side by side); the
+/// journal and the answers use it, and names are unique.
+#[test]
+fn a_backend_may_be_named_and_names_are_unique() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let journal = dir.path().join("j.jsonl");
+    let two = |second: &str| {
+        format!(
+            "journal = {journal:?}\n[[backend]]\nkind = \"lm-studio\"\nname = \"qwen\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 2\n[[backend]]\nkind = \"lm-studio\"\nname = \"{second}\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 2\n"
+        )
+    };
+    let router = Config::parse(&two("gemma"))
+        .expect("valid")
+        .router()
+        .expect("builds");
+    let outcome = router
+        .complete_on(&itsaresume_router::Request::new("p"), Some("gemma"))
+        .expect("gemma is configured");
+    assert_eq!(outcome.attempts.len(), 1);
+    assert_eq!(outcome.attempts[0].backend, "gemma");
+
+    let Err(error) = Config::parse(&two("qwen")).expect("parses").router() else {
+        panic!("two backends named qwen")
+    };
+    assert!(error.to_string().contains("qwen"), "{error}");
 }

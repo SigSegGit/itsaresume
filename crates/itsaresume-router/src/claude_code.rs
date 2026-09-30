@@ -248,12 +248,7 @@ impl ClaudeCodeBackend {
         if let Some(error) = self.latched() {
             return Err(error);
         }
-        std::fs::create_dir_all(&self.workdir).map_err(|error| {
-            BackendError::Other(format!(
-                "cannot create the claude working directory {}: {error}",
-                self.workdir.display()
-            ))
-        })?;
+        private_workdir(&self.workdir)?;
         let system = request.system.as_deref().unwrap_or(DEFAULT_SYSTEM_PROMPT);
         // Removed when this function returns, whatever the outcome.
         let system_file = SystemFile::write(&self.workdir, system)?;
@@ -353,6 +348,58 @@ impl ClaudeCodeBackend {
 /// without case: Windows environment names are case-insensitive).
 /// Tells apart the system prompt files of one process's concurrent requests.
 static SYSTEM_FILES: AtomicU64 = AtomicU64::new(0);
+
+/// Create `workdir` if missing, then make sure it is fit to hold the system
+/// prompt file and to start `claude` in.
+///
+/// On Unix: a directory, not a link, that no other user can write into, left
+/// 0700 (a 0755 one of ours is tightened; `chmod` fails on someone else's).
+/// On Windows the temp directory is per user: a directory, not a link.
+fn private_workdir(workdir: &Path) -> Result<(), BackendError> {
+    let refuse = |why: String| {
+        BackendError::Other(format!(
+            "the claude working directory {} {why}",
+            workdir.display()
+        ))
+    };
+    #[cfg(unix)]
+    let created = {
+        use std::os::unix::fs::DirBuilderExt;
+        if let Some(parent) = workdir.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| refuse(format!("cannot be created: {error}")))?;
+        }
+        std::fs::DirBuilder::new().mode(0o700).create(workdir)
+    };
+    #[cfg(not(unix))]
+    let created = std::fs::create_dir_all(workdir);
+    if let Err(error) = created {
+        if error.kind() != std::io::ErrorKind::AlreadyExists {
+            return Err(refuse(format!("cannot be created: {error}")));
+        }
+    }
+    let metadata = std::fs::symlink_metadata(workdir)
+        .map_err(|error| refuse(format!("cannot be read: {error}")))?;
+    // Not followed: a link's own metadata is never a directory's.
+    if !metadata.is_dir() {
+        return Err(refuse("is not a plain directory (a link or a file)".into()));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = metadata.permissions().mode() & 0o777;
+        if mode & 0o022 != 0 {
+            return Err(refuse(format!(
+                "is writable by other users (mode {mode:o}); remove it or chmod 700"
+            )));
+        }
+        if mode != 0o700 {
+            std::fs::set_permissions(workdir, std::fs::Permissions::from_mode(0o700))
+                .map_err(|error| refuse(format!("cannot be made private: {error}")))?;
+        }
+    }
+    Ok(())
+}
 
 /// The system prompt of one request, in a file of the working directory that
 /// only its owner can read (0600 on Unix; on Windows the default working

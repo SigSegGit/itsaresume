@@ -32,6 +32,8 @@ pub struct Config {
 pub enum BackendConfig {
     /// The `claude` CLI on the subscription.
     ClaudeCode {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
         /// The executable (a path, or a name looked up on `PATH`).
         program: PathBuf,
         /// A model alias for `claude --model`.
@@ -43,12 +45,16 @@ pub enum BackendConfig {
     },
     /// LM Studio's OpenAI-compatible server.
     LmStudio {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
         /// The endpoint, ending in `/v1`.
         base_url: String,
         /// The model id as LM Studio lists it.
         model: String,
-        /// Seconds before giving up.
+        /// Seconds before giving up, waiting for a slot included.
         timeout_secs: Option<u64>,
+        /// Completions on the server at once; 1 when absent (Bionic has one slot).
+        max_concurrent: Option<usize>,
     },
 }
 
@@ -61,6 +67,36 @@ impl BackendConfig {
             }
         };
         Duration::from_secs(seconds)
+    }
+
+    /// The name a request may give (`backend`) and the journal records:
+    /// the configured `name`, else the kind.
+    pub fn name(&self) -> String {
+        match self {
+            Self::ClaudeCode { name, .. } => name.clone().unwrap_or_else(|| "claude-code".into()),
+            Self::LmStudio { name, .. } => name.clone().unwrap_or_else(|| "lm-studio".into()),
+        }
+    }
+
+    /// How many completions may reach the backend at once (`None`: no limit).
+    pub fn max_concurrent(&self) -> Option<usize> {
+        match self {
+            Self::ClaudeCode { .. } => None,
+            Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(1)),
+        }
+    }
+
+    /// Whether an `lm-studio` `base_url` has `user@` before its host, which
+    /// would be sent as Basic auth.
+    fn has_userinfo(&self) -> bool {
+        let Self::LmStudio { base_url, .. } = self else {
+            return false;
+        };
+        let rest = base_url
+            .split_once("://")
+            .map_or(base_url.as_str(), |(_, r)| r);
+        let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+        authority.contains('@')
     }
 
     /// The backend; `journal` is where the Claude Code billing latch goes, beside it.
@@ -85,7 +121,11 @@ impl BackendConfig {
             }
             Self::LmStudio {
                 base_url, model, ..
-            } => Box::new(LmStudioBackend::new(base_url, model).with_timeout(self.timeout())),
+            } => Box::new(
+                LmStudioBackend::new(base_url, model)
+                    .with_timeout(self.timeout())
+                    .with_max_concurrent(self.max_concurrent().unwrap_or(1)),
+            ),
         }
     }
 }
@@ -117,12 +157,56 @@ impl Config {
 
     /// The router this configuration describes.
     pub fn router(&self) -> Result<Router, ConfigError> {
+        if self.backends.iter().any(|b| b.max_concurrent() == Some(0)) {
+            return Err(ConfigError(
+                "invalid configuration: max_concurrent = 0 would never answer".into(),
+            ));
+        }
+        if self.backends.iter().any(BackendConfig::has_userinfo) {
+            // Never echo the URL: its userinfo is a credential.
+            return Err(ConfigError(
+                "invalid configuration: an lm-studio base_url holds userinfo (user@ or user:password@); no credential goes in this file".into(),
+            ));
+        }
+        let mut seen = std::collections::HashSet::new();
+        for backend in &self.backends {
+            if !seen.insert(backend.name()) {
+                return Err(ConfigError(format!(
+                    "invalid configuration: two backends are named \"{}\" (give each a unique `name`)",
+                    backend.name()
+                )));
+            }
+        }
         let backends = self
             .backends
             .iter()
-            .map(|backend| backend.build(&self.journal))
+            .map(|backend| -> Box<dyn Backend> {
+                Box::new(Named {
+                    name: backend.name(),
+                    inner: backend.build(&self.journal),
+                })
+            })
             .collect();
         Router::new(backends, Journal::new(&self.journal))
             .map_err(|error| ConfigError(format!("invalid configuration: {error}")))
+    }
+}
+
+/// A backend under its configured name (the kind when none is given).
+struct Named {
+    name: String,
+    inner: Box<dyn Backend>,
+}
+
+impl Backend for Named {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(
+        &self,
+        request: &crate::backend::Request,
+    ) -> Result<crate::backend::Completion, crate::backend::BackendError> {
+        self.inner.complete(request)
     }
 }
