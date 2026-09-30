@@ -2,7 +2,7 @@
 
 use itsaresume_router::config::Config;
 use itsaresume_router::server::{DEFAULT_LISTEN, Server};
-use itsaresume_router::{Request, RouteError};
+use itsaresume_router::{Kind, Request, RouteError};
 use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -10,7 +10,7 @@ use std::process::ExitCode;
 const USAGE: &str = "\
 usage:
   itsaresume complete [--config FILE] [--system TEXT] [--backend NAME]
-                      [--schema FILE]
+                      [--schema FILE] [--kind generate|classify]
       prompt on stdin, answer on stdout, the answering backend on stderr;
       --backend tries that configured backend alone (no fallback);
       --schema asks for an answer following that JSON Schema
@@ -40,6 +40,7 @@ struct Options {
     backend: Option<String>,
     schema: Option<PathBuf>,
     by_day: bool,
+    kind: Kind,
 }
 
 fn parse(args: &[String]) -> Result<(String, Options), String> {
@@ -62,6 +63,17 @@ fn parse(args: &[String]) -> Result<(String, Options), String> {
             "--by-day" if command == "stats" => {
                 options.by_day = true;
                 continue;
+            }
+            "--kind" if command == "complete" => {
+                options.kind = match value()?.as_str() {
+                    "generate" => Kind::Generate,
+                    "classify" => Kind::Classify,
+                    other => {
+                        return Err(format!(
+                            "--kind must be generate or classify, not {other:?}"
+                        ));
+                    }
+                };
             }
             "--schema" if command == "complete" => options.schema = Some(PathBuf::from(value()?)),
             "--listen" if command == "serve" => options.listen = Some(value()?),
@@ -106,6 +118,7 @@ fn main() -> ExitCode {
             options.system,
             options.backend.as_deref(),
             options.schema.as_deref(),
+            options.kind,
         )
     }
 }
@@ -186,6 +199,7 @@ fn complete(
     system: Option<String>,
     only: Option<&str>,
     schema_file: Option<&std::path::Path>,
+    kind: Kind,
 ) -> ExitCode {
     // Before anything else: a bad schema file is a usage error, no backend
     // is called for it.
@@ -218,7 +232,7 @@ fn complete(
             prompt,
             system,
             schema,
-            kind: Default::default(),
+            kind,
         },
         only,
     ) {

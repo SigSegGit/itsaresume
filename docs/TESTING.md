@@ -129,6 +129,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_schema_option_reaches_the_cli_as_json_schema` | `tests/cli.rs` | `--schema FILE` reaches the CLI as `--json-schema`; the answer is the structured JSON | CLI: --schema is read; CLI: the schema reaches the request |
 | `the_stats_command_sums_up_the_journal` | `tests/cli.rs` | `itsaresume stats` prints the summary of the configured journal and appends nothing | CLI: stats reads the journal |
 | `the_stats_by_day_option_prints_one_line_per_day` | `tests/cli.rs` | `stats --by-day` prints one line per day | CLI: --by-day is read |
+| `the_kind_option_reaches_a_classify_only_backend` | `tests/cli.rs` | `--kind classify` reaches a classify-only backend; no flag (a generation) exits 2 naming the kind; an unknown kind exits 2 | CLI: --kind classify is read; CLI: the kind reaches the request |
 | `a_schema_file_that_is_not_an_object_is_a_usage_error` | `tests/cli.rs` | A schema file that is not a JSON object exits 2 naming it, before any backend runs | CLI: a schema file must hold an object |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |
 | `a_fired_billing_tripwire_stops_the_next_process_too` | `tests/cli.rs` | A tripwire fired in one `itsaresume` process stops the next one (latch file beside the journal) | Billing latch: a latched backend does not start claude; Billing latch: beside the journal; Billing latch: written down for a restart |

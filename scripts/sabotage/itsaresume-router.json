@@ -779,8 +779,8 @@
     },
     "CLI: the schema reaches the request": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n            kind: Default::default(),\n        },\n        only,",
-      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind: Default::default(),\n        },\n        only,",
+      "live": "system,\n            schema,\n            kind,\n        },\n        only,",
+      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind,\n        },\n        only,",
       "expect": [
         "the_schema_option_reaches_the_cli_as_json_schema"
       ]
@@ -947,6 +947,22 @@
       "dead": "Value::String(kind) if kind == \"classify!\" => Kind::Classify,",
       "expect": [
         "a_request_kind_is_generate_or_classify"
+      ]
+    },
+    "CLI: --kind classify is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "\"classify\" => Kind::Classify,",
+      "dead": "\"classify!\" => Kind::Classify,",
+      "expect": [
+        "the_kind_option_reaches_a_classify_only_backend"
+      ]
+    },
+    "CLI: the kind reaches the request": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "system,\n            schema,\n            kind,\n        },",
+      "dead": "system,\n            schema,\n            kind: if kind == Kind::Classify { Kind::Generate } else { kind },\n        },",
+      "expect": [
+        "the_kind_option_reaches_a_classify_only_backend"
       ]
     }
   }

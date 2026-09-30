@@ -41,6 +41,9 @@ A request may name one configured backend (`--backend NAME`, or `"backend"`
 in `POST /v1/complete`): only that one is tried, no fallback. It may ask for
 structured output (`--schema FILE`, or `"schema"`: a JSON Schema object):
 the answer is then a JSON document following it, or the request fails.
+A request has a kind (`--kind`, or `"kind"`: `generate` by default, or
+`classify`), and a backend may serve only some kinds (`serves` in the
+configuration): a small model never gets a generation.
 `itsaresume stats` sums the journal up: per backend and outcome, the
 fallbacks, the share of structured requests.
 

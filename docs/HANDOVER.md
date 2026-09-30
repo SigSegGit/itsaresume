@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.35
-TITLE: complete --kind classify, and serves documented in config.example.toml
+NEXT: 8.36
+TITLE: The generator marks its classification calls (kind) so a small model can take them
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -448,11 +448,17 @@ branch with the local gates of §3 green.
   journal "unserved"), config `serves` through `Named`, `"kind"` on the
   endpoint; four tests, five defences. The runtime and the model on the Pi
   or the VM stay open (§9, the owner's choice).
-- [ ] **8.35** `itsaresume complete --kind classify` (the CLI parity of
+- [x] **8.35** `itsaresume complete --kind classify` (the CLI parity of
   `"kind"`), an unknown kind a usage error; `serves` shown, commented, in
   `config.example.toml` and README. Red test in `tests/cli.rs`: a config
   whose only backend serves classify: `--kind classify` answers, no flag
-  exits 2 naming the kind.
+  exits 2 naming the kind. Done: one test, two defences (one anchor moved).
+- [ ] **8.36** The generator side of M2 (in `cv/`): `complete()` sends
+  `kind` when asked, and the calls that only choose (the offer split's
+  ranges? the listing's must/nice?) are marked `classify` where a small
+  model could serve them; measure first on the corpus whether such a call
+  keeps its quality with the local model before marking it (`measure-*`).
+  Nothing changes for a router without a classify-only backend.
 
 ## 9. Deliberately open
 
