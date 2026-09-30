@@ -1,0 +1,65 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Floor: the listing keeps it": {
+      "file": "src/listing.js",
+      "live": "return withFloor(listed, offer);",
+      "dead": "return listed;",
+      "expect": [
+        "the listing gets back what the model dropped, and nothing twice"
+      ]
+    },
+    "Floor: an unreadable listing keeps it": {
+      "file": "src/listing.js",
+      "live": "return withFloor([], offer);",
+      "dead": "return [];",
+      "expect": [
+        "an unreadable listing still keeps the floor"
+      ]
+    },
+    "Floor: nothing twice": {
+      "file": "src/listing.js",
+      "live": "const missing = floorItems(offer).filter((item) => !listed.some((known) => mentions(item.name, known.name) || mentions(known.name, item.name)));",
+      "dead": "const missing = floorItems(offer);",
+      "expect": [
+        "the listing gets back what the model dropped, and nothing twice"
+      ]
+    },
+    "Floor: a header needs a cue": {
+      "file": "src/listing.js",
+      "live": "if (!own) continue;",
+      "dead": "if (false) continue;",
+      "expect": [
+        "a header without a cue, or a denied one, adds nothing"
+      ]
+    },
+    "Floor: a blank line ends the list": {
+      "file": "src/listing.js",
+      "live": "      section = null;\n      continue;",
+      "dead": "      continue;",
+      "expect": [
+        "a list ends at a blank line or the next header"
+      ]
+    },
+    "Floor: a header's enumeration": {
+      "file": "src/listing.js",
+      "live": "else for (const part of header[2].split(/,|;|\\bet\\b|\\band\\b/)) add(part, own);",
+      "dead": "else void header;",
+      "expect": [
+        "a header's own enumeration is floor items"
+      ]
+    },
+    "Floor: the header's importance": {
+      "file": "src/listing.js",
+      "live": "if (section) add(bullet[1], section);",
+      "dead": "if (section) add(bullet[1], 'must');",
+      "expect": [
+        "the items under a nice header are floor items, nice"
+      ]
+    }
+  }
+}

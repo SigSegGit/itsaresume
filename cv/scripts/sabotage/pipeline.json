@@ -53,6 +53,14 @@
       "expect": [
         "the client waits as long as its own timeout, and no longer"
       ]
+    },
+    "Client: a backend name is sent only when asked": {
+      "file": "src/llm.js",
+      "live": "const body = JSON.stringify(backend ? { prompt, system, backend } : { prompt, system });",
+      "dead": "const body = JSON.stringify({ prompt, system });",
+      "expect": [
+        "the client names a backend only when asked (router 8.22)"
+      ]
     }
   }
 }

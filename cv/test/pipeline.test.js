@@ -126,6 +126,21 @@ test('the client posts JSON to /v1/complete and surfaces a router refusal', asyn
   }
 });
 
+test('the client names a backend only when asked (router 8.22)', async () => {
+  const { server, seen, url } = await fakeRouter([
+    [200, { backend: 'qwen', text: 'a', attempts: [] }],
+    [200, { backend: 'claude-code', text: 'b', attempts: [] }],
+  ]);
+  try {
+    await complete({ url, system: 's', prompt: 'p', backend: 'qwen' });
+    await complete({ url, system: 's', prompt: 'p' });
+    assert.deepEqual(seen[0].body, { prompt: 'p', system: 's', backend: 'qwen' });
+    assert.deepEqual(seen[1].body, { prompt: 'p', system: 's' });
+  } finally {
+    server.close();
+  }
+});
+
 test('an unreachable router is a clear error', async () => {
   await assert.rejects(complete({ url: 'http://127.0.0.1:9', system: 's', prompt: 'p' }), /itsaresume/);
 });

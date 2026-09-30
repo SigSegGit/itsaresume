@@ -135,6 +135,18 @@ property it proves.
 | the model is never shown a skill the evidence rules out, and may not claim it | Evidence: the free text may not name a ruled-out skill; Evidence: the pipeline checks the answer against the verdicts |
 | a quote from a source with a text must be found in it, word for word | Evidence: a quote must be in its source; Evidence: a quote survives line wrapping and case |
 
+## `test/floor.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the items under a nice header are floor items, nice | Floor: the header's importance |
+| the items under a must header are floor items, must | — |
+| a header's own enumeration is floor items | Floor: a header's enumeration |
+| a header without a cue, or a denied one, adds nothing | Floor: a header needs a cue |
+| a list ends at a blank line or the next header | Floor: a blank line ends the list |
+| the listing gets back what the model dropped, and nothing twice | Floor: the listing keeps it; Floor: nothing twice |
+| an unreadable listing still keeps the floor | Floor: an unreadable listing keeps it |
+
 ## `test/guard.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -265,6 +277,7 @@ property it proves.
 | an answer still invalid after the retry is refused, not rendered | Pipeline: an invalid answer is never accepted |
 | the report states the score, the verdict and how each requirement is met | — |
 | the client posts JSON to /v1/complete and surfaces a router refusal | Client: JSON content type; Client: a refusal is an error |
+| the client names a backend only when asked (router 8.22) | Client: a backend name is sent only when asked |
 | an unreachable router is a clear error | — |
 | itsacv tailor writes the CV, the report and the analysis | — |
 | itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why | Evidence: the CLI draws the CV from the restricted profile; Evidence: the report has its Verification section; Run: the report lists what older CVs named |
@@ -410,6 +423,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**266 tests, 219 of them covered by at least one sabotage defence.**
+**274 tests, 226 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice
