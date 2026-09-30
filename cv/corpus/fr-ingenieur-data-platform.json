@@ -1,0 +1,40 @@
+{
+  "id": "fr-ingenieur-data-platform",
+  "language": "fr",
+  "offer": "Ingénieur plateforme data\n\nVous opérez la plateforme de données : Kafka, Spark sur Kubernetes, stockage S3 compatible (MinIO).\n\nCe que nous attendons :\n- Expérience obligatoire en exploitation de Kafka\n- Spark, idéalement en production\n- Des bases solides en SQL\n\nAtouts : Airflow, dbt.\nUne expérience de Flink ne serait pas un plus pour ce poste, nous ne l'utilisons pas.",
+  "requirements": [
+    {
+      "name": "Kafka",
+      "importance": "must"
+    },
+    {
+      "name": "Spark",
+      "importance": "nice"
+    },
+    {
+      "name": "Kubernetes",
+      "importance": "must"
+    },
+    {
+      "name": "MinIO",
+      "importance": "must"
+    },
+    {
+      "name": "SQL",
+      "importance": "must"
+    },
+    {
+      "name": "Airflow",
+      "importance": "nice"
+    },
+    {
+      "name": "dbt",
+      "importance": "nice"
+    }
+  ],
+  "excluded": [
+    {
+      "name": "Flink"
+    }
+  ]
+}

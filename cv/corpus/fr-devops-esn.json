@@ -1,0 +1,44 @@
+{
+  "id": "fr-devops-esn",
+  "language": "fr",
+  "offer": "Consultant DevOps confirmé\n\nNotre client, un acteur de l'énergie, recherche un consultant pour accompagner la migration de ses applications vers OpenShift.\n\nPré-requis :\n- Jenkins, GitLab CI\n- Docker\n- Scripting Bash\n\nCompétences appréciées :\n- Vault\n- Azure\n\nDes notions de Terraform sont les bienvenues. La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.",
+  "requirements": [
+    {
+      "name": "OpenShift",
+      "importance": "must"
+    },
+    {
+      "name": "Jenkins",
+      "importance": "must"
+    },
+    {
+      "name": "GitLab CI",
+      "importance": "must"
+    },
+    {
+      "name": "Docker",
+      "importance": "must"
+    },
+    {
+      "name": "Bash",
+      "importance": "must"
+    },
+    {
+      "name": "Vault",
+      "importance": "nice"
+    },
+    {
+      "name": "Azure",
+      "importance": "nice"
+    },
+    {
+      "name": "Terraform",
+      "importance": "nice"
+    },
+    {
+      "name": "Ansible",
+      "importance": "nice",
+      "known": "wrong: \"n'est pas obligatoire\" read as a must cue (negation)"
+    }
+  ]
+}

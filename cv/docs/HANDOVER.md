@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1
-TITLE: measure quality on a labelled corpus (synthetic offers from known requirement lists), since real offers are too few to discriminate
+NEXT: 2.1b
+TITLE: importance cues: negation, a cue scoped to a certification, "a big plus" (the corpus's three misses)
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -35,9 +35,14 @@ the decisions waiting for him, how to reach his machines — are in
   brings the profile title naming it); short missions (only what the main
   missions leave open). "Before any model" (a shortlist to the model for
   what code cannot settle) is step 2.3.
-- **Measured limit**: real offers are few (three distinct ones). The rules
-  are tested on synthetic phrases; replaying past runs could not
-  discriminate most of them. Hence 2.1 next.
+- **Measured limit**: real offers are few (three distinct ones). Since
+  2.1a, a labelled corpus (`corpus/*.json`: 8 synthetic offers, 75
+  requirements labelled must/nice by a human reader, names the offer
+  excludes) measures the code: `importanceIn` is right on 38, silent on 35
+  (no cue: the model decides), **wrong on 2** plus one excluded name read as
+  a must. The misses are labelled `known` in the corpus; `test/corpus.test.js`
+  holds the code to exactly that list (fixing one means dropping its
+  `known`).
 - 290 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
@@ -92,12 +97,31 @@ Traps met, each cost time once:
 
 - [x] **1.1** Publish, CI, issues (private, 2026-09-24); moved public
   2026-09-30 (§0).
-- [ ] **2.1** Measure quality: a labelled corpus of offers, recall of
+- [~] **2.1** Measure quality: a labelled corpus of offers, recall of
   requirements, false refusals, per model; a deterministic requirement
-  floor. Cheap corpus: synthetic offers generated from known requirement
-  lists by the local model (text only, no tools), recall measured against
-  the list; the must/nice cues of 2.6 and the equivalents of 2.7 measured
-  on it too.
+  floor.
+  - [x] **2.1a** (2026-09-30) The corpus (`corpus/`, written by hand, not
+    by a model: labels a model wrote would measure the model against
+    itself) and `src/measure.js` (`corpusProblems`, `measureImportance`,
+    `recall`); 7 tests, 4 defences (`scripts/sabotage/corpus.json`).
+  - [ ] **2.1b** Fix the three misses `importanceIn` shows on the corpus,
+    red first from the corpus lines: (1) negation, "n'est pas obligatoire
+    mais sera appréciée" and "Kubernetes is not required" read as musts (a
+    negated must cue is no must; "pas obligatoire mais appréciée" is nice);
+    (2) "Une certification AWS est un atout" makes AWS itself nice while a
+    mission needs it (a cue on "certification X" applies to the
+    certification, not to X); (3) "would be a big plus" is silent (the NICE
+    alternation misses "be a big plus"). Drop each `known` it fixes; add a
+    corpus offer for each new phrase; replay the rules on real runs
+    (`~/.itsaresume/migrations/rules-replay.mjs`) before shipping.
+  - [ ] **2.1c** Listing recall per model: `scripts/measure-listing.mjs`
+    sends each corpus offer through `listRequirements` (router at
+    `--url`, Bionic alone first: free) and prints recall per offer and the
+    missed names; then Sonnet through the router (≈ 8 calls on the owner's
+    Pro quota). Record the numbers here; a recall floor test only once a
+    model's numbers are stable across two runs.
+  - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
+    corpus: grounding of each label against the synthetic profile.
 - [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.
 - [ ] **2.3** Router contract: structured output, a model per call (router
   M3). Carries 2.7's step (5): the code settles each requirement it can

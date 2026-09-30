@@ -1,0 +1,43 @@
+{
+  "id": "fr-admin-sys-public",
+  "language": "fr",
+  "offer": "Administrateur systèmes Linux - Collectivité territoriale\n\nVous administrez un parc de 300 serveurs Red Hat et Debian, la sauvegarde (Veeam) et la supervision (Zabbix).\n\nProfil :\nTitulaire d'un bac+3 en informatique, vous maîtrisez l'administration Linux et VMware. Une première expérience d'Ansible est souhaitable. Le permis B est requis pour les déplacements sur site. Rigueur et sens du service public.",
+  "requirements": [
+    {
+      "name": "Red Hat",
+      "importance": "must"
+    },
+    {
+      "name": "Debian",
+      "importance": "must"
+    },
+    {
+      "name": "Veeam",
+      "importance": "must"
+    },
+    {
+      "name": "Zabbix",
+      "importance": "must"
+    },
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "VMware",
+      "importance": "must"
+    },
+    {
+      "name": "Ansible",
+      "importance": "nice"
+    },
+    {
+      "name": "permis B",
+      "importance": "must"
+    },
+    {
+      "name": "Rigueur",
+      "importance": "must"
+    }
+  ]
+}

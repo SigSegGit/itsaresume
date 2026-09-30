@@ -1,0 +1,59 @@
+{
+  "id": "en-platform-startup",
+  "language": "en",
+  "offer": "Senior Platform Engineer - Remote (EU)\n\nWhat you'll do\n- Own our GitOps delivery with Argo CD and Helm\n- Run PostgreSQL and Redis at scale\n- Improve CI pipelines in GitHub Actions\n\nMust have:\n- Kubernetes\n- Terraform\n- Strong Go or Python\n\nNice to have:\n- Rust\n- Datadog\n- Experience with SOC 2 audits\n\nBonus points if you have contributed to open source.",
+  "requirements": [
+    {
+      "name": "Argo CD",
+      "importance": "must"
+    },
+    {
+      "name": "Helm",
+      "importance": "must"
+    },
+    {
+      "name": "PostgreSQL",
+      "importance": "must"
+    },
+    {
+      "name": "Redis",
+      "importance": "must"
+    },
+    {
+      "name": "GitHub Actions",
+      "importance": "must"
+    },
+    {
+      "name": "Kubernetes",
+      "importance": "must"
+    },
+    {
+      "name": "Terraform",
+      "importance": "must"
+    },
+    {
+      "name": "Go",
+      "importance": "must"
+    },
+    {
+      "name": "Python",
+      "importance": "must"
+    },
+    {
+      "name": "Rust",
+      "importance": "nice"
+    },
+    {
+      "name": "Datadog",
+      "importance": "nice"
+    },
+    {
+      "name": "SOC 2",
+      "importance": "nice"
+    },
+    {
+      "name": "open source",
+      "importance": "nice"
+    }
+  ]
+}

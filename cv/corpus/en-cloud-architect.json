@@ -1,0 +1,41 @@
+{
+  "id": "en-cloud-architect",
+  "language": "en",
+  "offer": "Cloud Architect (AWS)\n\nMandatory: AWS Solutions Architect Professional certification.\nYou design landing zones with AWS Organizations and Control Tower, and guide teams on cost optimisation.\n\nSkills\n- Terraform or CloudFormation, required\n- Python for automation\n- Kubernetes is not required for this role\n- Experience in regulated environments (ISO 27001) desirable",
+  "requirements": [
+    {
+      "name": "AWS Solutions Architect Professional",
+      "importance": "must"
+    },
+    {
+      "name": "AWS Organizations",
+      "importance": "must"
+    },
+    {
+      "name": "Control Tower",
+      "importance": "must"
+    },
+    {
+      "name": "Terraform",
+      "importance": "must"
+    },
+    {
+      "name": "CloudFormation",
+      "importance": "must"
+    },
+    {
+      "name": "Python",
+      "importance": "must"
+    },
+    {
+      "name": "ISO 27001",
+      "importance": "nice"
+    }
+  ],
+  "excluded": [
+    {
+      "name": "Kubernetes",
+      "known": "wrong: \"is not required\" read as a must cue (negation)"
+    }
+  ]
+}

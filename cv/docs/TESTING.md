@@ -77,6 +77,18 @@ property it proves.
 | bullets backing a matched requirement are added after the model picks, up to the limit | Model: requirement-backed bullets fill experiences |
 | a hidden skill group backs requirements but never shows in the sidebar | Model: hidden groups stay out of the sidebar |
 
+## `test/corpus.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the corpus holds at least 8 offers and 70 labelled requirements | — |
+| every corpus label is named by its offer, once, must or nice | — |
+| a label the offer never names is a corpus problem | Corpus: a label must be named by its offer |
+| importance on the corpus: the code is wrong exactly where a label says it is known to be | Corpus: the wrong list is the code's disagreement |
+| importance on the corpus: a name the offer excludes is never a must | — |
+| recall finds a label named by a listed item either way round | Recall: a listed name holding the label counts |
+| recall does not take a stem for a name | Recall: whole words, not stems |
+
 ## `test/equivalent.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -397,6 +409,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**258 tests, 213 of them covered by at least one sabotage defence.**
+**265 tests, 217 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice
