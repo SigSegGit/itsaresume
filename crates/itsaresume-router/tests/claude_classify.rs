@@ -262,3 +262,29 @@ fn the_observed_structured_output_is_its_json() {
     assert_eq!(value["requirements"][2]["name"], "Kafka");
     assert_eq!(kind(&classify(OBSERVED_STRUCTURED)), "other", "unasked, its tool trips the wire");
 }
+
+/// The observed success with its rate-limit event's `isUsingOverage` set.
+fn with_overage(flag: Value) -> String {
+    let mut messages: Vec<Value> = serde_json::from_str(OBSERVED_SUCCESS).expect("array");
+    for message in &mut messages {
+        if message["type"] == "rate_limit_event" {
+            message["rate_limit_info"]["isUsingOverage"] = flag.clone();
+        }
+    }
+    Value::Array(messages).to_string()
+}
+
+/// 8.29: extra usage is billed per token (decision 1). An answer the CLI
+/// reports as overage is refused, and the message starts the billing
+/// latch, so the next request does not spend more.
+#[test]
+fn an_answer_billed_as_overage_trips_the_billing_wire() {
+    match classify(&with_overage(json!(true))) {
+        Err(BackendError::Other(message)) => {
+            assert!(message.starts_with("billing tripwire"), "{message}");
+            assert!(message.contains("overage"), "{message}");
+        }
+        other => panic!("expected the billing tripwire, got {other:?}"),
+    }
+    assert_eq!(kind(&classify(&with_overage(json!(false)))), "success");
+}
