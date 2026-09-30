@@ -133,7 +133,14 @@ fn complete(config: &Config, system: Option<String>, only: Option<&str>) -> Exit
         return ExitCode::from(EXIT_USAGE);
     }
 
-    let outcome = match router.complete_on(&Request { prompt, system }, only) {
+    let outcome = match router.complete_on(
+        &Request {
+            prompt,
+            system,
+            schema: None,
+        },
+        only,
+    ) {
         Ok(outcome) => outcome,
         Err(unknown) => {
             eprintln!("itsaresume: {unknown}");

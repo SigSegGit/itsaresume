@@ -108,6 +108,7 @@ fn the_cli_runs_with_json_output_and_no_tools() {
     let request = Request {
         prompt: "p".into(),
         system: Some("You write CVs.".into()),
+        schema: None,
     };
 
     backend(&scene)
@@ -173,6 +174,7 @@ fn a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line() {
     let request = Request {
         prompt: "p".into(),
         system: Some(system.clone()),
+        schema: None,
     };
 
     let outcome = backend(&scene).complete_with_env(&request, success_env(&scene));
@@ -241,6 +243,7 @@ fn concurrent_requests_each_get_their_own_system_prompt() {
                 let request = Request {
                     prompt: "p".into(),
                     system: Some(system.into()),
+                    schema: None,
                 };
                 let outcome = backend(&scene)
                     .with_workdir(workdir)
@@ -568,4 +571,25 @@ mod workdir {
             .expect("the fake answers");
         assert_eq!(mode(&scene.workdir), 0o700);
     }
+}
+
+/// 8.24: a schema reaches the CLI as `--json-schema`, and only then.
+#[test]
+fn a_schema_reaches_the_cli_as_json_schema() {
+    let backend = ClaudeCodeBackend::new(FAKE);
+    let schema = serde_json::json!({"type": "object"});
+    let with = backend.arguments_for(Path::new("s.txt"), Some(&schema));
+    let at = with
+        .iter()
+        .position(|a| a == "--json-schema")
+        .expect("--json-schema given");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&with[at + 1]).expect("json"),
+        schema
+    );
+    assert!(
+        !backend
+            .arguments_for(Path::new("s.txt"), None)
+            .contains(&"--json-schema".to_owned())
+    );
 }

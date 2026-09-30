@@ -76,10 +76,12 @@
     },
     "Claude: tool tripwire": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
-      "live": "if !tools_empty {",
-      "dead": "if !tools_empty && false {",
+      "live": "if !tools_allowed {",
+      "dead": "if !tools_allowed && false {",
       "expect": [
-        "a_successful_answer_with_tools_enabled_is_refused"
+        "a_successful_answer_with_tools_enabled_is_refused",
+        "the_structured_output_tool_without_a_schema_is_refused",
+        "another_tool_beside_structured_output_is_refused"
       ]
     },
     "Claude: init message required": {
@@ -666,6 +668,71 @@
       "dead": "\"--backend\" if command == \"complete\" => drop(value()?),",
       "expect": [
         "the_backend_option_picks_one_backend"
+      ]
+    },
+    "Schema: lm-studio sends response_format": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "if let Some(schema) = &request.schema {",
+      "dead": "if let Some(schema) = None::<&serde_json::Value> {",
+      "expect": [
+        "a_schema_request_sends_response_format_and_needs_json"
+      ]
+    },
+    "Schema: lm-studio's answer must be JSON": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "if request.schema.is_some() && serde_json::from_str::<Value>(&completion.text).is_err() {",
+      "dead": "if request.schema.is_some() && false {",
+      "expect": [
+        "a_schema_request_sends_response_format_and_needs_json"
+      ]
+    },
+    "Schema: claude gets --json-schema": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if let Some(schema) = schema {",
+      "dead": "if let Some(schema) = schema.filter(|_| false) {",
+      "expect": [
+        "a_schema_reaches_the_cli_as_json_schema"
+      ]
+    },
+    "Schema: StructuredOutput only with a schema": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "|| (schema && tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\"));",
+      "dead": "|| tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\");",
+      "expect": [
+        "the_structured_output_tool_without_a_schema_is_refused"
+      ]
+    },
+    "Schema: StructuredOutput alone": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "|| (schema && tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\"));",
+      "dead": "|| (schema && tools.is_some_and(|t| t.iter().any(|x| x == \"StructuredOutput\")));",
+      "expect": [
+        "another_tool_beside_structured_output_is_refused"
+      ]
+    },
+    "Schema: claude's answer is structured_output": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "if schema && result[\"is_error\"] == false {",
+      "dead": "if false && schema {",
+      "expect": [
+        "a_schema_answer_is_its_structured_output",
+        "a_schema_answer_without_structured_output_is_other"
+      ]
+    },
+    "Schema: the endpoint passes it on": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "Value::Object(_) => Some(value[\"schema\"].clone()),",
+      "dead": "Value::Object(_) => None,",
+      "expect": [
+        "the_schema_reaches_the_backend"
+      ]
+    },
+    "Schema: the endpoint refuses a non-object": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "_ => return Err(\"\\\"schema\\\" must be a JSON Schema object\".into()),",
+      "dead": "_ => None,",
+      "expect": [
+        "a_schema_must_be_an_object"
       ]
     }
   }

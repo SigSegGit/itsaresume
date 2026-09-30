@@ -426,3 +426,41 @@ fn a_request_may_name_its_backend() {
     let (status, _) = post(address, r#"{"prompt": "p", "backend": 3}"#);
     assert_eq!(status, 400);
 }
+
+/// 8.24: `"schema"` is a JSON Schema object, or the request is 400.
+#[test]
+fn a_schema_must_be_an_object() {
+    let (address, _dir) = start(vec![answers("lm-studio", "{\"a\": 1}")]);
+    let (status, body) = post(address, r#"{"prompt": "p", "schema": "not a schema"}"#);
+    assert_eq!(status, 400, "{body}");
+    let (status, body) = post(address, r#"{"prompt": "p", "schema": {"type": "object"}}"#);
+    assert_eq!(status, 200, "{body}");
+}
+
+/// A backend that answers with the schema it was given (or "none").
+struct EchoSchema;
+
+impl Backend for EchoSchema {
+    fn name(&self) -> &str {
+        "echo"
+    }
+
+    fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
+        Ok(Completion {
+            text: request
+                .schema
+                .as_ref()
+                .map_or_else(|| "none".to_owned(), ToString::to_string),
+        })
+    }
+}
+
+#[test]
+fn the_schema_reaches_the_backend() {
+    let (address, _dir) = start(vec![Box::new(EchoSchema)]);
+    let (status, body) = post(address, r#"{"prompt": "p", "schema": {"type": "object"}}"#);
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["text"], r#"{"type":"object"}"#);
+    let (_, body) = post(address, r#"{"prompt": "p"}"#);
+    assert_eq!(body["text"], "none");
+}
