@@ -35,7 +35,17 @@ test('each offer is cut from the lines the model points at, with the shared cont
   assert.match(offers[1].text, /^Voici deux besoins/);
   assert.match(offers[1].text, /BMad, pédagogie\.$/);
   assert.ok(!offers.some((offer) => /Cordialement/.test(offer.text)), 'no signature');
-  assert.deepEqual(repairs, []);
+  // Left out, and said so (audit 2026-09-27: split dropped lines silently).
+  assert.deepEqual(repairs, ['lines 1, 12-13 are in no offer and were left out: "Bonjour Nicolas,", "Cordialement,", "Samar"']);
+});
+
+test('a requirement line in no range is said, never dropped silently', async () => {
+  const text = [...EMAIL.split('\n').slice(0, 11), 'Pour les deux postes : anglais courant exigé.', ...EMAIL.split('\n').slice(11)].join('\n');
+  const llm = reply({ shared: [2, 2], offers: [{ title: 'Architecte', start: 4, end: 6 }, { title: 'AI Tech Lead', start: 8, end: 10 }] });
+  const { repairs } = await splitOffers({ text, llm });
+  assert.equal(repairs.length, 1);
+  assert.match(repairs[0], /12-14/);
+  assert.match(repairs[0], /anglais courant exigé/);
 });
 
 test('ranges out of the text, overlapping, reversed or too short fall back to one offer', async () => {
