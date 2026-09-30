@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.29
-TITLE: Overage tripwire: a claude answer billed as extra usage stops and latches, like the billing tripwire
+NEXT: 8.30
+TITLE: itsaresume stats: the journal summed up (per backend and outcome, structured share, median time)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -384,14 +384,25 @@ branch with the local gates of §3 green.
   lists, thinking signatures, account details of the rate-limit event); two
   tests, one new defence. Found on the way: `rate_limit_event` carries
   `rate_limit_info.isUsingOverage` (false here) and `overageStatus`.
-- [ ] **8.29** Overage tripwire: extra usage is billed per token (decision
+- [x] **8.29** Overage tripwire: extra usage is billed per token (decision
   1). When a `rate_limit_event` says `isUsingOverage: true`, the answer is
   refused as `Other` and the billing latch is set (as for `apiKeySource`),
   so the next request does not spend more; the journal says why. Red tests
   from `observed-success.verbose.json` edited to `isUsingOverage: true`:
   `Other` with "overage" in the message, latch file written; `false` or no
   event: unchanged. Note it can only stop the *next* call (the one that
-  reported it was already billed): say so in §9.
+  reported it was already billed): say so in §9. Done: the check in
+  `classify_for` (its message starts "billing tripwire", so the existing
+  latch applies); a classify test and an end-to-end CLI test (exit 3, latch
+  written, next process stopped); two defences. The Docker image pins the
+  CLI version observed (2.1.162), so `--json-schema` and the rate-limit
+  event are there too.
+- [ ] **8.30** `itsaresume stats [--config FILE]`: read the journal and
+  print, per backend and outcome, the count and the median `duration_ms`;
+  the share of requests with `schema: true`; the fallbacks (answered after
+  a failed attempt). Plain text on stdout, nothing written; a journal line
+  that is not JSON is counted as unreadable, never fatal. Red tests in
+  `tests/cli.rs` on a hand-written journal of five lines.
 
 ## 9. Deliberately open
 
@@ -416,7 +427,9 @@ branch with the local gates of §3 green.
 - **From the 2026-09-23 review, not confirmed (uncertain):** extra usage
   (overage) billed per token on the OAuth path: detectable after all, the
   `rate_limit_event` message carries `isUsingOverage` and `overageStatus`
-  (observed 2026-09-30, 8.28; 8.29 acts on it); the default Claude workdir in the temp directory is predictable and
+  (observed 2026-09-30, 8.28; 8.29 refuses such an answer and latches,
+  but the answer that reported it was already billed: the tripwire saves
+  the next calls, not that one); the default Claude workdir in the temp directory is predictable and
   never checked (fixed in 8.20). Fixed since: the truncated answer (2026-09-27),
   userinfo in `base_url` (8.18), the unpinned merge (8.19).
 - **The system prompt file on disk** (8.15): a crash mid-request leaves it

@@ -793,6 +793,24 @@
         "the_observed_success_is_an_answer",
         "a_successful_run_is_an_answer"
       ]
+    },
+    "Claude: overage trips the billing wire": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "&& message[\"rate_limit_info\"][\"isUsingOverage\"] == true",
+      "dead": "&& message[\"rate_limit_info\"][\"isUsingOverage\"] == \"never\"",
+      "expect": [
+        "an_answer_billed_as_overage_trips_the_billing_wire",
+        "an_overage_answer_latches_the_next_process_too"
+      ]
+    },
+    "Claude: overage refusal latches": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "\"billing tripwire: claude reports this answer as extra usage (overage, \\",
+      "dead": "\"tripwire: claude reports this answer as extra usage (overage, \\",
+      "expect": [
+        "an_answer_billed_as_overage_trips_the_billing_wire",
+        "an_overage_answer_latches_the_next_process_too"
+      ]
     }
   }
 }

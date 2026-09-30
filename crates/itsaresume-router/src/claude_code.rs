@@ -74,6 +74,23 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         )));
     }
 
+    // Extra usage is billed per token (§1, decision 1), and the CLI says so
+    // in its rate-limit event (observed on 2.1.162, 8.28). This answer was
+    // already billed: refusing it latches the backend (the message prefix),
+    // so the next request does not spend more.
+    let overage = messages.iter().any(|message| {
+        message["type"] == "rate_limit_event"
+            && message["rate_limit_info"]["isUsingOverage"] == true
+    });
+    if overage {
+        return Err(BackendError::Other(
+            "billing tripwire: claude reports this answer as extra usage (overage, \
+             isUsingOverage), which is billed per token; itsaresume only uses the \
+             subscription (docs/HANDOVER.md §1). Turn extra usage off for the account"
+                .into(),
+        ));
+    }
+
     let result = messages
         .iter()
         .rev()

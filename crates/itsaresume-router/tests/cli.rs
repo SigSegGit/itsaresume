@@ -492,3 +492,45 @@ fn a_schema_file_that_is_not_an_object_is_a_usage_error() {
     );
     assert!(!record.join("args.json").exists(), "the backend was called");
 }
+
+/// 8.29: an answer billed as extra usage latches like any billing tripwire:
+/// the next process stops before claude runs.
+#[test]
+fn an_overage_answer_latches_the_next_process_too() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let args = ["complete", "--config", config.to_str().expect("utf-8")];
+    let observed =
+        std::fs::read_to_string(claude_fixture("observed-success.verbose.json")).expect("fixture");
+    let mut messages: Vec<Value> = serde_json::from_str(&observed).expect("array");
+    for message in &mut messages {
+        if message["type"] == "rate_limit_event" {
+            message["rate_limit_info"]["isUsingOverage"] = Value::Bool(true);
+        }
+    }
+    let overage = dir.path().join("overage.json");
+    std::fs::write(&overage, Value::Array(messages).to_string()).expect("write");
+
+    let first = run(
+        &args,
+        "a prompt",
+        &[("FAKE_CLAUDE_STDOUT", overage.to_string_lossy().into_owned())],
+    );
+    assert_eq!(first.status.code(), Some(3), "{first:?}");
+    assert!(
+        String::from_utf8_lossy(&first.stderr).contains("overage"),
+        "{first:?}"
+    );
+    assert!(dir.path().join("journal.billing-tripped").exists());
+
+    let second = run(
+        &args,
+        "a prompt",
+        &[(
+            "FAKE_CLAUDE_STDOUT",
+            claude_fixture("observed-success.verbose.json"),
+        )],
+    );
+    assert_eq!(second.status.code(), Some(3), "{second:?}");
+    assert!(String::from_utf8_lossy(&second.stderr).contains("latched"));
+}

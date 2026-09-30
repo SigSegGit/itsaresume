@@ -49,6 +49,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_schema_answer_is_its_structured_output` | `tests/claude_classify.rs` | With a schema, the answer is `structured_output` (observed on 2.1.162: `result` is empty) | Schema: claude's answer is structured_output |
 | `the_observed_success_is_an_answer` | `tests/claude_classify.rs` | A plain success observed on 2.1.162 (redacted) is its `result` text | Claude: a success is its result text |
 | `the_observed_structured_output_is_its_json` | `tests/claude_classify.rs` | A structured success observed on 2.1.162 is its `structured_output`; unasked, its tool trips the wire | Schema: claude's answer is structured_output; Schema: StructuredOutput only with a schema |
+| `an_answer_billed_as_overage_trips_the_billing_wire` | `tests/claude_classify.rs` | A rate-limit event with `isUsingOverage: true` refuses the answer as the billing tripwire; `false` is an answer | Claude: overage trips the billing wire; Claude: overage refusal latches |
 | `the_structured_output_tool_without_a_schema_is_refused` | `tests/claude_classify.rs` | `StructuredOutput` in init without a schema asked for trips the tool tripwire | Schema: StructuredOutput only with a schema; Claude: tool tripwire |
 | `another_tool_beside_structured_output_is_refused` | `tests/claude_classify.rs` | With a schema, any tool beside `StructuredOutput` still trips it | Schema: StructuredOutput alone; Claude: tool tripwire |
 | `a_schema_answer_without_structured_output_is_other` | `tests/claude_classify.rs` | A schema request answered without `structured_output` is `Other` | Schema: claude's answer is structured_output |
@@ -121,6 +122,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_schema_file_that_is_not_an_object_is_a_usage_error` | `tests/cli.rs` | A schema file that is not a JSON object exits 2 naming it, before any backend runs | CLI: a schema file must hold an object |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |
 | `a_fired_billing_tripwire_stops_the_next_process_too` | `tests/cli.rs` | A tripwire fired in one `itsaresume` process stops the next one (latch file beside the journal) | Billing latch: a latched backend does not start claude; Billing latch: beside the journal; Billing latch: written down for a restart |
+| `an_overage_answer_latches_the_next_process_too` | `tests/cli.rs` | An overage answer exits 3 saying so, writes the latch, and the next process stops before claude runs | Claude: overage trips the billing wire; Claude: overage refusal latches |
 | `a_proxy_in_the_environment_is_never_used` | `tests/cli.rs` | `HTTP(S)_PROXY` in the environment never carries a request to LM Studio | No proxy from the environment |
 | `a_completion_returns_the_text_the_backend_and_the_failed_attempts` | `tests/server.rs` | 200 carries the text, the answering backend and the failed attempts | — |
 | `a_stopped_request_is_502_with_the_reason` | `tests/server.rs` | A stop (`Other`) is 502 with kind `stopped`, the backend and its message | Server: stopped is 502 |

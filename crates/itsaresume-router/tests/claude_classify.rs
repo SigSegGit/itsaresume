@@ -260,7 +260,11 @@ fn the_observed_structured_output_is_its_json() {
     let answer = classify_for(OBSERVED_STRUCTURED, true).expect("a structured answer");
     let value: Value = serde_json::from_str(&answer.text).expect("the answer is JSON");
     assert_eq!(value["requirements"][2]["name"], "Kafka");
-    assert_eq!(kind(&classify(OBSERVED_STRUCTURED)), "other", "unasked, its tool trips the wire");
+    assert_eq!(
+        kind(&classify(OBSERVED_STRUCTURED)),
+        "other",
+        "unasked, its tool trips the wire"
+    );
 }
 
 /// The observed success with its rate-limit event's `isUsingOverage` set.
