@@ -45,6 +45,10 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_successful_answer_billed_to_an_api_key_is_refused` | `tests/claude_classify.rs` | A *successful* answer whose `apiKeySource` is `ANTHROPIC_API_KEY`, `apiKeyHelper` or `/login managed key` is refused | Claude: billing tripwire |
 | `output_without_an_init_message_is_refused` | `tests/claude_classify.rs` | Without `system/init` the billing source cannot be checked, so the output is refused (fail closed) | Claude: init message required |
 | `a_successful_answer_with_tools_enabled_is_refused` | `tests/claude_classify.rs` | An answer produced with tools enabled is refused (prompt-injection guard) | Claude: tool tripwire |
+| `a_schema_answer_is_its_structured_output` | `tests/claude_classify.rs` | With a schema, the answer is `structured_output` (observed on 2.1.162: `result` is empty) | Schema: claude's answer is structured_output |
+| `the_structured_output_tool_without_a_schema_is_refused` | `tests/claude_classify.rs` | `StructuredOutput` in init without a schema asked for trips the tool tripwire | Schema: StructuredOutput only with a schema |
+| `another_tool_beside_structured_output_is_refused` | `tests/claude_classify.rs` | With a schema, any tool beside `StructuredOutput` still trips it | Schema: StructuredOutput alone |
+| `a_schema_answer_without_structured_output_is_other` | `tests/claude_classify.rs` | A schema request answered without `structured_output` is `Other` | Schema: claude's answer is structured_output |
 | `the_synthetic_usage_limit_is_quota_exceeded` | `tests/claude_classify.rs` | The synthetic usage-limit output (429) is `QuotaExceeded` — **hypothesis** | Claude: HTTP 429 is quota |
 | `status_429_is_quota_exceeded_whatever_the_message` | `tests/claude_classify.rs` | HTTP 429 alone makes `QuotaExceeded` | Claude: HTTP 429 is quota |
 | `usage_limit_wordings_without_a_status_are_quota_exceeded` | `tests/claude_classify.rs` | Known plan-limit wordings without a status are `QuotaExceeded` — **hypothesis**, not observed | Claude: wording 'usage limit'; Claude: wording 'limit reached'; Claude: wording 'hit your ... limit' |
@@ -55,6 +59,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `output_that_is_not_the_expected_json_is_other` | `tests/claude_classify.rs` | Empty, non-JSON, object-shaped or result-less output is `Other` | — |
 | `the_prompt_goes_on_stdin_and_the_answer_comes_back` | `tests/claude_process.rs` | The prompt reaches the child on stdin, whole and never on the command line; the classified answer comes back | Claude process: prompt on stdin |
 | `the_cli_runs_with_json_output_and_no_tools` | `tests/claude_process.rs` | The child gets `-p`, JSON verbose output, `--tools ""`, no MCP, no slash commands, no session persistence, the request's system prompt (through its file) and the model — and never `--bare` | Claude process: tools disabled; No user or project settings in the child |
+| `a_schema_reaches_the_cli_as_json_schema` | `tests/claude_process.rs` | A schema reaches the CLI as `--json-schema`, and only then | Schema: claude gets --json-schema |
 | `without_a_system_prompt_a_neutral_one_replaces_claude_codes_own` | `tests/claude_process.rs` | A system prompt is always passed, so Claude Code's agentic one is never used; no `--model` unless configured | — |
 | `a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line` | `tests/claude_process.rs` | A 100 KB system prompt holding a NUL reaches the child whole through `--system-prompt-file`, and no part of it is on the command line (it failed the spawn as `Other`) | Claude process: system prompt whole in its file |
 | `the_system_prompt_file_is_removed_once_the_cli_has_answered` | `tests/claude_process.rs` | The system prompt file is gone once the call returns | Claude process: system prompt file removed |
@@ -85,6 +90,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `other_error_statuses_stop_with_the_servers_message` | `tests/lm_studio.rs` | 400 (other than no model), 401, 404, 500 are `Other` carrying LM Studio's message | LM Studio: other statuses stop |
 | `a_success_without_an_answer_is_other` | `tests/lm_studio.rs` | A 2xx without an answer (empty choices, not JSON, no content) is `Other` | — |
 | `a_truncated_or_empty_answer_is_other` | `tests/lm_studio.rs` | An answer cut by the length limit, or empty, is `Other`, never a success | A truncated answer is not a success; An empty answer is not a success |
+| `a_schema_request_sends_response_format_and_needs_json` | `tests/lm_studio.rs` | A schema goes as strict `json_schema` `response_format`; a non-JSON answer to it is `Other`; no schema, no `response_format` | Schema: lm-studio sends response_format; Schema: lm-studio's answer must be JSON |
 | `two_requests_never_overlap_on_a_one_slot_backend` | `tests/lm_studio.rs` | Two slow requests at once: the second waits in the router, never on the one-slot server | LM Studio: one completion at a time on the server |
 | `waiting_for_the_slot_past_the_timeout_is_unreachable` | `tests/lm_studio.rs` | A request still waiting for the slot at its timeout is `Unreachable` (falls back) and never reaches the server | LM Studio: one completion at a time on the server; LM Studio: waiting for the slot counts against the timeout |
 | `a_two_slot_backend_lets_two_requests_overlap` | `tests/lm_studio.rs` | `max_concurrent = 2` lets two completions overlap | LM Studio: max_concurrent sets the slots |
@@ -116,6 +122,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `an_exhausted_request_is_503` | `tests/server.rs` | Every backend failing with a fallback kind is 503 `exhausted` with the attempts | — |
 | `a_malformed_request_is_400` | `tests/server.rs` | Non-JSON, missing/blank/non-string prompt, non-string system are 400 | Server: blank prompt is 400 |
 | `a_request_may_name_its_backend` | `tests/server.rs` | `"backend"` picks the one backend; unknown is 400 listing the names; a non-string is 400 | Named backend: only that one is tried; Named backend: found by its name; Server: the request's backend is read |
+| `a_schema_must_be_an_object` | `tests/server.rs` | `"schema"` that is not an object is 400; an object is served | Schema: the endpoint refuses a non-object |
+| `the_schema_reaches_the_backend` | `tests/server.rs` | The endpoint passes the schema to the backend, and none when absent | Schema: the endpoint passes it on |
 | `an_oversized_request_is_413` | `tests/server.rs` | A body over 1 MiB is 413 | Server: oversized is 413 |
 | `health_and_unknown_paths` | `tests/server.rs` | `/healthz` 200, unknown path 404, wrong method 405 | — |
 | `a_slow_completion_does_not_block_other_requests` | `tests/server.rs` | A health check answers in under 1 s while a 3 s completion runs | Server: one thread per request |

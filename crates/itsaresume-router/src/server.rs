@@ -272,11 +272,16 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
         Value::String(name) => Some(name.clone()),
         _ => return Err("\"backend\" must be a string".into()),
     };
+    let schema = match &value["schema"] {
+        Value::Null => None,
+        Value::Object(_) => Some(value["schema"].clone()),
+        _ => return Err("\"schema\" must be a JSON Schema object".into()),
+    };
     Ok((
         Inference {
             prompt: prompt.to_owned(),
             system,
-            schema: None,
+            schema,
         },
         only,
     ))

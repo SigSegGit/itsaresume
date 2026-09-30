@@ -579,7 +579,17 @@ fn a_schema_reaches_the_cli_as_json_schema() {
     let backend = ClaudeCodeBackend::new(FAKE);
     let schema = serde_json::json!({"type": "object"});
     let with = backend.arguments_for(Path::new("s.txt"), Some(&schema));
-    let at = with.iter().position(|a| a == "--json-schema").expect("--json-schema given");
-    assert_eq!(serde_json::from_str::<serde_json::Value>(&with[at + 1]).expect("json"), schema);
-    assert!(!backend.arguments_for(Path::new("s.txt"), None).contains(&"--json-schema".to_owned()));
+    let at = with
+        .iter()
+        .position(|a| a == "--json-schema")
+        .expect("--json-schema given");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&with[at + 1]).expect("json"),
+        schema
+    );
+    assert!(
+        !backend
+            .arguments_for(Path::new("s.txt"), None)
+            .contains(&"--json-schema".to_owned())
+    );
 }

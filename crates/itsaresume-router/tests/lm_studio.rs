@@ -284,7 +284,10 @@ fn a_configured_lm_studio_backend_keeps_one_slot() {
 #[test]
 fn a_schema_request_sends_response_format_and_needs_json() {
     let schema = serde_json::json!({"type": "object", "properties": {"a": {"type": "string"}}});
-    let (base_url, received) = serve(200, r#"{"choices":[{"message":{"content":"{\"a\": \"x\"}"},"finish_reason":"stop"}]}"#);
+    let (base_url, received) = serve(
+        200,
+        r#"{"choices":[{"message":{"content":"{\"a\": \"x\"}"},"finish_reason":"stop"}]}"#,
+    );
     let outcome = backend(&base_url).complete(&Request::new("p").with_schema(schema.clone()));
     assert_eq!(kind(&outcome), "success", "{outcome:?}");
     let body = received.recv().expect("the server saw the request").body;
@@ -298,5 +301,12 @@ fn a_schema_request_sends_response_format_and_needs_json() {
 
     let (base_url, received) = serve(200, SUCCESS);
     let _ = backend(&base_url).complete(&Request::new("p"));
-    assert!(received.recv().expect("seen").body.get("response_format").is_none());
+    assert!(
+        received
+            .recv()
+            .expect("seen")
+            .body
+            .get("response_format")
+            .is_none()
+    );
 }

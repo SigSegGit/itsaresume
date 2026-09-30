@@ -232,7 +232,10 @@ fn another_tool_beside_structured_output_is_refused() {
 #[test]
 fn a_schema_answer_without_structured_output_is_other() {
     let missing = edited(SYNTHETIC_STRUCTURED, |_, result| {
-        result.as_object_mut().expect("object").remove("structured_output");
+        result
+            .as_object_mut()
+            .expect("object")
+            .remove("structured_output");
     });
     assert_eq!(kind(&classify_for(&missing, true)), "other");
 }

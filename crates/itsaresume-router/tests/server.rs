@@ -436,3 +436,31 @@ fn a_schema_must_be_an_object() {
     let (status, body) = post(address, r#"{"prompt": "p", "schema": {"type": "object"}}"#);
     assert_eq!(status, 200, "{body}");
 }
+
+/// A backend that answers with the schema it was given (or "none").
+struct EchoSchema;
+
+impl Backend for EchoSchema {
+    fn name(&self) -> &str {
+        "echo"
+    }
+
+    fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
+        Ok(Completion {
+            text: request
+                .schema
+                .as_ref()
+                .map_or_else(|| "none".to_owned(), ToString::to_string),
+        })
+    }
+}
+
+#[test]
+fn the_schema_reaches_the_backend() {
+    let (address, _dir) = start(vec![Box::new(EchoSchema)]);
+    let (status, body) = post(address, r#"{"prompt": "p", "schema": {"type": "object"}}"#);
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["text"], r#"{"type":"object"}"#);
+    let (_, body) = post(address, r#"{"prompt": "p"}"#);
+    assert_eq!(body["text"], "none");
+}

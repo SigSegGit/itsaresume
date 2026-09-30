@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.24
-TITLE: Structured output: a request may carry a JSON schema (M3)
+NEXT: 8.25
+TITLE: The generator asks for structured output (cv 2.3 first step): the listing call sends its schema
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -328,7 +328,7 @@ branch with the local gates of §3 green.
   `sonnet` and `qwen`) measures both models (cv 2.1c). Red test: the fake
   router in the cv tests receives `"backend": "qwen"`. Done (PR #24):
   Sonnet lists 75/75 of the cv corpus, Bionic 69/75 with the floor.
-- [ ] **8.24** Structured output (M3, the generator's 2.3): `POST
+- [x] **8.24** Structured output (M3, the generator's 2.3): `POST
   /v1/complete` takes an optional `schema` (a JSON Schema object); the
   `lm-studio` backend sends it as `response_format: {type: "json_schema",
   json_schema: {name, schema, strict: true}}` (observe Bionic's answer
@@ -337,7 +337,18 @@ branch with the local gates of §3 green.
   router checks the answer parses as JSON either way (an answer that does
   not parse is `Other`, never a success). Red tests: the scripted
   lm-studio server receives the `response_format`; a non-JSON answer to a
-  schema request is `Other`; no schema, no change.
+  schema request is `Other`; no schema, no change. Done: observed first
+  (Bionic honours `json_schema`; `claude --json-schema` answers in
+  `structured_output` through a `StructuredOutput` tool, which the
+  tripwire now allows only for a schema request and only alone:
+  docs/ARCHITECTURE.md); eight tests, eight defences; a real request
+  through each backend returned the JSON document.
+- [ ] **8.25** The generator side of structured output (cv 2.3's first
+  step): `listRequirements` sends the listing schema (`{requirements:
+  [{name, importance: must|nice}]}`) through `complete({schema})`, so no
+  answer is lost to `extractJson`; measure the corpus recall again with
+  `measure-listing.mjs` for both backends (it must not drop). Then the
+  analysis call, whose schema is larger (a closed list of skill ids).
 
 ## 9. Deliberately open
 
