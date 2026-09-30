@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.26
-TITLE: The journal says whether a request named its backend and carried a schema
+NEXT: 8.27
+TITLE: itsaresume complete --schema FILE (the CLI asks for structured output too)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -356,13 +356,21 @@ branch with the local gates of §3 green.
   Done (PR #27), measured: with the schema the local model listed 61-66/75
   against 68-70/75 without (three runs each), Sonnet 75/75 either way; so
   the listing sends it only when asked (`structured`). See cv §8, 2.3.
-- [ ] **8.26** The journal says how a request was asked: `backend_asked`
+- [x] **8.26** The journal says how a request was asked: `backend_asked`
   (the name, when the request named one) and `schema: true` when it
   carried a schema, so the cost and failure rate of structured calls can
   be read from the journal later. Never the schema itself (it may be
   large) and never the prompt (§1). Red test: two journaled requests, one
   named and structured, one plain; the lines differ exactly by those two
-  fields.
+  fields. Done: `Journal::record_asked`; one test, three defences.
+- [ ] **8.27** `itsaresume complete --schema FILE`: the CLI reads a JSON
+  Schema object from FILE and asks for structured output, as the endpoint
+  does (8.24). A file that is not a JSON object is a usage error (exit 2,
+  naming the file, before any backend is called). Red tests in
+  `tests/cli.rs`: with the fake claude and `--backend claude-code`, the
+  recorded args hold `--json-schema` with the file's schema; a file holding
+  `[1]` exits 2 and the fake is never run. (8.12, the Docker run with
+  Claude, still waits on the owner's `claude setup-token`, §10.)
 
 ## 9. Deliberately open
 
