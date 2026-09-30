@@ -19,7 +19,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
 import { identityNames, LEVELS } from './profile.js';
-import { mentions, STOP, wordsOf } from './text.js';
+import { mentions, stem, STOP, wordsOf } from './text.js';
 import { isNever } from './score.js';
 
 export { GRADES, STANCES } from './profile.js';
@@ -60,9 +60,6 @@ const flat = (text) =>
     .trim();
 
 const numbers = (text) => String(text ?? '').match(/\d+(?:[.,]\d+)?/g) ?? [];
-
-/** A crude stem, the same as the offer check's: an inflection is the same word. */
-const stem = (word) => word.slice(0, 6);
 
 /**
  * Every line the CV may show traces to the truth document (`profile.truth`,

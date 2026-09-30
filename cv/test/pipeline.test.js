@@ -177,6 +177,31 @@ test('itsacv tailor writes the CV, the report and the analysis', async () => {
   }
 });
 
+// 2.8: a replay re-normalizes the stored analysis, so a rule acting on the
+// model's own answer could not show there. The raw answers are kept.
+test('itsacv tailor keeps every raw model answer, in call order, in raw.json', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-'));
+  const offer = join(dir, 'offer.txt');
+  writeFileSync(offer, OFFER);
+  const analysis = JSON.stringify(valid());
+  const { server, url } = await fakeRouter([
+    [200, { backend: 'lm-studio', text: EMPTY_LISTING, attempts: [] }],
+    [200, { backend: 'claude-code', text: analysis, attempts: [] }],
+  ]);
+  try {
+    const { status, stderr } = await runCli(['tailor', offer, '--profile', PROFILE_PATH.pathname.replace(/^\/(\w:)/, '$1'), '--out', dir, '--url', url, '--no-layout']);
+    assert.equal(status, 0, stderr);
+    const [run] = readdirSync(dir).filter((name) => name !== 'offer.txt');
+    const raw = JSON.parse(readFileSync(join(dir, run, 'raw.json'), 'utf8'));
+    assert.deepEqual(raw.calls, [
+      { step: 'listing', backend: 'lm-studio', text: EMPTY_LISTING },
+      { step: 'analysis', backend: 'claude-code', text: analysis },
+    ]);
+  } finally {
+    server.close();
+  }
+});
+
 test('itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'itsacv-'));
   const offer = join(dir, 'offer.txt');

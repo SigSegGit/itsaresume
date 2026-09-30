@@ -20,9 +20,19 @@ export const MAX_ATTEMPTS = 2;
  * `profile` is the one the CV may draw from (restricted by the evidence,
  * src/evidence.js); `assessment`, when given, is checked again on the answer.
  */
-export async function analyse({ profile, offer, llm, assessment, onStep = () => {} }) {
+export async function analyse({ profile, offer, llm: call, assessment, onStep = () => {} }) {
+  // Every raw answer, in call order (2.8): a replay re-normalizes the stored
+  // analysis, so a rule acting on the model's own answer shows only here.
+  const calls = [];
+  let step = 'listing';
+  const llm = async (request) => {
+    const answer = await call(request);
+    calls.push({ step, backend: answer.backend, text: answer.text });
+    return answer;
+  };
   onStep('listing');
   const listed = await listRequirements({ offer, llm });
+  step = 'analysis';
   const { system, prompt } = buildPrompt(profile, offer, listed);
   const language = detectLanguage(offer);
   let current = prompt;
@@ -43,10 +53,11 @@ export async function analyse({ profile, offer, llm, assessment, onStep = () => 
     } catch (error) {
       errors = [error.message];
     }
-    if (errors.length === 0) return { analysis, attempts: attempt, backend, repairs, listed };
+    if (errors.length === 0) return { analysis, attempts: attempt, backend, repairs, listed, calls };
     current = retryPrompt(prompt, text, errors);
   }
   const failure = new Error(`the model's analysis is still invalid after ${MAX_ATTEMPTS} attempts:\n- ${errors.join('\n- ')}`);
   failure.answers = answers;
+  failure.calls = calls;
   throw failure;
 }

@@ -61,6 +61,30 @@
       "expect": [
         "the client names a backend only when asked (router 8.22)"
       ]
+    },
+    "Raw: every call is recorded": {
+      "file": "src/pipeline.js",
+      "live": "calls.push({ step, backend: answer.backend, text: answer.text });",
+      "dead": "void calls;",
+      "expect": [
+        "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
+    },
+    "Raw: the analysis calls are labelled": {
+      "file": "src/pipeline.js",
+      "live": "  step = 'analysis';",
+      "dead": "  step = 'listing';",
+      "expect": [
+        "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
+    },
+    "Raw: raw.json is written": {
+      "file": "src/run.js",
+      "live": "writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));",
+      "dead": "void calls;",
+      "expect": [
+        "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
     }
   }
 }

@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1f
-TITLE: a requirement the offer only names to deny it ("Kubernetes is not required") leaves the listing
+NEXT: 2.1d
+TITLE: the equivalents of 2.7 (relate()) measured on the corpus against the synthetic profile
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -131,13 +131,17 @@ Traps met, each cost time once:
     Kubernetes. Measured from one router with named backends (router 8.22,
     `measure-listing.mjs --backend sonnet|qwen`, cv 8.23: `complete()` sends
     `backend` only when asked).
-  - [ ] **2.1f** A name the offer only denies ("Kubernetes is not required
+  - [x] **2.1f** A name the offer only denies ("Kubernetes is not required
     for this role", "n'est pas requis") leaves the listing: both models list
     it, and the analysis would then count it. Code, after the listing: drop
     a listed name whose every mention in the offer sits in a clause with a
     negated must cue (`NEGATED` in `importance.js`) or "ne ... pas"; keep it
     if any mention is plain. Red test from the corpus's `excluded` names:
     the listing that holds them loses them; a plain mention keeps them.
+    Done 2026-09-30: `onlyDenied` in `src/listing.js` (sentence level; a
+    nice cue in the sentence keeps it); 2 tests, 2 defences. Replayed on the
+    owner's real offers: it drops nothing; the floor adds only names the
+    offers put under a must/nice header.
   - [x] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
     the items of a list under a header (`Nice to have:`, `Must have:`,
     `Atouts :`, `Pré-requis :`...) and of a header line's own enumeration
@@ -173,8 +177,30 @@ Traps met, each cost time once:
   must-stay-no set: certifications, migrations, NoSQL (d), language level
   (e), short missions and an unshown must (f), the skills column (g), the
   check under its name (h); a–b were private data.
-- [ ] **2.8** Keep the model's raw answer in the run directory
+- [x] **2.8** Keep the model's raw answer in the run directory
   (`raw.json`), so a replay can test rules acting on it (found 2026-09-29).
+  Done 2026-09-30: `analyse()` records every call (`step`, `backend`,
+  `text`, in order), `tailorOffer` writes `raw.json`; 1 test, 3 defences.
+  Rejected runs still keep only `rejected-attempt-N.txt`.
+- [x] **2.9** The crude stem (`stem = word.slice(0, 6)` in `src/text.js`,
+  copied in `src/evidence.js`) makes "product" and "production", "config"
+  and "configuration", "develop" and "developer" one word: a requirement
+  "Product ownership" is then "stated" by "production" (`statedIn`), and a
+  bullet quoting "production" backs "product" (`evidence.js`). A stem that
+  strips known endings (FR/EN: -s, -es, -tion(s), -ment(s), -er, -ing,
+  -ed, -é(e)(s)...) and never shortens a word below its root. Red tests:
+  "product"/"production" differ; "déploiement"/"déploiements",
+  "deploy"/"deployed"/"deploying" stay one; replay the real runs
+  (`runs-replay.mjs`, `rules-replay.mjs`) and list every changed verdict
+  before shipping. Done 2026-09-30: `stem()` in `src/text.js` strips a
+  plural then one ending of a table (`-ation`/`-ated`/`-ateur`/`-ator` meet
+  at `-at`; roots keep 4 letters), `evidence.js` uses it; 19 cases, 4
+  defences (`scripts/sabotage/stem.json`). Replay of the real runs: one
+  verdict changed, the intended one ("product engineering" is no longer
+  grounded by prod-ops: 20 → 17 on a run already not qualified); the first
+  try also broke "Architectes"/architecture and "expérimenté"/expérience,
+  kept since with their endings and tests. Profile provenance: 0 errors.
+  The replay scripts' static imports were fixed (`CV_SRC`, dynamic).
 
 Open from the 2026-09-27 audit, by value: split may drop lines silently;
 the report lists the model's bullet picks, not the rendered ones; no
