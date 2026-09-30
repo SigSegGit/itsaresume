@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.21
-TITLE: Run the whole sabotage plan under WSL before pushing
+NEXT: 8.22
+TITLE: A request may name its backend (M3, first step of the generator contract)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -303,11 +303,22 @@ branch with the local gates of §3 green.
   tightened, `chmod` fails on someone else's); four Unix tests; defences
   marked `unix_only` (`sabotage.py` skips them on Windows, loudly), verified
   under WSL; the 8.15 0600 file gained its defence the same way.
-- [ ] **8.21** A `scripts/sabotage-wsl.sh` (or a `--wsl` note in §3) that
-  runs the whole plan under WSL (`CARGO_TARGET_DIR=$HOME/.cache/...`, cargo
-  1.98 is there) so `unix_only` defences are verified before a push, not
-  only by the CI; and an `unix_only` defence that the Linux CI job reports as
-  skipped must fail the job (a guard: `os.name == 'nt'` only).
+- [x] **8.21** `scripts/sabotage-wsl.sh` runs the whole plan under WSL
+  (`unix_only` defences verified before a push; first run 2026-09-30: 76 of
+  77, the 77th a real anchor break, fixed on PR #14; the "huge declared
+  body" defence Windows cannot verify passes there). The Linux CI job never
+  skips `unix_only` (`os.name == 'nt'` only), so no guard was needed.
+  `check-testing.py` (fast CI job `handover`) now also fails when a
+  defence's `live` anchor is not exactly once in its file: the anchor break
+  above took 16 minutes of the sabotage job to show.
+- [ ] **8.22** A request may name its backend (M3's first step, the
+  generator's 2.1c/2.3 need it): `POST /v1/complete` and `complete` take an
+  optional `backend` (a configured backend's `name`, a new optional config
+  field, unique; default the kind); named, only that backend is tried (no
+  fallback: the caller asked for it) and an unknown name is 400 / exit 2
+  listing the names. Red tests: two lm-studio backends named `a` and `b`
+  (scripted servers), a request naming `b` reaches only `b`; unknown `c` is
+  400 with `a, b`; without a name the order and fallback are unchanged.
 
 ## 9. Deliberately open
 
