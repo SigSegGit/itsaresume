@@ -33,6 +33,8 @@ def rows(text):
         if not test:
             continue
         cited = set()
+        if cells[-1].startswith('—'):
+            cells[-1] = ''  # "— (reason)": nothing cited, the reason is prose
         for part in cells[-1].split(';'):
             part = part.strip()
             if part and not part.startswith('—'):

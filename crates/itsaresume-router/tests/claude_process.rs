@@ -378,6 +378,34 @@ fn a_cli_that_does_not_answer_in_time_is_killed_and_unreachable() {
     );
 }
 
+/// Returning in time is not proof of a kill: an abandoned child would still
+/// run, and a real one would still spend the plan. The fake creates a file
+/// once its sleep is over; a killed child never gets there.
+#[test]
+fn a_timed_out_cli_is_dead_not_abandoned() {
+    let scene = scene();
+    let survived = scene.record.join("survived");
+    let survived_text = survived.to_string_lossy().into_owned();
+    let env = env_with(&[
+        ("FAKE_CLAUDE_SLEEP_MS", "1000"),
+        ("FAKE_CLAUDE_SURVIVED", &survived_text),
+    ]);
+
+    let outcome = backend(&scene)
+        .with_timeout(Duration::from_millis(200))
+        .complete_with_env(&Request::new("p"), env);
+    assert!(
+        matches!(outcome, Err(BackendError::Unreachable(_))),
+        "{outcome:?}"
+    );
+
+    std::thread::sleep(Duration::from_millis(2500));
+    assert!(
+        !survived.exists(),
+        "the timed-out child outlived its sleep: it was abandoned, not killed"
+    );
+}
+
 #[test]
 fn an_error_printed_by_the_cli_is_classified_like_the_captured_one() {
     let scene = scene();

@@ -10,6 +10,8 @@
 //!   `--system-prompt-file`, that file's content in `system.txt` (and, on
 //!   Unix, its permission bits in octal in `system-mode.txt`);
 //! - `FAKE_CLAUDE_SLEEP_MS=<n>`: sleep before answering;
+//! - `FAKE_CLAUDE_SURVIVED=<file>`: once the sleep is over, create that file
+//!   (a child killed during its sleep never does);
 //! - `FAKE_CLAUDE_STDOUT=<file>`: print that file on stdout;
 //! - `FAKE_CLAUDE_STDERR=<text>`: print that text on stderr;
 //! - `FAKE_CLAUDE_EXIT=<code>`: exit with that code (default 0).
@@ -28,6 +30,9 @@ fn main() {
     }
     if let Some(ms) = number("FAKE_CLAUDE_SLEEP_MS") {
         std::thread::sleep(Duration::from_millis(ms));
+    }
+    if let Ok(file) = std::env::var("FAKE_CLAUDE_SURVIVED") {
+        std::fs::write(file, b"alive").expect("FAKE_CLAUDE_SURVIVED is writable");
     }
     if let Ok(file) = std::env::var("FAKE_CLAUDE_STDOUT") {
         let content = std::fs::read(file).expect("FAKE_CLAUDE_STDOUT names a readable file");
