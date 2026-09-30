@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1d
-TITLE: the equivalents of 2.7 (relate()) measured on the corpus against the synthetic profile
+NEXT: 2.3
+TITLE: measure the analysis call with a JSON schema (closed skill ids) on the corpus, both models, before any use
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -156,7 +156,13 @@ Traps met, each cost time once:
     (92 %), `en-platform-startup` 12/13; still missed: GCP, the languages
     (Anglais, Spanish, permis B: language.js handles languages later),
     Rigueur, "open source".
-  - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
+  - [x] **2.1h** (2026-09-30) The eight corpus offers end to end on the
+    owner's profile through the local model alone (Bionic): 8/8 valid at
+    the first attempt, 132-205 s each, 0.83-0.91 page, ATS ok. The low
+    scores (15-47 on SRE/platform offers) come from the profile (Kubernetes
+    "never claimed", DNS/TCP/IP waiting for the owner), not from the code.
+  - [ ] **2.1d** (deferred: no ground truth to measure it against; label
+    the expected grounding of the corpus first, or drop it) The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
 - [x] **2.2** Sonnet measured (ADR-2). The local model alone, 2026-09-30:
   one synthetic offer (`corpus/fr-sre-banque.json`) end to end through a
