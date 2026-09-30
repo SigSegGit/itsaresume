@@ -525,7 +525,7 @@
     "LM Studio: waiting for the slot counts against the timeout": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "let left = deadline.checked_duration_since(Instant::now())?;",
-      "dead": "let left = Duration::from_secs(3600);",
+      "dead": "let left = Duration::from_secs(3600) + (deadline - deadline);",
       "expect": [
         "waiting_for_the_slot_past_the_timeout_is_unreachable"
       ]
@@ -533,7 +533,7 @@
     "LM Studio: max_concurrent sets the slots": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "self.slots = Slots::new(slots);",
-      "dead": "self.slots = Slots::new(1);",
+      "dead": "self.slots = Slots::new(slots.min(1));",
       "expect": [
         "a_two_slot_backend_lets_two_requests_overlap"
       ]
