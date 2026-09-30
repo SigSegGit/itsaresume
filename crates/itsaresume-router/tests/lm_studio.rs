@@ -193,3 +193,57 @@ fn a_truncated_or_empty_answer_is_other() {
         assert_eq!(kind(&outcome), "other", "{body}: {outcome:?}");
     }
 }
+
+/// The local server has one slot (Bionic): two requests at once must not
+/// both reach it. The second waits in the router, not on the server.
+#[test]
+fn two_requests_never_overlap_on_a_one_slot_backend() {
+    let (base_url, overlap) = support::serve_slow(Duration::from_millis(400), SUCCESS);
+    let backend = backend(&base_url);
+    let other = backend.clone();
+    let first = thread::spawn(move || other.complete(&Request::new("one")));
+    let second = backend.complete(&Request::new("two"));
+    let first = first.join().expect("first thread");
+
+    assert_eq!(kind(&first), "success", "{first:?}");
+    assert_eq!(kind(&second), "success", "{second:?}");
+    let overlap = overlap.lock().expect("lock");
+    assert_eq!(overlap.received, 2);
+    assert_eq!(overlap.most, 1, "both requests were on the server at once");
+}
+
+/// Waiting for the slot counts against the backend's timeout: past it, the
+/// waiting request is an outage (it falls back) and never reaches the server.
+#[test]
+fn waiting_for_the_slot_past_the_timeout_is_unreachable() {
+    let (base_url, overlap) = support::serve_slow(Duration::from_secs(3), SUCCESS);
+    let backend = LmStudioBackend::new(&base_url, "example-model").with_timeout(Duration::from_secs(1));
+    // A clone shares the slot, whatever its own timeout.
+    let holder = backend.clone().with_timeout(Duration::from_secs(10));
+    let first = thread::spawn(move || holder.complete(&Request::new("one")));
+    thread::sleep(Duration::from_millis(200));
+
+    let started = Instant::now();
+    let second = backend.complete(&Request::new("two"));
+    let waited = started.elapsed();
+
+    assert_eq!(kind(&second), "unreachable", "{second:?}");
+    assert!(waited < Duration::from_millis(2500), "waited {waited:?}");
+    assert_eq!(overlap.lock().expect("lock").received, 1, "the second reached the server");
+    let _ = first.join();
+}
+
+/// `max_concurrent` lifts the limit when the server has more slots.
+#[test]
+fn a_two_slot_backend_lets_two_requests_overlap() {
+    let (base_url, overlap) = support::serve_slow(Duration::from_millis(400), SUCCESS);
+    let backend = backend(&base_url).with_max_concurrent(2);
+    let other = backend.clone();
+    let first = thread::spawn(move || other.complete(&Request::new("one")));
+    let second = backend.complete(&Request::new("two"));
+    let first = first.join().expect("first thread");
+
+    assert_eq!(kind(&first), "success", "{first:?}");
+    assert_eq!(kind(&second), "success", "{second:?}");
+    assert_eq!(overlap.lock().expect("lock").most, 2);
+}

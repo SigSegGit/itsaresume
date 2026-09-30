@@ -36,6 +36,11 @@ impl LmStudioBackend {
         self
     }
 
+    /// Let `slots` completions reach the server at once (1 by default).
+    pub fn with_max_concurrent(self, _slots: usize) -> Self {
+        self
+    }
+
     fn body(&self, request: &Request) -> String {
         let mut messages = Vec::new();
         if let Some(system) = &request.system {

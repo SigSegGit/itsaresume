@@ -53,6 +53,7 @@ fn backends_keep_their_order_and_settings() {
                 base_url,
                 model,
                 timeout_secs,
+                ..
             },
             BackendConfig::ClaudeCode {
                 program,
@@ -115,4 +116,57 @@ fn a_configuration_without_backends_cannot_build_a_router() {
 fn a_valid_configuration_builds_a_router() {
     let config = Config::parse(EXAMPLE).expect("valid");
     assert!(config.router().is_ok());
+}
+
+/// Bionic serves one request at a time: an `lm-studio` backend takes one
+/// completion at a time unless `max_concurrent` says otherwise; `claude-code`
+/// has no such limit (each request is its own process).
+#[test]
+fn lm_studio_takes_one_completion_at_a_time_by_default() {
+    let config = Config::parse(
+        "journal = \"j.jsonl\"
+[[backend]]
+kind = \"lm-studio\"
+base_url = \"http://h/v1\"
+model = \"m\"
+[[backend]]
+kind = \"lm-studio\"
+base_url = \"http://h/v1\"
+model = \"m\"
+max_concurrent = 3
+[[backend]]
+kind = \"claude-code\"
+program = \"claude\"
+",
+    )
+    .expect("valid");
+    assert_eq!(config.backends[0].max_concurrent(), Some(1));
+    assert_eq!(config.backends[1].max_concurrent(), Some(3));
+    assert_eq!(config.backends[2].max_concurrent(), None);
+}
+
+#[test]
+fn max_concurrent_zero_or_on_claude_code_is_refused() {
+    let zero = Config::parse(
+        "journal = \"j.jsonl\"
+[[backend]]
+kind = \"lm-studio\"
+base_url = \"http://h/v1\"
+model = \"m\"
+max_concurrent = 0
+",
+    )
+    .expect("parses");
+    let Err(error) = zero.router() else {
+        panic!("zero slots would never answer")
+    };
+    assert!(error.to_string().contains("max_concurrent"), "{error}");
+
+    let claude = "journal = \"j.jsonl\"
+[[backend]]
+kind = \"claude-code\"
+program = \"claude\"
+max_concurrent = 1
+";
+    assert!(Config::parse(claude).is_err());
 }

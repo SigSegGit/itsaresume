@@ -63,6 +63,11 @@ impl BackendConfig {
         Duration::from_secs(seconds)
     }
 
+    /// How many completions may reach the backend at once (`None`: no limit).
+    pub fn max_concurrent(&self) -> Option<usize> {
+        None
+    }
+
     /// The backend; `journal` is where the Claude Code billing latch goes, beside it.
     fn build(&self, journal: &Path) -> Box<dyn Backend> {
         match self {
