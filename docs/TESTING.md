@@ -58,10 +58,14 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_system_prompt_file_is_removed_once_the_cli_has_answered` | `tests/claude_process.rs` | The system prompt file is gone once the call returns | Claude process: system prompt file removed |
 | `the_system_prompt_file_is_removed_when_the_cli_is_killed` | `tests/claude_process.rs` | The system prompt file is gone after a timeout kill too | Claude process: system prompt file removed |
 | `concurrent_requests_each_get_their_own_system_prompt` | `tests/claude_process.rs` | Two overlapping requests in one working directory each get their own file and system prompt | Claude process: one system prompt file per request |
-| `the_system_prompt_file_is_readable_by_its_owner_only` | `tests/claude_process.rs` | Unix only: the file is 0600 | — (Unix only; local sabotage runs on Windows) |
+| `the_system_prompt_file_is_readable_by_its_owner_only` | `tests/claude_process.rs` | Unix only: the file is 0600 | System prompt file: owner only |
 | `metered_credentials_never_reach_the_child` | `tests/claude_process.rs` | None of `METERED_ENV` reaches the child (checked by the child itself); `CLAUDE_CODE_OAUTH_TOKEN` and `PATH` do | Claude process: metered env removed |
 | `the_metered_list_names_the_known_metered_switches` | `tests/claude_process.rs` | `METERED_ENV` names the API-key, auth-token, Bedrock and Vertex switches and not the subscription token | CLAUDE_CONFIG_DIR is scrubbed |
 | `the_child_runs_in_the_dedicated_working_directory` | `tests/claude_process.rs` | The child's working directory is the dedicated one, created if missing | Claude process: dedicated workdir |
+| `a_missing_working_directory_is_created_private` | `tests/claude_process.rs` (Unix) | A missing working directory is created 0700 | — (the tightening step covers a looser create) |
+| `a_working_directory_others_could_write_into_is_refused` | `tests/claude_process.rs` (Unix) | A 0777 working directory is `Other`, naming it, and the CLI never runs | Claude workdir: others cannot write into it |
+| `a_working_directory_that_is_a_link_is_refused` | `tests/claude_process.rs` (Unix) | A symlink as working directory is `Other`, naming it, and the CLI never runs | Claude workdir: not a link |
+| `a_readable_working_directory_of_ours_is_made_private` | `tests/claude_process.rs` (Unix) | A 0755 working directory of ours is tightened to 0700 | Claude workdir: left 0700 |
 | `a_missing_binary_is_unreachable` | `tests/claude_process.rs` | A `claude` that does not exist is `Unreachable` (falls back) | Claude process: missing binary is unreachable |
 | `a_cli_that_does_not_answer_in_time_is_killed_and_unreachable` | `tests/claude_process.rs` | A child still running at the timeout is killed within seconds and reported `Unreachable` | Claude process: timeout kills |
 | `a_timed_out_cli_is_dead_not_abandoned` | `tests/claude_process.rs` | The timed-out child is dead: the fake never outlives its sleep to create its marker file | Claude process: the timed-out child is killed, not abandoned |
