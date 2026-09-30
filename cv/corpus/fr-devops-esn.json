@@ -37,8 +37,7 @@
     },
     {
       "name": "Ansible",
-      "importance": "nice",
-      "known": "wrong: \"n'est pas obligatoire\" read as a must cue (negation)"
+      "importance": "nice"
     }
   ]
 }

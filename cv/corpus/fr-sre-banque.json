@@ -9,8 +9,7 @@
     },
     {
       "name": "AWS",
-      "importance": "must",
-      "known": "wrong: \"une certification AWS est un atout\" makes AWS itself nice"
+      "importance": "must"
     },
     {
       "name": "Terraform",
