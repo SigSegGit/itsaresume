@@ -39,8 +39,8 @@
     },
     "Web: a body is bounded": {
       "file": "src/server.js",
-      "live": "if (size > MAX_BODY) {",
-      "dead": "if (false) {",
+      "live": "request.on('end', () => (size > MAX_BODY ? reject(tooLarge()) : resolve(Buffer.concat(chunks).toString('utf8'))));",
+      "dead": "request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));",
       "expect": [
         "a POST from another origin, without the token, or not in JSON is refused"
       ]
@@ -331,6 +331,14 @@
       "dead": "      void 0;",
       "expect": [
         "in public mode the page offers one offer at a time, with no email splitting"
+      ]
+    },
+    "Web: a declared oversize is refused unread": {
+      "file": "src/server.js",
+      "live": "if (Number(request.headers['content-length']) > MAX_BODY) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a declared oversize body is refused at once, unread"
       ]
     }
   }

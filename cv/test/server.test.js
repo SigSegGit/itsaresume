@@ -389,3 +389,23 @@ test('in public mode an offer already answered is reused at once, with no model 
   assert.equal(app.calls.tailored, 0);
   assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Nouvelle : DBA') }] })).status, 202, 'the caps are untouched');
 });
+
+test('a declared oversize body is refused at once, unread', async () => {
+  const app = await start();
+  try {
+    // Ten megabytes announced, one byte sent: a server that reads first
+    // would wait for the rest; this one answers from the header.
+    const status = await new Promise((resolve) => {
+      const req = request({
+        host: '127.0.0.1', port: app.port, method: 'POST', path: '/api/split',
+        headers: { Host: `127.0.0.1:${app.port}`, Origin: app.origin, 'X-CSRF-Token': TOKEN, 'Content-Type': 'application/json', 'Content-Length': String(10 * 1024 * 1024) },
+      }, (res) => resolve(res.statusCode));
+      req.on('error', () => resolve('error'));
+      setTimeout(() => (req.destroy(), resolve('waited')), 2000);
+      req.write('{');
+    });
+    assert.equal(status, 413);
+  } finally {
+    app.server.close();
+  }
+});

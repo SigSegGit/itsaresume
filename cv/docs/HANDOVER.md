@@ -215,8 +215,9 @@ shown by the CLI and the page; the page's message no longer claims "kept as
 one offer" for it, untested: the browser script has no harness; the report
 listing the model's bullet picks instead of the rendered ones: fixed the
 same day, "Experiences on the CV" counts what `buildModel` rendered; the
-6-letter stem: fixed in 2.9). Still open: no elapsed time on the page; 413
-as a cut socket.
+6-letter stem: fixed in 2.9; 413 as a cut socket: fixed, a declared
+oversize is refused unread, a streamed one drained up to 4 × MAX_BODY then
+answered 413, `Connection: close`). Still open: no elapsed time on the page.
 
 ## 9. Open on purpose
 
