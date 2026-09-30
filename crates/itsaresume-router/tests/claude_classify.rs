@@ -54,7 +54,8 @@ fn a_successful_run_is_an_answer() {
     assert_eq!(
         classify(SYNTHETIC_SUCCESS),
         Ok(Completion {
-            text: "Synthetic answer.".into()
+            text: "Synthetic answer.".into(),
+            rate_limit: None,
         })
     );
 }
@@ -250,7 +251,8 @@ fn the_observed_success_is_an_answer() {
     assert_eq!(
         classify(OBSERVED_SUCCESS),
         Ok(Completion {
-            text: "Hello".into()
+            text: "Hello".into(),
+            rate_limit: None,
         })
     );
 }
@@ -291,4 +293,16 @@ fn an_answer_billed_as_overage_trips_the_billing_wire() {
         other => panic!("expected the billing tripwire, got {other:?}"),
     }
     assert_eq!(kind(&classify(&with_overage(json!(false)))), "success");
+}
+
+/// 8.32: the plan's limits as the CLI reported them with this answer, kept
+/// for the journal (M4): which limit, allowed or not, overage or not.
+#[test]
+fn a_claude_answer_carries_its_rate_limit_event() {
+    let answer = classify(OBSERVED_SUCCESS).expect("an answer");
+    let limit = answer.rate_limit.expect("the observed output has one");
+    assert_eq!(limit["status"], "allowed");
+    assert_eq!(limit["isUsingOverage"], false);
+    let without = edited(SYNTHETIC_SUCCESS, |_, _| {});
+    assert_eq!(classify(&without).expect("an answer").rate_limit, None);
 }

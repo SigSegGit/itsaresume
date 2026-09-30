@@ -36,6 +36,10 @@ impl Request {
 pub struct Completion {
     /// The generated text.
     pub text: String,
+    /// What the backend reported about the plan's limits with this answer
+    /// (Claude's `rate_limit_event`), for the journal (M4); `None` when it
+    /// reports nothing.
+    pub rate_limit: Option<serde_json::Value>,
 }
 
 /// Why a backend did not answer. The kind decides whether the router tries

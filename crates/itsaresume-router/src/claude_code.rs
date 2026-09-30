@@ -101,6 +101,7 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         return match result.get("structured_output") {
             Some(object) if !object.is_null() => Ok(Completion {
                 text: object.to_string(),
+                rate_limit: None,
             }),
             _ => Err(BackendError::Other(
                 "claude answered a schema request without structured_output".into(),
@@ -112,6 +113,7 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
     match (result["is_error"].as_bool(), text) {
         (Some(false), Some(text)) => Ok(Completion {
             text: text.to_owned(),
+            rate_limit: None,
         }),
         (Some(true), text) => Err(classify_error(
             result["api_error_status"].as_u64(),

@@ -32,7 +32,8 @@ fn the_observed_success_is_an_answer() {
     assert_eq!(
         backend(&base_url).complete(&Request::new("hi")),
         Ok(Completion {
-            text: "Hello!".into()
+            text: "Hello!".into(),
+            rate_limit: None,
         })
     );
 }

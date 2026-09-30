@@ -20,7 +20,10 @@ fn scripted(
     let calls = Arc::new(AtomicUsize::new(0));
     let backend = Scripted {
         name,
-        reply: reply.map(|text| Completion { text: text.into() }),
+        reply: reply.map(|text| Completion {
+            text: text.into(),
+            rate_limit: None,
+        }),
         calls: Arc::clone(&calls),
     };
     (Box::new(backend), calls)
