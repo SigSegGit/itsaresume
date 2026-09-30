@@ -199,3 +199,25 @@ test('notions asked are met by notions held', () => {
 test('a level asked that the profile holds only as notions stays no', () => {
   assert.equal(judgeLevel('Allemand courant', withGerman()).match, 'no');
 });
+
+// Seen on a real offer (2026-09-30): "trilingual candidates (English,
+// Spanish, and French or Italian)". The example merge made one row
+// "English / Spanish / French / Italian", no longer a language row, and the
+// run was refused twice ("marked yes but names no profile skill"). A
+// language is settled on its own, level included: never merged.
+test('languages an offer lists together are settled one by one, never merged', () => {
+  const offer = 'Languages: English required. For EMEA, trilingual candidates (English, Spanish, and French or Italian) are prioritized.';
+  const rows = [
+    { name: 'English', importance: 'must', match: 'yes', skills: ['english'], note: '' },
+    { name: 'Spanish', importance: 'nice', match: 'no', skills: [], note: '' },
+    { name: 'French', importance: 'nice', match: 'yes', skills: ['french'], note: '' },
+    { name: 'Italian', importance: 'nice', match: 'no', skills: [], note: '' },
+  ];
+  const p = withGerman();
+  const judged = normalize(analysis(rows), p, { offer }).analysis;
+  const byName = new Map(judged.requirements.map((row) => [row.name, row]));
+  assert.equal(byName.get('English')?.kind, 'language', [...byName.keys()].join(' | '));
+  assert.equal(byName.get('English').match, 'yes');
+  assert.ok(![...byName.keys()].some((name) => /English \//.test(name)), 'English was merged');
+  assert.deepEqual(validateAnalysis(judged, p).errors.filter((error) => /English|French|Spanish|Italian/.test(error)), []);
+});
