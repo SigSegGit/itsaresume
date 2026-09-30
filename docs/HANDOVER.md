@@ -347,6 +347,12 @@ branch with the local gates of §3 green.
   check-testing, check-handover and the cv catalogue check before a push:
   three CI runs were lost on 2026-09-30 to a command chain that went on
   past a failed gate.
+  Same day, a WSL sabotage run hung for 90 minutes: a test panicked before
+  killing its `serve` child, the orphan held the run's pipes, the working
+  tree kept a sabotaged `server.rs`, and the run resumed rewriting files
+  after a branch switch. Fixed: `Serving` (kill on drop, no inherited
+  stdout) in `tests/server.rs`; `sabotage-wsl.sh` runs in a detached
+  worktree at HEAD (commit first).
 - [x] **8.25** The generator side of structured output (cv 2.3's first
   step): `listRequirements` sends the listing schema (`{requirements:
   [{name, importance: must|nice}]}`) through `complete({schema})`, so no
