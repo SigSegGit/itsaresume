@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.23
-TITLE: The generator names its backend per call (cv --backend), measuring Sonnet and Bionic from one router
+NEXT: 8.24
+TITLE: Structured output: a request may carry a JSON schema (M3)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -322,11 +322,22 @@ branch with the local gates of §3 green.
   Done: `Router::complete_on`, `UnknownBackend`, config `name` (unique,
   wrapped as `Named`), `"backend"` in the endpoint, `--backend` on the CLI;
   five tests, six defences (verified with `-D warnings`).
-- [ ] **8.23** The generator side (in `cv/`): `complete()` in
+- [x] **8.23** The generator side (in `cv/`): `complete()` in
   `cv/src/llm.js` sends an optional `backend`; `measure-listing.mjs` takes
   `--backend`, so one router (`sonnet-qwen.local.toml` with names
   `sonnet` and `qwen`) measures both models (cv 2.1c). Red test: the fake
-  router in the cv tests receives `"backend": "qwen"`.
+  router in the cv tests receives `"backend": "qwen"`. Done (PR #24):
+  Sonnet lists 75/75 of the cv corpus, Bionic 69/75 with the floor.
+- [ ] **8.24** Structured output (M3, the generator's 2.3): `POST
+  /v1/complete` takes an optional `schema` (a JSON Schema object); the
+  `lm-studio` backend sends it as `response_format: {type: "json_schema",
+  json_schema: {name, schema, strict: true}}` (observe Bionic's answer
+  first, record the fixture); the `claude-code` backend has no schema flag
+  observed yet: it appends the schema to the system prompt file, and the
+  router checks the answer parses as JSON either way (an answer that does
+  not parse is `Other`, never a success). Red tests: the scripted
+  lm-studio server receives the `response_format`; a non-JSON answer to a
+  schema request is `Other`; no schema, no change.
 
 ## 9. Deliberately open
 
