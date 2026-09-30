@@ -146,7 +146,8 @@ function setupOffers() {
     try {
       const found = await api('/api/split', { text });
       for (const offer of found.offers) addOffer(offer.text, offer.title);
-      if (found.repairs.length) showError(`Découpage incertain : ${found.repairs.join(' ; ')}. Le texte est gardé en une seule offre.`);
+      // Each repair says what happened: kept as one offer, or lines left out.
+      if (found.repairs.length) showError(`Découpage : ${found.repairs.join(' ; ')}.`);
       $('paste').value = '';
     } catch (error) {
       showError(`Découpage impossible : ${error.message}`);

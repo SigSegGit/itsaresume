@@ -209,7 +209,10 @@ Traps met, each cost time once:
   kept since with their endings and tests. Profile provenance: 0 errors.
   The replay scripts' static imports were fixed (`CV_SRC`, dynamic).
 
-Open from the 2026-09-27 audit, by value: split may drop lines silently;
+Open from the 2026-09-27 audit, by value (split dropping lines silently:
+fixed 2026-09-30, every non-empty line in no range is named in a repair,
+shown by the CLI and the page; the page's message no longer claims "kept as
+one offer" for it, untested: the browser script has no harness);
 the report lists the model's bullet picks, not the rendered ones; no
 elapsed time on the page; 413 as a cut socket; the 6-letter stem
 ("product" vs "production").
