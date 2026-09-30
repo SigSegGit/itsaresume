@@ -811,6 +811,46 @@
         "an_answer_billed_as_overage_trips_the_billing_wire",
         "an_overage_answer_latches_the_next_process_too"
       ]
+    },
+    "Stats: a fallback is an answer after a failed attempt": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "if key.0 == 0 && attempts > 0 {",
+      "dead": "if attempts > 0 {",
+      "expect": [
+        "the_journal_is_summed_up_per_backend_and_outcome"
+      ]
+    },
+    "Stats: structured requests counted": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "if entry[\"schema\"] == true {",
+      "dead": "if entry[\"schema\"] == \"never\" {",
+      "expect": [
+        "the_journal_is_summed_up_per_backend_and_outcome"
+      ]
+    },
+    "Stats: an unreadable line is skipped, not counted": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "let Ok(entry) = serde_json::from_str::<Value>(line) else {\n            unreadable += 1;",
+      "dead": "let Ok(entry) = serde_json::from_str::<Value>(line).or_else(|_| serde_json::from_str::<Value>(\"{}\")) else {\n            unreadable += 1;",
+      "expect": [
+        "the_journal_is_summed_up_per_backend_and_outcome"
+      ]
+    },
+    "Stats: the median is the middle": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "(values[middle - 1] + values[middle]) / 2",
+      "dead": "values[middle]",
+      "expect": [
+        "the_journal_is_summed_up_per_backend_and_outcome"
+      ]
+    },
+    "CLI: stats reads the journal": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "if command == \"stats\" {\n        return stats(&config);",
+      "dead": "if command == \"stats\" && false {\n        return stats(&config);",
+      "expect": [
+        "the_stats_command_sums_up_the_journal"
+      ]
     }
   }
 }

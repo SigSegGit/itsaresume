@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.30
-TITLE: itsaresume stats: the journal summed up (per backend and outcome, structured share, median time)
+NEXT: 8.31
+TITLE: ROADMAP.md brought up to date with 8.17-8.30 (M1 closed, M3 started)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -403,12 +403,20 @@ branch with the local gates of §3 green.
   written, next process stopped); two defences. The Docker image pins the
   CLI version observed (2.1.162), so `--json-schema` and the rate-limit
   event are there too.
-- [ ] **8.30** `itsaresume stats [--config FILE]`: read the journal and
+- [x] **8.30** `itsaresume stats [--config FILE]`: read the journal and
   print, per backend and outcome, the count and the median `duration_ms`;
   the share of requests with `schema: true`; the fallbacks (answered after
   a failed attempt). Plain text on stdout, nothing written; a journal line
   that is not JSON is counted as unreadable, never fatal. Red tests in
-  `tests/cli.rs` on a hand-written journal of five lines.
+  `tests/cli.rs` on a hand-written journal of five lines. Done:
+  `src/stats.rs`; three tests, five defences; on the owner's own journal
+  (56 requests) it read 40 answered by the local model (median 48 s), 13
+  by Claude (26 s). README documents `--backend`, `--schema`, `stats`.
+- [ ] **8.31** `docs/ROADMAP.md` says what is done and what is next: bring
+  it up to 8.17-8.30 (one slot per local backend, named backends,
+  structured output, the tripwires, stats), close M1 if nothing of it is
+  left but 8.12 (the owner's token), and write M3's next items from cv
+  2.3 (the analysis schema, measured before it is sent).
 
 ## 9. Deliberately open
 

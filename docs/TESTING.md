@@ -38,6 +38,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `stopped_and_exhausted_requests_are_journaled_too` | `tests/journal.rs` | Failed requests are journaled as `stopped` (with the stopping backend) or `exhausted` (no backend) | — |
 | `the_prompt_and_answer_text_are_never_written_to_the_journal` | `tests/journal.rs` | Sentinel prompt, system prompt and answer never appear in the journal file | Journal keeps the prompt out |
 | `a_named_structured_request_is_journaled_as_such` | `tests/journal.rs` | A line says `backend_asked` and `schema: true` when the request named a backend and carried a schema, neither otherwise, and never holds the schema | Journal: the backend asked for; Journal: a schema request is marked; Router: the journal hears the name asked |
+| `the_journal_is_summed_up_per_backend_and_outcome` | `tests/stats.rs` | A journal of five lines and a garbage one: counts and medians per backend and outcome, fallbacks, structured share, the garbage line skipped | Stats: a fallback is an answer after a failed attempt; Stats: structured requests counted; Stats: an unreadable line is skipped, not counted; Stats: the median is the middle |
+| `an_empty_journal_says_so` | `tests/stats.rs` | No journal line: one line, `requests: 0` | — |
 | `error_messages_are_truncated_in_the_journal` | `tests/journal.rs` | A 1,000-character error message is cut to 200 characters plus `…` | Journal truncates error messages |
 | `an_unwritable_journal_does_not_lose_the_answer` | `tests/journal.rs` | When the journal cannot be written the answer is still returned **and** the failure is reported | Router reports a journal it could not write |
 | `a_successful_run_is_an_answer` | `tests/claude_classify.rs` | `is_error: false` with a `result` string is the answer | Claude: a success is its result text |
@@ -119,6 +121,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_bad_configuration_or_usage_exits_2` | `tests/cli.rs` | An invalid configuration or command line exits 2 with the reason | — |
 | `the_backend_option_picks_one_backend` | `tests/cli.rs` | `--backend` tries that backend alone; an unknown name exits 2 listing the names | Named backend: only that one is tried; Named backend: found by its name; CLI: --backend is read |
 | `the_schema_option_reaches_the_cli_as_json_schema` | `tests/cli.rs` | `--schema FILE` reaches the CLI as `--json-schema`; the answer is the structured JSON | CLI: --schema is read; CLI: the schema reaches the request |
+| `the_stats_command_sums_up_the_journal` | `tests/cli.rs` | `itsaresume stats` prints the summary of the configured journal and appends nothing | CLI: stats reads the journal |
 | `a_schema_file_that_is_not_an_object_is_a_usage_error` | `tests/cli.rs` | A schema file that is not a JSON object exits 2 naming it, before any backend runs | CLI: a schema file must hold an object |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |
 | `a_fired_billing_tripwire_stops_the_next_process_too` | `tests/cli.rs` | A tripwire fired in one `itsaresume` process stops the next one (latch file beside the journal) | Billing latch: a latched backend does not start claude; Billing latch: beside the journal; Billing latch: written down for a restart |
