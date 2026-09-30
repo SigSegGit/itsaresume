@@ -80,3 +80,9 @@ fn median(values: &mut [u64]) -> u64 {
         values[middle]
     }
 }
+
+/// One line per UTC day (8.33). Stub for the red commit.
+pub fn summarize_by_day(journal: &str) -> String {
+    let _ = journal;
+    String::new()
+}
