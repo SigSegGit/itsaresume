@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1c
-TITLE: listing recall through Sonnet (the router's claude-code backend), to compare with Bionic's 92 % with the floor
+NEXT: 2.1f
+TITLE: a requirement the offer only names to deny it ("Kubernetes is not required") leaves the listing
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -43,7 +43,7 @@ the decisions waiting for him, how to reach his machines — are in
   wrong must say so (`known`), `test/corpus.test.js` holds the code to
   exactly that list. The listing model (Bionic) finds 84-88 % of the labels
   and dropped whole "Nice to have" lists (2.1c); with the floor of 2.1e,
-  92 % (69/75).
+  92 % (69/75). Sonnet lists 75/75 (100 %), 5-16 s an offer.
 - 290 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
@@ -119,15 +119,25 @@ Traps met, each cost time once:
     "a big/real/huge plus"; 7 cases, 3 new defences; the replay of the real
     runs is unchanged (the replay scripts now take `CV_SRC`, default
     `D:/GitHub/itsaresume/cv/src`: they pointed at the archived repository).
-  - [~] **2.1c** Listing recall per model: `scripts/measure-listing.mjs
+  - [x] **2.1c** Listing recall per model: `scripts/measure-listing.mjs
     --url <router>` sends each corpus offer through `listRequirements` and
     prints recall and misses. **Bionic (`qwen3-coder-next`), 2026-09-30,
     two runs: 66/75 (88 %) then 63/75 (84 %)**, 10-108 s per offer. Missed
     in both runs: the whole "Nice to have:" list of `en-platform-startup`
     (Rust, Datadog, SOC 2, open source), GCP, the languages (Anglais,
     Spanish), OpenShift, Rigueur; it also listed the excluded "Kubernetes is
-    not required" once. Still to do: Sonnet through the router (≈ 8 calls
-    on the owner's Pro quota), then 2.1e.
+    not required" once. **Sonnet, 2026-09-30, one run: 75/75 (100 %)**,
+    5-16 s an offer, 87 items listed; it also listed the excluded
+    Kubernetes. Measured from one router with named backends (router 8.22,
+    `measure-listing.mjs --backend sonnet|qwen`, cv 8.23: `complete()` sends
+    `backend` only when asked).
+  - [ ] **2.1f** A name the offer only denies ("Kubernetes is not required
+    for this role", "n'est pas requis") leaves the listing: both models list
+    it, and the analysis would then count it. Code, after the listing: drop
+    a listed name whose every mention in the offer sits in a clause with a
+    negated must cue (`NEGATED` in `importance.js`) or "ne ... pas"; keep it
+    if any mention is plain. Red test from the corpus's `excluded` names:
+    the listing that holds them loses them; a plain mention keeps them.
   - [x] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
     the items of a list under a header (`Nice to have:`, `Must have:`,
     `Atouts :`, `Pré-requis :`...) and of a header line's own enumeration

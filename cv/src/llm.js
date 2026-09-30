@@ -21,9 +21,10 @@ function attemptsOf(error) {
   return said.length ? ` (${said.join('; ')})` : '';
 }
 
-export function complete({ url, system, prompt, timeoutMs = TIMEOUT_MS }) {
+export function complete({ url, system, prompt, backend, timeoutMs = TIMEOUT_MS }) {
   const target = new URL(`${url.replace(/\/$/, '')}/v1/complete`);
-  const body = JSON.stringify({ prompt, system });
+  // A named backend is tried alone by the router (8.22): a measure per model.
+  const body = JSON.stringify(backend ? { prompt, system, backend } : { prompt, system });
   return new Promise((resolve, reject) => {
     const outgoing = httpRequest(
       target,
