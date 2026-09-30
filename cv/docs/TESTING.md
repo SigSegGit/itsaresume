@@ -84,10 +84,11 @@ property it proves.
 | the corpus holds at least 8 offers and 70 labelled requirements | — |
 | every corpus label is named by its offer, once, must or nice | — |
 | a label the offer never names is a corpus problem | Corpus: a label must be named by its offer |
-| importance on the corpus: the code is wrong exactly where a label says it is known to be | Corpus: the wrong list is the code's disagreement; Importance: a negated must cue is no must; Importance: a cue on a certification is not the skill's |
+| importance on the corpus: the code is wrong exactly where a label says it is known to be | Importance: a negated must cue is no must; Importance: a cue on a certification is not the skill's |
 | importance on the corpus: a name the offer excludes is never a must | Importance: a negated must cue is no must |
 | recall finds a label named by a listed item either way round | Recall: a listed name holding the label counts |
 | recall does not take a stem for a name | Recall: whole words, not stems |
+| a label the code contradicts is measured wrong, one it agrees with right | Corpus: the wrong list is the code's disagreement |
 
 ## `test/equivalent.test.js`
 

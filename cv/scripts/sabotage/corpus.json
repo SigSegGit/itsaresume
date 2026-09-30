@@ -18,7 +18,7 @@
       "live": "else if (decided === requirement.importance) result.right.push(where);",
       "dead": "else if (decided !== null) result.right.push(where);",
       "expect": [
-        "importance on the corpus: the code is wrong exactly where a label says it is known to be"
+        "a label the code contradicts is measured wrong, one it agrees with right"
       ]
     },
     "Recall: a listed name holding the label counts": {
