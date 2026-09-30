@@ -287,8 +287,8 @@
     },
     "LM Studio: timeout honoured": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
-      "live": ".timeout_global(Some(self.timeout))",
-      "dead": ".timeout_global(Some(self.timeout * 100))",
+      "live": ".timeout_global(Some(left))",
+      "dead": ".timeout_global(Some(left * 100))",
       "expect": [
         "a_server_that_does_not_answer_in_time_is_unreachable"
       ]
