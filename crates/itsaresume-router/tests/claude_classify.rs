@@ -15,6 +15,9 @@ const OBSERVED_API_KEY: &str =
 const SYNTHETIC_SUCCESS: &str = include_str!("fixtures/claude/synthetic-success.verbose.json");
 const SYNTHETIC_USAGE_LIMIT: &str =
     include_str!("fixtures/claude/synthetic-usage-limit.verbose.json");
+const OBSERVED_SUCCESS: &str = include_str!("fixtures/claude/observed-success.verbose.json");
+const OBSERVED_STRUCTURED: &str =
+    include_str!("fixtures/claude/observed-structured-output.verbose.json");
 const SYNTHETIC_STRUCTURED: &str =
     include_str!("fixtures/claude/synthetic-structured-output.verbose.json");
 const SYNTHETIC_OVERLOADED: &str =
@@ -238,4 +241,24 @@ fn a_schema_answer_without_structured_output_is_other() {
             .remove("structured_output");
     });
     assert_eq!(kind(&classify_for(&missing, true)), "other");
+}
+
+/// 8.28: successes observed on 2.1.162 through the router's own flags
+/// (2026-09-30, redacted), next to the synthetic ones built before any was.
+#[test]
+fn the_observed_success_is_an_answer() {
+    assert_eq!(
+        classify(OBSERVED_SUCCESS),
+        Ok(Completion {
+            text: "Hello".into()
+        })
+    );
+}
+
+#[test]
+fn the_observed_structured_output_is_its_json() {
+    let answer = classify_for(OBSERVED_STRUCTURED, true).expect("a structured answer");
+    let value: Value = serde_json::from_str(&answer.text).expect("the answer is JSON");
+    assert_eq!(value["requirements"][2]["name"], "Kafka");
+    assert_eq!(kind(&classify(OBSERVED_STRUCTURED)), "other", "unasked, its tool trips the wire");
 }

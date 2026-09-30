@@ -699,7 +699,8 @@
       "live": "|| (schema && tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\"));",
       "dead": "|| tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\");",
       "expect": [
-        "the_structured_output_tool_without_a_schema_is_refused"
+        "the_structured_output_tool_without_a_schema_is_refused",
+        "the_observed_structured_output_is_its_json"
       ]
     },
     "Schema: StructuredOutput alone": {
@@ -716,7 +717,8 @@
       "dead": "if false && schema {",
       "expect": [
         "a_schema_answer_is_its_structured_output",
-        "a_schema_answer_without_structured_output_is_other"
+        "a_schema_answer_without_structured_output_is_other",
+        "the_observed_structured_output_is_its_json"
       ]
     },
     "Schema: the endpoint passes it on": {
@@ -781,6 +783,15 @@
       "dead": "system,\n            schema: schema.filter(|_| false),\n        },\n        only,",
       "expect": [
         "the_schema_option_reaches_the_cli_as_json_schema"
+      ]
+    },
+    "Claude: a success is its result text": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "text: text.to_owned(),",
+      "dead": "text: text.to_uppercase(),",
+      "expect": [
+        "the_observed_success_is_an_answer",
+        "a_successful_run_is_an_answer"
       ]
     }
   }
