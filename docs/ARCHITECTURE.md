@@ -107,6 +107,16 @@ copied from the web, and a prompt-injected instruction must have no tool to
 call. The init message lists the tools; a non-empty list is refused
 (tripwire, `Other`).
 
+**Structured output (8.24).** A request may carry a JSON Schema (`schema`
+in `POST /v1/complete`). `lm-studio` sends it as a strict `json_schema`
+`response_format` (Bionic honours it: the content is the document alone);
+`claude-code` passes `--json-schema`, and then (observed on 2.1.162) the CLI
+answers through a `StructuredOutput` tool: init lists it, `result` is empty,
+the object is in `structured_output`. That one tool returns data and acts on
+nothing, so the tool tripwire allows it **only** for a schema request and
+**only alone**; any other tool, or `StructuredOutput` unasked, still stops
+the request. Either way a schema answer that is not JSON is `Other`.
+
 Output classification (observed shapes in
 `crates/itsaresume-router/tests/fixtures/claude/`, HANDOVER §4):
 

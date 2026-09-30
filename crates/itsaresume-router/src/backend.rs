@@ -9,6 +9,9 @@ pub struct Request {
     pub prompt: String,
     /// An optional system prompt.
     pub system: Option<String>,
+    /// An optional JSON Schema the answer must follow (structured output):
+    /// the answer is then a JSON document, or the request fails as `Other`.
+    pub schema: Option<serde_json::Value>,
 }
 
 impl Request {
@@ -17,7 +20,14 @@ impl Request {
         Self {
             prompt: prompt.into(),
             system: None,
+            schema: None,
         }
+    }
+
+    /// The same request, asking for an answer that follows `schema`.
+    pub fn with_schema(mut self, schema: serde_json::Value) -> Self {
+        self.schema = Some(schema);
+        self
     }
 }
 

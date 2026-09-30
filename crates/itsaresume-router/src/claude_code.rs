@@ -28,6 +28,11 @@ pub const SUBSCRIPTION_BILLING_SOURCE: &str = "none";
 /// result, so an answer that was billed per token is refused even when it
 /// succeeded (docs/ARCHITECTURE.md, "Billing guards").
 pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
+    classify_for(stdout, false)
+}
+
+/// [`classify`], for a request that asked (`schema`) for structured output.
+pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendError> {
     let messages: Vec<Value> = serde_json::from_str(stdout.trim()).map_err(|error| {
         BackendError::Other(format!(
             "claude output is not the expected JSON array ({error}): {}",
@@ -55,8 +60,13 @@ pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
         )));
     }
 
-    let tools_empty = init["tools"].as_array().is_some_and(Vec::is_empty);
-    if !tools_empty {
+    // With a schema, the CLI answers through its `StructuredOutput` tool,
+    // which returns data and acts on nothing (8.24): that one, alone, and
+    // only when a schema was asked for.
+    let tools = init["tools"].as_array();
+    let tools_allowed = tools.is_some_and(Vec::is_empty)
+        || (schema && tools.is_some_and(|t| t.len() == 1 && t[0] == "StructuredOutput"));
+    if !tools_allowed {
         return Err(BackendError::Other(format!(
             "tool tripwire: claude started with tools {}; prompts may carry injected \
              instructions and must find no tool to call",
@@ -69,6 +79,17 @@ pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
         .rev()
         .find(|message| message["type"] == "result")
         .ok_or_else(|| BackendError::Other("claude output has no result message".into()))?;
+
+    if schema && result["is_error"] == false {
+        return match result.get("structured_output") {
+            Some(object) if !object.is_null() => Ok(Completion {
+                text: object.to_string(),
+            }),
+            _ => Err(BackendError::Other(
+                "claude answered a schema request without structured_output".into(),
+            )),
+        };
+    }
 
     let text = result["result"].as_str();
     match (result["is_error"].as_bool(), text) {
@@ -204,6 +225,22 @@ impl ClaudeCodeBackend {
     /// No request text is among them: the prompt goes on stdin and the system
     /// prompt in that file, since argv is length-limited, cannot hold a NUL,
     /// and is readable by every local process.
+    pub fn arguments_for(
+        &self,
+        system_file: &Path,
+        schema: Option<&serde_json::Value>,
+    ) -> Vec<String> {
+        let mut arguments = self.arguments(system_file);
+        if let Some(schema) = schema {
+            // Observed on 2.1.162: the answer then comes in `structured_output`.
+            // The schema is no secret: argv is fine for it.
+            arguments.push("--json-schema".into());
+            arguments.push(schema.to_string());
+        }
+        arguments
+    }
+
+    /// The arguments without a schema.
     pub fn arguments(&self, system_file: &Path) -> Vec<String> {
         let mut arguments: Vec<String> = vec![
             "-p".into(),
@@ -255,7 +292,7 @@ impl ClaudeCodeBackend {
 
         let mut command = Command::new(&self.program);
         command
-            .args(self.arguments(&system_file.path))
+            .args(self.arguments_for(&system_file.path, request.schema.as_ref()))
             .current_dir(&self.workdir)
             .env_clear()
             .envs(env.into_iter().filter(|(name, _)| !is_metered(name)))
@@ -318,7 +355,7 @@ impl ClaudeCodeBackend {
                 excerpt(stderr.trim(), 160)
             )));
         }
-        let outcome = classify(&stdout);
+        let outcome = classify_for(&stdout, request.schema.is_some());
         if matches!(&outcome, Err(BackendError::Other(message)) if message.starts_with("billing tripwire"))
         {
             self.tripped.store(true, Ordering::SeqCst);

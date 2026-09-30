@@ -102,7 +102,16 @@ impl LmStudioBackend {
             messages.push(json!({"role": "system", "content": system}));
         }
         messages.push(json!({"role": "user", "content": request.prompt}));
-        json!({"model": self.model, "messages": messages, "stream": false}).to_string()
+        let mut body = json!({"model": self.model, "messages": messages, "stream": false});
+        if let Some(schema) = &request.schema {
+            // Observed honoured by Bionic (2026-09-30): the content is the
+            // JSON document alone.
+            body["response_format"] = json!({
+                "type": "json_schema",
+                "json_schema": {"name": "answer", "schema": schema, "strict": true},
+            });
+        }
+        body.to_string()
     }
 }
 
@@ -143,7 +152,14 @@ impl Backend for LmStudioBackend {
             .body_mut()
             .read_to_string()
             .map_err(|error| transport(&url, error))?;
-        classify(status, &body)
+        let completion = classify(status, &body)?;
+        if request.schema.is_some() && serde_json::from_str::<Value>(&completion.text).is_err() {
+            return Err(BackendError::Other(format!(
+                "LM Studio answered a schema request with text that is not JSON: {}",
+                excerpt(&completion.text, 160)
+            )));
+        }
+        Ok(completion)
     }
 }
 
