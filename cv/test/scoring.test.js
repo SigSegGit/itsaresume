@@ -151,3 +151,13 @@ test('learning fast is a personal quality; machine learning stays a skill', asyn
   }
   for (const name of ['Apprentissage automatique', 'Machine learning', 'Kubernetes']) assert.equal(namesQuality(name), false, name);
 });
+
+// Audit 2026-09-27: the report listed the model's bullet picks, not what the
+// CV shows (the layout adds requirement-backed bullets and cuts to the page).
+test('the report counts the bullets the CV shows, not the model\'s picks', () => {
+  const { analysis } = normalize(answer(), v4(), {});
+  const rendered = [{ id: 'acme', title: 'SRE', org: 'Acme', bullets: ['one', 'two', 'three'] }];
+  const text = report(analysis, v4(), { backend: 'b', attempts: 1, rendered });
+  assert.match(text, /## Experiences on the CV\n\n- \*\*SRE\*\* — Acme: 3 bullet\(s\)/);
+  assert.match(report(analysis, v4(), { backend: 'b', attempts: 1 }), /## Experiences put forward/, 'without a rendered CV, the picks');
+});
