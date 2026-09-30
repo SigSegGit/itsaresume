@@ -24,7 +24,7 @@
     },
     "Importance: \"a plus\" only after is / would be": {
       "file": "src/importance.js",
-      "live": "'(?:is|would be|will be|as|considered|a big)\\\\s+a\\\\s+plus',",
+      "live": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+(?:big\\\\s+|real\\\\s+|huge\\\\s+)?plus',",
       "dead": "'a\\\\s+plus',",
       "expect": [
         "\"Il y a plus de 10 serveurs Linux à administrer.\": Linux is left to the model"
@@ -76,6 +76,34 @@
       "dead": "void own;",
       "expect": [
         "\"Compétences obligatoires : Ansible, DevOps.\": DevOps is must"
+      ]
+    },
+    "Importance: a negated must cue is no must": {
+      "file": "src/importance.js",
+      "live": "].map((alternative) => `${NEGATED}${alternative}`));",
+      "dead": "]);",
+      "expect": [
+        "\"La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.\": Ansible is nice",
+        "\"Kubernetes is not required for this role.\": Kubernetes is left to the model",
+        "importance on the corpus: the code is wrong exactly where a label says it is known to be",
+        "importance on the corpus: a name the offer excludes is never a must"
+      ]
+    },
+    "Importance: a cue on a certification is not the skill's": {
+      "file": "src/importance.js",
+      "live": "return all > 0 && (text.match(certified) ?? []).length >= all;",
+      "dead": "return false;",
+      "expect": [
+        "\"Une certification AWS est un atout.\": AWS is left to the model",
+        "importance on the corpus: the code is wrong exactly where a label says it is known to be"
+      ]
+    },
+    "Importance: \"a big plus\" is a plus": {
+      "file": "src/importance.js",
+      "live": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+(?:big\\\\s+|real\\\\s+|huge\\\\s+)?plus',",
+      "dead": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+plus',",
+      "expect": [
+        "\"It would be a big plus to know Sigstore.\": Sigstore is nice"
       ]
     }
   }

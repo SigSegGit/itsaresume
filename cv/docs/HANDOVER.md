@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1b
-TITLE: importance cues: negation, a cue scoped to a certification, "a big plus" (the corpus's three misses)
+NEXT: 2.1e
+TITLE: a deterministic listing floor: items under an explicit header are requirements even when the model drops them
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -38,11 +38,11 @@ the decisions waiting for him, how to reach his machines — are in
 - **Measured limit**: real offers are few (three distinct ones). Since
   2.1a, a labelled corpus (`corpus/*.json`: 8 synthetic offers, 75
   requirements labelled must/nice by a human reader, names the offer
-  excludes) measures the code: `importanceIn` is right on 38, silent on 35
-  (no cue: the model decides), **wrong on 2** plus one excluded name read as
-  a must. The misses are labelled `known` in the corpus; `test/corpus.test.js`
-  holds the code to exactly that list (fixing one means dropping its
-  `known`).
+  excludes) measures the code. After 2.1b `importanceIn` is right on 39,
+  silent on 36 (no cue: the model decides), wrong on 0; a label it gets
+  wrong must say so (`known`), `test/corpus.test.js` holds the code to
+  exactly that list. The listing model (Bionic) finds 84-88 % of the labels
+  and drops whole "Nice to have" lists (2.1c): 2.1e next.
 - 290 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
@@ -104,7 +104,7 @@ Traps met, each cost time once:
     by a model: labels a model wrote would measure the model against
     itself) and `src/measure.js` (`corpusProblems`, `measureImportance`,
     `recall`); 7 tests, 4 defences (`scripts/sabotage/corpus.json`).
-  - [ ] **2.1b** Fix the three misses `importanceIn` shows on the corpus,
+  - [x] **2.1b** Fix the three misses `importanceIn` shows on the corpus,
     red first from the corpus lines: (1) negation, "n'est pas obligatoire
     mais sera appréciée" and "Kubernetes is not required" read as musts (a
     negated must cue is no must; "pas obligatoire mais appréciée" is nice);
@@ -114,6 +114,10 @@ Traps met, each cost time once:
     alternation misses "be a big plus"). Drop each `known` it fixes; add a
     corpus offer for each new phrase; replay the rules on real runs
     (`~/.itsaresume/migrations/rules-replay.mjs`) before shipping.
+    Done 2026-09-30: `NEGATED` before every must cue, `onlyCertified`,
+    "a big/real/huge plus"; 7 cases, 3 new defences; the replay of the real
+    runs is unchanged (the replay scripts now take `CV_SRC`, default
+    `D:/GitHub/itsaresume/cv/src`: they pointed at the archived repository).
   - [~] **2.1c** Listing recall per model: `scripts/measure-listing.mjs
     --url <router>` sends each corpus offer through `listRequirements` and
     prints recall and misses. **Bionic (`qwen3-coder-next`), 2026-09-30,
