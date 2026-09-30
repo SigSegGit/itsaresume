@@ -46,6 +46,17 @@ impl Journal {
         outcome: &Outcome,
         elapsed: Duration,
     ) -> std::io::Result<()> {
+        self.record_asked(request, None, outcome, elapsed)
+    }
+
+    /// [`Journal::record`], for a request that named the backend `asked`.
+    pub fn record_asked(
+        &self,
+        request: &Request,
+        asked: Option<&str>,
+        outcome: &Outcome,
+        elapsed: Duration,
+    ) -> std::io::Result<()> {
         let (label, backend, answer_chars) = match &outcome.result {
             Ok(answer) => (
                 "answered",
@@ -68,7 +79,7 @@ impl Journal {
             .collect();
         // Lengths only: the prompt, the system prompt and the answer are
         // never written (module documentation).
-        let entry = json!({
+        let mut entry = json!({
             "ts": humantime::format_rfc3339_millis(SystemTime::now()).to_string(),
             "outcome": label,
             "backend": backend,
@@ -77,6 +88,13 @@ impl Journal {
             "prompt_chars": request.prompt.chars().count(),
             "answer_chars": answer_chars,
         });
+        // How it was asked (8.26); the schema itself is never written.
+        if let Some(asked) = asked {
+            entry["backend_asked"] = json!(asked);
+        }
+        if request.schema.is_some() {
+            entry["schema"] = json!(true);
+        }
         let mut line = entry.to_string();
         line.push('\n');
 

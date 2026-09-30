@@ -205,5 +205,8 @@ fn a_named_structured_request_is_journaled_as_such() {
     assert!(lines[1].get("backend_asked").is_none(), "{}", lines[1]);
     assert!(lines[1].get("schema").is_none(), "{}", lines[1]);
     let raw = std::fs::read_to_string(&path).expect("journal");
-    assert!(!raw.contains("a-very-visible-schema"), "the schema itself is never written");
+    assert!(
+        !raw.contains("a-very-visible-schema"),
+        "the schema itself is never written"
+    );
 }

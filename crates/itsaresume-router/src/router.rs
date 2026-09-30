@@ -114,13 +114,21 @@ impl Router {
     /// Answer `request` from the first backend that can, and journal it.
     pub fn complete(&self, request: &Request) -> Outcome {
         let all: Vec<&dyn Backend> = self.backends.iter().map(AsRef::as_ref).collect();
-        self.journaled(request, &all)
+        self.journaled(request, None, &all)
     }
 
-    fn journaled(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {
+    fn journaled(
+        &self,
+        request: &Request,
+        asked: Option<&str>,
+        backends: &[&dyn Backend],
+    ) -> Outcome {
         let started = Instant::now();
         let mut outcome = self.route(request, backends);
-        if let Err(error) = self.journal.record(request, &outcome, started.elapsed()) {
+        if let Err(error) = self
+            .journal
+            .record_asked(request, asked, &outcome, started.elapsed())
+        {
             outcome.journal_error = Some(format!(
                 "could not append to {}: {error}",
                 self.journal.path().display()
@@ -150,7 +158,7 @@ impl Router {
                 }
             },
         };
-        Ok(self.journaled(request, &chosen))
+        Ok(self.journaled(request, only, &chosen))
     }
 
     fn route(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {
