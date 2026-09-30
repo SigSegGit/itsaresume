@@ -48,3 +48,15 @@ test('recall finds a label named by a listed item either way round', () => {
 test('recall does not take a stem for a name', () => {
   assert.deepEqual(recall([{ name: 'Go' }], ['Google Cloud']), { found: [], missed: ['Go'] });
 });
+
+test('a label the code contradicts is measured wrong, one it agrees with right', () => {
+  const entry = {
+    id: 'x',
+    offer: 'Kafka serait un plus. Terraform est obligatoire.',
+    requirements: [
+      { name: 'Kafka', importance: 'must' },
+      { name: 'Terraform', importance: 'must' },
+    ],
+  };
+  assert.deepEqual(measureImportance([entry]), { right: ['x: Terraform'], silent: [], wrong: ['x: Kafka'] });
+});
