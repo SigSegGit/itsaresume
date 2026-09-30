@@ -851,6 +851,30 @@
       "expect": [
         "the_stats_command_sums_up_the_journal"
       ]
+    },
+    "Claude: the rate-limit event is kept": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".find(|message| message[\"type\"] == \"rate_limit_event\")\n        .map(|message| {",
+      "dead": ".find(|message| message[\"type\"] == \"no such event\")\n        .map(|message| {",
+      "expect": [
+        "a_claude_answer_carries_its_rate_limit_event"
+      ]
+    },
+    "Router: the answer keeps its rate limit": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "rate_limit: completion.rate_limit,",
+      "dead": "rate_limit: completion.rate_limit.filter(|_| false),",
+      "expect": [
+        "the_rate_limit_of_an_answer_is_journaled"
+      ]
+    },
+    "Journal: the rate limit is written": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "entry[\"rate_limit\"] = limit.clone();",
+      "dead": "let _ = limit;",
+      "expect": [
+        "the_rate_limit_of_an_answer_is_journaled"
+      ]
     }
   }
 }

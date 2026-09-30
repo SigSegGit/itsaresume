@@ -62,7 +62,8 @@ fn first_backend_answers_and_the_next_is_not_called() {
         outcome.result,
         Ok(Answer {
             backend: "a".into(),
-            text: "from a".into()
+            text: "from a".into(),
+            rate_limit: None,
         })
     );
     assert!(outcome.attempts.is_empty());

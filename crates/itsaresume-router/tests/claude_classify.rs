@@ -248,13 +248,8 @@ fn a_schema_answer_without_structured_output_is_other() {
 /// (2026-09-30, redacted), next to the synthetic ones built before any was.
 #[test]
 fn the_observed_success_is_an_answer() {
-    assert_eq!(
-        classify(OBSERVED_SUCCESS),
-        Ok(Completion {
-            text: "Hello".into(),
-            rate_limit: None,
-        })
-    );
+    let answer = classify(OBSERVED_SUCCESS).expect("an answer");
+    assert_eq!(answer.text, "Hello");
 }
 
 #[test]

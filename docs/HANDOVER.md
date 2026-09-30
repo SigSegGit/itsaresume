@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.32
-TITLE: The journal keeps the rate-limit event (status, type, overage) of each Claude answer (M4)
+NEXT: 8.33
+TITLE: stats per day, and when the plan ran out (M4 exit criterion)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -418,13 +418,21 @@ branch with the local gates of §3 green.
   left but 8.12 (the owner's token), and write M3's next items from cv
   2.3 (the analysis schema, measured before it is sent). Done: M1 row
   and contents, M3 and M4 marked started, M3's "own repository" corrected.
-- [ ] **8.32** M4's second half starts in the journal: a Claude answer's
+- [x] **8.32** M4's second half starts in the journal: a Claude answer's
   `rate_limit_event` (`status`, `rateLimitType`, `isUsingOverage`, never
   `resetsAt` precision beyond the minute) goes into its journal line as
   `rate_limit`, so `stats` can later say when the plan ran out. The
   `Completion` gains an optional `meta` the Claude backend fills; the
   journal writes it. Red tests: the observed success journaled with its
-  `rate_limit`; an LM Studio answer without one.
+  `rate_limit`; an LM Studio answer without one. Done: `rate_limit` on
+  `Completion` and `Answer` (status, rateLimitType, isUsingOverage,
+  overageStatus only); two tests, three defences.
+- [ ] **8.33** `itsaresume stats --by-day`: one block per UTC day (from
+  `ts`): the share Claude answered, the quota hits (attempts of kind
+  `quota_exceeded`, and answers whose `rate_limit.status` is not
+  `allowed`), and the time of the first one that day ("ran out at 14:02").
+  That is M4's exit criterion (ROADMAP). Red tests on a hand-written
+  two-day journal.
 
 ## 9. Deliberately open
 

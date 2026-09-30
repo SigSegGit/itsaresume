@@ -21,6 +21,8 @@ pub struct Answer {
     pub backend: String,
     /// The generated text.
     pub text: String,
+    /// The backend's report on the plan's limits, if any (8.32).
+    pub rate_limit: Option<serde_json::Value>,
 }
 
 /// Why no answer came back.
@@ -169,6 +171,7 @@ impl Router {
                     let answer = Answer {
                         backend: backend.name().to_owned(),
                         text: completion.text,
+                        rate_limit: completion.rate_limit,
                     };
                     return Outcome {
                         result: Ok(answer),

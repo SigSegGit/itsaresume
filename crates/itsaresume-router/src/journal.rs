@@ -5,7 +5,7 @@
 //! will carry personal CV data (docs/HANDOVER.md §1, decision 9).
 
 use crate::backend::{Request, excerpt};
-use crate::router::{Outcome, RouteError};
+use crate::router::{Answer, Outcome, RouteError};
 use serde_json::{Value, json};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -94,6 +94,14 @@ impl Journal {
         }
         if request.schema.is_some() {
             entry["schema"] = json!(true);
+        }
+        // The plan's limits as the answering backend reported them (8.32).
+        if let Ok(Answer {
+            rate_limit: Some(limit),
+            ..
+        }) = &outcome.result
+        {
+            entry["rate_limit"] = limit.clone();
         }
         let mut line = entry.to_string();
         line.push('\n');
