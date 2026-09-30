@@ -76,10 +76,12 @@
     },
     "Claude: tool tripwire": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
-      "live": "if !tools_empty {",
-      "dead": "if !tools_empty && false {",
+      "live": "if !tools_allowed {",
+      "dead": "if !tools_allowed && false {",
       "expect": [
-        "a_successful_answer_with_tools_enabled_is_refused"
+        "a_successful_answer_with_tools_enabled_is_refused",
+        "the_structured_output_tool_without_a_schema_is_refused",
+        "another_tool_beside_structured_output_is_refused"
       ]
     },
     "Claude: init message required": {

@@ -342,7 +342,11 @@ branch with the local gates of §3 green.
   `structured_output` through a `StructuredOutput` tool, which the
   tripwire now allows only for a schema request and only alone:
   docs/ARCHITECTURE.md); eight tests, eight defences; a real request
-  through each backend returned the JSON document.
+  through each backend returned the JSON document. Also: `scripts/pre-push.sh`
+  (install: `cp scripts/pre-push.sh .git/hooks/pre-push`) runs
+  check-testing, check-handover and the cv catalogue check before a push:
+  three CI runs were lost on 2026-09-30 to a command chain that went on
+  past a failed gate.
 - [ ] **8.25** The generator side of structured output (cv 2.3's first
   step): `listRequirements` sends the listing schema (`{requirements:
   [{name, importance: must|nice}]}`) through `complete({schema})`, so no

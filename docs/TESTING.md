@@ -46,8 +46,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `output_without_an_init_message_is_refused` | `tests/claude_classify.rs` | Without `system/init` the billing source cannot be checked, so the output is refused (fail closed) | Claude: init message required |
 | `a_successful_answer_with_tools_enabled_is_refused` | `tests/claude_classify.rs` | An answer produced with tools enabled is refused (prompt-injection guard) | Claude: tool tripwire |
 | `a_schema_answer_is_its_structured_output` | `tests/claude_classify.rs` | With a schema, the answer is `structured_output` (observed on 2.1.162: `result` is empty) | Schema: claude's answer is structured_output |
-| `the_structured_output_tool_without_a_schema_is_refused` | `tests/claude_classify.rs` | `StructuredOutput` in init without a schema asked for trips the tool tripwire | Schema: StructuredOutput only with a schema |
-| `another_tool_beside_structured_output_is_refused` | `tests/claude_classify.rs` | With a schema, any tool beside `StructuredOutput` still trips it | Schema: StructuredOutput alone |
+| `the_structured_output_tool_without_a_schema_is_refused` | `tests/claude_classify.rs` | `StructuredOutput` in init without a schema asked for trips the tool tripwire | Schema: StructuredOutput only with a schema; Claude: tool tripwire |
+| `another_tool_beside_structured_output_is_refused` | `tests/claude_classify.rs` | With a schema, any tool beside `StructuredOutput` still trips it | Schema: StructuredOutput alone; Claude: tool tripwire |
 | `a_schema_answer_without_structured_output_is_other` | `tests/claude_classify.rs` | A schema request answered without `structured_output` is `Other` | Schema: claude's answer is structured_output |
 | `the_synthetic_usage_limit_is_quota_exceeded` | `tests/claude_classify.rs` | The synthetic usage-limit output (429) is `QuotaExceeded` — **hypothesis** | Claude: HTTP 429 is quota |
 | `status_429_is_quota_exceeded_whatever_the_message` | `tests/claude_classify.rs` | HTTP 429 alone makes `QuotaExceeded` | Claude: HTTP 429 is quota |
