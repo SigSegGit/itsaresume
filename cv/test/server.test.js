@@ -133,8 +133,13 @@ test('a POST from another origin, without the token, or not in JSON is refused',
     assert.equal((await post(app, '/api/split', { text: 'x' }, { 'X-CSRF-Token': 'b'.repeat(48) })).status, 403);
     assert.equal((await post(app, '/api/split', 'text=x', { 'Content-Type': 'application/x-www-form-urlencoded' })).status, 415);
     assert.equal((await post(app, '/api/split', '{not json')).status, 400);
+    // Audit 2026-09-27: the socket was cut before the 413 was sent. Streamed
+    // (chunked) or declared, a body over the limit gets its 413.
     const huge = await post(app, '/api/split', JSON.stringify({ text: 'x'.repeat(MAX_BODY) }));
-    assert.ok(huge.status === 413 || huge.status === 'reset', `huge body: ${huge.status}`);
+    assert.equal(huge.status, 413, 'streamed');
+    const body = JSON.stringify({ text: 'x'.repeat(MAX_BODY) });
+    const declared = await post(app, '/api/split', body, { 'Content-Length': String(Buffer.byteLength(body)) });
+    assert.equal(declared.status, 413, 'declared');
     assert.equal((await call(app.port, { method: 'PUT', path: '/api/jobs' })).status, 405);
     assert.equal(app.calls.offers.length, 0, 'nothing reached the model');
   } finally {
