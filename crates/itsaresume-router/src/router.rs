@@ -171,7 +171,22 @@ impl Router {
 
     fn route(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {
         let mut attempts = Vec::new();
-        for backend in backends {
+        // M2: a backend that does not serve the request's kind is not tried
+        // at all: not an attempt, not a failure (a small model never gets
+        // a generation).
+        let serving: Vec<&dyn Backend> = backends
+            .iter()
+            .copied()
+            .filter(|backend| backend.serves(request.kind))
+            .collect();
+        if serving.is_empty() {
+            return Outcome {
+                result: Err(RouteError::Unserved { kind: request.kind }),
+                attempts,
+                journal_error: None,
+            };
+        }
+        for backend in serving {
             let error = match backend.complete(request) {
                 Ok(completion) => {
                     let answer = Answer {

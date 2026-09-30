@@ -779,8 +779,8 @@
     },
     "CLI: the schema reaches the request": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n        },\n        only,",
-      "dead": "system,\n            schema: schema.filter(|_| false),\n        },\n        only,",
+      "live": "system,\n            schema,\n            kind: Default::default(),\n        },\n        only,",
+      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind: Default::default(),\n        },\n        only,",
       "expect": [
         "the_schema_option_reaches_the_cli_as_json_schema"
       ]
@@ -906,6 +906,47 @@
       "dead": "options.by_day = false;",
       "expect": [
         "the_stats_by_day_option_prints_one_line_per_day"
+      ]
+    },
+    "M2: a backend is tried only for the kinds it serves": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".filter(|backend| backend.serves(request.kind))",
+      "dead": ".filter(|backend| backend.serves(request.kind) || true)",
+      "expect": [
+        "a_generation_request_goes_past_a_classify_only_backend",
+        "serves_declares_the_kinds_and_none_is_refused"
+      ]
+    },
+    "M2: a request no backend serves is unserved": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "if serving.is_empty() {",
+      "dead": "if serving.is_empty() && false {",
+      "expect": [
+        "a_request_no_backend_serves_is_unserved"
+      ]
+    },
+    "M2: serves = [] is refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "if let Some(backend) = self.backends.iter().find(|b| b.serves().is_empty()) {",
+      "dead": "if let Some(backend) = self.backends.iter().find(|b| b.serves().is_empty() && false) {",
+      "expect": [
+        "serves_declares_the_kinds_and_none_is_refused"
+      ]
+    },
+    "M2: a configured backend declares its kinds": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "self.serves.contains(&kind)",
+      "dead": "self.serves.contains(&kind) || true",
+      "expect": [
+        "serves_declares_the_kinds_and_none_is_refused"
+      ]
+    },
+    "M2: the endpoint reads the kind": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "Value::String(kind) if kind == \"classify\" => Kind::Classify,",
+      "dead": "Value::String(kind) if kind == \"classify!\" => Kind::Classify,",
+      "expect": [
+        "a_request_kind_is_generate_or_classify"
       ]
     }
   }

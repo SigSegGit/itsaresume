@@ -4,7 +4,7 @@
 //! 502 when a backend stopped the request, 503 when every backend failed with
 //! a fallback kind; `GET /healthz` → 200 (docs/ARCHITECTURE.md, HTTP endpoint).
 
-use crate::backend::Request as Inference;
+use crate::backend::{Kind, Request as Inference};
 use crate::router::{Attempt, RouteError, Router};
 use serde_json::{Value, json};
 use std::io::Read;
@@ -285,12 +285,18 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
         Value::Object(_) => Some(value["schema"].clone()),
         _ => return Err("\"schema\" must be a JSON Schema object".into()),
     };
+    let kind = match &value["kind"] {
+        Value::Null => Kind::Generate,
+        Value::String(kind) if kind == "generate" => Kind::Generate,
+        Value::String(kind) if kind == "classify" => Kind::Classify,
+        _ => return Err("\"kind\" must be \"generate\" or \"classify\"".into()),
+    };
     Ok((
         Inference {
             prompt: prompt.to_owned(),
             system,
             schema,
-            kind: Default::default(),
+            kind,
         },
         only,
     ))

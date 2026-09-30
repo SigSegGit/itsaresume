@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.34
-TITLE: A request kind (generate or classify); a backend serves the kinds it declares (M2 first step)
+NEXT: 8.35
+TITLE: complete --kind classify, and serves documented in config.example.toml
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -435,7 +435,7 @@ branch with the local gates of §3 green.
   two-day journal. Done: `summarize_by_day` in `src/stats.rs`, `--by-day`;
   two tests, four defences; on the owner's journal, five days, no quota hit
   yet. M4's exit criterion is met (ROADMAP).
-- [ ] **8.34** M2's first step, no hardware choice needed: a request has a
+- [x] **8.34** M2's first step, no hardware choice needed: a request has a
   `kind`, `generate` (default) or `classify`; a backend's config may say
   `serves = ["classify"]` (default: both); the router skips a backend that
   does not serve the request's kind (not an attempt, not a failure), and a
@@ -443,7 +443,16 @@ branch with the local gates of §3 green.
   classify-only backend first, a generate request goes past it to the
   next; a classify request is answered by it; `serves = []` is refused at
   load. M2's exit criterion (ROADMAP): "the router refuses to send a
-  generation request to it", proved by a sabotage-verified test.
+  generation request to it", proved by a sabotage-verified test. Done:
+  `Kind`, `Backend::serves`, `RouteError::Unserved` (400 / exit 2 /
+  journal "unserved"), config `serves` through `Named`, `"kind"` on the
+  endpoint; four tests, five defences. The runtime and the model on the Pi
+  or the VM stay open (§9, the owner's choice).
+- [ ] **8.35** `itsaresume complete --kind classify` (the CLI parity of
+  `"kind"`), an unknown kind a usage error; `serves` shown, commented, in
+  `config.example.toml` and README. Red test in `tests/cli.rs`: a config
+  whose only backend serves classify: `--kind classify` answers, no flag
+  exits 2 naming the kind.
 
 ## 9. Deliberately open
 
