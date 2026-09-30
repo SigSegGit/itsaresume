@@ -218,6 +218,7 @@ fn complete(
             prompt,
             system,
             schema,
+            kind: Default::default(),
         },
         only,
     ) {
@@ -253,6 +254,10 @@ fn complete(
         Err(RouteError::Exhausted) => {
             eprintln!("itsaresume: every backend failed with a quota or an outage");
             ExitCode::from(EXIT_EXHAUSTED)
+        }
+        Err(error @ RouteError::Unserved { .. }) => {
+            eprintln!("itsaresume: {error}");
+            ExitCode::from(EXIT_USAGE)
         }
     }
 }

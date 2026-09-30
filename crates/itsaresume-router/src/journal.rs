@@ -64,6 +64,7 @@ impl Journal {
                 Some(answer.text.chars().count()),
             ),
             Err(RouteError::Stopped { backend, .. }) => ("stopped", Some(backend.as_str()), None),
+            Err(RouteError::Unserved { .. }) => ("unserved", None, None),
             Err(RouteError::Exhausted) => ("exhausted", None, None),
         };
         let attempts: Vec<Value> = outcome

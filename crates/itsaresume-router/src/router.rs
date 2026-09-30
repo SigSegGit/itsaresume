@@ -38,6 +38,11 @@ pub enum RouteError {
     },
     /// Every backend failed with an error that allows fallback.
     Exhausted,
+    /// No configured backend serves the request's kind (8.34).
+    Unserved {
+        /// The kind asked for.
+        kind: crate::backend::Kind,
+    },
 }
 
 impl fmt::Display for RouteError {
@@ -45,6 +50,7 @@ impl fmt::Display for RouteError {
         match self {
             Self::Stopped { backend, error } => write!(f, "stopped by {backend}: {error}"),
             Self::Exhausted => write!(f, "every backend failed with a quota or an outage"),
+            Self::Unserved { kind } => write!(f, "no configured backend serves {kind:?} requests"),
         }
     }
 }

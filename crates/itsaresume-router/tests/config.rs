@@ -227,3 +227,31 @@ fn a_backend_may_be_named_and_names_are_unique() {
     };
     assert!(error.to_string().contains("qwen"), "{error}");
 }
+
+/// 8.34: `serves` declares the kinds a backend takes; none is refused.
+#[test]
+fn serves_declares_the_kinds_and_none_is_refused() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let text = |serves: &str| {
+        format!(
+            "journal = {:?}\n[[backend]]\nkind = \"lm-studio\"\nname = \"small\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 1\n{serves}\n",
+            dir.path().join("j.jsonl")
+        )
+    };
+    let router = Config::parse(&text("serves = [\"classify\"]"))
+        .expect("valid")
+        .router()
+        .expect("builds");
+    let outcome = router.complete(&itsaresume_router::Request::new("p"));
+    assert!(
+        outcome.attempts.is_empty(),
+        "a generation was sent to a classify-only backend"
+    );
+    let Err(error) = Config::parse(&text("serves = []"))
+        .expect("parses")
+        .router()
+    else {
+        panic!("a backend serving nothing")
+    };
+    assert!(error.to_string().contains("serves"), "{error}");
+}

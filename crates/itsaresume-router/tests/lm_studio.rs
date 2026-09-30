@@ -47,6 +47,7 @@ fn the_request_is_a_chat_completion_without_any_credential() {
         prompt: "Write a summary.".into(),
         system: Some("You write CVs.".into()),
         schema: None,
+        kind: Default::default(),
     };
 
     backend(&base_url)

@@ -483,3 +483,17 @@ fn the_schema_reaches_the_backend() {
     let (_, body) = post(address, r#"{"prompt": "p"}"#);
     assert_eq!(body["text"], "none");
 }
+
+/// 8.34: `"kind"` is `generate` or `classify`; anything else is 400.
+#[test]
+fn a_request_kind_is_generate_or_classify() {
+    let (address, _dir) = start(vec![answers("lm-studio", "yes")]);
+    assert_eq!(
+        post(address, r#"{"prompt": "p", "kind": "classify"}"#).0,
+        200
+    );
+    assert_eq!(
+        post(address, r#"{"prompt": "p", "kind": "translate"}"#).0,
+        400
+    );
+}

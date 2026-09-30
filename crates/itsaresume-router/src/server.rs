@@ -238,6 +238,14 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
                 "attempts": attempts,
             }}),
         ),
+        Err(RouteError::Unserved { kind }) => (
+            400,
+            json!({"error": {
+                "kind": "unserved",
+                "message": format!("no configured backend serves {kind:?} requests"),
+                "attempts": attempts,
+            }}),
+        ),
         Err(RouteError::Exhausted) => (
             503,
             json!({"error": {
@@ -282,6 +290,7 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
             prompt: prompt.to_owned(),
             system,
             schema,
+            kind: Default::default(),
         },
         only,
     ))

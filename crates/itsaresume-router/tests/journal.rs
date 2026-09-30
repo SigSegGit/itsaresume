@@ -125,6 +125,7 @@ fn the_prompt_and_answer_text_are_never_written_to_the_journal() {
         prompt: "SENTINEL-PROMPT-7f3a".into(),
         system: Some("SENTINEL-SYSTEM-2b8e".into()),
         schema: None,
+        kind: Default::default(),
     };
 
     router.complete(&request);
