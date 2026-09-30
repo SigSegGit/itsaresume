@@ -14,6 +14,6 @@ pub mod router;
 pub mod server;
 pub mod stats;
 
-pub use backend::{Backend, BackendError, Completion, Request};
+pub use backend::{Backend, BackendError, Completion, Kind, Request};
 pub use journal::Journal;
 pub use router::{Answer, Attempt, NoBackends, Outcome, RouteError, Router};

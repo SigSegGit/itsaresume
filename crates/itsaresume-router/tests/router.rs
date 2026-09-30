@@ -20,7 +20,10 @@ fn scripted(
     let calls = Arc::new(AtomicUsize::new(0));
     let backend = Scripted {
         name,
-        reply: reply.map(|text| Completion { text: text.into() }),
+        reply: reply.map(|text| Completion {
+            text: text.into(),
+            rate_limit: None,
+        }),
         calls: Arc::clone(&calls),
     };
     (Box::new(backend), calls)
@@ -59,7 +62,8 @@ fn first_backend_answers_and_the_next_is_not_called() {
         outcome.result,
         Ok(Answer {
             backend: "a".into(),
-            text: "from a".into()
+            text: "from a".into(),
+            rate_limit: None,
         })
     );
     assert!(outcome.attempts.is_empty());
@@ -192,4 +196,63 @@ fn an_unknown_backend_name_is_refused_with_the_configured_names() {
     assert_eq!(a_calls.load(Ordering::SeqCst), 0);
     let unnamed = router.complete_on(&request(), None).expect("no name");
     assert_eq!(unnamed.result.expect("a answers").backend, "a");
+}
+
+/// A backend that serves classification only (a small model, M2).
+struct ClassifyOnly(Box<dyn Backend>);
+
+impl Backend for ClassifyOnly {
+    fn name(&self) -> &str {
+        self.0.name()
+    }
+    fn serves(&self, kind: itsaresume_router::Kind) -> bool {
+        kind == itsaresume_router::Kind::Classify
+    }
+    fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
+        self.0.complete(request)
+    }
+}
+
+/// 8.34, M2's exit criterion: a generation request never reaches a backend
+/// that serves classification only; it goes past it, as if absent.
+#[test]
+fn a_generation_request_goes_past_a_classify_only_backend() {
+    let (small, small_calls) = scripted("small", Ok("yes"));
+    let (big, _) = scripted("big", Ok("a whole CV"));
+    let dir = tempfile::tempdir().expect("temp dir");
+    let router = Router::new(
+        vec![Box::new(ClassifyOnly(small)), big],
+        Journal::new(dir.path().join("j.jsonl")),
+    )
+    .expect("backends");
+
+    let generated = router.complete(&request());
+    assert_eq!(generated.result.expect("big answers").backend, "big");
+    assert!(generated.attempts.is_empty(), "skipping is not a failure");
+    assert_eq!(
+        small_calls.load(Ordering::SeqCst),
+        0,
+        "a generation reached the small model"
+    );
+
+    let classified = router.complete(&request().with_kind(itsaresume_router::Kind::Classify));
+    assert_eq!(classified.result.expect("small answers").backend, "small");
+}
+
+#[test]
+fn a_request_no_backend_serves_is_unserved() {
+    let (small, small_calls) = scripted("small", Ok("yes"));
+    let dir = tempfile::tempdir().expect("temp dir");
+    let router = Router::new(
+        vec![Box::new(ClassifyOnly(small))],
+        Journal::new(dir.path().join("j.jsonl")),
+    )
+    .expect("backends");
+    let outcome = router.complete(&request());
+    assert!(
+        matches!(outcome.result, Err(RouteError::Unserved { .. })),
+        "{:?}",
+        outcome.result
+    );
+    assert_eq!(small_calls.load(Ordering::SeqCst), 0);
 }

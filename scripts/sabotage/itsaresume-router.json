@@ -779,8 +779,8 @@
     },
     "CLI: the schema reaches the request": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n        },\n        only,",
-      "dead": "system,\n            schema: schema.filter(|_| false),\n        },\n        only,",
+      "live": "system,\n            schema,\n            kind,\n        },\n        only,",
+      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind,\n        },\n        only,",
       "expect": [
         "the_schema_option_reaches_the_cli_as_json_schema"
       ]
@@ -846,10 +846,123 @@
     },
     "CLI: stats reads the journal": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "if command == \"stats\" {\n        return stats(&config);",
-      "dead": "if command == \"stats\" && false {\n        return stats(&config);",
+      "live": "if command == \"stats\" {\n        return stats(&config, options.by_day);",
+      "dead": "if command == \"stats\" && false {\n        return stats(&config, options.by_day);",
       "expect": [
         "the_stats_command_sums_up_the_journal"
+      ]
+    },
+    "Claude: the rate-limit event is kept": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".find(|message| message[\"type\"] == \"rate_limit_event\")\n        .map(|message| {",
+      "dead": ".find(|message| message[\"type\"] == \"no such event\")\n        .map(|message| {",
+      "expect": [
+        "a_claude_answer_carries_its_rate_limit_event"
+      ]
+    },
+    "Router: the answer keeps its rate limit": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "rate_limit: completion.rate_limit,",
+      "dead": "rate_limit: completion.rate_limit.filter(|_| false),",
+      "expect": [
+        "the_rate_limit_of_an_answer_is_journaled"
+      ]
+    },
+    "Journal: the rate limit is written": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "entry[\"rate_limit\"] = limit.clone();",
+      "dead": "let _ = limit;",
+      "expect": [
+        "the_rate_limit_of_an_answer_is_journaled"
+      ]
+    },
+    "Stats by day: a limit not allowed is a hit": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": ".is_some_and(|status| status != \"allowed\");",
+      "dead": ".is_some_and(|status| status == \"never\");",
+      "expect": [
+        "the_journal_by_day_says_when_the_plan_ran_out"
+      ]
+    },
+    "Stats by day: the first hit stays": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "day.first_hit.get_or_insert_with(|| ts[11..16].to_owned());",
+      "dead": "day.first_hit = Some(ts[11..16].to_owned());",
+      "expect": [
+        "the_journal_by_day_says_when_the_plan_ran_out"
+      ]
+    },
+    "Stats by day: a quota attempt is a hit": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": ".filter(|a| a[\"kind\"] == \"quota_exceeded\")",
+      "dead": ".filter(|a| a[\"kind\"] == \"never\")",
+      "expect": [
+        "the_journal_by_day_says_when_the_plan_ran_out"
+      ]
+    },
+    "CLI: --by-day is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "options.by_day = true;",
+      "dead": "options.by_day = false;",
+      "expect": [
+        "the_stats_by_day_option_prints_one_line_per_day"
+      ]
+    },
+    "M2: a backend is tried only for the kinds it serves": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".filter(|backend| backend.serves(request.kind))",
+      "dead": ".filter(|backend| backend.serves(request.kind) || true)",
+      "expect": [
+        "a_generation_request_goes_past_a_classify_only_backend",
+        "serves_declares_the_kinds_and_none_is_refused"
+      ]
+    },
+    "M2: a request no backend serves is unserved": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "if serving.is_empty() {",
+      "dead": "if serving.is_empty() && false {",
+      "expect": [
+        "a_request_no_backend_serves_is_unserved"
+      ]
+    },
+    "M2: serves = [] is refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "if let Some(backend) = self.backends.iter().find(|b| b.serves().is_empty()) {",
+      "dead": "if let Some(backend) = self.backends.iter().find(|b| b.serves().is_empty() && false) {",
+      "expect": [
+        "serves_declares_the_kinds_and_none_is_refused"
+      ]
+    },
+    "M2: a configured backend declares its kinds": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "self.serves.contains(&kind)",
+      "dead": "self.serves.contains(&kind) || true",
+      "expect": [
+        "serves_declares_the_kinds_and_none_is_refused"
+      ]
+    },
+    "M2: the endpoint reads the kind": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "Value::String(kind) if kind == \"classify\" => Kind::Classify,",
+      "dead": "Value::String(kind) if kind == \"classify!\" => Kind::Classify,",
+      "expect": [
+        "a_request_kind_is_generate_or_classify"
+      ]
+    },
+    "CLI: --kind classify is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "\"classify\" => Kind::Classify,",
+      "dead": "\"classify!\" => Kind::Classify,",
+      "expect": [
+        "the_kind_option_reaches_a_classify_only_backend"
+      ]
+    },
+    "CLI: the kind reaches the request": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "system,\n            schema,\n            kind,\n        },",
+      "dead": "system,\n            schema,\n            kind: if kind == Kind::Classify { Kind::Generate } else { kind },\n        },",
+      "expect": [
+        "the_kind_option_reaches_a_classify_only_backend"
       ]
     }
   }

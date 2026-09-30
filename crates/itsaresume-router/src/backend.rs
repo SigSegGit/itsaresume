@@ -12,6 +12,20 @@ pub struct Request {
     /// An optional JSON Schema the answer must follow (structured output):
     /// the answer is then a JSON document, or the request fails as `Other`.
     pub schema: Option<serde_json::Value>,
+    /// What is asked (M2): a generation, or a classification a small model
+    /// can serve. Generation by default.
+    pub kind: Kind,
+}
+
+/// The kind of a request (M2): a backend serves the kinds it declares.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Kind {
+    /// A document or an answer of any length: the default.
+    #[default]
+    Generate,
+    /// A short choice among given options.
+    Classify,
 }
 
 impl Request {
@@ -21,7 +35,14 @@ impl Request {
             prompt: prompt.into(),
             system: None,
             schema: None,
+            kind: Kind::Generate,
         }
+    }
+
+    /// The same request, of `kind`.
+    pub fn with_kind(mut self, kind: Kind) -> Self {
+        self.kind = kind;
+        self
     }
 
     /// The same request, asking for an answer that follows `schema`.
@@ -36,6 +57,10 @@ impl Request {
 pub struct Completion {
     /// The generated text.
     pub text: String,
+    /// What the backend reported about the plan's limits with this answer
+    /// (Claude's `rate_limit_event`), for the journal (M4); `None` when it
+    /// reports nothing.
+    pub rate_limit: Option<serde_json::Value>,
 }
 
 /// Why a backend did not answer. The kind decides whether the router tries
@@ -108,6 +133,12 @@ pub(crate) fn excerpt(text: &str, max_chars: usize) -> String {
 pub trait Backend: Send + Sync {
     /// A short stable name, as written in the journal (`claude-code`, …).
     fn name(&self) -> &str;
+
+    /// Whether this backend serves requests of `kind` (all, by default).
+    fn serves(&self, kind: Kind) -> bool {
+        let _ = kind;
+        true
+    }
 
     /// Answer one request, or say which of the three ways it failed.
     fn complete(&self, request: &Request) -> Result<Completion, BackendError>;

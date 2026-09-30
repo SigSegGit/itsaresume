@@ -21,6 +21,8 @@ pub struct Answer {
     pub backend: String,
     /// The generated text.
     pub text: String,
+    /// The backend's report on the plan's limits, if any (8.32).
+    pub rate_limit: Option<serde_json::Value>,
 }
 
 /// Why no answer came back.
@@ -36,6 +38,11 @@ pub enum RouteError {
     },
     /// Every backend failed with an error that allows fallback.
     Exhausted,
+    /// No configured backend serves the request's kind (8.34).
+    Unserved {
+        /// The kind asked for.
+        kind: crate::backend::Kind,
+    },
 }
 
 impl fmt::Display for RouteError {
@@ -43,6 +50,7 @@ impl fmt::Display for RouteError {
         match self {
             Self::Stopped { backend, error } => write!(f, "stopped by {backend}: {error}"),
             Self::Exhausted => write!(f, "every backend failed with a quota or an outage"),
+            Self::Unserved { kind } => write!(f, "no configured backend serves {kind:?} requests"),
         }
     }
 }
@@ -163,12 +171,28 @@ impl Router {
 
     fn route(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {
         let mut attempts = Vec::new();
-        for backend in backends {
+        // M2: a backend that does not serve the request's kind is not tried
+        // at all: not an attempt, not a failure (a small model never gets
+        // a generation).
+        let serving: Vec<&dyn Backend> = backends
+            .iter()
+            .copied()
+            .filter(|backend| backend.serves(request.kind))
+            .collect();
+        if serving.is_empty() {
+            return Outcome {
+                result: Err(RouteError::Unserved { kind: request.kind }),
+                attempts,
+                journal_error: None,
+            };
+        }
+        for backend in serving {
             let error = match backend.complete(request) {
                 Ok(completion) => {
                     let answer = Answer {
                         backend: backend.name().to_owned(),
                         text: completion.text,
+                        rate_limit: completion.rate_limit,
                     };
                     return Outcome {
                         result: Ok(answer),

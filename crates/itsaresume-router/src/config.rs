@@ -1,6 +1,6 @@
 //! The configuration file (`config.local.toml`; `config.example.toml` shows it).
 
-use crate::backend::Backend;
+use crate::backend::{Backend, Kind};
 use crate::claude_code::ClaudeCodeBackend;
 use crate::journal::Journal;
 use crate::lm_studio::LmStudioBackend;
@@ -34,6 +34,8 @@ pub enum BackendConfig {
     ClaudeCode {
         /// The name requests and the journal use (default: the kind).
         name: Option<String>,
+        /// The request kinds it takes (default: all).
+        serves: Option<Vec<Kind>>,
         /// The executable (a path, or a name looked up on `PATH`).
         program: PathBuf,
         /// A model alias for `claude --model`.
@@ -47,6 +49,9 @@ pub enum BackendConfig {
     LmStudio {
         /// The name requests and the journal use (default: the kind).
         name: Option<String>,
+        /// The request kinds it takes (default: all; a small model:
+        /// `["classify"]`).
+        serves: Option<Vec<Kind>>,
         /// The endpoint, ending in `/v1`.
         base_url: String,
         /// The model id as LM Studio lists it.
@@ -76,6 +81,14 @@ impl BackendConfig {
             Self::ClaudeCode { name, .. } => name.clone().unwrap_or_else(|| "claude-code".into()),
             Self::LmStudio { name, .. } => name.clone().unwrap_or_else(|| "lm-studio".into()),
         }
+    }
+
+    /// The request kinds this backend takes: its `serves`, else all.
+    pub fn serves(&self) -> Vec<Kind> {
+        let (Self::ClaudeCode { serves, .. } | Self::LmStudio { serves, .. }) = self;
+        serves
+            .clone()
+            .unwrap_or_else(|| vec![Kind::Generate, Kind::Classify])
     }
 
     /// How many completions may reach the backend at once (`None`: no limit).
@@ -168,6 +181,12 @@ impl Config {
                 "invalid configuration: an lm-studio base_url holds userinfo (user@ or user:password@); no credential goes in this file".into(),
             ));
         }
+        if let Some(backend) = self.backends.iter().find(|b| b.serves().is_empty()) {
+            return Err(ConfigError(format!(
+                "invalid configuration: backend \"{}\" serves nothing (serves = [])",
+                backend.name()
+            )));
+        }
         let mut seen = std::collections::HashSet::new();
         for backend in &self.backends {
             if !seen.insert(backend.name()) {
@@ -183,6 +202,7 @@ impl Config {
             .map(|backend| -> Box<dyn Backend> {
                 Box::new(Named {
                     name: backend.name(),
+                    serves: backend.serves(),
                     inner: backend.build(&self.journal),
                 })
             })
@@ -195,12 +215,17 @@ impl Config {
 /// A backend under its configured name (the kind when none is given).
 struct Named {
     name: String,
+    serves: Vec<Kind>,
     inner: Box<dyn Backend>,
 }
 
 impl Backend for Named {
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn serves(&self, kind: Kind) -> bool {
+        self.serves.contains(&kind)
     }
 
     fn complete(

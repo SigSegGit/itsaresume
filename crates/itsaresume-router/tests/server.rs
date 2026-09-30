@@ -27,7 +27,10 @@ impl Backend for Scripted {
 fn answers(name: &'static str, text: &str) -> Box<dyn Backend> {
     Box::new(Scripted {
         name,
-        reply: Ok(Completion { text: text.into() }),
+        reply: Ok(Completion {
+            text: text.into(),
+            rate_limit: None,
+        }),
         delay: Duration::ZERO,
     })
 }
@@ -171,6 +174,7 @@ fn a_slow_completion_does_not_block_other_requests() {
         name: "claude-code",
         reply: Ok(Completion {
             text: "slow".into(),
+            rate_limit: None,
         }),
         delay: Duration::from_secs(3),
     })]);
@@ -395,6 +399,7 @@ fn completions_beyond_the_cap_are_503_busy() {
         name: "claude-code",
         reply: Ok(Completion {
             text: "slow".into(),
+            rate_limit: None,
         }),
         delay: Duration::from_secs(3),
     })]);
@@ -464,6 +469,7 @@ impl Backend for EchoSchema {
                 .schema
                 .as_ref()
                 .map_or_else(|| "none".to_owned(), ToString::to_string),
+            rate_limit: None,
         })
     }
 }
@@ -476,4 +482,18 @@ fn the_schema_reaches_the_backend() {
     assert_eq!(body["text"], r#"{"type":"object"}"#);
     let (_, body) = post(address, r#"{"prompt": "p"}"#);
     assert_eq!(body["text"], "none");
+}
+
+/// 8.34: `"kind"` is `generate` or `classify`; anything else is 400.
+#[test]
+fn a_request_kind_is_generate_or_classify() {
+    let (address, _dir) = start(vec![answers("lm-studio", "yes")]);
+    assert_eq!(
+        post(address, r#"{"prompt": "p", "kind": "classify"}"#).0,
+        200
+    );
+    assert_eq!(
+        post(address, r#"{"prompt": "p", "kind": "translate"}"#).0,
+        400
+    );
 }

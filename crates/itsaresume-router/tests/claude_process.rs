@@ -91,7 +91,8 @@ fn the_prompt_goes_on_stdin_and_the_answer_comes_back() {
     assert_eq!(
         outcome,
         Ok(Completion {
-            text: "Synthetic answer.".into()
+            text: "Synthetic answer.".into(),
+            rate_limit: None,
         })
     );
     let stdin = std::fs::read_to_string(scene.record.join("stdin.txt")).expect("stdin recorded");
@@ -109,6 +110,7 @@ fn the_cli_runs_with_json_output_and_no_tools() {
         prompt: "p".into(),
         system: Some("You write CVs.".into()),
         schema: None,
+        kind: Default::default(),
     };
 
     backend(&scene)
@@ -175,6 +177,7 @@ fn a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line() {
         prompt: "p".into(),
         system: Some(system.clone()),
         schema: None,
+        kind: Default::default(),
     };
 
     let outcome = backend(&scene).complete_with_env(&request, success_env(&scene));
@@ -182,7 +185,8 @@ fn a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line() {
     assert_eq!(
         outcome,
         Ok(Completion {
-            text: "Synthetic answer.".into()
+            text: "Synthetic answer.".into(),
+            rate_limit: None,
         })
     );
     assert!(
@@ -244,6 +248,7 @@ fn concurrent_requests_each_get_their_own_system_prompt() {
                     prompt: "p".into(),
                     system: Some(system.into()),
                     schema: None,
+                    kind: Default::default(),
                 };
                 let outcome = backend(&scene)
                     .with_workdir(workdir)

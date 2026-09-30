@@ -13,10 +13,10 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
 | | Milestone | Goal | Exit criterion | Status |
 |---|---|---|---|---|
 | **M0** | Scaffold | Workspace, docs, CI and guard scripts exist before any feature | CI green on the scaffold PR; `check-handover.py` passes | ✅ merged (PR #1) |
-| **M1** | MVP router in Docker | A prompt sent over HTTP to a container goes to Claude Code (subscription), falls back to LM Studio on quota or outage, and every request leaves one journal line | Every M1 step of HANDOVER §8 ticked, merged, CI green (image build included); all fallback/error tests sabotage-verified in CI; one real answer from LM Studio through the container | ✅ merged (PR #1, #2); since 2026-09-27: 73 tests, 45 defences, main green again after the flaky CLI test fix |
-| **M2** | Micro-model | A small model on the Pi or the Freebox VM takes **classification** requests only | The router refuses to send a generation request to it, proved by a sabotage-verified test | ⬜ |
-| **M3** | CV integration | The Node.js CV generator calls the M1 HTTP endpoint; the contract is versioned and frozen | The Node project runs one end-to-end CV through it on Nicolas's machines | ⬜ |
-| **M4** | Plan observability | Nicolas can see whether his Pro/Max plan carries the load | A report answers "what share of today's requests did Claude answer, and when did it run out" from the journal alone | ⬜ |
+| **M1** | MVP router in Docker | A prompt sent over HTTP to a container goes to Claude Code (subscription), falls back to LM Studio on quota or outage, and every request leaves one journal line | Every M1 step of HANDOVER §8 ticked, merged, CI green (image build included); all fallback/error tests sabotage-verified in CI; one real answer from LM Studio through the container | ✅ merged (PR #1, #2); hardened through 8.30 (2026-09-30): one completion at a time per local backend, no userinfo in a `base_url`, a private Claude working directory, an overage tripwire; 91 defences verified on Linux (CI and WSL). Only 8.12's Claude half waits (⏸ the owner's `claude setup-token`) |
+| **M2** | Micro-model | A small model on the Pi or the Freebox VM takes **classification** requests only | The router refuses to send a generation request to it, proved by a sabotage-verified test | 🟨 the criterion is proved in the router (8.34: request `kind`, backend `serves`, sabotage-verified); the runtime and model on the Pi or VM are not chosen yet |
+| **M3** | CV integration | The Node.js CV generator calls the M1 HTTP endpoint; the contract is versioned and frozen | The Node project runs one end-to-end CV through it on Nicolas's machines | 🟨 end-to-end CVs run through it (Claude, and the local model alone: 239 s); a request may name its backend (8.22) and carry a JSON schema (8.24); the contract is not frozen yet |
+| **M4** | Plan observability | Nicolas can see whether his Pro/Max plan carries the load | A report answers "what share of today's requests did Claude answer, and when did it run out" from the journal alone | ✅ `itsaresume stats` (8.30) and `stats --by-day` (8.33): per day, who answered and the time of the first quota hit, from the journal alone (the `rate_limit` Claude reports rides in it since 8.32) |
 
 ### M1 — what it contains
 
@@ -33,6 +33,13 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
 - A Docker image (router + `claude` CLI) and a compose file; the Claude
   backend authenticates in the container with a subscription OAuth token
   (`claude setup-token`), never an API key.
+- Since 2026-09-30 (8.17-8.30): `max_concurrent` per local backend (one
+  slot by default: the wait counts against the timeout, then falls back);
+  config `name`s and a request naming one backend (no fallback); a JSON
+  schema per request (`response_format` to LM Studio, `--json-schema` to
+  Claude, which answers through its `StructuredOutput` tool, allowed only
+  then); the tripwires extended to extra usage (`isUsingOverage`); the
+  journal says how a request was asked; `itsaresume stats`.
 
 ### M2 — what it will need (not designed in detail yet)
 
@@ -43,16 +50,20 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
 
 ### M3 — what it will need
 
-- The Node.js project calling `POST /v1/complete` (built in M1), and the
-  contract frozen with a version and contract tests.
-- The CV generator itself stays in its own repository; itsaresume never builds
-  a document.
+- The Node.js generator, in `cv/` of this repository since 2026-09-30
+  (the router never builds a document), already calls `POST /v1/complete`.
+- Next: the analysis call's schema (a closed list of skill ids), sent only
+  if measured not to cost recall or verdicts (the listing's schema cost the
+  local model recall: 61-66/75 against 68-70/75, so it stays opt-in); then
+  the contract frozen with a version and contract tests on both sides.
 
 ### M4 — what it will need
 
 - The Claude CLI reports `usage`, `modelUsage` and `total_cost_usd` (notional
-  on a subscription) per call. Journal them, then summarise per day: share per
-  backend, quota hits and when they happened.
+  on a subscription) per call, and a `rate_limit_event` (`status`,
+  `rateLimitType`, `isUsingOverage`). Journal them, then summarise per day:
+  share per backend, quota hits and when they happened. `itsaresume stats`
+  (8.30) is the first half, over the whole journal.
 
 ## Dependencies between steps
 
