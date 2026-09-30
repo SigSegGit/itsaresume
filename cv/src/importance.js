@@ -22,7 +22,7 @@ const cue = (alternatives) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternatives.j
 export const NICE = cue([
   '(?:est|sera|serait|sont|seront|seraient|constitue|constituerait|c\'est)\\s+un\\s+(?:vrai\\s+|gros\\s+|réel\\s+)?plus',
   'un\\s+(?:vrai\\s+|gros\\s+|réel\\s+)?plus(?=\\s*(?:[).,;:!]|$))',
-  '(?:is|would be|will be|as|considered|a big)\\s+a\\s+plus',
+  '(?:is|would be|will be|as|considered)\\s+a\\s+(?:big\\s+|real\\s+|huge\\s+)?plus',
   'nice[- ]to[- ]have',
   'bonus',
   'atouts?',
@@ -37,6 +37,12 @@ export const NICE = cue([
   'desirable',
 ]);
 
+/**
+ * A must cue that is denied ("n'est pas obligatoire", "is not required",
+ * "sans être exigé") is no must: the negation sits right before the cue.
+ */
+const NEGATED = '(?<!(?:pas|not|non|sans\\s+être|without\\s+being)[\\s-]+)';
+
 export const MUST = cue([
   'obligatoires?',
   'exigée?s?',
@@ -46,10 +52,25 @@ export const MUST = cue([
   'impérati(?:f|ve)s?',
   'mandatory',
   'must[- ]have',
-]);
+].map((alternative) => `${NEGATED}${alternative}`));
 
 /** 'must', 'nice' or null for one piece of text. A must cue wins. */
 const cueOf = (text) => (MUST.test(text) ? 'must' : NICE.test(text) ? 'nice' : null);
+
+const escape = (text) => canonical(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Whether every mention of `name` in `clause` names a certification ("une
+ * certification AWS est un atout", "Kubernetes certification"): the cue is
+ * then the certification's, not the skill's.
+ */
+function onlyCertified(clause, name) {
+  if (/certifi/iu.test(name)) return false;
+  const text = canonical(clause);
+  const all = (text.match(new RegExp(escape(name), 'giu')) ?? []).length;
+  const certified = new RegExp(`certifi\\p{L}*\\s+(?:\\p{L}+\\s+)?${escape(name)}|${escape(name)}\\s+(?:\\p{L}+\\s+)?certifi`, 'giu');
+  return all > 0 && (text.match(certified) ?? []).length >= all;
+}
 
 /** A header: a short head before ":" (the rest of the line may list items). */
 const HEADER = /^([^:.!?]{1,80}):(.*)$/;
@@ -78,7 +99,7 @@ export function importanceIn(offer, name) {
     for (const sentence of body.split(/(?<=[.!?;])\s+/)) {
       const clauses = sentence.split(/,/);
       clauses.forEach((clause, index) => {
-        if (!mentions(clause, name)) return;
+        if (!mentions(clause, name) || onlyCertified(clause, name)) return;
         const found = [clause, ...clauses.slice(index + 1), ...clauses.slice(0, index).reverse()].map(cueOf).find(Boolean) ?? lineCue;
         if (found) votes.add(found);
       });

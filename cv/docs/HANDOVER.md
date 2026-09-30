@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1b
-TITLE: importance cues: negation, a cue scoped to a certification, "a big plus" (the corpus's three misses)
+NEXT: 2.1e
+TITLE: a deterministic listing floor: items under an explicit header are requirements even when the model drops them
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -38,11 +38,11 @@ the decisions waiting for him, how to reach his machines — are in
 - **Measured limit**: real offers are few (three distinct ones). Since
   2.1a, a labelled corpus (`corpus/*.json`: 8 synthetic offers, 75
   requirements labelled must/nice by a human reader, names the offer
-  excludes) measures the code: `importanceIn` is right on 38, silent on 35
-  (no cue: the model decides), **wrong on 2** plus one excluded name read as
-  a must. The misses are labelled `known` in the corpus; `test/corpus.test.js`
-  holds the code to exactly that list (fixing one means dropping its
-  `known`).
+  excludes) measures the code. After 2.1b `importanceIn` is right on 39,
+  silent on 36 (no cue: the model decides), wrong on 0; a label it gets
+  wrong must say so (`known`), `test/corpus.test.js` holds the code to
+  exactly that list. The listing model (Bionic) finds 84-88 % of the labels
+  and drops whole "Nice to have" lists (2.1c): 2.1e next.
 - 290 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
@@ -104,7 +104,7 @@ Traps met, each cost time once:
     by a model: labels a model wrote would measure the model against
     itself) and `src/measure.js` (`corpusProblems`, `measureImportance`,
     `recall`); 7 tests, 4 defences (`scripts/sabotage/corpus.json`).
-  - [ ] **2.1b** Fix the three misses `importanceIn` shows on the corpus,
+  - [x] **2.1b** Fix the three misses `importanceIn` shows on the corpus,
     red first from the corpus lines: (1) negation, "n'est pas obligatoire
     mais sera appréciée" and "Kubernetes is not required" read as musts (a
     negated must cue is no must; "pas obligatoire mais appréciée" is nice);
@@ -114,12 +114,27 @@ Traps met, each cost time once:
     alternation misses "be a big plus"). Drop each `known` it fixes; add a
     corpus offer for each new phrase; replay the rules on real runs
     (`~/.itsaresume/migrations/rules-replay.mjs`) before shipping.
-  - [ ] **2.1c** Listing recall per model: `scripts/measure-listing.mjs`
-    sends each corpus offer through `listRequirements` (router at
-    `--url`, Bionic alone first: free) and prints recall per offer and the
-    missed names; then Sonnet through the router (≈ 8 calls on the owner's
-    Pro quota). Record the numbers here; a recall floor test only once a
-    model's numbers are stable across two runs.
+    Done 2026-09-30: `NEGATED` before every must cue, `onlyCertified`,
+    "a big/real/huge plus"; 7 cases, 3 new defences; the replay of the real
+    runs is unchanged (the replay scripts now take `CV_SRC`, default
+    `D:/GitHub/itsaresume/cv/src`: they pointed at the archived repository).
+  - [~] **2.1c** Listing recall per model: `scripts/measure-listing.mjs
+    --url <router>` sends each corpus offer through `listRequirements` and
+    prints recall and misses. **Bionic (`qwen3-coder-next`), 2026-09-30,
+    two runs: 66/75 (88 %) then 63/75 (84 %)**, 10-108 s per offer. Missed
+    in both runs: the whole "Nice to have:" list of `en-platform-startup`
+    (Rust, Datadog, SOC 2, open source), GCP, the languages (Anglais,
+    Spanish), OpenShift, Rigueur; it also listed the excluded "Kubernetes is
+    not required" once. Still to do: Sonnet through the router (≈ 8 calls
+    on the owner's Pro quota), then 2.1e.
+  - [ ] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
+    the items of a list under a header (`Nice to have:`, `Must have:`,
+    `Atouts :`, `Pré-requis :`...) and of a header line's own enumeration
+    are requirements even when the model's listing drops them; added with
+    the header's importance, named by the offer's own words. Red test: the
+    corpus's `en-platform-startup` listing without its nice list gets it
+    back. Measure again with 2.1c: recall must rise, excluded names stay
+    out (a negated line adds nothing).
   - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
 - [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.

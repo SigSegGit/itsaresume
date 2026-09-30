@@ -34,8 +34,7 @@
   ],
   "excluded": [
     {
-      "name": "Kubernetes",
-      "known": "wrong: \"is not required\" read as a must cue (negation)"
+      "name": "Kubernetes"
     }
   ]
 }

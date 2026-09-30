@@ -27,6 +27,15 @@ const CASES = [
   ['Profil souhaité :\n- PostgreSQL\n', 'PostgreSQL', null],
   ['Vous administrerez des clusters PostgreSQL.', 'PostgreSQL', null],
   ['Kafka serait un plus.', 'Terraform', null],
+  // 2.1b, from the corpus: a negated must cue is no must; a cue on
+  // "certification X" is the certification's; "a big plus" is a plus.
+  ["La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.", 'Ansible', 'nice'],
+  ['Kubernetes is not required for this role.', 'Kubernetes', null],
+  ['Kubernetes: not mandatory.', 'Kubernetes', null],
+  ['It would be a big plus to know Sigstore.', 'Sigstore', 'nice'],
+  ['Une certification AWS est un atout.', 'AWS', null],
+  ['Une certification AWS est un atout.', 'certification AWS', 'nice'],
+  ['Kubernetes certification (CKA) would be a plus.', 'CKA', 'nice'],
 ];
 
 for (const [offer, name, expected] of CASES) {
