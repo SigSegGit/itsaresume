@@ -758,6 +758,30 @@
       "expect": [
         "a_named_structured_request_is_journaled_as_such"
       ]
+    },
+    "CLI: --schema is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "\"--schema\" if command == \"complete\" => options.schema = Some(PathBuf::from(value()?)),",
+      "dead": "\"--schema\" if command == \"complete\" => drop(value()?),",
+      "expect": [
+        "the_schema_option_reaches_the_cli_as_json_schema"
+      ]
+    },
+    "CLI: a schema file must hold an object": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "Ok(schema) if schema.is_object() => Ok(schema),",
+      "dead": "Ok(schema) if schema.is_object() || schema.is_array() => Ok(schema),",
+      "expect": [
+        "a_schema_file_that_is_not_an_object_is_a_usage_error"
+      ]
+    },
+    "CLI: the schema reaches the request": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "system,\n            schema,\n        },\n        only,",
+      "dead": "system,\n            schema: schema.filter(|_| false),\n        },\n        only,",
+      "expect": [
+        "the_schema_option_reaches_the_cli_as_json_schema"
+      ]
     }
   }
 }

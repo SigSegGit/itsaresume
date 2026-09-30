@@ -115,6 +115,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_config_path_can_come_from_the_environment` | `tests/cli.rs` | `ITSARESUME_CONFIG` names the configuration | — |
 | `a_bad_configuration_or_usage_exits_2` | `tests/cli.rs` | An invalid configuration or command line exits 2 with the reason | — |
 | `the_backend_option_picks_one_backend` | `tests/cli.rs` | `--backend` tries that backend alone; an unknown name exits 2 listing the names | Named backend: only that one is tried; Named backend: found by its name; CLI: --backend is read |
+| `the_schema_option_reaches_the_cli_as_json_schema` | `tests/cli.rs` | `--schema FILE` reaches the CLI as `--json-schema`; the answer is the structured JSON | CLI: --schema is read; CLI: the schema reaches the request |
+| `a_schema_file_that_is_not_an_object_is_a_usage_error` | `tests/cli.rs` | A schema file that is not a JSON object exits 2 naming it, before any backend runs | CLI: a schema file must hold an object |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |
 | `a_fired_billing_tripwire_stops_the_next_process_too` | `tests/cli.rs` | A tripwire fired in one `itsaresume` process stops the next one (latch file beside the journal) | Billing latch: a latched backend does not start claude; Billing latch: beside the journal; Billing latch: written down for a restart |
 | `a_proxy_in_the_environment_is_never_used` | `tests/cli.rs` | `HTTP(S)_PROXY` in the environment never carries a request to LM Studio | No proxy from the environment |

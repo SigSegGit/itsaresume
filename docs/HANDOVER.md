@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.27
-TITLE: itsaresume complete --schema FILE (the CLI asks for structured output too)
+NEXT: 8.28
+TITLE: Observed success fixtures for the claude CLI (plain and structured), redacted
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -363,14 +363,23 @@ branch with the local gates of §3 green.
   large) and never the prompt (§1). Red test: two journaled requests, one
   named and structured, one plain; the lines differ exactly by those two
   fields. Done: `Journal::record_asked`; one test, three defences.
-- [ ] **8.27** `itsaresume complete --schema FILE`: the CLI reads a JSON
+- [x] **8.27** `itsaresume complete --schema FILE`: the CLI reads a JSON
   Schema object from FILE and asks for structured output, as the endpoint
   does (8.24). A file that is not a JSON object is a usage error (exit 2,
   naming the file, before any backend is called). Red tests in
   `tests/cli.rs`: with the fake claude and `--backend claude-code`, the
   recorded args hold `--json-schema` with the file's schema; a file holding
   `[1]` exits 2 and the fake is never run. (8.12, the Docker run with
-  Claude, still waits on the owner's `claude setup-token`, §10.)
+  Claude, still waits on the owner's `claude setup-token`, §10.) Done:
+  `read_schema` in `main.rs`; two tests, three defences.
+- [ ] **8.28** Observed success fixtures (§9 says no successful CLI output
+  was ever observed; on 2026-09-30 several were, through the router): run
+  `claude -p` once plain and once with `--json-schema` (the router's own
+  flags, a trivial synthetic prompt), save both `--verbose` arrays under
+  `tests/fixtures/claude/observed-success*.verbose.json` with every id,
+  path, session and machine-specific value replaced by `REDACTED`, and
+  make `classify` / `classify_for` tests run on them next to the
+  synthetic ones. Then drop the §9 item.
 
 ## 9. Deliberately open
 
