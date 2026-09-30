@@ -511,6 +511,57 @@
       "expect": [
         "a_relative_workdir_still_hands_claude_its_system_prompt"
       ]
+    },
+    "LM Studio: one completion at a time on the server": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "*free -= 1;",
+      "dead": "*free -= 0;",
+      "expect": [
+        "two_requests_never_overlap_on_a_one_slot_backend",
+        "waiting_for_the_slot_past_the_timeout_is_unreachable",
+        "a_configured_lm_studio_backend_keeps_one_slot"
+      ]
+    },
+    "LM Studio: waiting for the slot counts against the timeout": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "let left = deadline.checked_duration_since(Instant::now())?;",
+      "dead": "let left = Duration::from_secs(3600);",
+      "expect": [
+        "waiting_for_the_slot_past_the_timeout_is_unreachable"
+      ]
+    },
+    "LM Studio: max_concurrent sets the slots": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "self.slots = Slots::new(slots);",
+      "dead": "self.slots = Slots::new(1);",
+      "expect": [
+        "a_two_slot_backend_lets_two_requests_overlap"
+      ]
+    },
+    "Config: lm-studio defaults to one slot": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(1)),",
+      "dead": "Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(4)),",
+      "expect": [
+        "lm_studio_takes_one_completion_at_a_time_by_default",
+        "a_configured_lm_studio_backend_keeps_one_slot"
+      ]
+    },
+    "Config: max_concurrent = 0 is refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "b.max_concurrent() == Some(0)",
+      "dead": "b.max_concurrent() == Some(usize::MAX)",
+      "expect": [
+        "max_concurrent_zero_or_on_claude_code_is_refused"
+      ]
+    },
+    "Config: the slot limit reaches the backend": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": ".with_max_concurrent(self.max_concurrent().unwrap_or(1)),",
+      "dead": ".with_max_concurrent(8),",
+      "expect": [
+        "a_configured_lm_studio_backend_keeps_one_slot"
+      ]
     }
   }
 }

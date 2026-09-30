@@ -47,8 +47,10 @@ pub enum BackendConfig {
         base_url: String,
         /// The model id as LM Studio lists it.
         model: String,
-        /// Seconds before giving up.
+        /// Seconds before giving up, waiting for a slot included.
         timeout_secs: Option<u64>,
+        /// Completions on the server at once; 1 when absent (Bionic has one slot).
+        max_concurrent: Option<usize>,
     },
 }
 
@@ -65,7 +67,10 @@ impl BackendConfig {
 
     /// How many completions may reach the backend at once (`None`: no limit).
     pub fn max_concurrent(&self) -> Option<usize> {
-        None
+        match self {
+            Self::ClaudeCode { .. } => None,
+            Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(1)),
+        }
     }
 
     /// The backend; `journal` is where the Claude Code billing latch goes, beside it.
@@ -90,7 +95,11 @@ impl BackendConfig {
             }
             Self::LmStudio {
                 base_url, model, ..
-            } => Box::new(LmStudioBackend::new(base_url, model).with_timeout(self.timeout())),
+            } => Box::new(
+                LmStudioBackend::new(base_url, model)
+                    .with_timeout(self.timeout())
+                    .with_max_concurrent(self.max_concurrent().unwrap_or(1)),
+            ),
         }
     }
 }
@@ -122,6 +131,11 @@ impl Config {
 
     /// The router this configuration describes.
     pub fn router(&self) -> Result<Router, ConfigError> {
+        if self.backends.iter().any(|b| b.max_concurrent() == Some(0)) {
+            return Err(ConfigError(
+                "invalid configuration: max_concurrent = 0 would never answer".into(),
+            ));
+        }
         let backends = self
             .backends
             .iter()

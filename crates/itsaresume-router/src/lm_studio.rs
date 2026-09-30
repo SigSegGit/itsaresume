@@ -6,7 +6,8 @@
 
 use crate::backend::{Backend, BackendError, Completion, Request, excerpt};
 use serde_json::{Value, json};
-use std::time::Duration;
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::{Duration, Instant};
 
 /// LM Studio's `/v1/chat/completions`, with no credential of any kind.
 ///
@@ -18,6 +19,56 @@ pub struct LmStudioBackend {
     base_url: String,
     model: String,
     timeout: Duration,
+    /// Shared by clones: the server's slots, not this value's.
+    slots: Arc<Slots>,
+}
+
+/// How many completions may be on the server at once, and how many are.
+#[derive(Debug)]
+struct Slots {
+    free: Mutex<usize>,
+    freed: Condvar,
+}
+
+impl Slots {
+    fn new(count: usize) -> Arc<Self> {
+        Arc::new(Self {
+            free: Mutex::new(count),
+            freed: Condvar::new(),
+        })
+    }
+
+    /// Take a slot before `deadline`, or `None` once it has passed.
+    fn take(self: &Arc<Self>, deadline: Instant) -> Option<Slot> {
+        let mut free = self
+            .free
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner());
+        while *free == 0 {
+            let left = deadline.checked_duration_since(Instant::now())?;
+            free = self
+                .freed
+                .wait_timeout(free, left)
+                .unwrap_or_else(|poison| poison.into_inner())
+                .0;
+        }
+        *free -= 1;
+        Some(Slot(Arc::clone(self)))
+    }
+}
+
+/// A slot taken; given back on drop, whatever the outcome.
+struct Slot(Arc<Slots>);
+
+impl Drop for Slot {
+    fn drop(&mut self) {
+        *self
+            .0
+            .free
+            .lock()
+            .unwrap_or_else(|poison| poison.into_inner()) += 1;
+        self.0.freed.notify_one();
+    }
 }
 
 impl LmStudioBackend {
@@ -27,6 +78,7 @@ impl LmStudioBackend {
             base_url: base_url.into(),
             model: model.into(),
             timeout: Duration::from_secs(300),
+            slots: Slots::new(1),
         }
     }
 
@@ -36,8 +88,11 @@ impl LmStudioBackend {
         self
     }
 
-    /// Let `slots` completions reach the server at once (1 by default).
-    pub fn with_max_concurrent(self, _slots: usize) -> Self {
+    /// Let `slots` completions reach the server at once (1 by default: the
+    /// local server has one slot, and a request queued there outlives the
+    /// caller's timeout). Clones made before this call keep the old slots.
+    pub fn with_max_concurrent(mut self, slots: usize) -> Self {
+        self.slots = Slots::new(slots);
         self
     }
 
@@ -58,8 +113,18 @@ impl Backend for LmStudioBackend {
 
     fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
         let url = format!("{}/chat/completions", self.base_url.trim_end_matches('/'));
+        // Waiting for the slot counts against the timeout: past it, this is
+        // an outage (the router falls back) and the server never sees it.
+        let deadline = Instant::now() + self.timeout;
+        let Some(_slot) = self.slots.take(deadline) else {
+            return Err(BackendError::Unreachable(format!(
+                "LM Studio at {url}: no free slot within {:?} (another completion holds it)",
+                self.timeout
+            )));
+        };
+        let left = deadline.saturating_duration_since(Instant::now());
         let agent: ureq::Agent = ureq::Agent::config_builder()
-            .timeout_global(Some(self.timeout))
+            .timeout_global(Some(left))
             // The prompts hold a whole CV: never through a proxy taken from
             // the environment (ureq reads HTTP_PROXY and ALL_PROXY by default).
             .proxy(None)

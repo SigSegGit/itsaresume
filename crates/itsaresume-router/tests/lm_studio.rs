@@ -217,7 +217,8 @@ fn two_requests_never_overlap_on_a_one_slot_backend() {
 #[test]
 fn waiting_for_the_slot_past_the_timeout_is_unreachable() {
     let (base_url, overlap) = support::serve_slow(Duration::from_secs(3), SUCCESS);
-    let backend = LmStudioBackend::new(&base_url, "example-model").with_timeout(Duration::from_secs(1));
+    let backend =
+        LmStudioBackend::new(&base_url, "example-model").with_timeout(Duration::from_secs(1));
     // A clone shares the slot, whatever its own timeout.
     let holder = backend.clone().with_timeout(Duration::from_secs(10));
     let first = thread::spawn(move || holder.complete(&Request::new("one")));
@@ -229,7 +230,11 @@ fn waiting_for_the_slot_past_the_timeout_is_unreachable() {
 
     assert_eq!(kind(&second), "unreachable", "{second:?}");
     assert!(waited < Duration::from_millis(2500), "waited {waited:?}");
-    assert_eq!(overlap.lock().expect("lock").received, 1, "the second reached the server");
+    assert_eq!(
+        overlap.lock().expect("lock").received,
+        1,
+        "the second reached the server"
+    );
     let _ = first.join();
 }
 
@@ -246,4 +251,28 @@ fn a_two_slot_backend_lets_two_requests_overlap() {
     assert_eq!(kind(&first), "success", "{first:?}");
     assert_eq!(kind(&second), "success", "{second:?}");
     assert_eq!(overlap.lock().expect("lock").most, 2);
+}
+
+/// The configuration wires the limit: an `lm-studio` backend built from a
+/// file without `max_concurrent` keeps one completion on the server.
+#[test]
+fn a_configured_lm_studio_backend_keeps_one_slot() {
+    let (base_url, overlap) = support::serve_slow(Duration::from_millis(400), SUCCESS);
+    let dir = tempfile::tempdir().expect("temp dir");
+    let text = format!(
+        "journal = {:?}\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{base_url}\"\nmodel = \"m\"\ntimeout_secs = 10\n",
+        dir.path().join("journal.jsonl")
+    );
+    let router = std::sync::Arc::new(
+        itsaresume_router::config::Config::parse(&text)
+            .expect("valid")
+            .router()
+            .expect("builds"),
+    );
+    let other = std::sync::Arc::clone(&router);
+    let first = thread::spawn(move || other.complete(&Request::new("one")).result.is_ok());
+    let second = router.complete(&Request::new("two")).result.is_ok();
+
+    assert!(first.join().expect("first thread") && second);
+    assert_eq!(overlap.lock().expect("lock").most, 1);
 }
