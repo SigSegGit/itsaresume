@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.9
-TITLE: the 6-letter stem conflates words ("product" and "production"): a stem that respects the word
+NEXT: 2.1d
+TITLE: the equivalents of 2.7 (relate()) measured on the corpus against the synthetic profile
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -182,7 +182,7 @@ Traps met, each cost time once:
   Done 2026-09-30: `analyse()` records every call (`step`, `backend`,
   `text`, in order), `tailorOffer` writes `raw.json`; 1 test, 3 defences.
   Rejected runs still keep only `rejected-attempt-N.txt`.
-- [ ] **2.9** The crude stem (`stem = word.slice(0, 6)` in `src/text.js`,
+- [x] **2.9** The crude stem (`stem = word.slice(0, 6)` in `src/text.js`,
   copied in `src/evidence.js`) makes "product" and "production", "config"
   and "configuration", "develop" and "developer" one word: a requirement
   "Product ownership" is then "stated" by "production" (`statedIn`), and a
@@ -192,7 +192,15 @@ Traps met, each cost time once:
   "product"/"production" differ; "déploiement"/"déploiements",
   "deploy"/"deployed"/"deploying" stay one; replay the real runs
   (`runs-replay.mjs`, `rules-replay.mjs`) and list every changed verdict
-  before shipping.
+  before shipping. Done 2026-09-30: `stem()` in `src/text.js` strips a
+  plural then one ending of a table (`-ation`/`-ated`/`-ateur`/`-ator` meet
+  at `-at`; roots keep 4 letters), `evidence.js` uses it; 19 cases, 4
+  defences (`scripts/sabotage/stem.json`). Replay of the real runs: one
+  verdict changed, the intended one ("product engineering" is no longer
+  grounded by prod-ops: 20 → 17 on a run already not qualified); the first
+  try also broke "Architectes"/architecture and "expérimenté"/expérience,
+  kept since with their endings and tests. Profile provenance: 0 errors.
+  The replay scripts' static imports were fixed (`CV_SRC`, dynamic).
 
 Open from the 2026-09-27 audit, by value: split may drop lines silently;
 the report lists the model's bullet picks, not the rendered ones; no

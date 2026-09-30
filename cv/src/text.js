@@ -48,8 +48,27 @@ export function wordsOf(text) {
   return (canonical(text).toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter((word) => word.length >= 3);
 }
 
-/** A crude stem: the first six characters ("conteneurs" and "conteneurisation" share one). */
-export const stem = (word) => word.slice(0, 6);
+/**
+ * Endings an inflection or a derivation adds (FR/EN), longest first. The
+ * six-letter prefix this replaced made "product" and "production" one word
+ * (2.9); endings keep "conteneurs" and "conteneurisation" one.
+ */
+const ENDINGS = [
+  ['imentée', ''], ['isation', ''], ['ization', ''], ['imenté', ''], ['ateur', 'at'], ['ience', ''], ['ation', 'at'], ['ement', ''], ['ator', 'at'], ['ated', 'at'],
+  ['iser', ''], ['ment', ''], ['tion', ''], ['ate', 'at'], ['ure', ''], ['ing', ''], ['ées', ''], ['ée', ''], ['és', ''], ['er', ''], ['ed', ''], ['é', ''], ['e', ''],
+];
+/** A root shorter than this is not cut ("gestion" stays whole). */
+const MIN_ROOT = 4;
+
+/**
+ * The word without its plural and its ending: "automation", "automated",
+ * "automatiser" are one; "production" and "product" are two.
+ */
+export function stem(word) {
+  const root = word.length > MIN_ROOT && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;
+  const found = ENDINGS.find(([end]) => root.endsWith(end) && root.length - end.length >= MIN_ROOT);
+  return found ? root.slice(0, -found[0].length) + found[1] : root;
+}
 
 /**
  * Whether the offer states a requirement the model names: the name itself, or

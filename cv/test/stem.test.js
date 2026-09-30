@@ -21,6 +21,9 @@ const SAME = [
   ['orchestration', 'orchestrator'],
   ['virtualisation', 'virtualization'],
   ['données', 'donnée'],
+  // From the replay of the real runs (2026-09-30): both were matches.
+  ['architectes', 'architecture'],
+  ['expérimenté', 'expérience'],
 ];
 
 const DIFFERENT = [
