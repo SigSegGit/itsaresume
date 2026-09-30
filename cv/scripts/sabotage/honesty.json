@@ -1,0 +1,50 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Honesty: the answer is in the offer's language": {
+      "file": "src/analysis.js",
+      "live": "need(analysis?.language === language,",
+      "dead": "need(analysis?.language === language || true,",
+      "expect": [
+        "an answer in another language than the offer is refused"
+      ]
+    },
+    "Honesty: the offer language is detected": {
+      "file": "src/language.js",
+      "live": "return count('fr') > count('en') ? 'fr' : 'en';",
+      "dead": "return count('fr') > count('en') && false ? 'fr' : 'en';",
+      "expect": [
+        "the offer language is detected from its words",
+        "the prompt imposes the offer language"
+      ]
+    },
+    "Honesty: the score is computed, not the model's": {
+      "file": "src/normalize.js",
+      "live": "const score = scoreOf(analysis.requirements ?? [], { lab });",
+      "dead": "const score = fit.score ?? scoreOf(analysis.requirements ?? [], { lab });",
+      "expect": [
+        "the score is computed from the requirements, not taken from the model"
+      ]
+    },
+    "Honesty: must-haves weigh more": {
+      "file": "src/score.js",
+      "live": "export const IMPORTANCE_WEIGHT = { must: 3, nice: 1 };",
+      "dead": "export const IMPORTANCE_WEIGHT = { must: 1, nice: 1 };",
+      "expect": [
+        "the score is computed from the requirements, not taken from the model"
+      ]
+    },
+    "Honesty: no requirement, no score": {
+      "file": "src/analysis.js",
+      "live": "need((analysis?.requirements ?? []).length > 0,",
+      "dead": "need((analysis?.requirements ?? []).length >= 0,",
+      "expect": [
+        "an analysis without any requirement cannot be scored and is refused"
+      ]
+    }
+  }
+}

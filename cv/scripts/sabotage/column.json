@@ -1,0 +1,34 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Column: a met skill comes into it": {
+      "file": "src/normalize.js",
+      "live": "put(skill.group, skill.id);",
+      "dead": "void skill;",
+      "expect": [
+        "a met skill the model left out of its group comes into it",
+        "a met skill whose group the model did not list brings its group"
+      ]
+    },
+    "Column: a hidden group never shows": {
+      "file": "src/normalize.js",
+      "live": " || unseen.has(skill.group)) continue;",
+      "dead": ") continue;",
+      "expect": [
+        "a met skill of a hidden group stays out of the column"
+      ]
+    },
+    "Column: groups holding a met skill are kept first": {
+      "file": "src/normalize.js",
+      "live": "[...shownChoices.filter(holdsMet), ...shownChoices.filter((choice) => !holdsMet(choice))]",
+      "dead": "shownChoices",
+      "expect": [
+        "beyond the group cap, a group holding a met skill is kept before one that holds none"
+      ]
+    }
+  }
+}

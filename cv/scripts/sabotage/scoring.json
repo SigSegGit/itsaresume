@@ -1,0 +1,221 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Summary: the hook is the first hook listed, not the first id": {
+      "file": "src/normalize.js",
+      "live": "const hook = listed.find((id) => facts.get(id).kind === 'hook');",
+      "dead": "const hook = listed[0];",
+      "expect": [
+        "the summary is one hook, the first one listed, and at most one supporting fact; a note never prints",
+        "an answer whose summary names no hook is refused, so the model gets its one retry"
+      ]
+    },
+    "Summary: no hook, no summary": {
+      "file": "src/normalize.js",
+      "live": "analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
+      "dead": "analysis.summary = [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]);",
+      "expect": [
+        "an answer whose summary names no hook is refused, so the model gets its one retry"
+      ]
+    },
+    "Summary: notes, extra hooks and extra facts never print": {
+      "file": "src/normalize.js",
+      "live": "analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
+      "dead": "analysis.summary = hook ? listed.map((id) => facts.get(id)[lang]) : [];",
+      "expect": [
+        "the summary is one hook, the first one listed, and at most one supporting fact; a note never prints"
+      ]
+    },
+    "Summary: validation refuses an answer without a hook": {
+      "file": "src/analysis.js",
+      "live": "need(analysis.summary.length > 0, 'summary_ids: no hook among them",
+      "dead": "need(true, 'summary_ids: no hook among them",
+      "expect": [
+        "an answer whose summary names no hook is refused, so the model gets its one retry",
+        "unknown or missing ids are refused, not replaced by free text"
+      ]
+    },
+    "Profile: a fact is a hook, a fact or a note": {
+      "file": "src/profile.js",
+      "live": "need(FACT_KINDS.includes(fact.kind), `fact ${fact.id}: kind ${fact.kind} is not one of ${FACT_KINDS.join(', ')}`);",
+      "dead": "void fact;",
+      "expect": [
+        "a profile fact is a hook, a fact or a note, and a profile with titles has a hook"
+      ]
+    },
+    "Profile: titles need a hook": {
+      "file": "src/profile.js",
+      "live": "need((profile.profile_facts ?? []).some((fact) => fact.kind === 'hook'), 'the profile has titles but no hook",
+      "dead": "need(true, 'the profile has titles but no hook",
+      "expect": [
+        "a profile fact is a hook, a fact or a note, and a profile with titles has a hook"
+      ]
+    },
+    "Prompt: each fact is listed with its kind": {
+      "file": "src/prompt.js",
+      "live": "lines.push(`- ${fact.id} (${fact.kind}) — ${fact.en}`);",
+      "dead": "lines.push(`- ${fact.id} — ${fact.en}`);",
+      "expect": [
+        "the prompt gives each fact its kind and says the summary is one hook",
+        "the prompt lists the titles and facts by id and asks for ids"
+      ]
+    },
+    "Prompt: the one-hook rule is stated": {
+      "file": "src/prompt.js",
+      "live": "summary_ids: exactly one hook id, the hook that fits the offer best, then at most one fact id; a note is context about the candidate, never on the CV.",
+      "dead": "summary_ids 2 or 3 fact ids, the most relevant to the offer first;",
+      "expect": [
+        "the prompt gives each fact its kind and says the summary is one hook"
+      ]
+    },
+    "Quality: a requirement named with a quality word is set apart": {
+      "file": "src/normalize.js",
+      "live": "if (isQuality(requirement, profile)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Quality: a run of quality words names a quality": {
+      "file": "src/text.js",
+      "live": "return words.some((_, i) => starts.every((start, j) => words[i + j]?.startsWith(start)));",
+      "dead": "return words.some((word) => word.startsWith(entry));",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Quality: a product name keeps a requirement scored": {
+      "file": "src/normalize.js",
+      "live": "/\\p{N}|[\\p{L}\\p{N}]\\p{Lu}/u.test(name) || ",
+      "dead": "",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Quality: a never-claimed item keeps a requirement scored": {
+      "file": "src/normalize.js",
+      "live": " || isNever(requirement, profile.never)) return false;",
+      "dead": ") return false;",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Quality: a profile skill keeps a requirement scored": {
+      "file": "src/normalize.js",
+      "live": "return !profile.skills.some((skill) => skillNames(skill).some((named) => mentions(name, named)));",
+      "dead": "return true;",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Quality: the model's label is not trusted": {
+      "file": "src/normalize.js",
+      "live": "    delete requirement.kind;\n",
+      "dead": "",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Score: a quality is not scored": {
+      "file": "src/score.js",
+      "live": "for (const requirement of scored(requirements)) {",
+      "dead": "for (const requirement of requirements) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Score: a quality is not a must-have of the qualification": {
+      "file": "src/score.js",
+      "live": "const requirements = scored(all);",
+      "dead": "const requirements = all;",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Report: qualities have their own section": {
+      "file": "src/report.js",
+      "live": "if (qualities.length) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Report: a quality is not in the scored table": {
+      "file": "src/report.js",
+      "live": "for (const requirement of scored) {",
+      "dead": "for (const requirement of analysis.requirements) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Report: a quality is not a gap": {
+      "file": "src/report.js",
+      "live": "const gaps = scored.filter(",
+      "dead": "const gaps = analysis.requirements.filter(",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Examples: an enumeration's rows are united": {
+      "file": "src/normalize.js",
+      "live": "for (const index of named.slice(1)) parent[root(index)] = root(named[0]);",
+      "dead": "for (const index of named.slice(1)) void index;",
+      "expect": [
+        "examples the offer lists in parentheses are one requirement, met by its best example",
+        "a never-claimed example is reported as such, not counted as a must-have of its own when another example is met"
+      ]
+    },
+    "Examples: one item or prose is no enumeration": {
+      "file": "src/text.js",
+      "live": "return items.length >= 2 && items.every((item) => item.split(/\\s+/).length <= EXAMPLE_WORDS);",
+      "dead": "return items.length >= 1;",
+      "expect": [
+        "a parenthesis holding one item or prose merges nothing"
+      ]
+    },
+    "Examples: the merged row is met as its best example": {
+      "file": "src/normalize.js",
+      "live": "const best = members.reduce((kept, row) => (strength(row) > strength(kept) ? row : kept));",
+      "dead": "const best = members[members.length - 1];",
+      "expect": [
+        "examples the offer lists in parentheses are one requirement, met by its best example"
+      ]
+    },
+    "Listing: a failed call fails the run": {
+      "file": "src/listing.js",
+      "live": "  const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer) });\n  try {",
+      "dead": "  try {\n    var { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer) });",
+      "expect": [
+        "a failed listing call fails the run; only an unreadable answer lists nothing"
+      ]
+    },
+    "Quality: learning fast is a quality": {
+      "file": "src/text.js",
+      "live": "    'monter rapidement', 'nouveaux sujets', 'montée compétence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact']);",
+      "dead": "    ]);",
+      "expect": [
+        "learning fast is a personal quality; machine learning stays a skill"
+      ]
+    },
+    "Judged: the model's reading keeps half credit": {
+      "file": "src/normalize.js",
+      "live": "      requirement.match = 'adjacent';\n      requirement.judged = true;",
+      "dead": "      requirement.match = 'no';\n      requirement.skills = [];",
+      "expect": [
+        "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
+      ]
+    },
+    "Judged: a gap of the qualification": {
+      "file": "src/score.js",
+      "live": "    else if (requirement.judged === true) gaps.push(",
+      "dead": "    else if (false) gaps.push(",
+      "expect": [
+        "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
+      ]
+    }
+  }
+}

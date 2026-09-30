@@ -1,0 +1,89 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Intake: an offer holds several offer words": {
+      "file": "src/intake.js",
+      "live": "return OFFER_WORDS.filter((word) => words.has(word)).length >= MIN_OFFER_WORDS;",
+      "dead": "return true;",
+      "expect": [
+        "a job offer is accepted; a question, a poem, code or an oversized text is not"
+      ]
+    },
+    "Intake: an offer has an offer size": {
+      "file": "src/intake.js",
+      "live": "if (clean.length < OFFER_CHARS.min || clean.length > OFFER_CHARS.max) return false;",
+      "dead": "",
+      "expect": [
+        "a job offer is accepted; a question, a poem, code or an oversized text is not"
+      ]
+    },
+    "Intake: mostly letters": {
+      "file": "src/intake.js",
+      "live": "if (letters / clean.replace(/\\s/g, '').length < MIN_LETTERS) return false;",
+      "dead": "",
+      "expect": [
+        "a job offer is accepted; a question, a poem, code or an oversized text is not"
+      ]
+    },
+    "Intake: only close offers are the same": {
+      "file": "src/intake.js",
+      "live": ".filter((run) => similarity(offer, run.offer) >= SAME_OFFER);",
+      "dead": ".filter(() => true);",
+      "expect": [
+        "a reusable run is the closest well-rated one; a run rated below 3 is never reused"
+      ]
+    },
+    "Intake: a run rated below 3 is never reused": {
+      "file": "src/intake.js",
+      "live": ".filter((run) => (run.quality ?? MIN_REUSED_QUALITY) >= MIN_REUSED_QUALITY)",
+      "dead": ".filter(() => true)",
+      "expect": [
+        "a reusable run is the closest well-rated one; a run rated below 3 is never reused"
+      ]
+    },
+    "Intake: the best rated run first": {
+      "file": "src/intake.js",
+      "live": "candidates.sort((a, b) => (b.quality ?? MIN_REUSED_QUALITY) - (a.quality ?? MIN_REUSED_QUALITY) || b.name.localeCompare(a.name));",
+      "dead": "",
+      "expect": [
+        "a reusable run is the closest well-rated one; a run rated below 3 is never reused"
+      ]
+    },
+    "Intake: similarity counts shared words": {
+      "file": "src/intake.js",
+      "live": "return shared / (left.size + right.size - shared);",
+      "dead": "return 1;",
+      "expect": [
+        "the same offer, reformatted or with a changed date, is recognised; another offer is not"
+      ]
+    },
+    "Server: public admits offers only": {
+      "file": "src/server.js",
+      "live": "if (publicMode && !looksLikeOffer(offer.text)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "in public mode only a job offer of a reasonable size is admitted"
+      ]
+    },
+    "Server: a reused offer is outside the caps": {
+      "file": "src/server.js",
+      "live": "if (publicMode) admit(request, reused.filter((result) => !result).length);",
+      "dead": "if (publicMode) admit(request, reused.length);",
+      "expect": [
+        "in public mode an offer already answered is reused at once, with no model call and outside the caps"
+      ]
+    },
+    "Run: the offer is kept": {
+      "file": "src/run.js",
+      "live": "  writeFileSync(join(dir, 'offer.txt'), offer);\n",
+      "dead": "",
+      "expect": [
+        "a run keeps its offer and what it did, and reads back as the same result"
+      ]
+    }
+  }
+}

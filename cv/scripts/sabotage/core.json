@@ -1,0 +1,65 @@
+{
+  "command": ["node", "--test", "--test-reporter=tap"],
+  "defences": {
+    "Profile: bullet skills must exist": {
+      "file": "src/profile.js",
+      "live": "need(skills.has(skill), `bullet ${bullet.id}: unknown skill ${skill}`);",
+      "dead": "need(skills.has(skill) || true, `bullet ${bullet.id}: unknown skill ${skill}`);",
+      "expect": ["a profile whose bullet cites an unknown skill is refused"]
+    },
+    "Profile: duplicate ids refused": {
+      "file": "src/profile.js",
+      "live": "for (const id of duplicates(ids)) errors.push(`duplicate id ${id}`);",
+      "dead": "for (const id of duplicates(ids).slice(0, 0)) errors.push(`duplicate id ${id}`);",
+      "expect": ["duplicate ids in a profile are refused"]
+    },
+    "Analysis: bullets belong to their experience": {
+      "file": "src/analysis.js",
+      "live": "need(own.has(bullet), `bullet ${bullet} does not belong to experience ${choice.id}`);",
+      "dead": "need(own.has(bullet) || true, `bullet ${bullet} does not belong to experience ${choice.id}`);",
+      "expect": ["an analysis may not select an experience, a bullet or a skill the profile lacks"]
+    },
+    "Analysis: skills stay in their group": {
+      "file": "src/analysis.js",
+      "live": "else need(skill.group === choice.id, `skill ${id} is not in group ${choice.id}`);",
+      "dead": "else need(skill.group === choice.id || true, `skill ${id} is not in group ${choice.id}`);",
+      "expect": ["an analysis may not select an experience, a bullet or a skill the profile lacks"]
+    },
+    "Analysis: free text may not claim an absent technology": {
+      "file": "src/analysis.js",
+      "live": "if (!known.has(requirement.name.toLowerCase()) && mentions(freeText, requirement.name)) {",
+      "dead": "if (!known.has(requirement.name.toLowerCase()) && mentions(freeText, requirement.name) && false) {",
+      "expect": ["a summary or headline claiming a technology absent from the profile is refused"]
+    },
+    "Analysis: aliases count as the profile's own names": {
+      "file": "src/profile.js",
+      "live": "return [skill.name, ...(skill.aliases ?? [])].map((name) => name.toLowerCase());",
+      "dead": "return [skill.name, ...(skill.aliases ?? []).slice(0, 0)].map((name) => name.toLowerCase());",
+      "expect": ["naming a technology the profile has, even through an alias, is allowed"]
+    },
+    "Analysis: matched requirements name a skill": {
+      "file": "src/analysis.js",
+      "live": "need((requirement.skills ?? []).length > 0, `requirement ${name} is marked ${requirement.match} but names no profile skill`);",
+      "dead": "need((requirement.skills ?? []).length >= 0, `requirement ${name} is marked ${requirement.match} but names no profile skill`);",
+      "expect": ["a requirement marked matched must name at least one profile skill, and an unmatched one none"]
+    },
+    "Analysis: score bounded": {
+      "file": "src/analysis.js",
+      "live": "fit.score >= 0 && fit.score <= 100",
+      "dead": "fit.score >= 0 && fit.score <= 1000",
+      "expect": ["an analysis with an out-of-range score, a bad verdict, a bad language or no experience is refused"]
+    },
+    "Model: unselected experiences keep one bullet": {
+      "file": "src/tailor.js",
+      "live": "export const UNSELECTED_BULLETS = 1;",
+      "dead": "export const UNSELECTED_BULLETS = 9;",
+      "expect": ["the model takes every text from the profile, in the analysis language, except headline and summary"]
+    },
+    "Model: texts in the analysis language": {
+      "file": "src/tailor.js",
+      "live": "const t = (value) => value[lang];",
+      "dead": "const t = (value) => value.en;",
+      "expect": ["a French analysis yields French texts and labels"]
+    }
+  }
+}

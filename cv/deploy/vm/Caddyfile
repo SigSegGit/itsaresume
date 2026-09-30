@@ -1,0 +1,21 @@
+# One block per public service; the domain's A record (or a wildcard) points
+# at the router, which forwards 80 and 443 to this machine. A new service is a
+# new block and a new DNS name, nothing else. Certificates are automatic
+# (Let's Encrypt); an expiry-notice address can be added with a global
+# `email` option.
+
+# The CV generator: the laptop's `itsacv serve --public-host`, through the tunnel.
+{$CV_HOST} {
+	header Strict-Transport-Security "max-age=31536000"
+	request_body {
+		max_size 300KB
+	}
+	# Caddy sets X-Forwarded-For to the client's address; itsacv caps per client on it.
+	reverse_proxy 127.0.0.1:18790
+	# Laptop off, or the tunnel down: say so, instead of a bare 502.
+	handle_errors 502 503 504 {
+		root * /srv/offline
+		rewrite * /index.html
+		file_server
+	}
+}

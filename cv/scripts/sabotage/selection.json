@@ -1,0 +1,33 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Model: requirement-backed bullets fill experiences": {
+      "file": "src/tailor.js",
+      "live": "if (entry.tier > 0 && (entry.tier === 2 || used < limit(entry.index))) {",
+      "dead": "if (entry.tier === 2) {",
+      "expect": [
+        "bullets backing a matched requirement are added after the model picks, up to the limit"
+      ]
+    },
+    "Model: every experience shows at least one bullet": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) === 'main' && ids.length < UNSELECTED_BULLETS) {",
+      "dead": "if (kindOf(experience) === 'main' && ids.length < 0) {",
+      "expect": [
+        "an experience selected without any bullet shows its requirement-backed ones, or at least its first"
+      ]
+    },
+    "Model: hidden groups stay out of the sidebar": {
+      "file": "src/tailor.js",
+      "live": "&& !groups.get(choice.id).hidden)",
+      "dead": "&& (!groups.get(choice.id).hidden || true))",
+      "expect": [
+        "a hidden skill group backs requirements but never shows in the sidebar"
+      ]
+    }
+  }
+}

@@ -1,0 +1,314 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Injection: links are refused": {
+      "file": "src/guard.js",
+      "live": "['a link', /\\b(?:https?|ftp|javascript|data):|\\bwww\\.|\\b[\\w-]+\\.(?:com|net|org|io|fr|dev|ai|co|uk|xyz|ru|info|biz|app|me)\\b/i],",
+      "dead": "['a link', /(?!)/],",
+      "expect": [
+        "no link, email address or phone number in any free text",
+        "validation runs the free-text checks when it knows the offer"
+      ]
+    },
+    "Injection: email addresses are refused": {
+      "file": "src/guard.js",
+      "live": "['an email address', /[\\w.+-]+@[\\w-]+\\.[\\w.-]+/],",
+      "dead": "['an email address', /(?!)/],",
+      "expect": [
+        "no link, email address or phone number in any free text",
+        "an obedient model following an injected offer gets no CV"
+      ]
+    },
+    "Injection: phone numbers are refused": {
+      "file": "src/guard.js",
+      "live": "['a phone number', /(?:\\+\\d{1,3}[\\s.-]?)?(?:\\(?\\d\\)?[\\s.-]?){9,}/],",
+      "dead": "['a phone number', /(?!)/],",
+      "expect": [
+        "no link, email address or phone number in any free text"
+      ]
+    },
+    "Injection: markup is refused": {
+      "file": "src/guard.js",
+      "live": "['markup', /<\\/?[a-z!?][^>]*>|\\[[^\\]]*\\]\\([^)]*\\)|```|\\*\\*|^\\s*#{1,6}\\s/im],",
+      "dead": "['markup', /(?!)/],",
+      "expect": [
+        "no markup and no control or bidi characters"
+      ]
+    },
+    "Injection: control and bidi characters are refused": {
+      "file": "src/guard.js",
+      "live": "['a control character', INVISIBLE],",
+      "dead": "['a control character', /(?!)/],",
+      "expect": [
+        "no markup and no control or bidi characters"
+      ]
+    },
+    "Injection: a line break in a CV text is refused": {
+      "file": "src/guard.js",
+      "live": "if (/\\n/.test(text)) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "no markup and no control or bidi characters"
+      ]
+    },
+    "Injection: an unsafe name is dropped": {
+      "file": "src/guard.js",
+      "live": "if (!flat || unsafe(flat).length) return null;",
+      "dead": "if (!flat) return null;",
+      "expect": [
+        "a listed requirement name is plain, one line and short: cut if long, dropped if unsafe",
+        "a requirement name from the analysis is held to the same rule"
+      ]
+    },
+    "Injection: a long name is cut": {
+      "file": "src/guard.js",
+      "live": "if (flat.length <= LIMITS.name) return flat;",
+      "dead": "return flat;",
+      "expect": [
+        "a listed requirement name is plain, one line and short: cut if long, dropped if unsafe",
+        "a long requirement name from the analysis is cut, and the cut is reported"
+      ]
+    },
+    "Injection: a name is put on one line": {
+      "file": "src/guard.js",
+      "live": "const flat = name.replace(/[\\r\\n]+/g, ' ').replace(/\\s+/g, ' ').trim();",
+      "dead": "const flat = name.trim();",
+      "expect": [
+        "a listed requirement name is plain, one line and short: cut if long, dropped if unsafe"
+      ]
+    },
+    "Injection: numbers come from the profile": {
+      "file": "src/guard.js",
+      "live": "if (!known.has(key)) errors.push(`${label}: the number",
+      "dead": "if (false) errors.push(`${label}: the number",
+      "expect": [
+        "a number on the CV must come from the profile",
+        "the headline may echo the offer's words in title case, but not its proper nouns nor a number of its own",
+        "an obedient model following an injected offer gets no CV"
+      ]
+    },
+    "Injection: the offer's proper nouns stay out of the summary": {
+      "file": "src/guard.js",
+      "live": "else if (isCapitalised(word) && offerNouns.has(key)) errors.push(",
+      "dead": "else if (false) errors.push(",
+      "expect": [
+        "a name the offer uses as a proper noun may not reach the summary unless the profile has it",
+        "only a word the offer uses as a proper noun in its prose counts as one",
+        "a technology the offer names cannot reach the headline by being left out of the requirements"
+      ]
+    },
+    "Injection: a name found nowhere is refused mid-sentence": {
+      "file": "src/guard.js",
+      "live": "else if (!headline && isCapitalised(word) && !start && !offerWords.has(key)) errors.push(",
+      "dead": "else if (false) errors.push(",
+      "expect": [
+        "a capitalised name found in neither the profile nor the offer is refused mid-sentence"
+      ]
+    },
+    "Injection: a sentence may start with a common word": {
+      "file": "src/guard.js",
+      "live": "&& !start && !offerWords.has(key))",
+      "dead": "&& !offerWords.has(key))",
+      "expect": [
+        "a capitalised name found in neither the profile nor the offer is refused mid-sentence"
+      ]
+    },
+    "Injection: capitals say nothing in a headline": {
+      "file": "src/guard.js",
+      "live": "cvText('headline', headline, { headline: true });",
+      "dead": "cvText('headline', headline);",
+      "expect": [
+        "the headline may echo the offer's words in title case, but not its proper nouns nor a number of its own"
+      ]
+    },
+    "Injection: an offer heading is not prose": {
+      "file": "src/guard.js",
+      "live": "const prose = offer.split('\\n').filter((line) => !isHeading(line)).join('\\n');",
+      "dead": "const prose = offer;",
+      "expect": [
+        "only a word the offer uses as a proper noun in its prose counts as one"
+      ]
+    },
+    "Injection: a word the offer writes in lower case is no name": {
+      "file": "src/guard.js",
+      "live": ".filter((word) => !lower.has(word)),",
+      "dead": ".filter(Boolean),",
+      "expect": [
+        "only a word the offer uses as a proper noun in its prose counts as one"
+      ]
+    },
+    "Injection: the summary may not copy the offer": {
+      "file": "src/guard.js",
+      "live": "if (run) errors.push(`${label}: copies the offer",
+      "dead": "if (false) errors.push(`${label}: copies the offer",
+      "expect": [
+        "the summary may not copy a run of eight words from the offer"
+      ]
+    },
+    "Injection: what the profile says too is no copy": {
+      "file": "src/guard.js",
+      "live": "&& !profileText.includes(` ${run} `)) return run;",
+      "dead": ") return run;",
+      "expect": [
+        "the summary may not copy a run of eight words from the offer"
+      ]
+    },
+    "Injection: the headline is short": {
+      "file": "src/guard.js",
+      "live": "if (headline.length > LIMITS.headline) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "the CV texts are short"
+      ]
+    },
+    "Injection: a summary sentence is short": {
+      "file": "src/guard.js",
+      "live": "if (text.length > LIMITS.sentence) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "the CV texts are short"
+      ]
+    },
+    "Injection: the summary has few sentences": {
+      "file": "src/guard.js",
+      "live": "if (summary.length > LIMITS.sentences) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "the CV texts are short"
+      ]
+    },
+    "Injection: a requirement name must be plain": {
+      "file": "src/guard.js",
+      "live": "if (cleanName(requirement.name) === null) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "a requirement name from the analysis is held to the same rule"
+      ]
+    },
+    "Injection: notes are checked": {
+      "file": "src/guard.js",
+      "live": "plain(`note of ${String(requirement.name).slice(0, 60)}`, String(requirement.note ?? ''));",
+      "dead": "void 0;",
+      "expect": [
+        "no link, email address or phone number in any free text"
+      ]
+    },
+    "Injection: the rationale is checked": {
+      "file": "src/guard.js",
+      "live": "plain('rationale', String(analysis?.fit?.rationale ?? ''));",
+      "dead": "void 0;",
+      "expect": [
+        "no link, email address or phone number in any free text"
+      ]
+    },
+    "Injection: the fence marker is random": {
+      "file": "src/guard.js",
+      "live": "const marker = randomBytes(8).toString('hex');",
+      "dead": "const marker = '0123456789abcdef';",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Injection: the analysis prompt fences the offer": {
+      "file": "src/prompt.js",
+      "live": "lines.push('', ...fence(offer), '');",
+      "dead": "lines.push('', 'OFFER', '<<<', offer.trim(), '>>>', '');",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Injection: the listing prompt fences the offer": {
+      "file": "src/listing.js",
+      "live": "return fence(offer).join('\\n');",
+      "dead": "return ['OFFER', '<<<', offer.trim(), '>>>'].join('\\n');",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Injection: the analysis system prompt says the offer is untrusted": {
+      "file": "src/prompt.js",
+      "live": "Tone: direct, operational, senior.\n\n${UNTRUSTED}`;",
+      "dead": "Tone: direct, operational, senior.`;",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Injection: the listing system prompt says the offer is untrusted": {
+      "file": "src/listing.js",
+      "live": "nice to have.\n\n${UNTRUSTED}`;",
+      "dead": "nice to have.`;",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Injection: listed names are cleaned": {
+      "file": "src/listing.js",
+      "live": "const name = cleanName(item?.name);",
+      "dead": "const name = typeof item?.name === 'string' ? item.name.trim() : null;",
+      "expect": [
+        "a listed requirement name is plain, one line and short: cut if long, dropped if unsafe"
+      ]
+    },
+    "Injection: the analysis's names are cut": {
+      "file": "src/normalize.js",
+      "live": "const name = cleanName(requirement.name);",
+      "dead": "const name = requirement.name;",
+      "expect": [
+        "a long requirement name from the analysis is cut, and the cut is reported"
+      ]
+    },
+    "Injection: validation runs the free-text checks": {
+      "file": "src/analysis.js",
+      "live": "if (offer !== undefined) errors.push(...checkFreeText(analysis, profile, offer));",
+      "dead": "void checkFreeText;",
+      "expect": [
+        "validation runs the free-text checks when it knows the offer",
+        "an obedient model following an injected offer gets no CV"
+      ]
+    },
+    "Injection: the pipeline gives validation the offer": {
+      "file": "src/pipeline.js",
+      "live": "{ language, assessment, offer }",
+      "dead": "{ language, assessment }",
+      "expect": [
+        "an obedient model following an injected offer gets no CV"
+      ]
+    },
+    "Injection: a report cell escapes its pipes": {
+      "file": "src/report.js",
+      "live": "const cell = (text) => line(text).replace(/\\|/g, '\\\\|');",
+      "dead": "const cell = (text) => line(text);",
+      "expect": [
+        "the report cannot be broken by what the model wrote"
+      ]
+    },
+    "Injection: the report puts the model's text on one line": {
+      "file": "src/report.js",
+      "live": "const line = (text) => String(text ?? '').replace(/\\s*[\\r\\n]+\\s*/g, ' ');",
+      "dead": "const line = (text) => String(text ?? '');",
+      "expect": [
+        "the report cannot be broken by what the model wrote"
+      ]
+    },
+    "Hygiene: a CRLF line ending in a source file is found": {
+      "file": "src/text.js",
+      "live": "// Text helpers shared by the checks.\n",
+      "dead": "// Text helpers shared by the checks.\r\n",
+      "expect": [
+        "source files end their lines with LF, PowerShell scripts aside"
+      ]
+    },
+    "Hygiene: an invisible character in a source file is found": {
+      "file": "src/text.js",
+      "live": "// Text helpers shared by the checks.",
+      "dead": "// Text helpers shared by the checks.\u200b",
+      "expect": [
+        "no source file contains an invisible or bidi control character"
+      ]
+    }
+  }
+}

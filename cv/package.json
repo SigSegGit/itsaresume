@@ -1,0 +1,21 @@
+{
+  "name": "itsaresume-cv",
+  "version": "0.1.0",
+  "description": "Tailors a CV (docx, in the owner's own design) and a fit report to a job offer, using itsaresume for inference",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "bin": {
+    "itsacv": "bin/itsacv.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "docxtemplater": "^3.71.0",
+    "pizzip": "^3.3.0"
+  }
+}

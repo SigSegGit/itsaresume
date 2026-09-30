@@ -1,0 +1,621 @@
+{
+ "source": "Technology concepts curated by hand for the categories offers name loosely (tools ESCO lacks); see docs/HANDOVER.md 2.7",
+ "concepts": [
+  {
+   "id": "tech:public-cloud",
+   "fr": "Cloud public",
+   "en": "Public cloud",
+   "alt": {
+    "fr": [
+     "fournisseurs cloud",
+     "cloud computing",
+     "hyperscalers"
+    ],
+    "en": [
+     "cloud providers",
+     "cloud computing",
+     "hyperscalers"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:containers",
+   "fr": "Conteneurisation",
+   "en": "Containerization",
+   "alt": {
+    "fr": [
+     "conteneurs",
+     "containerisation",
+     "orchestration de conteneurs"
+    ],
+    "en": [
+     "containers",
+     "containerisation",
+     "container orchestration"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:iac",
+   "fr": "Infrastructure as Code",
+   "en": "Infrastructure as Code",
+   "alt": {
+    "fr": [
+     "IaC",
+     "infrastructure en tant que code",
+     "infrastructure as code"
+    ],
+    "en": [
+     "IaC"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:observability",
+   "fr": "Observabilité",
+   "en": "Observability",
+   "alt": {
+    "fr": [
+     "monitoring",
+     "supervision",
+     "métrologie"
+    ],
+    "en": [
+     "monitoring",
+     "alerting"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:scripting",
+   "fr": "Scripting",
+   "en": "Scripting",
+   "alt": {
+    "fr": [
+     "langages de script",
+     "scripts"
+    ],
+    "en": [
+     "scripting languages",
+     "scripts"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:cicd",
+   "fr": "CI/CD",
+   "en": "CI/CD",
+   "alt": {
+    "fr": [
+     "intégration continue",
+     "déploiement continu",
+     "pipelines CI/CD",
+     "chaîne CI/CD",
+     "cycles de delivery"
+    ],
+    "en": [
+     "continuous integration",
+     "continuous delivery",
+     "continuous deployment",
+     "CI/CD pipelines"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:databases",
+   "fr": "Bases de données",
+   "en": "Databases",
+   "alt": {
+    "fr": [
+     "base de données",
+     "SGBD",
+     "SGBDR"
+    ],
+    "en": [
+     "database",
+     "DBMS",
+     "RDBMS"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:nosql",
+   "fr": "Bases de données NoSQL",
+   "en": "NoSQL databases",
+   "alt": {
+    "fr": [
+     "bases NoSQL",
+     "NoSQL"
+    ],
+    "en": [
+     "NoSQL database",
+     "NoSQL"
+    ]
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:aws",
+   "fr": "AWS",
+   "en": "AWS",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Amazon Web Services"
+    ]
+   },
+   "broader": [
+    "tech:public-cloud"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:gcp",
+   "fr": "GCP",
+   "en": "GCP",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Google Cloud",
+     "Google Cloud Platform"
+    ]
+   },
+   "broader": [
+    "tech:public-cloud"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:azure",
+   "fr": "Azure",
+   "en": "Azure",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Microsoft Azure"
+    ]
+   },
+   "broader": [
+    "tech:public-cloud"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:docker",
+   "fr": "Docker",
+   "en": "Docker",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:containers"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:kubernetes",
+   "fr": "Kubernetes",
+   "en": "Kubernetes",
+   "alt": {
+    "fr": [],
+    "en": [
+     "K8s"
+    ]
+   },
+   "broader": [
+    "tech:containers"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:podman",
+   "fr": "Podman",
+   "en": "Podman",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:containers"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:openshift",
+   "fr": "OpenShift",
+   "en": "OpenShift",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:containers"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:terraform",
+   "fr": "Terraform",
+   "en": "Terraform",
+   "alt": {
+    "fr": [],
+    "en": [
+     "OpenTofu"
+    ]
+   },
+   "broader": [
+    "tech:iac"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:ansible",
+   "fr": "Ansible",
+   "en": "Ansible",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:iac"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:pulumi",
+   "fr": "Pulumi",
+   "en": "Pulumi",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:iac"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:cloudformation",
+   "fr": "CloudFormation",
+   "en": "CloudFormation",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:iac"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:puppet",
+   "fr": "Puppet",
+   "en": "Puppet",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:iac"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:chef",
+   "fr": "Chef",
+   "en": "Chef",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:iac"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:prometheus",
+   "fr": "Prometheus",
+   "en": "Prometheus",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:grafana",
+   "fr": "Grafana",
+   "en": "Grafana",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:splunk",
+   "fr": "Splunk",
+   "en": "Splunk",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:datadog",
+   "fr": "Datadog",
+   "en": "Datadog",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:zabbix",
+   "fr": "Zabbix",
+   "en": "Zabbix",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:nagios",
+   "fr": "Nagios",
+   "en": "Nagios",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:elk",
+   "fr": "ELK",
+   "en": "ELK",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Elastic Stack",
+     "Elasticsearch"
+    ]
+   },
+   "broader": [
+    "tech:observability"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:bash",
+   "fr": "Bash",
+   "en": "Bash",
+   "alt": {
+    "fr": [],
+    "en": [
+     "shell"
+    ]
+   },
+   "broader": [
+    "tech:scripting"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:python",
+   "fr": "Python",
+   "en": "Python",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:scripting"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:powershell",
+   "fr": "PowerShell",
+   "en": "PowerShell",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:scripting"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:perl",
+   "fr": "Perl",
+   "en": "Perl",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:scripting"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:jenkins",
+   "fr": "Jenkins",
+   "en": "Jenkins",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:cicd"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:gitlab-ci",
+   "fr": "GitLab CI",
+   "en": "GitLab CI",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:cicd"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:github-actions",
+   "fr": "GitHub Actions",
+   "en": "GitHub Actions",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:cicd"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:argo-cd",
+   "fr": "Argo CD",
+   "en": "Argo CD",
+   "alt": {
+    "fr": [],
+    "en": [
+     "ArgoCD"
+    ]
+   },
+   "broader": [
+    "tech:cicd"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:postgresql",
+   "fr": "PostgreSQL",
+   "en": "PostgreSQL",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Postgres"
+    ]
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:oracle",
+   "fr": "Oracle",
+   "en": "Oracle",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Oracle Database"
+    ]
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:mysql",
+   "fr": "MySQL",
+   "en": "MySQL",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:mariadb",
+   "fr": "MariaDB",
+   "en": "MariaDB",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:mongodb",
+   "fr": "MongoDB",
+   "en": "MongoDB",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:nosql"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:sql-server",
+   "fr": "SQL Server",
+   "en": "SQL Server",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Microsoft SQL Server"
+    ]
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Tool"
+  }
+ ]
+}

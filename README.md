@@ -10,8 +10,10 @@ that can answer it, among backends that are **never billed per token**:
 3. **A small local model** on a Raspberry Pi or a small VM, for light sorting
    and classification only — never for long text *(milestone M2, not built)*.
 
-It exists to feed a separate CV generator (Node.js). itsaresume produces text
-and nothing else: it never builds a document.
+It exists to feed the CV generator in [`cv/`](cv/README.md) (Node.js): an
+offer in, a one-page CV and an honest qualification report out, every
+decision that data can settle taken by code rather than by the model. The
+router produces text and nothing else: it never builds a document.
 
 ## Run it
 

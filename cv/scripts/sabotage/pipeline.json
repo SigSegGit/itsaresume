@@ -1,0 +1,58 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Pipeline: the retry says what was wrong": {
+      "file": "src/pipeline.js",
+      "live": "current = retryPrompt(prompt, text, errors);",
+      "dead": "current = prompt;",
+      "expect": [
+        "an invalid answer is sent back once with its errors, and a valid retry is accepted"
+      ]
+    },
+    "Pipeline: one retry": {
+      "file": "src/pipeline.js",
+      "live": "export const MAX_ATTEMPTS = 2;",
+      "dead": "export const MAX_ATTEMPTS = 1;",
+      "expect": [
+        "an invalid answer is sent back once with its errors, and a valid retry is accepted"
+      ]
+    },
+    "Pipeline: an invalid answer is never accepted": {
+      "file": "src/pipeline.js",
+      "live": "if (errors.length === 0) return",
+      "dead": "if (errors.length >= 0) return",
+      "expect": [
+        "an answer still invalid after the retry is refused, not rendered",
+        "itsacv tailor writes no CV when the answer stays invalid"
+      ]
+    },
+    "Client: JSON content type": {
+      "file": "src/llm.js",
+      "live": "'Content-Type': 'application/json', 'Content-Length'",
+      "dead": "'Content-Type': 'text/plain', 'Content-Length'",
+      "expect": [
+        "the client posts JSON to /v1/complete and surfaces a router refusal"
+      ]
+    },
+    "Client: a refusal is an error": {
+      "file": "src/llm.js",
+      "live": "if (response.statusCode < 200 || response.statusCode >= 300) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the client posts JSON to /v1/complete and surfaces a router refusal"
+      ]
+    },
+    "Client: its own timeout, not fetch's": {
+      "file": "src/llm.js",
+      "live": "}, timeoutMs);",
+      "dead": "}, timeoutMs * 10);",
+      "expect": [
+        "the client waits as long as its own timeout, and no longer"
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "command": ["node", "--test", "--test-reporter=tap"],
+  "defences": {
+    "Render: a missing field fails": {
+      "file": "src/render.js",
+      "live": "if (!part.module) {",
+      "dead": "if (!part.module && false) {",
+      "expect": ["a model missing a field makes rendering fail instead of printing \"undefined\""]
+    },
+    "Render: loop markers removed": {
+      "file": "src/render.js",
+      "live": "paragraphLoop: true,",
+      "dead": "paragraphLoop: false,",
+      "expect": ["loop markers leave no empty paragraph behind"]
+    },
+    "Render: dotted tags resolve": {
+      "file": "src/render.js",
+      "live": "return tag.split('.').reduce(",
+      "dead": "return [tag].reduce(",
+      "expect": ["rendering replaces every tag, in order, with the model"]
+    }
+  }
+}

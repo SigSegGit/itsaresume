@@ -1,0 +1,50 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Normalise: a bullet id as experience id is relocated": {
+      "file": "src/normalize.js",
+      "live": "else if (owner.has(choice.id)) {",
+      "dead": "else if (owner.has(choice.id) && false) {",
+      "expect": [
+        "a bullet id given as an experience id is moved under its experience",
+        "an answer that only needs safe repairs is accepted at once, the repairs reported"
+      ]
+    },
+    "Normalise: matched without a skill becomes unmatched": {
+      "file": "src/normalize.js",
+      "live": "if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0) {",
+      "dead": "if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0 && false) {",
+      "expect": [
+        "a requirement marked matched without any profile skill becomes unmatched"
+      ]
+    },
+    "Normalise: unknown skills never kept": {
+      "file": "src/normalize.js",
+      "live": "const known = (requirement.skills ?? []).filter((id) => skills.has(id));",
+      "dead": "const known = (requirement.skills ?? []).filter((id) => skills.has(id) || true);",
+      "expect": [
+        "ids the profile does not have are dropped and reported, never kept"
+      ]
+    },
+    "Normalise: skills go to their own group": {
+      "file": "src/normalize.js",
+      "live": "put(skill.group, id);",
+      "dead": "put(groupIds.has(choice.id) ? choice.id : skill.group, id);",
+      "expect": [
+        "a skill shown in the wrong group moves to its own group"
+      ]
+    },
+    "Normalise: the input is not modified": {
+      "file": "src/normalize.js",
+      "live": "const analysis = structuredClone(input);",
+      "dead": "const analysis = input;",
+      "expect": [
+        "normalisation does not modify its input"
+      ]
+    }
+  }
+}

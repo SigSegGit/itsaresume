@@ -1,0 +1,10 @@
+node_modules/
+# Generated CVs and reports: personal data.
+out/
+# Never commit a real profile, offer or CV: they belong in ~/.itsaresume/.
+private/
+*.local.*
+# Raw ESCO API answers (tools/esco.py)
+.esco-cache/
+# Python bytecode
+__pycache__/
