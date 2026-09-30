@@ -322,7 +322,9 @@ function renderJob(job) {
     done: ['ok', 'prêt'],
     failed: ['bad', 'échec'],
   }[job.status] ?? ['', job.status];
-  const children = [h('div', { class: 'job-head' }, h('h3', { text: job.title }), h('span', { class: `chip ${status[0]}`, text: status[1] }))];
+  // The server's clock (audit 2026-09-27): running, it grows; done, it stays.
+  const elapsed = Number.isFinite(job.elapsed_ms) ? ` · ${Math.round(job.elapsed_ms / 1000)} s` : '';
+  const children = [h('div', { class: 'job-head' }, h('h3', { text: job.title }), h('span', { class: `chip ${status[0]}`, text: status[1] + elapsed }))];
   if (job.status !== 'done') children.push(stepsOf(job));
   if (job.status === 'failed') children.push(h('p', { class: 'error', text: job.error ?? 'échec' }));
   const detail = details.get(job.id);

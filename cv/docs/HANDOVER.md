@@ -244,7 +244,10 @@ listing the model's bullet picks instead of the rendered ones: fixed the
 same day, "Experiences on the CV" counts what `buildModel` rendered; the
 6-letter stem: fixed in 2.9; 413 as a cut socket: fixed, a declared
 oversize is refused unread, a streamed one drained up to 4 × MAX_BODY then
-answered 413, `Connection: close`). Still open: no elapsed time on the page.
+answered 413, `Connection: close`; no elapsed time on the page: fixed, the
+job view carries `elapsed_ms` from the server's clock, the page shows it in
+the status chip). The audit list is closed. One rare flake seen once in
+three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
 

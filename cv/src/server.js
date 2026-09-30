@@ -92,7 +92,7 @@ const PUBLIC_FILES = new Set(['cv.pdf', 'cv.docx']);
 
 /** A job as the page sees it. */
 function view(job, { detail = false, publicMode = null } = {}) {
-  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error: job.error ?? null };
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error: job.error ?? null, elapsed_ms: job.elapsed?.() ?? null };
   if (!job.result) return base;
   const { fit } = job.result.view;
   base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
@@ -121,7 +121,7 @@ const MAX_VISITORS = 10_000;
  * The server, not yet listening. Everything that touches a model, Word or the
  * disk comes in through `deps`, so the tests run it with fakes.
  */
-export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null }) {
+export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null, clock = Date.now }) {
   const jobs = new Map();
   const queue = [];
   let running = false;
@@ -167,11 +167,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     while (queue.length) {
       const job = queue.shift();
       job.status = 'running';
+      job.startedAt = clock();
+      // Read by the view: running, it grows; done or failed, it stays.
+      job.elapsed = () => (job.endedAt ?? clock()) - job.startedAt;
       try {
         job.result = await deps.tailor({ offer: job.text, onStep: (step, detail = {}) => job.steps.push({ step, ...detail }) });
         job.status = 'done';
+        job.endedAt = clock();
       } catch (error) {
         job.status = 'failed';
+        job.endedAt = clock();
         job.error = String(error.message ?? error).slice(0, 2000);
       }
     }
