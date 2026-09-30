@@ -75,5 +75,28 @@ export async function splitOffers({ text, llm }) {
     title: cleanName(title ?? '') ?? firstLine(cut(range)),
     text: [...context, ...cut(range)].join('\n').trim(),
   }));
-  return { offers, repairs: [] };
+  return { offers, repairs: leftOut(lines, [...checked.ranges.map((item) => item.range), ...(checked.shared ? [checked.shared] : [])]) };
+}
+
+/** Longer, a left-out line is quoted by its start. */
+const QUOTE_CHARS = 60;
+
+/**
+ * The non-empty lines no range covers, said in one repair (audit
+ * 2026-09-27: a requirement stated once for all offers, outside the shared
+ * range, vanished without a trace). Greetings and signatures are said too.
+ */
+function leftOut(lines, ranges) {
+  const covered = (number) => ranges.some(([first, last]) => number >= first && number <= last);
+  const numbers = lines.map((line, index) => index + 1).filter((number) => lines[number - 1].trim() && !covered(number));
+  if (numbers.length === 0) return [];
+  const spans = [];
+  for (const number of numbers) {
+    const last = spans.at(-1);
+    if (last && number === last[1] + 1) last[1] = number;
+    else spans.push([number, number]);
+  }
+  const named = spans.map(([first, last]) => (first === last ? `${first}` : `${first}-${last}`)).join(', ');
+  const quoted = numbers.map((number) => JSON.stringify(lines[number - 1].trim().slice(0, QUOTE_CHARS))).join(', ');
+  return [`lines ${named} are in no offer and were left out: ${quoted}`];
 }

@@ -43,29 +43,43 @@ export const HEADERS = {
 };
 
 class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, { close = false } = {}) {
     super(message);
     this.status = status;
+    // Close the connection once answered: the body was not read to its end.
+    this.close = close;
   }
 }
+
+/** Past this much, an oversized body is not even drained: the socket is cut. */
+const DRAIN_LIMIT = 4 * MAX_BODY;
 
 function send(response, status, body, type = 'application/json; charset=utf-8', extra = {}) {
   response.writeHead(status, { ...HEADERS, 'Content-Type': type, ...extra });
   response.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
 
+/**
+ * The body, at most MAX_BODY bytes. Over it the answer is a 413 the client
+ * receives (audit 2026-09-27: the socket used to be cut first): a declared
+ * length is refused unread; a streamed body is drained, discarded, up to
+ * DRAIN_LIMIT, and only past that is the socket cut.
+ */
 function readBody(request) {
   return new Promise((resolve, reject) => {
+    const tooLarge = () => new HttpError(413, `the request is larger than ${MAX_BODY} bytes`, { close: true });
+    if (Number(request.headers['content-length']) > MAX_BODY) {
+      reject(tooLarge());
+      return;
+    }
     let size = 0;
     const chunks = [];
     request.on('data', (chunk) => {
       size += chunk.length;
-      if (size > MAX_BODY) {
-        reject(new HttpError(413, `the request is larger than ${MAX_BODY} bytes`));
-        request.destroy();
-      } else chunks.push(chunk);
+      if (size <= MAX_BODY) chunks.push(chunk);
+      else if (size > DRAIN_LIMIT) request.destroy();
     });
-    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    request.on('end', () => (size > MAX_BODY ? reject(tooLarge()) : resolve(Buffer.concat(chunks).toString('utf8'))));
     request.on('error', reject);
   });
 }
@@ -254,7 +268,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       throw new HttpError(404, 'not found');
     } catch (error) {
       const status = error instanceof HttpError ? error.status : 500;
-      if (!response.headersSent) send(response, status, { error: status === 500 ? 'internal error' : error.message });
+      const extra = error.close ? { Connection: 'close' } : {};
+      if (!response.headersSent) send(response, status, { error: status === 500 ? 'internal error' : error.message }, undefined, extra);
       if (status === 500) process.stderr.write(`itsacv serve: ${error.stack ?? error}\n`);
     }
   });

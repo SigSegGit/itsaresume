@@ -187,6 +187,7 @@ test('itsacv tailor writes the CV, the report and the analysis', async () => {
     for (const file of ['cv.docx', 'report.md', 'analysis.json']) {
       assert.ok(existsSync(join(dir, run, file)), `${file} written`);
     }
+    assert.match(readFileSync(join(dir, run, 'report.md'), 'utf8'), /## Experiences on the CV/, 'the report counts what the CV shows');
   } finally {
     server.close();
   }
