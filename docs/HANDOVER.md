@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.26
-TITLE: The journal says whether a request named its backend and carried a schema
+NEXT: 8.30
+TITLE: itsaresume stats: the journal summed up (per backend and outcome, structured share, median time)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -362,13 +362,53 @@ branch with the local gates of §3 green.
   Done (PR #27), measured: with the schema the local model listed 61-66/75
   against 68-70/75 without (three runs each), Sonnet 75/75 either way; so
   the listing sends it only when asked (`structured`). See cv §8, 2.3.
-- [ ] **8.26** The journal says how a request was asked: `backend_asked`
+- [x] **8.26** The journal says how a request was asked: `backend_asked`
   (the name, when the request named one) and `schema: true` when it
   carried a schema, so the cost and failure rate of structured calls can
   be read from the journal later. Never the schema itself (it may be
   large) and never the prompt (§1). Red test: two journaled requests, one
   named and structured, one plain; the lines differ exactly by those two
-  fields.
+  fields. Done: `Journal::record_asked`; one test, three defences.
+- [x] **8.27** `itsaresume complete --schema FILE`: the CLI reads a JSON
+  Schema object from FILE and asks for structured output, as the endpoint
+  does (8.24). A file that is not a JSON object is a usage error (exit 2,
+  naming the file, before any backend is called). Red tests in
+  `tests/cli.rs`: with the fake claude and `--backend claude-code`, the
+  recorded args hold `--json-schema` with the file's schema; a file holding
+  `[1]` exits 2 and the fake is never run. (8.12, the Docker run with
+  Claude, still waits on the owner's `claude setup-token`, §10.) Done:
+  `read_schema` in `main.rs`; two tests, three defences.
+- [x] **8.28** Observed success fixtures (§9 says no successful CLI output
+  was ever observed; on 2026-09-30 several were, through the router): run
+  `claude -p` once plain and once with `--json-schema` (the router's own
+  flags, a trivial synthetic prompt), save both `--verbose` arrays under
+  `tests/fixtures/claude/observed-success*.verbose.json` with every id,
+  path, session and machine-specific value replaced by `REDACTED`, and
+  make `classify` / `classify_for` tests run on them next to the
+  synthetic ones. Then drop the §9 item. Done: `observed-success` and
+  `observed-structured-output` (redacted: ids, paths, the skill/agent/plugin
+  lists, thinking signatures, account details of the rate-limit event); two
+  tests, one new defence. Found on the way: `rate_limit_event` carries
+  `rate_limit_info.isUsingOverage` (false here) and `overageStatus`.
+- [x] **8.29** Overage tripwire: extra usage is billed per token (decision
+  1). When a `rate_limit_event` says `isUsingOverage: true`, the answer is
+  refused as `Other` and the billing latch is set (as for `apiKeySource`),
+  so the next request does not spend more; the journal says why. Red tests
+  from `observed-success.verbose.json` edited to `isUsingOverage: true`:
+  `Other` with "overage" in the message, latch file written; `false` or no
+  event: unchanged. Note it can only stop the *next* call (the one that
+  reported it was already billed): say so in §9. Done: the check in
+  `classify_for` (its message starts "billing tripwire", so the existing
+  latch applies); a classify test and an end-to-end CLI test (exit 3, latch
+  written, next process stopped); two defences. The Docker image pins the
+  CLI version observed (2.1.162), so `--json-schema` and the rate-limit
+  event are there too.
+- [ ] **8.30** `itsaresume stats [--config FILE]`: read the journal and
+  print, per backend and outcome, the count and the median `duration_ms`;
+  the share of requests with `schema: true`; the fallbacks (answered after
+  a failed attempt). Plain text on stdout, nothing written; a journal line
+  that is not JSON is counted as unreadable, never fatal. Red tests in
+  `tests/cli.rs` on a hand-written journal of five lines.
 
 ## 9. Deliberately open
 
@@ -376,8 +416,6 @@ branch with the local gates of §3 green.
   429 or a message pattern; an unrecognised limit message is `Other` and stops
   loudly, with the raw message in the error and the journal. Add its fixture
   when seen.
-- **Successful CLI output never observed** here; `synthetic-success` is
-  built from the observed error shape.
 - **Tripwires fire after the call.** A metered call can happen once before
   `apiKeySource` is read. Removing the variables before the spawn is the
   prevention; the tripwire only stops it from repeating.
@@ -393,8 +431,11 @@ branch with the local gates of §3 green.
   (key not stripped → tripwire message or 503 timeout) is argued in the
   script, not demonstrated by breaking the image.
 - **From the 2026-09-23 review, not confirmed (uncertain):** extra usage
-  (overage) billed per token on the OAuth path is not detectable from the CLI
-  output; the default Claude workdir in the temp directory is predictable and
+  (overage) billed per token on the OAuth path: detectable after all, the
+  `rate_limit_event` message carries `isUsingOverage` and `overageStatus`
+  (observed 2026-09-30, 8.28; 8.29 refuses such an answer and latches,
+  but the answer that reported it was already billed: the tripwire saves
+  the next calls, not that one); the default Claude workdir in the temp directory is predictable and
   never checked (fixed in 8.20). Fixed since: the truncated answer (2026-09-27),
   userinfo in `base_url` (8.18), the unpinned merge (8.19).
 - **The system prompt file on disk** (8.15): a crash mid-request leaves it

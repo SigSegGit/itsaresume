@@ -415,3 +415,122 @@ fn the_backend_option_picks_one_backend() {
         "{output:?}"
     );
 }
+
+/// 8.27: `--schema FILE` asks for structured output from the command line,
+/// as `"schema"` does on the endpoint.
+#[test]
+fn the_schema_option_reaches_the_cli_as_json_schema() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let record = dir.path().join("record");
+    std::fs::create_dir(&record).expect("record dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let schema = dir.path().join("schema.json");
+    std::fs::write(&schema, r#"{"type": "object"}"#).expect("schema");
+
+    let output = run(
+        &[
+            "complete",
+            "--config",
+            config.to_str().expect("utf-8"),
+            "--backend",
+            "claude-code",
+            "--schema",
+            schema.to_str().expect("utf-8"),
+        ],
+        "a prompt",
+        &[
+            (
+                "FAKE_CLAUDE_STDOUT",
+                claude_fixture("synthetic-structured-output.verbose.json"),
+            ),
+            ("FAKE_CLAUDE_RECORD", record.to_string_lossy().into_owned()),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    let args: Vec<String> =
+        serde_json::from_str(&std::fs::read_to_string(record.join("args.json")).expect("args"))
+            .expect("list");
+    let at = args
+        .iter()
+        .position(|a| a == "--json-schema")
+        .expect("--json-schema given");
+    assert_eq!(
+        serde_json::from_str::<Value>(&args[at + 1]).expect("json"),
+        serde_json::json!({"type": "object"})
+    );
+    let answer: Value =
+        serde_json::from_slice(&output.stdout).expect("the answer is the structured JSON");
+    assert_eq!(answer["requirements"][0]["name"], "Kubernetes");
+}
+
+#[test]
+fn a_schema_file_that_is_not_an_object_is_a_usage_error() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let record = dir.path().join("record");
+    std::fs::create_dir(&record).expect("record dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let schema = dir.path().join("schema.json");
+    std::fs::write(&schema, "[1]").expect("schema");
+
+    let output = run(
+        &[
+            "complete",
+            "--config",
+            config.to_str().expect("utf-8"),
+            "--schema",
+            schema.to_str().expect("utf-8"),
+        ],
+        "a prompt",
+        &[("FAKE_CLAUDE_RECORD", record.to_string_lossy().into_owned())],
+    );
+
+    assert_eq!(output.status.code(), Some(2), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("schema.json"),
+        "{output:?}"
+    );
+    assert!(!record.join("args.json").exists(), "the backend was called");
+}
+
+/// 8.29: an answer billed as extra usage latches like any billing tripwire:
+/// the next process stops before claude runs.
+#[test]
+fn an_overage_answer_latches_the_next_process_too() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    let args = ["complete", "--config", config.to_str().expect("utf-8")];
+    let observed =
+        std::fs::read_to_string(claude_fixture("observed-success.verbose.json")).expect("fixture");
+    let mut messages: Vec<Value> = serde_json::from_str(&observed).expect("array");
+    for message in &mut messages {
+        if message["type"] == "rate_limit_event" {
+            message["rate_limit_info"]["isUsingOverage"] = Value::Bool(true);
+        }
+    }
+    let overage = dir.path().join("overage.json");
+    std::fs::write(&overage, Value::Array(messages).to_string()).expect("write");
+
+    let first = run(
+        &args,
+        "a prompt",
+        &[("FAKE_CLAUDE_STDOUT", overage.to_string_lossy().into_owned())],
+    );
+    assert_eq!(first.status.code(), Some(3), "{first:?}");
+    assert!(
+        String::from_utf8_lossy(&first.stderr).contains("overage"),
+        "{first:?}"
+    );
+    assert!(dir.path().join("journal.billing-tripped").exists());
+
+    let second = run(
+        &args,
+        "a prompt",
+        &[(
+            "FAKE_CLAUDE_STDOUT",
+            claude_fixture("observed-success.verbose.json"),
+        )],
+    );
+    assert_eq!(second.status.code(), Some(3), "{second:?}");
+    assert!(String::from_utf8_lossy(&second.stderr).contains("latched"));
+}

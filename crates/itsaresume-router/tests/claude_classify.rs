@@ -15,6 +15,9 @@ const OBSERVED_API_KEY: &str =
 const SYNTHETIC_SUCCESS: &str = include_str!("fixtures/claude/synthetic-success.verbose.json");
 const SYNTHETIC_USAGE_LIMIT: &str =
     include_str!("fixtures/claude/synthetic-usage-limit.verbose.json");
+const OBSERVED_SUCCESS: &str = include_str!("fixtures/claude/observed-success.verbose.json");
+const OBSERVED_STRUCTURED: &str =
+    include_str!("fixtures/claude/observed-structured-output.verbose.json");
 const SYNTHETIC_STRUCTURED: &str =
     include_str!("fixtures/claude/synthetic-structured-output.verbose.json");
 const SYNTHETIC_OVERLOADED: &str =
@@ -238,4 +241,54 @@ fn a_schema_answer_without_structured_output_is_other() {
             .remove("structured_output");
     });
     assert_eq!(kind(&classify_for(&missing, true)), "other");
+}
+
+/// 8.28: successes observed on 2.1.162 through the router's own flags
+/// (2026-09-30, redacted), next to the synthetic ones built before any was.
+#[test]
+fn the_observed_success_is_an_answer() {
+    assert_eq!(
+        classify(OBSERVED_SUCCESS),
+        Ok(Completion {
+            text: "Hello".into()
+        })
+    );
+}
+
+#[test]
+fn the_observed_structured_output_is_its_json() {
+    let answer = classify_for(OBSERVED_STRUCTURED, true).expect("a structured answer");
+    let value: Value = serde_json::from_str(&answer.text).expect("the answer is JSON");
+    assert_eq!(value["requirements"][2]["name"], "Kafka");
+    assert_eq!(
+        kind(&classify(OBSERVED_STRUCTURED)),
+        "other",
+        "unasked, its tool trips the wire"
+    );
+}
+
+/// The observed success with its rate-limit event's `isUsingOverage` set.
+fn with_overage(flag: Value) -> String {
+    let mut messages: Vec<Value> = serde_json::from_str(OBSERVED_SUCCESS).expect("array");
+    for message in &mut messages {
+        if message["type"] == "rate_limit_event" {
+            message["rate_limit_info"]["isUsingOverage"] = flag.clone();
+        }
+    }
+    Value::Array(messages).to_string()
+}
+
+/// 8.29: extra usage is billed per token (decision 1). An answer the CLI
+/// reports as overage is refused, and the message starts the billing
+/// latch, so the next request does not spend more.
+#[test]
+fn an_answer_billed_as_overage_trips_the_billing_wire() {
+    match classify(&with_overage(json!(true))) {
+        Err(BackendError::Other(message)) => {
+            assert!(message.starts_with("billing tripwire"), "{message}");
+            assert!(message.contains("overage"), "{message}");
+        }
+        other => panic!("expected the billing tripwire, got {other:?}"),
+    }
+    assert_eq!(kind(&classify(&with_overage(json!(false)))), "success");
 }

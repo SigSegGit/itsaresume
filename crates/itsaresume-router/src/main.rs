@@ -10,8 +10,10 @@ use std::process::ExitCode;
 const USAGE: &str = "\
 usage:
   itsaresume complete [--config FILE] [--system TEXT] [--backend NAME]
+                      [--schema FILE]
       prompt on stdin, answer on stdout, the answering backend on stderr;
-      --backend tries that configured backend alone (no fallback)
+      --backend tries that configured backend alone (no fallback);
+      --schema asks for an answer following that JSON Schema
   itsaresume serve [--config FILE] [--listen ADDRESS]
       HTTP endpoint (POST /v1/complete, GET /healthz), on 127.0.0.1:8787
       unless told otherwise: it has no authentication and spends the plan
@@ -33,6 +35,7 @@ struct Options {
     system: Option<String>,
     listen: Option<String>,
     backend: Option<String>,
+    schema: Option<PathBuf>,
 }
 
 fn parse(args: &[String]) -> Result<(String, Options), String> {
@@ -52,6 +55,7 @@ fn parse(args: &[String]) -> Result<(String, Options), String> {
             "--config" => options.config = Some(PathBuf::from(value()?)),
             "--system" if command == "complete" => options.system = Some(value()?),
             "--backend" if command == "complete" => options.backend = Some(value()?),
+            "--schema" if command == "complete" => options.schema = Some(PathBuf::from(value()?)),
             "--listen" if command == "serve" => options.listen = Some(value()?),
             other => return Err(format!("unknown option {other:?}")),
         }
@@ -86,7 +90,12 @@ fn main() -> ExitCode {
     if command == "serve" {
         serve(&config, options.listen.as_deref().unwrap_or(DEFAULT_LISTEN))
     } else {
-        complete(&config, options.system, options.backend.as_deref())
+        complete(
+            &config,
+            options.system,
+            options.backend.as_deref(),
+            options.schema.as_deref(),
+        )
     }
 }
 
@@ -115,7 +124,38 @@ fn serve(config: &Config, listen: &str) -> ExitCode {
     }
 }
 
-fn complete(config: &Config, system: Option<String>, only: Option<&str>) -> ExitCode {
+/// The JSON Schema object in `path`, or why it cannot be one.
+fn read_schema(path: &std::path::Path) -> Result<serde_json::Value, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|error| format!("cannot read the schema {}: {error}", path.display()))?;
+    match serde_json::from_str::<serde_json::Value>(&text) {
+        Ok(schema) if schema.is_object() => Ok(schema),
+        Ok(_) => Err(format!(
+            "the schema {} is not a JSON object",
+            path.display()
+        )),
+        Err(error) => Err(format!(
+            "the schema {} is not JSON: {error}",
+            path.display()
+        )),
+    }
+}
+
+fn complete(
+    config: &Config,
+    system: Option<String>,
+    only: Option<&str>,
+    schema_file: Option<&std::path::Path>,
+) -> ExitCode {
+    // Before anything else: a bad schema file is a usage error, no backend
+    // is called for it.
+    let schema = match schema_file.map(read_schema).transpose() {
+        Ok(schema) => schema,
+        Err(problem) => {
+            eprintln!("itsaresume: {problem}");
+            return ExitCode::from(EXIT_USAGE);
+        }
+    };
     let router = match config.router() {
         Ok(router) => router,
         Err(error) => {
@@ -137,7 +177,7 @@ fn complete(config: &Config, system: Option<String>, only: Option<&str>) -> Exit
         &Request {
             prompt,
             system,
-            schema: None,
+            schema,
         },
         only,
     ) {

@@ -180,3 +180,33 @@ fn an_unwritable_journal_does_not_lose_the_answer() {
         "the failure to journal must be reported, not swallowed"
     );
 }
+
+/// 8.26: the journal says how a request was asked (a named backend, a
+/// schema), so structured calls can be counted later; never the schema.
+#[test]
+fn a_named_structured_request_is_journaled_as_such() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("journal.jsonl");
+    let router = Router::new(
+        vec![answers("claude-code", "{}"), answers("lm-studio", "{}")],
+        Journal::new(&path),
+    )
+    .expect("two backends");
+
+    let schema = serde_json::json!({"type": "object", "title": "a-very-visible-schema"});
+    router
+        .complete_on(&Request::new("one").with_schema(schema), Some("lm-studio"))
+        .expect("lm-studio is configured");
+    router.complete(&Request::new("two"));
+
+    let lines = lines(&path);
+    assert_eq!(lines[0]["backend_asked"], "lm-studio");
+    assert_eq!(lines[0]["schema"], true);
+    assert!(lines[1].get("backend_asked").is_none(), "{}", lines[1]);
+    assert!(lines[1].get("schema").is_none(), "{}", lines[1]);
+    let raw = std::fs::read_to_string(&path).expect("journal");
+    assert!(
+        !raw.contains("a-very-visible-schema"),
+        "the schema itself is never written"
+    );
+}

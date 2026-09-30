@@ -59,8 +59,8 @@
     },
     "Router reports a journal it could not write": {
       "file": "crates/itsaresume-router/src/router.rs",
-      "live": "if let Err(error) = self.journal.record(request, &outcome, started.elapsed()) {",
-      "dead": "if let Err(error) = self.journal.record(request, &outcome, started.elapsed()).or(Ok::<(), std::io::Error>(())) {",
+      "live": ".record_asked(request, asked, &outcome, started.elapsed())\n        {",
+      "dead": ".record_asked(request, asked, &outcome, started.elapsed())\n            .or(Ok::<(), std::io::Error>(()))\n        {",
       "expect": [
         "an_unwritable_journal_does_not_lose_the_answer"
       ]
@@ -699,7 +699,8 @@
       "live": "|| (schema && tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\"));",
       "dead": "|| tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\");",
       "expect": [
-        "the_structured_output_tool_without_a_schema_is_refused"
+        "the_structured_output_tool_without_a_schema_is_refused",
+        "the_observed_structured_output_is_its_json"
       ]
     },
     "Schema: StructuredOutput alone": {
@@ -716,7 +717,8 @@
       "dead": "if false && schema {",
       "expect": [
         "a_schema_answer_is_its_structured_output",
-        "a_schema_answer_without_structured_output_is_other"
+        "a_schema_answer_without_structured_output_is_other",
+        "the_observed_structured_output_is_its_json"
       ]
     },
     "Schema: the endpoint passes it on": {
@@ -733,6 +735,81 @@
       "dead": "_ => None,",
       "expect": [
         "a_schema_must_be_an_object"
+      ]
+    },
+    "Journal: the backend asked for": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "entry[\"backend_asked\"] = json!(asked);",
+      "dead": "let _ = asked;",
+      "expect": [
+        "a_named_structured_request_is_journaled_as_such"
+      ]
+    },
+    "Journal: a schema request is marked": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "if request.schema.is_some() {",
+      "dead": "if false {",
+      "expect": [
+        "a_named_structured_request_is_journaled_as_such"
+      ]
+    },
+    "Router: the journal hears the name asked": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".record_asked(request, asked, &outcome, started.elapsed())",
+      "dead": ".record_asked(request, asked.filter(|_| false), &outcome, started.elapsed())",
+      "expect": [
+        "a_named_structured_request_is_journaled_as_such"
+      ]
+    },
+    "CLI: --schema is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "\"--schema\" if command == \"complete\" => options.schema = Some(PathBuf::from(value()?)),",
+      "dead": "\"--schema\" if command == \"complete\" => drop(value()?),",
+      "expect": [
+        "the_schema_option_reaches_the_cli_as_json_schema"
+      ]
+    },
+    "CLI: a schema file must hold an object": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "Ok(schema) if schema.is_object() => Ok(schema),",
+      "dead": "Ok(schema) if schema.is_object() || schema.is_array() => Ok(schema),",
+      "expect": [
+        "a_schema_file_that_is_not_an_object_is_a_usage_error"
+      ]
+    },
+    "CLI: the schema reaches the request": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "system,\n            schema,\n        },\n        only,",
+      "dead": "system,\n            schema: schema.filter(|_| false),\n        },\n        only,",
+      "expect": [
+        "the_schema_option_reaches_the_cli_as_json_schema"
+      ]
+    },
+    "Claude: a success is its result text": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "text: text.to_owned(),",
+      "dead": "text: text.to_uppercase(),",
+      "expect": [
+        "the_observed_success_is_an_answer",
+        "a_successful_run_is_an_answer"
+      ]
+    },
+    "Claude: overage trips the billing wire": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "&& message[\"rate_limit_info\"][\"isUsingOverage\"] == true",
+      "dead": "&& message[\"rate_limit_info\"][\"isUsingOverage\"] == \"never\"",
+      "expect": [
+        "an_answer_billed_as_overage_trips_the_billing_wire",
+        "an_overage_answer_latches_the_next_process_too"
+      ]
+    },
+    "Claude: overage refusal latches": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "\"billing tripwire: claude reports this answer as extra usage (overage, \\",
+      "dead": "\"tripwire: claude reports this answer as extra usage (overage, \\",
+      "expect": [
+        "an_answer_billed_as_overage_trips_the_billing_wire",
+        "an_overage_answer_latches_the_next_process_too"
       ]
     }
   }
