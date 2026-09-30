@@ -73,6 +73,19 @@ impl BackendConfig {
         }
     }
 
+    /// Whether an `lm-studio` `base_url` has `user@` before its host, which
+    /// would be sent as Basic auth.
+    fn has_userinfo(&self) -> bool {
+        let Self::LmStudio { base_url, .. } = self else {
+            return false;
+        };
+        let rest = base_url
+            .split_once("://")
+            .map_or(base_url.as_str(), |(_, r)| r);
+        let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
+        authority.contains('@')
+    }
+
     /// The backend; `journal` is where the Claude Code billing latch goes, beside it.
     fn build(&self, journal: &Path) -> Box<dyn Backend> {
         match self {
@@ -134,6 +147,12 @@ impl Config {
         if self.backends.iter().any(|b| b.max_concurrent() == Some(0)) {
             return Err(ConfigError(
                 "invalid configuration: max_concurrent = 0 would never answer".into(),
+            ));
+        }
+        if self.backends.iter().any(BackendConfig::has_userinfo) {
+            // Never echo the URL: its userinfo is a credential.
+            return Err(ConfigError(
+                "invalid configuration: an lm-studio base_url holds userinfo (user@ or user:password@); no credential goes in this file".into(),
             ));
         }
         let backends = self

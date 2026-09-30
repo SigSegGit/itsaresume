@@ -185,12 +185,18 @@ fn userinfo_in_a_base_url_is_refused_without_echoing_it() {
         };
         let message = error.to_string();
         assert!(message.contains("base_url"), "{message}");
-        assert!(!message.contains("alice") && !message.contains("s3cret"), "{message}");
+        assert!(
+            !message.contains("alice") && !message.contains("s3cret"),
+            "{message}"
+        );
     }
     for url in ["http://h:1234/v1", "http://h:1234/v1/@x"] {
         let text = format!(
             "journal = \"j.jsonl\"\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{url}\"\nmodel = \"m\"\n"
         );
-        assert!(Config::parse(&text).expect("parses").router().is_ok(), "{url}");
+        assert!(
+            Config::parse(&text).expect("parses").router().is_ok(),
+            "{url}"
+        );
     }
 }

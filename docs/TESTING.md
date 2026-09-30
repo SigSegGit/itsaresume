@@ -91,6 +91,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_valid_configuration_builds_a_router` | `tests/config.rs` | The example configuration builds a router | — |
 | `lm_studio_takes_one_completion_at_a_time_by_default` | `tests/config.rs` | `lm-studio` defaults to one slot, `max_concurrent` overrides it, `claude-code` has no limit | Config: lm-studio defaults to one slot |
 | `max_concurrent_zero_or_on_claude_code_is_refused` | `tests/config.rs` | `max_concurrent = 0` cannot build a router; the field is unknown on `claude-code` | Config: max_concurrent = 0 is refused |
+| `userinfo_in_a_base_url_is_refused_without_echoing_it` | `tests/config.rs` | A `base_url` with `user@` or `user:pass@` cannot build a router, and the error echoes neither; `@` in the path is fine | Config: userinfo in base_url is refused; Config: only the authority is checked for userinfo |
 | `complete_prints_the_answer_on_stdout_and_exits_0` | `tests/cli.rs` | The answer alone goes to stdout, the backend name to stderr, exit 0, one journal line | — |
 | `a_spent_claude_plan_falls_back_to_lm_studio` | `tests/cli.rs` | **End to end**: Claude reports a usage limit, LM Studio answers, the journal records both | — |
 | `a_stopped_request_exits_3_and_never_reaches_lm_studio` | `tests/cli.rs` | **End to end**: not logged in exits 3 and LM Studio's listener sees no connection | CLI: stopped exits 3 |
