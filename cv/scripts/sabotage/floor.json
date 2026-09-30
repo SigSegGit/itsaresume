@@ -60,6 +60,22 @@
       "expect": [
         "the items under a nice header are floor items, nice"
       ]
+    },
+    "Denied: a name only denied leaves the listing": {
+      "file": "src/listing.js",
+      "live": "return [...listed, ...missing].filter((item) => !onlyDenied(offer, item.name));",
+      "dead": "return [...listed, ...missing];",
+      "expect": [
+        "a name the offer only denies leaves the listing"
+      ]
+    },
+    "Denied: a nice cue keeps it": {
+      "file": "src/listing.js",
+      "live": "return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence) && !NICE.test(sentence));",
+      "dead": "return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence));",
+      "expect": [
+        "a denied must that the offer still wants stays, and so does a plain mention"
+      ]
     }
   }
 }

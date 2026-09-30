@@ -114,5 +114,21 @@ export function floorItems(offer) {
 /** `listed`, plus the floor items no listed name names or is named by. */
 function withFloor(listed, offer) {
   const missing = floorItems(offer).filter((item) => !listed.some((known) => mentions(item.name, known.name) || mentions(known.name, item.name)));
-  return [...listed, ...missing];
+  return [...listed, ...missing].filter((item) => !onlyDenied(offer, item.name));
+}
+
+/** A denial: "not required", "pas obligatoire", "ne serait pas un plus". */
+const DENIAL = /(?<![\p{L}\p{N}])(?:pas|not|non|no)\s+(?:\p{L}+\s+)?(?:obligatoires?|exigée?s?|requise?s?|required|mandatory|indispensables?|needed|necessary|nécessaires?|un\s+plus|a\s+plus)(?![\p{L}\p{N}])/iu;
+
+/**
+ * Whether the offer names `name` only to deny it (2.1f): every sentence
+ * that mentions it holds a denial and no nice cue ("n'est pas obligatoire
+ * mais sera appréciée" still wants it). Both models listed "Kubernetes is
+ * not required for this role" on the corpus.
+ */
+function onlyDenied(offer, name) {
+  const sentences = canonical(String(offer ?? ''))
+    .split(/\r?\n|(?<=[.!?;])\s+/)
+    .filter((sentence) => mentions(sentence, name));
+  return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence) && !NICE.test(sentence));
 }

@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1f
-TITLE: a requirement the offer only names to deny it ("Kubernetes is not required") leaves the listing
+NEXT: 2.8
+TITLE: keep the model's raw answers in the run directory (raw.json), so a replay can test rules acting on them
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -131,13 +131,17 @@ Traps met, each cost time once:
     Kubernetes. Measured from one router with named backends (router 8.22,
     `measure-listing.mjs --backend sonnet|qwen`, cv 8.23: `complete()` sends
     `backend` only when asked).
-  - [ ] **2.1f** A name the offer only denies ("Kubernetes is not required
+  - [x] **2.1f** A name the offer only denies ("Kubernetes is not required
     for this role", "n'est pas requis") leaves the listing: both models list
     it, and the analysis would then count it. Code, after the listing: drop
     a listed name whose every mention in the offer sits in a clause with a
     negated must cue (`NEGATED` in `importance.js`) or "ne ... pas"; keep it
     if any mention is plain. Red test from the corpus's `excluded` names:
     the listing that holds them loses them; a plain mention keeps them.
+    Done 2026-09-30: `onlyDenied` in `src/listing.js` (sentence level; a
+    nice cue in the sentence keeps it); 2 tests, 2 defences. Replayed on the
+    owner's real offers: it drops nothing; the floor adds only names the
+    offers put under a must/nice header.
   - [x] **2.1e** A deterministic listing floor, from 2.1c's stable misses:
     the items of a list under a header (`Nice to have:`, `Must have:`,
     `Atouts :`, `Pré-requis :`...) and of a header line's own enumeration
