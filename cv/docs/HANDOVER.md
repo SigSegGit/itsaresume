@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.8
-TITLE: keep the model's raw answers in the run directory (raw.json), so a replay can test rules acting on them
+NEXT: 2.9
+TITLE: the 6-letter stem conflates words ("product" and "production"): a stem that respects the word
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -177,8 +177,22 @@ Traps met, each cost time once:
   must-stay-no set: certifications, migrations, NoSQL (d), language level
   (e), short missions and an unshown must (f), the skills column (g), the
   check under its name (h); a–b were private data.
-- [ ] **2.8** Keep the model's raw answer in the run directory
+- [x] **2.8** Keep the model's raw answer in the run directory
   (`raw.json`), so a replay can test rules acting on it (found 2026-09-29).
+  Done 2026-09-30: `analyse()` records every call (`step`, `backend`,
+  `text`, in order), `tailorOffer` writes `raw.json`; 1 test, 3 defences.
+  Rejected runs still keep only `rejected-attempt-N.txt`.
+- [ ] **2.9** The crude stem (`stem = word.slice(0, 6)` in `src/text.js`,
+  copied in `src/evidence.js`) makes "product" and "production", "config"
+  and "configuration", "develop" and "developer" one word: a requirement
+  "Product ownership" is then "stated" by "production" (`statedIn`), and a
+  bullet quoting "production" backs "product" (`evidence.js`). A stem that
+  strips known endings (FR/EN: -s, -es, -tion(s), -ment(s), -er, -ing,
+  -ed, -é(e)(s)...) and never shortens a word below its root. Red tests:
+  "product"/"production" differ; "déploiement"/"déploiements",
+  "deploy"/"deployed"/"deploying" stay one; replay the real runs
+  (`runs-replay.mjs`, `rules-replay.mjs`) and list every changed verdict
+  before shipping.
 
 Open from the 2026-09-27 audit, by value: split may drop lines silently;
 the report lists the model's bullet picks, not the rendered ones; no

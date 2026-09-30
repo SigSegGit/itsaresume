@@ -87,9 +87,10 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
     });
     throw new RunError(/itsaresume/.test(error.message) ? 4 : 3, error.message, { answers: error.answers, dir: error.answers ? dir : undefined });
   }
-  const { analysis, attempts, backend, repairs } = result;
+  const { analysis, attempts, backend, repairs, calls } = result;
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'analysis.json'), JSON.stringify(analysis, null, 2));
+  writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));
   const { layout, ats, skipped } = await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
   const older = olderMentions(analysis, full, texts);
   const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older });
