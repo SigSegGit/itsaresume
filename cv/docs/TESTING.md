@@ -113,6 +113,8 @@ property it proves.
 | notions asked are met by notions held | Languages: a level asked is compared, not only a working level; Languages: level words are language words |
 | a level asked that the profile holds only as notions stays no | — |
 | languages an offer lists together are settled one by one, never merged | Languages are never merged as examples |
+| a row naming one member of a merged group plus a category word joins the group | Category words do not hide a listed example |
+| a row that names a member and something more stays its own | — |
 
 ## `test/evidence.test.js`
 
@@ -150,6 +152,7 @@ property it proves.
 | a name the offer only denies leaves the listing | Denied: a name only denied leaves the listing |
 | a denied must that the offer still wants stays, and so does a plain mention | Denied: a nice cue keeps it |
 | the listing call sends its schema only when asked | Listing: the schema only when asked |
+| a listed name whose words the analysis already names is not added twice | Listing: a name the analysis already covers is not added |
 
 ## `test/guard.test.js`
 
@@ -439,6 +442,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**285 tests, 238 of them covered by at least one sabotage defence.**
+**288 tests, 240 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

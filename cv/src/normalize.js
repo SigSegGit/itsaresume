@@ -142,6 +142,21 @@ function languageMatch(name, named) {
  * (yes, then adjacent; client experience before lab): a never-claimed
  * example is said so in the report, and adds no must of its own.
  */
+/** Words that name a category, not a product ("IIS web server"). */
+const CATEGORY_WORDS = new Set(['web', 'server', 'servers', 'serveur', 'serveurs', 'database', 'databases', 'tool', 'tools', 'outil', 'outils',
+  'platform', 'platforms', 'plateforme', 'plateformes', 'engine', 'engines', 'service', 'services', 'framework', 'frameworks']);
+
+/**
+ * A requirement's name without its category words: the model writes "IIS
+ * web server" where the offer lists "(IIS, Apache, NGINX or Tomcat)" (2.10,
+ * seen on a real run where IIS and Apache counted as musts twice).
+ * "Apache Kafka" keeps its "Kafka".
+ */
+function core(name) {
+  const kept = String(name ?? '').split(/\s+/).filter((word) => !CATEGORY_WORDS.has(word.toLowerCase()));
+  return kept.length ? kept.join(' ') : String(name ?? '');
+}
+
 function mergeExamples(requirements, offer, profile, repairs, lang) {
   const lab = new Set(profile.skills.filter((skill) => skill.level === 'lab').map((skill) => skill.id));
   const parent = requirements.map((_, index) => index);
@@ -152,7 +167,7 @@ function mergeExamples(requirements, offer, profile, repairs, lang) {
     // Italian" became one row no longer read as a language, and the run was
     // refused twice).
     const named = requirements.flatMap((requirement, index) =>
-      requirement.kind !== 'quality' && languageOf(requirement, profile, lang) === null && mentions(inside, requirement.name) ? [index] : []);
+      requirement.kind !== 'quality' && languageOf(requirement, profile, lang) === null && mentions(inside, core(requirement.name)) ? [index] : []);
     for (const index of named.slice(1)) parent[root(index)] = root(named[0]);
   }
   const groups = new Map();

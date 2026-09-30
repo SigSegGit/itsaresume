@@ -226,9 +226,10 @@ test('languages an offer lists together are settled one by one, never merged', (
 // stayed beside the merged "NGINX / Tomcat / IIS / Apache", and IIS and
 // Apache counted as musts twice.
 test('a row naming one member of a merged group plus a category word joins the group', () => {
-  const offer = 'Web servers: experience with NGINX, Tomcat, IIS, Apache.';
+  // The real rows: the model named two of them with a category word.
+  const offer = 'Experience with web server administration (IIS, Apache, NGINX or Tomcat).';
   const no = (name) => ({ name, importance: 'must', match: 'no', skills: [], note: '' });
-  const rows = ['NGINX', 'Tomcat', 'IIS', 'Apache', 'IIS web server', 'Apache web server'].map(no);
+  const rows = ['NGINX', 'Tomcat', 'IIS web server', 'Apache web server'].map(no);
   const judged = normalize(analysis(rows), withGerman(), { offer }).analysis;
   const names = judged.requirements.map((row) => row.name);
   assert.equal(names.length, 1, names.join(' | '));
@@ -236,7 +237,7 @@ test('a row naming one member of a merged group plus a category word joins the g
 });
 
 test('a row that names a member and something more stays its own', () => {
-  const offer = 'Experience with NGINX, Tomcat, IIS, Apache.';
+  const offer = 'Web servers (NGINX, Tomcat, IIS, Apache).';
   const no = (name) => ({ name, importance: 'must', match: 'no', skills: [], note: '' });
   const rows = ['NGINX', 'Tomcat', 'IIS', 'Apache', 'Apache Kafka'].map(no);
   const names = normalize(analysis(rows), withGerman(), { offer }).analysis.requirements.map((row) => row.name);

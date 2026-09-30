@@ -8,7 +8,7 @@
 import { extractJson } from './llm.js';
 import { cleanName, fence, UNTRUSTED } from './guard.js';
 import { MUST, NICE } from './importance.js';
-import { canonical, mentions } from './text.js';
+import { canonical, GENERIC, mentions, stem, STOP, wordsOf } from './text.js';
 
 export const LISTING_SYSTEM = `List every skill, technology, tool, product, method or personal quality that the job offer asks for or names.
 
@@ -76,7 +76,15 @@ export async function listRequirements({ offer, llm, structured = false }) {
  */
 export function mergeListed(analysis, listed) {
   const present = new Set((analysis.requirements ?? []).map((requirement) => String(requirement.name).trim().toLowerCase()));
-  const added = listed.filter((item) => !present.has(item.name.toLowerCase()));
+  // A listed name whose every content word the analysis already names, in
+  // one row, is that row ("Customer meetings" / "Customer-facing
+  // meetings", 2.10): added again, it counted a must twice.
+  const analysed = (analysis.requirements ?? []).map((requirement) => new Set(wordsOf(requirement.name).map(stem)));
+  const covered = (name) => {
+    const words = wordsOf(name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
+    return words.length > 0 && analysed.some((row) => words.every((word) => row.has(word)));
+  };
+  const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !covered(item.name));
   return {
     analysis: {
       ...analysis,
