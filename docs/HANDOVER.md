@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.25
-TITLE: The generator asks for structured output (cv 2.3 first step): the listing call sends its schema
+NEXT: 8.26
+TITLE: The journal says whether a request named its backend and carried a schema
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -353,12 +353,22 @@ branch with the local gates of §3 green.
   after a branch switch. Fixed: `Serving` (kill on drop, no inherited
   stdout) in `tests/server.rs`; `sabotage-wsl.sh` runs in a detached
   worktree at HEAD (commit first).
-- [ ] **8.25** The generator side of structured output (cv 2.3's first
+- [x] **8.25** The generator side of structured output (cv 2.3's first
   step): `listRequirements` sends the listing schema (`{requirements:
   [{name, importance: must|nice}]}`) through `complete({schema})`, so no
   answer is lost to `extractJson`; measure the corpus recall again with
   `measure-listing.mjs` for both backends (it must not drop). Then the
   analysis call, whose schema is larger (a closed list of skill ids).
+  Done (PR #27), measured: with the schema the local model listed 61-66/75
+  against 68-70/75 without (three runs each), Sonnet 75/75 either way; so
+  the listing sends it only when asked (`structured`). See cv §8, 2.3.
+- [ ] **8.26** The journal says how a request was asked: `backend_asked`
+  (the name, when the request named one) and `schema: true` when it
+  carried a schema, so the cost and failure rate of structured calls can
+  be read from the journal later. Never the schema itself (it may be
+  large) and never the prompt (§1). Red test: two journaled requests, one
+  named and structured, one plain; the lines differ exactly by those two
+  fields.
 
 ## 9. Deliberately open
 

@@ -58,7 +58,7 @@ function describeQualification(fit) {
   return ['', `**Qualification:** ${QUALIFICATION[q.level]}${q.gaps.length ? ` — must-haves not covered by client experience: ${q.gaps.map(line).join(', ')}` : ''}`];
 }
 
-export function report(analysis, profile, { backend, attempts, repairs = [], layout, ats, skipped, assessment, removed = [], older = [] }) {
+export function report(analysis, profile, { backend, attempts, repairs = [], layout, ats, skipped, assessment, removed = [], older = [], rendered }) {
   const skills = new Map(profile.skills.map((skill) => [skill.id, skill]));
   const experiences = new Map(profile.experiences.map((experience) => [experience.id, experience]));
   const lang = analysis.language;
@@ -102,10 +102,17 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
       ...qualities.map((quality) => `- ${line(quality.name)} (${line(quality.importance)})`));
   }
   lines.push('', '## Summary on the CV', '', ...analysis.summary.map((sentence) => `> ${line(sentence)}`));
-  lines.push('', '## Experiences put forward', '');
-  for (const choice of analysis.experiences) {
-    const experience = experiences.get(choice.id);
-    lines.push(`- **${experience.title[lang]}** — ${experience.org[lang]}: ${choice.bullets.length} bullet(s)`);
+  if (rendered) {
+    // What the CV shows, after the layout added and cut bullets (audit
+    // 2026-09-27: the model's picks were listed instead).
+    lines.push('', '## Experiences on the CV', '');
+    for (const shown of rendered) lines.push(`- **${line(shown.title)}** — ${line(shown.org)}: ${shown.bullets.length} bullet(s)`);
+  } else {
+    lines.push('', '## Experiences put forward', '');
+    for (const choice of analysis.experiences) {
+      const experience = experiences.get(choice.id);
+      lines.push(`- **${experience.title[lang]}** — ${experience.org[lang]}: ${choice.bullets.length} bullet(s)`);
+    }
   }
   if (older.length) {
     lines.push('', '**Named in older CVs, absent from the profile (confirm, then add it to the profile if true):**', '');

@@ -216,6 +216,22 @@
       "expect": [
         "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
       ]
+    },
+    "Report: the bullets the CV shows": {
+      "file": "src/report.js",
+      "live": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** — ${line(shown.org)}: ${shown.bullets.length} bullet(s)`);",
+      "dead": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** — ${line(shown.org)}: 1 bullet(s)`);",
+      "expect": [
+        "the report counts the bullets the CV shows, not the model's picks"
+      ]
+    },
+    "Report: rendered, when there is a CV": {
+      "file": "src/report.js",
+      "live": "  if (rendered) {",
+      "dead": "  if (false) {",
+      "expect": [
+        "the report counts the bullets the CV shows, not the model's picks"
+      ]
     }
   }
 }

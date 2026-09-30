@@ -158,7 +158,11 @@ Traps met, each cost time once:
     Rigueur, "open source".
   - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
-- [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.
+- [x] **2.2** Sonnet measured (ADR-2). The local model alone, 2026-09-30:
+  one synthetic offer (`corpus/fr-sre-banque.json`) end to end through a
+  Bionic-only router (`qwen3-coder-next`): 239 s, first attempt valid,
+  0.91 page, ATS ok, `raw.json` holding the two calls. The fallback is
+  usable, at about the time Sonnet took per offer.
 - [~] **2.3** Router contract: structured output, a model per call (router
   M3). A model per call: done (router 8.22, cv 8.23). Structured output:
   the router takes a schema (8.24) and the client sends one when asked
@@ -209,10 +213,15 @@ Traps met, each cost time once:
   kept since with their endings and tests. Profile provenance: 0 errors.
   The replay scripts' static imports were fixed (`CV_SRC`, dynamic).
 
-Open from the 2026-09-27 audit, by value: split may drop lines silently;
-the report lists the model's bullet picks, not the rendered ones; no
-elapsed time on the page; 413 as a cut socket; the 6-letter stem
-("product" vs "production").
+Open from the 2026-09-27 audit, by value (split dropping lines silently:
+fixed 2026-09-30, every non-empty line in no range is named in a repair,
+shown by the CLI and the page; the page's message no longer claims "kept as
+one offer" for it, untested: the browser script has no harness; the report
+listing the model's bullet picks instead of the rendered ones: fixed the
+same day, "Experiences on the CV" counts what `buildModel` rendered; the
+6-letter stem: fixed in 2.9; 413 as a cut socket: fixed, a declared
+oversize is refused unread, a streamed one drained up to 4 × MAX_BODY then
+answered 413, `Connection: close`). Still open: no elapsed time on the page.
 
 ## 9. Open on purpose
 
