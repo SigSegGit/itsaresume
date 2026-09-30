@@ -63,3 +63,8 @@ export function mergeListed(analysis, listed) {
     repairs: added.map((item) => `requirement ${item.name} (${item.importance}) named in the offer and left out by the analysis: added`),
   };
 }
+
+/** The requirement floor (2.1e): stub for the red commit. */
+export function floorItems() {
+  return [];
+}
