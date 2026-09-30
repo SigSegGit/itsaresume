@@ -197,7 +197,19 @@ fn the_default_listen_address_is_loopback() {
 
 /// `itsaresume serve` itself, as a process, once it answers `/healthz`
 /// (None if it never did within 10 s).
-fn serve_process(dir: &std::path::Path) -> (std::process::Child, SocketAddr, Option<u16>) {
+/// A `serve` child, killed and reaped when dropped, even when the test
+/// panics first: an orphan kept the sabotage run's pipes open and hung it
+/// (seen under WSL, 2026-09-30).
+struct Serving(std::process::Child);
+
+impl Drop for Serving {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
+fn serve_process(dir: &std::path::Path) -> (Serving, SocketAddr, Option<u16>) {
     let port = std::net::TcpListener::bind("127.0.0.1:0")
         .expect("bind")
         .local_addr()
@@ -220,8 +232,11 @@ fn serve_process(dir: &std::path::Path) -> (std::process::Child, SocketAddr, Opt
             "--listen",
             &format!("127.0.0.1:{port}"),
         ])
+        // Nothing inherited: an orphan must hold none of the test's pipes.
+        .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
+        .map(Serving)
         .expect("serve starts");
     let address: SocketAddr = format!("127.0.0.1:{port}").parse().expect("address");
 
@@ -240,9 +255,8 @@ fn serve_process(dir: &std::path::Path) -> (std::process::Child, SocketAddr, Opt
 #[test]
 fn the_serve_command_answers_on_the_given_address() {
     let dir = tempfile::tempdir().expect("temp dir");
-    let (mut child, _, status) = serve_process(dir.path());
-    let _ = child.kill();
-    let _ = child.wait();
+    let (child, _, status) = serve_process(dir.path());
+    drop(child);
     assert_eq!(status, Some(200));
 }
 
@@ -350,9 +364,8 @@ fn a_huge_declared_body_is_413_and_the_server_lives() {
     );
     let refused = raw(address, &head, b"{");
     thread::sleep(Duration::from_millis(300));
-    let alive = child.try_wait().expect("child status").is_none();
-    let _ = child.kill();
-    let _ = child.wait();
+    let alive = child.0.try_wait().expect("child status").is_none();
+    drop(child);
     assert_eq!(refused, Some(413));
     assert!(alive, "the server died on a huge declared body");
 }
