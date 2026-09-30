@@ -84,6 +84,14 @@
       "expect": [
         "the listing call sends its schema only when asked"
       ]
+    },
+    "Listing: a name the analysis already covers is not added": {
+      "file": "src/listing.js",
+      "live": "return words.length > 0 && analysed.some((row) => words.every((word) => row.has(word)));",
+      "dead": "return false;",
+      "expect": [
+        "a listed name whose words the analysis already names is not added twice"
+      ]
     }
   }
 }

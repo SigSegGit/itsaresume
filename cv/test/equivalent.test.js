@@ -221,3 +221,25 @@ test('languages an offer lists together are settled one by one, never merged', (
   assert.ok(![...byName.keys()].some((name) => /English \//.test(name)), 'English was merged');
   assert.deepEqual(validateAnalysis(judged, p).errors.filter((error) => /English|French|Spanish|Italian/.test(error)), []);
 });
+
+// 2.10, seen on the same real run: "IIS web server" and "Apache web server"
+// stayed beside the merged "NGINX / Tomcat / IIS / Apache", and IIS and
+// Apache counted as musts twice.
+test('a row naming one member of a merged group plus a category word joins the group', () => {
+  // The real rows: the model named two of them with a category word.
+  const offer = 'Experience with web server administration (IIS, Apache, NGINX or Tomcat).';
+  const no = (name) => ({ name, importance: 'must', match: 'no', skills: [], note: '' });
+  const rows = ['NGINX', 'Tomcat', 'IIS web server', 'Apache web server'].map(no);
+  const judged = normalize(analysis(rows), withGerman(), { offer }).analysis;
+  const names = judged.requirements.map((row) => row.name);
+  assert.equal(names.length, 1, names.join(' | '));
+  assert.match(names[0], /IIS/);
+});
+
+test('a row that names a member and something more stays its own', () => {
+  const offer = 'Web servers (NGINX, Tomcat, IIS, Apache).';
+  const no = (name) => ({ name, importance: 'must', match: 'no', skills: [], note: '' });
+  const rows = ['NGINX', 'Tomcat', 'IIS', 'Apache', 'Apache Kafka'].map(no);
+  const names = normalize(analysis(rows), withGerman(), { offer }).analysis.requirements.map((row) => row.name);
+  assert.ok(names.includes('Apache Kafka'), names.join(' | '));
+});
