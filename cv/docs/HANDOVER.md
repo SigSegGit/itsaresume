@@ -158,7 +158,11 @@ Traps met, each cost time once:
     Rigueur, "open source".
   - [ ] **2.1d** The equivalents of 2.7 (`relate()`) measured on the
     corpus: grounding of each label against the synthetic profile.
-- [~] **2.2** Sonnet measured (ADR-2); the local model alone still to time.
+- [x] **2.2** Sonnet measured (ADR-2). The local model alone, 2026-09-30:
+  one synthetic offer (`corpus/fr-sre-banque.json`) end to end through a
+  Bionic-only router (`qwen3-coder-next`): 239 s, first attempt valid,
+  0.91 page, ATS ok, `raw.json` holding the two calls. The fallback is
+  usable, at about the time Sonnet took per offer.
 - [~] **2.3** Router contract: structured output, a model per call (router
   M3). A model per call: done (router 8.22, cv 8.23). Structured output:
   the router takes a schema (8.24) and the client sends one when asked
