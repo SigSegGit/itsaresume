@@ -22,7 +22,10 @@ impl Backend for Fixed {
 fn answers(name: &'static str, text: &str) -> Box<dyn Backend> {
     Box::new(Fixed {
         name,
-        reply: Ok(Completion { text: text.into() }),
+        reply: Ok(Completion {
+            text: text.into(),
+            rate_limit: None,
+        }),
     })
 }
 
@@ -122,6 +125,7 @@ fn the_prompt_and_answer_text_are_never_written_to_the_journal() {
         prompt: "SENTINEL-PROMPT-7f3a".into(),
         system: Some("SENTINEL-SYSTEM-2b8e".into()),
         schema: None,
+        kind: Default::default(),
     };
 
     router.complete(&request);
@@ -209,4 +213,27 @@ fn a_named_structured_request_is_journaled_as_such() {
         !raw.contains("a-very-visible-schema"),
         "the schema itself is never written"
     );
+}
+
+/// 8.32: an answer's rate-limit report goes into its journal line.
+#[test]
+fn the_rate_limit_of_an_answer_is_journaled() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("journal.jsonl");
+    let limited = Fixed {
+        name: "claude-code",
+        reply: Ok(Completion {
+            text: "hi".into(),
+            rate_limit: Some(serde_json::json!({"status": "allowed", "isUsingOverage": false})),
+        }),
+    };
+    let router = Router::new(vec![Box::new(limited)], Journal::new(&path)).expect("one backend");
+    router.complete(&Request::new("one"));
+    let other =
+        Router::new(vec![answers("lm-studio", "hi")], Journal::new(&path)).expect("one backend");
+    other.complete(&Request::new("two"));
+
+    let lines = lines(&path);
+    assert_eq!(lines[0]["rate_limit"]["status"], "allowed");
+    assert!(lines[1].get("rate_limit").is_none(), "{}", lines[1]);
 }

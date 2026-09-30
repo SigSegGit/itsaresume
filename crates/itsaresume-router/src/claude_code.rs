@@ -31,6 +31,9 @@ pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
     classify_for(stdout, false)
 }
 
+/// The keys of a `rate_limit_info` the journal keeps (8.32).
+const RATE_LIMIT_KEYS: [&str; 4] = ["status", "rateLimitType", "isUsingOverage", "overageStatus"];
+
 /// [`classify`], for a request that asked (`schema`) for structured output.
 pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendError> {
     let messages: Vec<Value> = serde_json::from_str(stdout.trim()).map_err(|error| {
@@ -91,6 +94,24 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         ));
     }
 
+    // The plan's limits as reported with this answer, for the journal
+    // (M4, 8.32): only what says which limit and whether it held.
+    let rate_limit = messages
+        .iter()
+        .rev()
+        .find(|message| message["type"] == "rate_limit_event")
+        .map(|message| {
+            let info = &message["rate_limit_info"];
+            let kept: serde_json::Map<String, Value> = RATE_LIMIT_KEYS
+                .iter()
+                .filter_map(|key| {
+                    info.get(*key)
+                        .map(|value| ((*key).to_owned(), value.clone()))
+                })
+                .collect();
+            Value::Object(kept)
+        });
+
     let result = messages
         .iter()
         .rev()
@@ -101,6 +122,7 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         return match result.get("structured_output") {
             Some(object) if !object.is_null() => Ok(Completion {
                 text: object.to_string(),
+                rate_limit: rate_limit.clone(),
             }),
             _ => Err(BackendError::Other(
                 "claude answered a schema request without structured_output".into(),
@@ -112,6 +134,7 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
     match (result["is_error"].as_bool(), text) {
         (Some(false), Some(text)) => Ok(Completion {
             text: text.to_owned(),
+            rate_limit,
         }),
         (Some(true), text) => Err(classify_error(
             result["api_error_status"].as_u64(),

@@ -192,6 +192,7 @@ fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
             ))),
             Some(text) => Ok(Completion {
                 text: text.to_owned(),
+                rate_limit: None,
             }),
             None => Err(BackendError::Other(format!(
                 "LM Studio answered {status} without choices[0].message.content: {}",

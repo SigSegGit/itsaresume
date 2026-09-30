@@ -32,7 +32,8 @@ fn the_observed_success_is_an_answer() {
     assert_eq!(
         backend(&base_url).complete(&Request::new("hi")),
         Ok(Completion {
-            text: "Hello!".into()
+            text: "Hello!".into(),
+            rate_limit: None,
         })
     );
 }
@@ -46,6 +47,7 @@ fn the_request_is_a_chat_completion_without_any_credential() {
         prompt: "Write a summary.".into(),
         system: Some("You write CVs.".into()),
         schema: None,
+        kind: Default::default(),
     };
 
     backend(&base_url)
