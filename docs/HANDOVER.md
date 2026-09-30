@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.33
-TITLE: stats per day, and when the plan ran out (M4 exit criterion)
+NEXT: 8.34
+TITLE: A request kind (generate or classify); a backend serves the kinds it declares (M2 first step)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -427,12 +427,23 @@ branch with the local gates of §3 green.
   `rate_limit`; an LM Studio answer without one. Done: `rate_limit` on
   `Completion` and `Answer` (status, rateLimitType, isUsingOverage,
   overageStatus only); two tests, three defences.
-- [ ] **8.33** `itsaresume stats --by-day`: one block per UTC day (from
+- [x] **8.33** `itsaresume stats --by-day`: one block per UTC day (from
   `ts`): the share Claude answered, the quota hits (attempts of kind
   `quota_exceeded`, and answers whose `rate_limit.status` is not
   `allowed`), and the time of the first one that day ("ran out at 14:02").
   That is M4's exit criterion (ROADMAP). Red tests on a hand-written
-  two-day journal.
+  two-day journal. Done: `summarize_by_day` in `src/stats.rs`, `--by-day`;
+  two tests, four defences; on the owner's journal, five days, no quota hit
+  yet. M4's exit criterion is met (ROADMAP).
+- [ ] **8.34** M2's first step, no hardware choice needed: a request has a
+  `kind`, `generate` (default) or `classify`; a backend's config may say
+  `serves = ["classify"]` (default: both); the router skips a backend that
+  does not serve the request's kind (not an attempt, not a failure), and a
+  request no backend serves is a usage error (400 / exit 2). Red tests: a
+  classify-only backend first, a generate request goes past it to the
+  next; a classify request is answered by it; `serves = []` is refused at
+  load. M2's exit criterion (ROADMAP): "the router refuses to send a
+  generation request to it", proved by a sabotage-verified test.
 
 ## 9. Deliberately open
 

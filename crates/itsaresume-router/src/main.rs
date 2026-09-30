@@ -14,8 +14,9 @@ usage:
       prompt on stdin, answer on stdout, the answering backend on stderr;
       --backend tries that configured backend alone (no fallback);
       --schema asks for an answer following that JSON Schema
-  itsaresume stats [--config FILE]
-      the journal summed up: per backend and outcome, fallbacks, structured
+  itsaresume stats [--config FILE] [--by-day]
+      the journal summed up: per backend and outcome, fallbacks, structured;
+      --by-day: per UTC day, who answered and when the plan ran out
   itsaresume serve [--config FILE] [--listen ADDRESS]
       HTTP endpoint (POST /v1/complete, GET /healthz), on 127.0.0.1:8787
       unless told otherwise: it has no authentication and spends the plan
@@ -38,6 +39,7 @@ struct Options {
     listen: Option<String>,
     backend: Option<String>,
     schema: Option<PathBuf>,
+    by_day: bool,
 }
 
 fn parse(args: &[String]) -> Result<(String, Options), String> {
@@ -57,6 +59,10 @@ fn parse(args: &[String]) -> Result<(String, Options), String> {
             "--config" => options.config = Some(PathBuf::from(value()?)),
             "--system" if command == "complete" => options.system = Some(value()?),
             "--backend" if command == "complete" => options.backend = Some(value()?),
+            "--by-day" if command == "stats" => {
+                options.by_day = true;
+                continue;
+            }
             "--schema" if command == "complete" => options.schema = Some(PathBuf::from(value()?)),
             "--listen" if command == "serve" => options.listen = Some(value()?),
             other => return Err(format!("unknown option {other:?}")),
@@ -90,7 +96,7 @@ fn main() -> ExitCode {
         }
     };
     if command == "stats" {
-        return stats(&config);
+        return stats(&config, options.by_day);
     }
     if command == "serve" {
         serve(&config, options.listen.as_deref().unwrap_or(DEFAULT_LISTEN))
@@ -105,7 +111,7 @@ fn main() -> ExitCode {
 }
 
 /// The journal summed up on stdout; a missing journal is an empty one.
-fn stats(config: &Config) -> ExitCode {
+fn stats(config: &Config, by_day: bool) -> ExitCode {
     let text = match std::fs::read_to_string(&config.journal) {
         Ok(text) => text,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
@@ -117,7 +123,11 @@ fn stats(config: &Config) -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let summary = itsaresume_router::stats::summarize(&text);
+    let summary = if by_day {
+        itsaresume_router::stats::summarize_by_day(&text)
+    } else {
+        itsaresume_router::stats::summarize(&text)
+    };
     let mut stdout = std::io::stdout().lock();
     if stdout
         .write_all(summary.as_bytes())

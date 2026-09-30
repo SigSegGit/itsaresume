@@ -566,3 +566,30 @@ fn the_stats_command_sums_up_the_journal() {
         "nothing appended"
     );
 }
+
+/// 8.33: `stats --by-day` prints one line per UTC day.
+#[test]
+fn the_stats_by_day_option_prints_one_line_per_day() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let config = config(dir.path(), FAKE_CLAUDE, &refused_url());
+    std::fs::write(
+        dir.path().join("journal.jsonl"),
+        "{\"ts\":\"2026-09-30T10:00:00.000Z\",\"outcome\":\"answered\",\"backend\":\"lm-studio\",\"attempts\":[]}\n",
+    )
+    .expect("journal");
+    let output = run(
+        &[
+            "stats",
+            "--by-day",
+            "--config",
+            config.to_str().expect("utf-8"),
+        ],
+        "",
+        &[],
+    );
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout),
+        "2026-09-30: 1 request; answered by lm-studio 1; no quota hit\n"
+    );
+}

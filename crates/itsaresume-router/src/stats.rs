@@ -81,8 +81,67 @@ fn median(values: &mut [u64]) -> u64 {
     }
 }
 
-/// One line per UTC day (8.33). Stub for the red commit.
+/// One line per UTC day (8.33, M4's exit criterion): the requests, who
+/// answered them, and the quota hits with the time of the first. A quota
+/// hit is a `quota_exceeded` attempt, or an answer whose `rate_limit`
+/// status is not `allowed` (the plan warning or refusing).
 pub fn summarize_by_day(journal: &str) -> String {
-    let _ = journal;
-    String::new()
+    #[derive(Default)]
+    struct Day {
+        requests: usize,
+        answered: BTreeMap<String, usize>,
+        hits: usize,
+        first_hit: Option<String>,
+    }
+    let mut days: BTreeMap<String, Day> = BTreeMap::new();
+    for line in journal.lines().filter(|line| !line.trim().is_empty()) {
+        let Ok(entry) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        let Some(ts) = entry["ts"].as_str().filter(|ts| ts.len() >= 16) else {
+            continue;
+        };
+        let day = days.entry(ts[..10].to_owned()).or_default();
+        day.requests += 1;
+        if entry["outcome"] == "answered" {
+            let backend = entry["backend"].as_str().unwrap_or("?").to_owned();
+            *day.answered.entry(backend).or_default() += 1;
+        }
+        let quota_attempts = entry["attempts"].as_array().map_or(0, |attempts| {
+            attempts
+                .iter()
+                .filter(|a| a["kind"] == "quota_exceeded")
+                .count()
+        });
+        let limited = entry["rate_limit"]["status"]
+            .as_str()
+            .is_some_and(|status| status != "allowed");
+        let hits = quota_attempts + usize::from(limited);
+        if hits > 0 {
+            day.hits += hits;
+            // The journal is in time order: the first hit of the day stays.
+            day.first_hit.get_or_insert_with(|| ts[11..16].to_owned());
+        }
+    }
+    let mut out = String::new();
+    for (date, day) in &days {
+        let requests = if day.requests == 1 {
+            "1 request".to_owned()
+        } else {
+            format!("{} requests", day.requests)
+        };
+        let answered = day
+            .answered
+            .iter()
+            .map(|(backend, count)| format!("{backend} {count}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let hits = match (day.hits, &day.first_hit) {
+            (0, _) | (_, None) => "no quota hit".to_owned(),
+            (1, Some(at)) => format!("1 quota hit, first at {at} UTC"),
+            (n, Some(at)) => format!("{n} quota hits, first at {at} UTC"),
+        };
+        let _ = writeln!(out, "{date}: {requests}; answered by {answered}; {hits}");
+    }
+    out
 }

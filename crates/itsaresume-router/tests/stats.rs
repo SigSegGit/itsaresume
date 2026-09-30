@@ -52,5 +52,10 @@ fn the_journal_by_day_says_when_the_plan_ran_out() {
         "2026-09-29: 3 requests; answered by claude-code 1, lm-studio 2; 2 quota hits, first at 14:02 UTC\n\
          2026-09-30: 2 requests; answered by claude-code 2; 1 quota hit, first at 08:00 UTC\n"
     );
-    assert_eq!(summarize_by_day(r#"{"ts":"2026-09-30T08:00:00Z","outcome":"answered","backend":"lm-studio","attempts":[]}"#), "2026-09-30: 1 request; answered by lm-studio 1; no quota hit\n");
+    assert_eq!(
+        summarize_by_day(
+            r#"{"ts":"2026-09-30T08:00:00Z","outcome":"answered","backend":"lm-studio","attempts":[]}"#
+        ),
+        "2026-09-30: 1 request; answered by lm-studio 1; no quota hit\n"
+    );
 }

@@ -846,8 +846,8 @@
     },
     "CLI: stats reads the journal": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "if command == \"stats\" {\n        return stats(&config);",
-      "dead": "if command == \"stats\" && false {\n        return stats(&config);",
+      "live": "if command == \"stats\" {\n        return stats(&config, options.by_day);",
+      "dead": "if command == \"stats\" && false {\n        return stats(&config, options.by_day);",
       "expect": [
         "the_stats_command_sums_up_the_journal"
       ]
@@ -874,6 +874,38 @@
       "dead": "let _ = limit;",
       "expect": [
         "the_rate_limit_of_an_answer_is_journaled"
+      ]
+    },
+    "Stats by day: a limit not allowed is a hit": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": ".is_some_and(|status| status != \"allowed\");",
+      "dead": ".is_some_and(|status| status == \"never\");",
+      "expect": [
+        "the_journal_by_day_says_when_the_plan_ran_out"
+      ]
+    },
+    "Stats by day: the first hit stays": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "day.first_hit.get_or_insert_with(|| ts[11..16].to_owned());",
+      "dead": "day.first_hit = Some(ts[11..16].to_owned());",
+      "expect": [
+        "the_journal_by_day_says_when_the_plan_ran_out"
+      ]
+    },
+    "Stats by day: a quota attempt is a hit": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": ".filter(|a| a[\"kind\"] == \"quota_exceeded\")",
+      "dead": ".filter(|a| a[\"kind\"] == \"never\")",
+      "expect": [
+        "the_journal_by_day_says_when_the_plan_ran_out"
+      ]
+    },
+    "CLI: --by-day is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "options.by_day = true;",
+      "dead": "options.by_day = false;",
+      "expect": [
+        "the_stats_by_day_option_prints_one_line_per_day"
       ]
     }
   }
