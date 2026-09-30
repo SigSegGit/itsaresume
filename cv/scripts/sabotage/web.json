@@ -340,6 +340,22 @@
       "expect": [
         "a declared oversize body is refused at once, unread"
       ]
+    },
+    "Web: a job carries its elapsed time": {
+      "file": "src/server.js",
+      "live": "error: job.error ?? null, elapsed_ms: job.elapsed?.() ?? null };",
+      "dead": "error: job.error ?? null, elapsed_ms: null };",
+      "expect": [
+        "a job says how long it ran, from start to end"
+      ]
+    },
+    "Web: the elapsed time stops at the end": {
+      "file": "src/server.js",
+      "live": "job.elapsed = () => (job.endedAt ?? clock()) - job.startedAt;",
+      "dead": "job.elapsed = () => clock() - job.startedAt;",
+      "expect": [
+        "a job says how long it ran, from start to end"
+      ]
     }
   }
 }

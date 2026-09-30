@@ -43,22 +43,23 @@ flowchart LR
 |---|---|
 | `src/profile.js` | Profile shape; attribution matrix (`where`), lab skills R&D-only, experience order. |
 | `src/evidence.js` | Graded evidence (A artefact, B candid self-assessment, C CV claim); provenance: every CV line traces to the truth document word for word. |
-| `src/split.js` | One email, several offers: the model names line ranges inside a fence, code checks and cuts. |
-| `src/listing.js`, `src/prompt.js` | The two analysis prompts; the offer sits between random markers. |
-| `src/normalize.js` | Repairs that only move or remove (never invent); personal qualities set apart; examples merged; judged matches at half credit. |
+| `src/split.js` | One email, several offers: the model names line ranges inside a fence, code checks and cuts; every non-empty line left out of all ranges is named in a repair (never dropped silently). |
+| `src/listing.js`, `src/prompt.js` | The two analysis prompts; the offer sits between random markers. After the listing call, code adds the floor (items under a must/nice header the model dropped), removes names the offer only denies ("is not required"), and does not add again a name an analysed row already covers. The listing's JSON schema is sent only when asked (`structured`): measured, it cost the local model recall. |
+| `src/normalize.js` | Repairs that only move or remove (never invent); personal qualities set apart; examples merged (read without category words: "IIS web server" is the offer's "IIS"), languages never merged, each settled with its level; judged matches at half credit. |
 | `src/score.js` | The score and the qualification, computed from the requirement table (must ×3, nice ×1; lab ½). |
 | `src/analysis.js`, `src/guard.js` | Refusal of anything the model may not say: absent or never-claimed skills, links, contacts, markup, copied offer text, invented numbers or names. |
 | `src/tailor.js` | The CV model: main missions first, reference one most developed, short missions and R&D projects only when they back a requirement, lab skills labelled. |
 | `src/render.js`, `src/fit.js`, `src/word.js`, `src/ats.js` | docx from the template; page filling measured in Word; tagged PDF; ATS read-back. |
-| `src/llm.js` | The router's HTTP client: its own timeout (`--timeout`, above the router's), a cut answer fails at once. |
-| `src/pipeline.js` | Listing, analysis, normalisation, validation, one retry with the errors. |
-| `src/text.js`, `src/language.js` | Canonical text (NFKC, invisible marks removed), word matching; the offer's language. |
+| `src/llm.js` | The router's HTTP client: its own timeout (`--timeout`, above the router's), a cut answer fails at once; a backend name and a JSON schema are sent only when asked. |
+| `src/pipeline.js` | Listing, analysis, normalisation, validation, one retry with the errors; every raw model answer recorded (`raw.json` in the run directory), so a run can be replayed with new code and no model call. |
+| `src/text.js`, `src/language.js` | Canonical text (NFKC, invisible marks removed), word matching, the stem (a plural and one ending off, roots of four letters: "product" and "production" stay two words); the offer's language. |
 | `src/importance.js` | Must or nice from the offer's own cues ("serait un plus", "obligatoire", "Nice to have:"); the model's reading stands where the offer gives none (2.6, ADR-9). |
-| `src/report.js` | The fit report: requirements, qualification, qualities not scored, what the CV shows. |
+| `src/report.js` | The fit report: requirements, qualification, qualities not scored, the bullets the CV actually shows (after layout). |
 | `src/run.js`, `bin/itsacv.js` | One run end to end, as a library and a CLI. |
 | `src/server.js`, `src/serve.js`, `src/view.js`, `web/` | The web page: local, or public with `--public-host` (visitors, caps, owner's notes hidden). |
 | `src/lexicon.js` | Offer words and the owner's skills linked through ESCO concepts, French and English: same, near, theme. |
 | `src/intake.js` | Public mode's gate: offers only, of an offer's size; the same offer answered from its best-rated run. |
+| `src/measure.js`, `corpus/`, `scripts/measure-listing.mjs` | Quality measured on a hand-labelled corpus of synthetic offers: must/nice decided by code against the labels, listing recall per model (Sonnet 75/75, the local model 69/75 with the floor). |
 
 ## Trust boundaries
 

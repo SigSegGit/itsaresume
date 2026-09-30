@@ -409,3 +409,30 @@ test('a declared oversize body is refused at once, unread', async () => {
     app.server.close();
   }
 });
+
+// Audit 2026-09-27: the page showed no elapsed time. The job view carries
+// it, from the server's clock: while running, and fixed once done.
+test('a job says how long it ran, from start to end', async () => {
+  // The run takes 3 s of this clock, however often the page reads it.
+  let now = 1_000;
+  const clock = () => now;
+  const tailor = async () => {
+    now = 4_000;
+    return fakeResult('x');
+  };
+  const app = createApp({ token: TOKEN, clock, deps: { tailor, split: async () => ({ offers: [], repairs: [] }), status: async () => ({}) } });
+  await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
+  const port = app.server.address().port;
+  const running = { port, origin: `http://127.0.0.1:${port}` };
+  try {
+    const created = await post(running, '/api/jobs', { offers: [{ text: 'offer text', title: 'A' }] });
+    assert.equal(created.status, 202, created.text);
+    const jobs = await until(running, (list) => list.every((job) => job.status === 'done'));
+    assert.equal(jobs[0].elapsed_ms, 3_000);
+    now = 60_000;
+    const later = JSON.parse((await call(port, { path: '/api/jobs' })).text);
+    assert.equal(later[0].elapsed_ms, 3_000, 'fixed once done');
+  } finally {
+    app.server.close();
+  }
+});
