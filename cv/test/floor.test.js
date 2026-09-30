@@ -88,3 +88,15 @@ test('the listing call sends its schema only when asked', async () => {
   assert.equal(requests[1].schema?.properties?.requirements?.type, 'array');
   assert.deepEqual(requests[1].schema.properties.requirements.items.properties.importance.enum, ['must', 'nice']);
 });
+
+// 2.10, seen on a real run: the listing's "Customer meetings" was added as
+// an unmet must beside the analysed "Customer-facing meetings".
+test('a listed name whose words the analysis already names is not added twice', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const analysis = { requirements: [{ name: 'Customer-facing meetings', importance: 'must', match: 'no', skills: [], note: '' }] };
+  const { analysis: merged } = mergeListed(analysis, [
+    { name: 'Customer meetings', importance: 'must' },
+    { name: 'Customer support', importance: 'must' },
+  ]);
+  assert.deepEqual(merged.requirements.map((row) => row.name), ['Customer-facing meetings', 'Customer support']);
+});
