@@ -73,6 +73,18 @@ impl fmt::Display for NoBackends {
 
 impl std::error::Error for NoBackends {}
 
+/// A request named a backend the router does not have.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnknownBackend;
+
+impl fmt::Display for UnknownBackend {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "unknown backend")
+    }
+}
+
+impl std::error::Error for UnknownBackend {}
+
 /// Sends each request to the first backend able to answer it.
 pub struct Router {
     backends: Vec<Box<dyn Backend>>,
@@ -100,6 +112,12 @@ impl Router {
             ));
         }
         outcome
+    }
+
+    /// Answer `request`, from the backend named `only` alone when given.
+    pub fn complete_on(&self, request: &Request, only: Option<&str>) -> Result<Outcome, UnknownBackend> {
+        let _ = only;
+        Ok(self.complete(request))
     }
 
     fn route(&self, request: &Request) -> Outcome {

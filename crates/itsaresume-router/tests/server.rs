@@ -404,3 +404,25 @@ fn completions_beyond_the_cap_are_503_busy() {
         "the slots come back"
     );
 }
+
+/// 8.22: `"backend"` names the one backend to try; an unknown name is 400
+/// listing the configured ones.
+#[test]
+fn a_request_may_name_its_backend() {
+    let (address, _dir) = start(vec![
+        answers("claude-code", "from claude"),
+        answers("lm-studio", "from the local model"),
+    ]);
+    let (status, body) = post(address, r#"{"prompt": "p", "backend": "lm-studio"}"#);
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(body["backend"], "lm-studio");
+    assert_eq!(body["text"], "from the local model");
+
+    let (status, body) = post(address, r#"{"prompt": "p", "backend": "gpt"}"#);
+    assert_eq!(status, 400, "{body}");
+    let message = body["error"]["message"].as_str().unwrap_or_default();
+    assert!(message.contains("claude-code, lm-studio"), "{body}");
+
+    let (status, _) = post(address, r#"{"prompt": "p", "backend": 3}"#);
+    assert_eq!(status, 400);
+}

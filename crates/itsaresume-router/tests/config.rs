@@ -200,3 +200,27 @@ fn userinfo_in_a_base_url_is_refused_without_echoing_it() {
         );
     }
 }
+
+/// 8.22: a backend may carry a `name` (two local models side by side); the
+/// journal and the answers use it, and names are unique.
+#[test]
+fn a_backend_may_be_named_and_names_are_unique() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let journal = dir.path().join("j.jsonl");
+    let two = |second: &str| {
+        format!(
+            "journal = {journal:?}\n[[backend]]\nkind = \"lm-studio\"\nname = \"qwen\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 2\n[[backend]]\nkind = \"lm-studio\"\nname = \"{second}\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 2\n"
+        )
+    };
+    let router = Config::parse(&two("gemma")).expect("valid").router().expect("builds");
+    let outcome = router
+        .complete_on(&itsaresume_router::Request::new("p"), Some("gemma"))
+        .expect("gemma is configured");
+    assert_eq!(outcome.attempts.len(), 1);
+    assert_eq!(outcome.attempts[0].backend, "gemma");
+
+    let Err(error) = Config::parse(&two("qwen")).expect("parses").router() else {
+        panic!("two backends named qwen")
+    };
+    assert!(error.to_string().contains("qwen"), "{error}");
+}
