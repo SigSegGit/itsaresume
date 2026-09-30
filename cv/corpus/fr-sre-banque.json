@@ -1,0 +1,52 @@
+{
+  "id": "fr-sre-banque",
+  "language": "fr",
+  "offer": "Ingénieur SRE (H/F) - Paris\n\nAu sein de l'équipe plateforme, vous garantissez la disponibilité des services de paiement.\n\nMissions :\n- Exploiter des clusters Kubernetes sur AWS\n- Automatiser l'infrastructure avec Terraform et Ansible\n- Mettre en place l'observabilité (Prometheus, Grafana)\n\nProfil recherché :\n- 5 ans d'expérience minimum en production\n- Maîtrise de Linux indispensable\n- Python ou Go impératif pour l'outillage\n- Une certification AWS est un atout\n- La connaissance de Kafka serait un vrai plus\n- Anglais professionnel exigé",
+  "requirements": [
+    {
+      "name": "Kubernetes",
+      "importance": "must"
+    },
+    {
+      "name": "AWS",
+      "importance": "must",
+      "known": "wrong: \"une certification AWS est un atout\" makes AWS itself nice"
+    },
+    {
+      "name": "Terraform",
+      "importance": "must"
+    },
+    {
+      "name": "Ansible",
+      "importance": "must"
+    },
+    {
+      "name": "Prometheus",
+      "importance": "must"
+    },
+    {
+      "name": "Grafana",
+      "importance": "must"
+    },
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "Python",
+      "importance": "must"
+    },
+    {
+      "name": "Go",
+      "importance": "must"
+    },
+    {
+      "name": "Kafka",
+      "importance": "nice"
+    },
+    {
+      "name": "Anglais",
+      "importance": "must"
+    }
+  ]
+}

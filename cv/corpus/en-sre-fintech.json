@@ -1,0 +1,43 @@
+{
+  "id": "en-sre-fintech",
+  "language": "en",
+  "offer": "Site Reliability Engineer\n\nYou will be on call for a payments platform built on GCP.\n\nRequirements\n- 4+ years operating Linux systems in production\n- Kubernetes (GKE) is required\n- Solid knowledge of networking: TCP/IP, DNS, load balancing\n- Familiarity with Datadog preferred\n- Ideally, experience with Istio\n\nKubernetes certification (CKA) would be a plus. Knowledge of Spanish is optional.",
+  "requirements": [
+    {
+      "name": "GCP",
+      "importance": "must"
+    },
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "Kubernetes",
+      "importance": "must"
+    },
+    {
+      "name": "DNS",
+      "importance": "must"
+    },
+    {
+      "name": "TCP/IP",
+      "importance": "must"
+    },
+    {
+      "name": "Datadog",
+      "importance": "nice"
+    },
+    {
+      "name": "Istio",
+      "importance": "nice"
+    },
+    {
+      "name": "CKA",
+      "importance": "nice"
+    },
+    {
+      "name": "Spanish",
+      "importance": "nice"
+    }
+  ]
+}

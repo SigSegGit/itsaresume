@@ -1,0 +1,47 @@
+{
+  "id": "en-devsecops",
+  "language": "en",
+  "offer": "DevSecOps Engineer\n\nOur security team hardens the software supply chain.\n\nYou bring:\n- Hands-on experience with SAST/DAST tools (SonarQube, OWASP ZAP)\n- Container image scanning (Trivy)\n- Kubernetes admission control (OPA Gatekeeper or Kyverno)\n\nIt would be a big plus to know Sigstore. Go is a plus, as is Rust. Fluent French is mandatory.",
+  "requirements": [
+    {
+      "name": "SonarQube",
+      "importance": "must"
+    },
+    {
+      "name": "OWASP ZAP",
+      "importance": "must"
+    },
+    {
+      "name": "Trivy",
+      "importance": "must"
+    },
+    {
+      "name": "Kubernetes",
+      "importance": "must"
+    },
+    {
+      "name": "OPA Gatekeeper",
+      "importance": "must"
+    },
+    {
+      "name": "Kyverno",
+      "importance": "must"
+    },
+    {
+      "name": "Sigstore",
+      "importance": "nice"
+    },
+    {
+      "name": "Go",
+      "importance": "nice"
+    },
+    {
+      "name": "Rust",
+      "importance": "nice"
+    },
+    {
+      "name": "French",
+      "importance": "must"
+    }
+  ]
+}
