@@ -92,3 +92,4 @@ jobs:
           fetch-depth: 0
       - run: python3 scripts/check-handover.py
       - run: python3 scripts/check-testing.py
+      - run: bash scripts/test-merge-when-green.sh

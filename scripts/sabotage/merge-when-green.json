@@ -1,0 +1,33 @@
+{
+  "command": [
+    "bash",
+    "scripts/test-merge-when-green.sh"
+  ],
+  "defences": {
+    "Merge: pinned to the counted head": {
+      "file": "scripts/merge-when-green.sh",
+      "live": "gh pr merge \"$PR\" --merge --delete-branch --match-head-commit \"$head\"",
+      "dead": "gh pr merge \"$PR\" --merge --delete-branch",
+      "expect": [
+        "a_green_pr_is_merged_pinned_to_its_head",
+        "the_head_is_read_before_the_checks"
+      ]
+    },
+    "Merge: every check must pass": {
+      "file": "scripts/merge-when-green.sh",
+      "live": "if [ \"$passing\" -ne \"$total\" ]; then",
+      "dead": "if false; then",
+      "expect": [
+        "a_pending_check_stops_the_merge"
+      ]
+    },
+    "Merge: the suite's minimum of checks": {
+      "file": "scripts/merge-when-green.sh",
+      "live": "if [ \"$total\" -lt \"$MINIMUM\" ]; then",
+      "dead": "if false; then",
+      "expect": [
+        "too_few_checks_stop_the_merge"
+      ]
+    }
+  }
+}

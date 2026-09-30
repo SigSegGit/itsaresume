@@ -562,6 +562,22 @@
       "expect": [
         "a_configured_lm_studio_backend_keeps_one_slot"
       ]
+    },
+    "Config: userinfo in base_url is refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "        authority.contains('@')\n",
+      "dead": "        authority.contains('#')\n",
+      "expect": [
+        "userinfo_in_a_base_url_is_refused_without_echoing_it"
+      ]
+    },
+    "Config: only the authority is checked for userinfo": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "let authority = rest.split(['/', '?', '#']).next().unwrap_or(\"\");",
+      "dead": "let authority = rest;",
+      "expect": [
+        "userinfo_in_a_base_url_is_refused_without_echoing_it"
+      ]
     }
   }
 }

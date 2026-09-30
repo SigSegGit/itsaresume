@@ -91,6 +91,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_valid_configuration_builds_a_router` | `tests/config.rs` | The example configuration builds a router | — |
 | `lm_studio_takes_one_completion_at_a_time_by_default` | `tests/config.rs` | `lm-studio` defaults to one slot, `max_concurrent` overrides it, `claude-code` has no limit | Config: lm-studio defaults to one slot |
 | `max_concurrent_zero_or_on_claude_code_is_refused` | `tests/config.rs` | `max_concurrent = 0` cannot build a router; the field is unknown on `claude-code` | Config: max_concurrent = 0 is refused |
+| `userinfo_in_a_base_url_is_refused_without_echoing_it` | `tests/config.rs` | A `base_url` with `user@` or `user:pass@` cannot build a router, and the error echoes neither; `@` in the path is fine | Config: userinfo in base_url is refused; Config: only the authority is checked for userinfo |
 | `complete_prints_the_answer_on_stdout_and_exits_0` | `tests/cli.rs` | The answer alone goes to stdout, the backend name to stderr, exit 0, one journal line | — |
 | `a_spent_claude_plan_falls_back_to_lm_studio` | `tests/cli.rs` | **End to end**: Claude reports a usage limit, LM Studio answers, the journal records both | — |
 | `a_stopped_request_exits_3_and_never_reaches_lm_studio` | `tests/cli.rs` | **End to end**: not logged in exits 3 and LM Studio's listener sees no connection | CLI: stopped exits 3 |
@@ -119,3 +120,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_serve_command_answers_on_the_given_address` | `tests/server.rs` | `itsaresume serve --listen` as a process answers `/healthz` | — |
 | `the_committed_docker_example_parses` | `tests/config.rs` | `docker/config.example.toml` stays valid and journals into the mounted directory | — |
 | `scripts/docker-smoke.sh` (CI job `docker`) | — | The image holds the pinned `claude` CLI and not the test double; `/healthz` answers; a real request through the **real** CLI with a bogus `ANTHROPIC_API_KEY` on the container returns 502 "Not logged in" — proving the key is stripped and the stop does not fall back | — (the script states what each other outcome would mean) |
+| `a_green_pr_is_merged_pinned_to_its_head` | `scripts/test-merge-when-green.sh` | Twelve passing checks: the merge names the head it counted (`--match-head-commit`) | Merge: pinned to the counted head |
+| `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |
+| `too_few_checks_stop_the_merge` | `scripts/test-merge-when-green.sh` | One passing check out of a suite of twelve: no merge | Merge: the suite's minimum of checks |
+| `the_head_is_read_before_the_checks` | `scripts/test-merge-when-green.sh` | A push while the checks are counted: the merge names the head read before, so GitHub refuses it | Merge: pinned to the counted head |
