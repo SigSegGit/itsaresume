@@ -566,7 +566,7 @@
     "Config: userinfo in base_url is refused": {
       "file": "crates/itsaresume-router/src/config.rs",
       "live": "        authority.contains('@')\n",
-      "dead": "        false\n",
+      "dead": "        authority.contains('#')\n",
       "expect": [
         "userinfo_in_a_base_url_is_refused_without_echoing_it"
       ]
