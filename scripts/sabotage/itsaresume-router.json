@@ -614,6 +614,59 @@
         "the_system_prompt_file_is_readable_by_its_owner_only"
       ],
       "unix_only": true
+    },
+    "Named backend: only that one is tried": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "Some(backend) => vec![backend.as_ref()],",
+      "dead": "Some(_) => self.backends.iter().map(AsRef::as_ref).collect(),",
+      "expect": [
+        "a_named_backend_is_the_only_one_tried",
+        "a_request_may_name_its_backend",
+        "the_backend_option_picks_one_backend"
+      ]
+    },
+    "Named backend: found by its name": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "Some(name) => match self.backends.iter().find(|b| b.name() == name) {",
+      "dead": "Some(name) => match self.backends.iter().find(|_| !name.is_empty()) {",
+      "expect": [
+        "a_named_backend_is_the_only_one_tried",
+        "an_unknown_backend_name_is_refused_with_the_configured_names",
+        "a_request_may_name_its_backend",
+        "the_backend_option_picks_one_backend"
+      ]
+    },
+    "Config: backend names are unique": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "if !seen.insert(backend.name()) {",
+      "dead": "if seen.insert(backend.name()) && false {",
+      "expect": [
+        "a_backend_may_be_named_and_names_are_unique"
+      ]
+    },
+    "Config: a backend runs under its configured name": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "name: backend.name(),",
+      "dead": "name: String::from(\"lm-studio\"),",
+      "expect": [
+        "a_backend_may_be_named_and_names_are_unique"
+      ]
+    },
+    "Server: the request's backend is read": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "Value::String(name) => Some(name.clone()),",
+      "dead": "Value::String(_) => None,",
+      "expect": [
+        "a_request_may_name_its_backend"
+      ]
+    },
+    "CLI: --backend is read": {
+      "file": "crates/itsaresume-router/src/main.rs",
+      "live": "\"--backend\" if command == \"complete\" => options.backend = Some(value()?),",
+      "dead": "\"--backend\" if command == \"complete\" => drop(value()?),",
+      "expect": [
+        "the_backend_option_picks_one_backend"
+      ]
     }
   }
 }

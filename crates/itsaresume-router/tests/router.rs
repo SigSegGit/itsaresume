@@ -151,15 +151,27 @@ fn a_named_backend_is_the_only_one_tried() {
     let (a, a_calls) = scripted("a", Err(BackendError::QuotaExceeded("spent".into())));
     let (b, b_calls) = scripted("b", Ok("from b"));
     let dir = tempfile::tempdir().expect("temp dir");
-    let router = Router::new(vec![a, b], Journal::new(dir.path().join("j.jsonl"))).expect("backends");
+    let router =
+        Router::new(vec![a, b], Journal::new(dir.path().join("j.jsonl"))).expect("backends");
 
-    let outcome = router.complete_on(&request(), Some("b")).expect("b is configured");
+    let outcome = router
+        .complete_on(&request(), Some("b"))
+        .expect("b is configured");
     assert_eq!(outcome.result.expect("b answers").backend, "b");
     assert_eq!(a_calls.load(Ordering::SeqCst), 0, "a was tried");
 
-    let outcome = router.complete_on(&request(), Some("a")).expect("a is configured");
-    assert_eq!(outcome.result.expect_err("a is spent"), RouteError::Exhausted);
-    assert_eq!(b_calls.load(Ordering::SeqCst), 1, "b was tried after a named a");
+    let outcome = router
+        .complete_on(&request(), Some("a"))
+        .expect("a is configured");
+    assert_eq!(
+        outcome.result.expect_err("a is spent"),
+        RouteError::Exhausted
+    );
+    assert_eq!(
+        b_calls.load(Ordering::SeqCst),
+        1,
+        "b was tried after a named a"
+    );
 }
 
 #[test]
@@ -167,10 +179,16 @@ fn an_unknown_backend_name_is_refused_with_the_configured_names() {
     let (a, a_calls) = scripted("a", Ok("from a"));
     let (b, _) = scripted("b", Ok("from b"));
     let dir = tempfile::tempdir().expect("temp dir");
-    let router = Router::new(vec![a, b], Journal::new(dir.path().join("j.jsonl"))).expect("backends");
+    let router =
+        Router::new(vec![a, b], Journal::new(dir.path().join("j.jsonl"))).expect("backends");
 
-    let error = router.complete_on(&request(), Some("c")).expect_err("c is not configured");
-    assert!(error.to_string().contains("\"c\"") && error.to_string().contains("a, b"), "{error}");
+    let error = router
+        .complete_on(&request(), Some("c"))
+        .expect_err("c is not configured");
+    assert!(
+        error.to_string().contains("\"c\"") && error.to_string().contains("a, b"),
+        "{error}"
+    );
     assert_eq!(a_calls.load(Ordering::SeqCst), 0);
     let unnamed = router.complete_on(&request(), None).expect("no name");
     assert_eq!(unnamed.result.expect("a answers").backend, "a");

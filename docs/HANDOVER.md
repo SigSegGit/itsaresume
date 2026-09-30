@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.22
-TITLE: A request may name its backend (M3, first step of the generator contract)
+NEXT: 8.23
+TITLE: The generator names its backend per call (cv --backend), measuring Sonnet and Bionic from one router
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -311,7 +311,7 @@ branch with the local gates of §3 green.
   `check-testing.py` (fast CI job `handover`) now also fails when a
   defence's `live` anchor is not exactly once in its file: the anchor break
   above took 16 minutes of the sabotage job to show.
-- [ ] **8.22** A request may name its backend (M3's first step, the
+- [x] **8.22** A request may name its backend (M3's first step, the
   generator's 2.1c/2.3 need it): `POST /v1/complete` and `complete` take an
   optional `backend` (a configured backend's `name`, a new optional config
   field, unique; default the kind); named, only that backend is tried (no
@@ -319,6 +319,14 @@ branch with the local gates of §3 green.
   listing the names. Red tests: two lm-studio backends named `a` and `b`
   (scripted servers), a request naming `b` reaches only `b`; unknown `c` is
   400 with `a, b`; without a name the order and fallback are unchanged.
+  Done: `Router::complete_on`, `UnknownBackend`, config `name` (unique,
+  wrapped as `Named`), `"backend"` in the endpoint, `--backend` on the CLI;
+  five tests, six defences (verified with `-D warnings`).
+- [ ] **8.23** The generator side (in `cv/`): `complete()` in
+  `cv/src/llm.js` sends an optional `backend`; `measure-listing.mjs` takes
+  `--backend`, so one router (`sonnet-qwen.local.toml` with names
+  `sonnet` and `qwen`) measures both models (cv 2.1c). Red test: the fake
+  router in the cv tests receives `"backend": "qwen"`.
 
 ## 9. Deliberately open
 

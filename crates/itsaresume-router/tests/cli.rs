@@ -376,3 +376,42 @@ fn a_fired_billing_tripwire_stops_the_next_process_too() {
     assert_eq!(second.status.code(), Some(3), "{second:?}");
     assert!(String::from_utf8_lossy(&second.stderr).contains("latched"));
 }
+
+/// 8.22: `--backend` names the one backend to try; an unknown name is a
+/// usage error (exit 2) listing the configured names.
+#[test]
+fn the_backend_option_picks_one_backend() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (lm_url, _) = support::serve(200, LM_SUCCESS);
+    let config = config(dir.path(), FAKE_CLAUDE, &lm_url);
+    let config = config.to_str().expect("utf-8");
+
+    // A Claude that would answer: named, lm-studio answers alone.
+    let claude = [(
+        "FAKE_CLAUDE_STDOUT",
+        claude_fixture("synthetic-success.verbose.json"),
+    )];
+    let output = run(
+        &["complete", "--config", config, "--backend", "lm-studio"],
+        "p",
+        &claude,
+    );
+    assert_eq!(output.status.code(), Some(0), "{output:?}");
+    assert_eq!(String::from_utf8_lossy(&output.stdout), "Hello!");
+    assert!(
+        journal(dir.path())[0]["attempts"]
+            .as_array()
+            .is_none_or(Vec::is_empty)
+    );
+
+    let output = run(
+        &["complete", "--config", config, "--backend", "gpt"],
+        "p",
+        &claude,
+    );
+    assert_eq!(output.status.code(), Some(2), "{output:?}");
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("claude-code, lm-studio"),
+        "{output:?}"
+    );
+}

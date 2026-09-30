@@ -32,6 +32,8 @@ pub struct Config {
 pub enum BackendConfig {
     /// The `claude` CLI on the subscription.
     ClaudeCode {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
         /// The executable (a path, or a name looked up on `PATH`).
         program: PathBuf,
         /// A model alias for `claude --model`.
@@ -43,6 +45,8 @@ pub enum BackendConfig {
     },
     /// LM Studio's OpenAI-compatible server.
     LmStudio {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
         /// The endpoint, ending in `/v1`.
         base_url: String,
         /// The model id as LM Studio lists it.
@@ -63,6 +67,15 @@ impl BackendConfig {
             }
         };
         Duration::from_secs(seconds)
+    }
+
+    /// The name a request may give (`backend`) and the journal records:
+    /// the configured `name`, else the kind.
+    pub fn name(&self) -> String {
+        match self {
+            Self::ClaudeCode { name, .. } => name.clone().unwrap_or_else(|| "claude-code".into()),
+            Self::LmStudio { name, .. } => name.clone().unwrap_or_else(|| "lm-studio".into()),
+        }
     }
 
     /// How many completions may reach the backend at once (`None`: no limit).
@@ -155,12 +168,45 @@ impl Config {
                 "invalid configuration: an lm-studio base_url holds userinfo (user@ or user:password@); no credential goes in this file".into(),
             ));
         }
+        let mut seen = std::collections::HashSet::new();
+        for backend in &self.backends {
+            if !seen.insert(backend.name()) {
+                return Err(ConfigError(format!(
+                    "invalid configuration: two backends are named \"{}\" (give each a unique `name`)",
+                    backend.name()
+                )));
+            }
+        }
         let backends = self
             .backends
             .iter()
-            .map(|backend| backend.build(&self.journal))
+            .map(|backend| -> Box<dyn Backend> {
+                Box::new(Named {
+                    name: backend.name(),
+                    inner: backend.build(&self.journal),
+                })
+            })
             .collect();
         Router::new(backends, Journal::new(&self.journal))
             .map_err(|error| ConfigError(format!("invalid configuration: {error}")))
+    }
+}
+
+/// A backend under its configured name (the kind when none is given).
+struct Named {
+    name: String,
+    inner: Box<dyn Backend>,
+}
+
+impl Backend for Named {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(
+        &self,
+        request: &crate::backend::Request,
+    ) -> Result<crate::backend::Completion, crate::backend::BackendError> {
+        self.inner.complete(request)
     }
 }

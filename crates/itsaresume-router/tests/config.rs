@@ -212,7 +212,10 @@ fn a_backend_may_be_named_and_names_are_unique() {
             "journal = {journal:?}\n[[backend]]\nkind = \"lm-studio\"\nname = \"qwen\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 2\n[[backend]]\nkind = \"lm-studio\"\nname = \"{second}\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\ntimeout_secs = 2\n"
         )
     };
-    let router = Config::parse(&two("gemma")).expect("valid").router().expect("builds");
+    let router = Config::parse(&two("gemma"))
+        .expect("valid")
+        .router()
+        .expect("builds");
     let outcome = router
         .complete_on(&itsaresume_router::Request::new("p"), Some("gemma"))
         .expect("gemma is configured");

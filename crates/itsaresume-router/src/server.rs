@@ -214,12 +214,15 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
     if raw.len() > MAX_BODY_BYTES {
         return too_large();
     }
-    let inference = match parse(&raw) {
-        Ok(inference) => inference,
+    let (inference, only) = match parse(&raw) {
+        Ok(parsed) => parsed,
         Err(message) => return error(400, "bad_request", &message),
     };
 
-    let outcome = router.complete(&inference);
+    let outcome = match router.complete_on(&inference, only.as_deref()) {
+        Ok(outcome) => outcome,
+        Err(unknown) => return error(400, "bad_request", &unknown.to_string()),
+    };
     let attempts = attempts_json(&outcome.attempts);
     let (status, mut body) = match outcome.result {
         Ok(answer) => (
@@ -250,7 +253,7 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
     (status, body)
 }
 
-fn parse(raw: &[u8]) -> Result<Inference, String> {
+fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
     let value: Value = serde_json::from_slice(raw)
         .map_err(|problem| format!("the body is not JSON: {problem}"))?;
     let prompt = value["prompt"]
@@ -264,10 +267,18 @@ fn parse(raw: &[u8]) -> Result<Inference, String> {
         Value::String(system) => Some(system.clone()),
         _ => return Err("\"system\" must be a string".into()),
     };
-    Ok(Inference {
-        prompt: prompt.to_owned(),
-        system,
-    })
+    let only = match &value["backend"] {
+        Value::Null => None,
+        Value::String(name) => Some(name.clone()),
+        _ => return Err("\"backend\" must be a string".into()),
+    };
+    Ok((
+        Inference {
+            prompt: prompt.to_owned(),
+            system,
+        },
+        only,
+    ))
 }
 
 fn attempts_json(attempts: &[Attempt]) -> Value {

@@ -30,6 +30,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `quota_exceeded_falls_back_to_the_next_backend` | `tests/router.rs` | A quota error hands the request to the next backend and is recorded as an attempt | Router falls back on quota and outage |
 | `unreachable_falls_back_to_the_next_backend` | `tests/router.rs` | An outage hands the request to the next backend | Router falls back on quota and outage |
 | `other_error_stops_without_trying_the_next_backend` | `tests/router.rs` | An `Other` error is returned as `Stopped` and the next backend is **never called** (call counter at 0) | Router stops on Other |
+| `a_named_backend_is_the_only_one_tried` | `tests/router.rs` | A request naming a backend is answered by it alone; its quota is the answer, no fallback | Named backend: only that one is tried; Named backend: found by its name |
+| `an_unknown_backend_name_is_refused_with_the_configured_names` | `tests/router.rs` | An unknown name tries nothing and lists the configured names; no name keeps the order | Named backend: found by its name |
 | `every_backend_failing_with_fallback_kinds_is_exhausted_with_attempts_in_order` | `tests/router.rs` | When all fail with fallback kinds the result is `Exhausted` and attempts keep the order tried | Router falls back on quota and outage |
 | `an_empty_router_is_refused` | `tests/router.rs` | A router with no backend cannot be built | Router refuses an empty backend list |
 | `every_request_appends_one_json_line_naming_the_answering_backend` | `tests/journal.rs` | Each request appends exactly one parseable JSON line with outcome, answering backend, failed attempts, lengths, duration and a UTC timestamp | — |
@@ -96,6 +98,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `lm_studio_takes_one_completion_at_a_time_by_default` | `tests/config.rs` | `lm-studio` defaults to one slot, `max_concurrent` overrides it, `claude-code` has no limit | Config: lm-studio defaults to one slot |
 | `max_concurrent_zero_or_on_claude_code_is_refused` | `tests/config.rs` | `max_concurrent = 0` cannot build a router; the field is unknown on `claude-code` | Config: max_concurrent = 0 is refused |
 | `userinfo_in_a_base_url_is_refused_without_echoing_it` | `tests/config.rs` | A `base_url` with `user@` or `user:pass@` cannot build a router, and the error echoes neither; `@` in the path is fine | Config: userinfo in base_url is refused; Config: only the authority is checked for userinfo |
+| `a_backend_may_be_named_and_names_are_unique` | `tests/config.rs` | A configured `name` is what requests and the journal use; two backends with one name cannot build a router | Config: backend names are unique; Config: a backend runs under its configured name |
 | `complete_prints_the_answer_on_stdout_and_exits_0` | `tests/cli.rs` | The answer alone goes to stdout, the backend name to stderr, exit 0, one journal line | — |
 | `a_spent_claude_plan_falls_back_to_lm_studio` | `tests/cli.rs` | **End to end**: Claude reports a usage limit, LM Studio answers, the journal records both | — |
 | `a_stopped_request_exits_3_and_never_reaches_lm_studio` | `tests/cli.rs` | **End to end**: not logged in exits 3 and LM Studio's listener sees no connection | CLI: stopped exits 3 |
@@ -104,6 +107,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_relative_workdir_still_hands_claude_its_system_prompt` | `tests/cli.rs` | With a relative `workdir`, the file's path stays valid inside the child's working directory (passed absolute) | Claude process: system prompt file path absolute |
 | `the_config_path_can_come_from_the_environment` | `tests/cli.rs` | `ITSARESUME_CONFIG` names the configuration | — |
 | `a_bad_configuration_or_usage_exits_2` | `tests/cli.rs` | An invalid configuration or command line exits 2 with the reason | — |
+| `the_backend_option_picks_one_backend` | `tests/cli.rs` | `--backend` tries that backend alone; an unknown name exits 2 listing the names | Named backend: only that one is tried; Named backend: found by its name; CLI: --backend is read |
 | `an_empty_prompt_is_a_usage_error` | `tests/cli.rs` | A blank prompt exits 2 without calling any backend | CLI: empty prompt refused |
 | `a_fired_billing_tripwire_stops_the_next_process_too` | `tests/cli.rs` | A tripwire fired in one `itsaresume` process stops the next one (latch file beside the journal) | Billing latch: a latched backend does not start claude; Billing latch: beside the journal; Billing latch: written down for a restart |
 | `a_proxy_in_the_environment_is_never_used` | `tests/cli.rs` | `HTTP(S)_PROXY` in the environment never carries a request to LM Studio | No proxy from the environment |
@@ -111,6 +115,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_stopped_request_is_502_with_the_reason` | `tests/server.rs` | A stop (`Other`) is 502 with kind `stopped`, the backend and its message | Server: stopped is 502 |
 | `an_exhausted_request_is_503` | `tests/server.rs` | Every backend failing with a fallback kind is 503 `exhausted` with the attempts | — |
 | `a_malformed_request_is_400` | `tests/server.rs` | Non-JSON, missing/blank/non-string prompt, non-string system are 400 | Server: blank prompt is 400 |
+| `a_request_may_name_its_backend` | `tests/server.rs` | `"backend"` picks the one backend; unknown is 400 listing the names; a non-string is 400 | Named backend: only that one is tried; Named backend: found by its name; Server: the request's backend is read |
 | `an_oversized_request_is_413` | `tests/server.rs` | A body over 1 MiB is 413 | Server: oversized is 413 |
 | `health_and_unknown_paths` | `tests/server.rs` | `/healthz` 200, unknown path 404, wrong method 405 | — |
 | `a_slow_completion_does_not_block_other_requests` | `tests/server.rs` | A health check answers in under 1 s while a 3 s completion runs | Server: one thread per request |

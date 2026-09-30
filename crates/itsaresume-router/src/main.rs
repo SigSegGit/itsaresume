@@ -9,8 +9,9 @@ use std::process::ExitCode;
 
 const USAGE: &str = "\
 usage:
-  itsaresume complete [--config FILE] [--system TEXT]
-      prompt on stdin, answer on stdout, the answering backend on stderr
+  itsaresume complete [--config FILE] [--system TEXT] [--backend NAME]
+      prompt on stdin, answer on stdout, the answering backend on stderr;
+      --backend tries that configured backend alone (no fallback)
   itsaresume serve [--config FILE] [--listen ADDRESS]
       HTTP endpoint (POST /v1/complete, GET /healthz), on 127.0.0.1:8787
       unless told otherwise: it has no authentication and spends the plan
@@ -31,6 +32,7 @@ struct Options {
     config: Option<PathBuf>,
     system: Option<String>,
     listen: Option<String>,
+    backend: Option<String>,
 }
 
 fn parse(args: &[String]) -> Result<(String, Options), String> {
@@ -49,6 +51,7 @@ fn parse(args: &[String]) -> Result<(String, Options), String> {
         match flag.as_str() {
             "--config" => options.config = Some(PathBuf::from(value()?)),
             "--system" if command == "complete" => options.system = Some(value()?),
+            "--backend" if command == "complete" => options.backend = Some(value()?),
             "--listen" if command == "serve" => options.listen = Some(value()?),
             other => return Err(format!("unknown option {other:?}")),
         }
@@ -83,7 +86,7 @@ fn main() -> ExitCode {
     if command == "serve" {
         serve(&config, options.listen.as_deref().unwrap_or(DEFAULT_LISTEN))
     } else {
-        complete(&config, options.system)
+        complete(&config, options.system, options.backend.as_deref())
     }
 }
 
@@ -112,7 +115,7 @@ fn serve(config: &Config, listen: &str) -> ExitCode {
     }
 }
 
-fn complete(config: &Config, system: Option<String>) -> ExitCode {
+fn complete(config: &Config, system: Option<String>, only: Option<&str>) -> ExitCode {
     let router = match config.router() {
         Ok(router) => router,
         Err(error) => {
@@ -130,7 +133,13 @@ fn complete(config: &Config, system: Option<String>) -> ExitCode {
         return ExitCode::from(EXIT_USAGE);
     }
 
-    let outcome = router.complete(&Request { prompt, system });
+    let outcome = match router.complete_on(&Request { prompt, system }, only) {
+        Ok(outcome) => outcome,
+        Err(unknown) => {
+            eprintln!("itsaresume: {unknown}");
+            return ExitCode::from(EXIT_USAGE);
+        }
+    };
     for attempt in &outcome.attempts {
         eprintln!("itsaresume: {} failed: {}", attempt.backend, attempt.error);
     }
