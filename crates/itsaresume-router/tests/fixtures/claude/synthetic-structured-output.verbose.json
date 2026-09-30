@@ -1,0 +1,74 @@
+[
+  {
+    "type": "system",
+    "subtype": "init",
+    "session_id": "REDACTED",
+    "tools": [
+      "StructuredOutput"
+    ],
+    "mcp_servers": [],
+    "model": "claude-sonnet-5",
+    "permissionMode": "default",
+    "apiKeySource": "none",
+    "claude_code_version": "2.1.162"
+  },
+  {
+    "type": "assistant",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "REDACTED",
+          "name": "StructuredOutput",
+          "input": {
+            "requirements": [
+              {
+                "name": "Kubernetes",
+                "importance": "must"
+              },
+              {
+                "name": "Kafka",
+                "importance": "nice"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "type": "user",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "REDACTED",
+          "content": "Structured output provided successfully"
+        }
+      ]
+    }
+  },
+  {
+    "type": "result",
+    "subtype": "success",
+    "is_error": false,
+    "num_turns": 2,
+    "result": "",
+    "stop_reason": "end_turn",
+    "session_id": "REDACTED",
+    "structured_output": {
+      "requirements": [
+        {
+          "name": "Kubernetes",
+          "importance": "must"
+        },
+        {
+          "name": "Kafka",
+          "importance": "nice"
+        }
+      ]
+    }
+  }
+]

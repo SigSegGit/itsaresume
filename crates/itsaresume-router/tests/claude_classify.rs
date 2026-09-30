@@ -2,7 +2,7 @@
 //! `tests/fixtures/claude/` (observed ones where they exist, synthetic ones
 //! marked as hypotheses — see that directory's README).
 
-use itsaresume_router::claude_code::classify;
+use itsaresume_router::claude_code::{classify, classify_for};
 use itsaresume_router::{BackendError, Completion};
 use serde_json::{Value, json};
 
@@ -15,6 +15,8 @@ const OBSERVED_API_KEY: &str =
 const SYNTHETIC_SUCCESS: &str = include_str!("fixtures/claude/synthetic-success.verbose.json");
 const SYNTHETIC_USAGE_LIMIT: &str =
     include_str!("fixtures/claude/synthetic-usage-limit.verbose.json");
+const SYNTHETIC_STRUCTURED: &str =
+    include_str!("fixtures/claude/synthetic-structured-output.verbose.json");
 const SYNTHETIC_OVERLOADED: &str =
     include_str!("fixtures/claude/synthetic-overloaded.verbose.json");
 
@@ -201,4 +203,36 @@ fn output_that_is_not_the_expected_json_is_other() {
         let outcome = classify(output);
         assert_eq!(kind(&outcome), "other", "{output:?}: {outcome:?}");
     }
+}
+
+/// 8.24: with `--json-schema` (observed on 2.1.162) the answer is in
+/// `structured_output`, `result` is empty, and init lists the one tool the
+/// CLI answers through, `StructuredOutput`: it returns data and acts on
+/// nothing, so it is allowed then, and only then, and alone.
+#[test]
+fn a_schema_answer_is_its_structured_output() {
+    let answer = classify_for(SYNTHETIC_STRUCTURED, true).expect("a structured answer");
+    let value: Value = serde_json::from_str(&answer.text).expect("the answer is JSON");
+    assert_eq!(value["requirements"][1]["name"], "Kafka");
+}
+
+#[test]
+fn the_structured_output_tool_without_a_schema_is_refused() {
+    assert_eq!(kind(&classify(SYNTHETIC_STRUCTURED)), "other");
+}
+
+#[test]
+fn another_tool_beside_structured_output_is_refused() {
+    let with_bash = edited(SYNTHETIC_STRUCTURED, |init, _| {
+        init["tools"] = json!(["StructuredOutput", "Bash"]);
+    });
+    assert_eq!(kind(&classify_for(&with_bash, true)), "other");
+}
+
+#[test]
+fn a_schema_answer_without_structured_output_is_other() {
+    let missing = edited(SYNTHETIC_STRUCTURED, |_, result| {
+        result.as_object_mut().expect("object").remove("structured_output");
+    });
+    assert_eq!(kind(&classify_for(&missing, true)), "other");
 }

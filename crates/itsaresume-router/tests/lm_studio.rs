@@ -45,6 +45,7 @@ fn the_request_is_a_chat_completion_without_any_credential() {
     let request = Request {
         prompt: "Write a summary.".into(),
         system: Some("You write CVs.".into()),
+        schema: None,
     };
 
     backend(&base_url)
@@ -275,4 +276,27 @@ fn a_configured_lm_studio_backend_keeps_one_slot() {
 
     assert!(first.join().expect("first thread") && second);
     assert_eq!(overlap.lock().expect("lock").most, 1);
+}
+
+/// 8.24: a schema goes to the server as `response_format` (json_schema,
+/// strict; observed honoured by Bionic on 2026-09-30), and an answer that is
+/// not JSON is `Other`, never a success.
+#[test]
+fn a_schema_request_sends_response_format_and_needs_json() {
+    let schema = serde_json::json!({"type": "object", "properties": {"a": {"type": "string"}}});
+    let (base_url, received) = serve(200, r#"{"choices":[{"message":{"content":"{\"a\": \"x\"}"},"finish_reason":"stop"}]}"#);
+    let outcome = backend(&base_url).complete(&Request::new("p").with_schema(schema.clone()));
+    assert_eq!(kind(&outcome), "success", "{outcome:?}");
+    let body = received.recv().expect("the server saw the request").body;
+    assert_eq!(body["response_format"]["type"], "json_schema");
+    assert_eq!(body["response_format"]["json_schema"]["schema"], schema);
+    assert_eq!(body["response_format"]["json_schema"]["strict"], true);
+
+    let (base_url, _) = serve(200, SUCCESS);
+    let outcome = backend(&base_url).complete(&Request::new("p").with_schema(schema));
+    assert_eq!(kind(&outcome), "other", "{outcome:?}");
+
+    let (base_url, received) = serve(200, SUCCESS);
+    let _ = backend(&base_url).complete(&Request::new("p"));
+    assert!(received.recv().expect("seen").body.get("response_format").is_none());
 }

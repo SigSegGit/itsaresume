@@ -28,6 +28,12 @@ pub const SUBSCRIPTION_BILLING_SOURCE: &str = "none";
 /// result, so an answer that was billed per token is refused even when it
 /// succeeded (docs/ARCHITECTURE.md, "Billing guards").
 pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
+    classify_for(stdout, false)
+}
+
+/// [`classify`], for a request that asked (`schema`) for structured output.
+pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendError> {
+    let _ = schema;
     let messages: Vec<Value> = serde_json::from_str(stdout.trim()).map_err(|error| {
         BackendError::Other(format!(
             "claude output is not the expected JSON array ({error}): {}",
@@ -204,6 +210,12 @@ impl ClaudeCodeBackend {
     /// No request text is among them: the prompt goes on stdin and the system
     /// prompt in that file, since argv is length-limited, cannot hold a NUL,
     /// and is readable by every local process.
+    pub fn arguments_for(&self, system_file: &Path, schema: Option<&serde_json::Value>) -> Vec<String> {
+        let _ = schema;
+        self.arguments(system_file)
+    }
+
+    /// The arguments without a schema.
     pub fn arguments(&self, system_file: &Path) -> Vec<String> {
         let mut arguments: Vec<String> = vec![
             "-p".into(),

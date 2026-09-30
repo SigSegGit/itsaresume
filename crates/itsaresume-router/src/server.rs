@@ -276,6 +276,7 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
         Inference {
             prompt: prompt.to_owned(),
             system,
+            schema: None,
         },
         only,
     ))

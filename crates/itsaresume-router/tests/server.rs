@@ -426,3 +426,13 @@ fn a_request_may_name_its_backend() {
     let (status, _) = post(address, r#"{"prompt": "p", "backend": 3}"#);
     assert_eq!(status, 400);
 }
+
+/// 8.24: `"schema"` is a JSON Schema object, or the request is 400.
+#[test]
+fn a_schema_must_be_an_object() {
+    let (address, _dir) = start(vec![answers("lm-studio", "{\"a\": 1}")]);
+    let (status, body) = post(address, r#"{"prompt": "p", "schema": "not a schema"}"#);
+    assert_eq!(status, 400, "{body}");
+    let (status, body) = post(address, r#"{"prompt": "p", "schema": {"type": "object"}}"#);
+    assert_eq!(status, 200, "{body}");
+}
