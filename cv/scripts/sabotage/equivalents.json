@@ -141,6 +141,14 @@
       "expect": [
         "notions asked are met by notions held"
       ]
+    },
+    "Languages are never merged as examples": {
+      "file": "src/normalize.js",
+      "live": "requirement.kind !== 'quality' && languageOf(requirement, profile, lang) === null && mentions(inside, requirement.name) ? [index] : []);",
+      "dead": "requirement.kind !== 'quality' && mentions(inside, requirement.name) ? [index] : []);",
+      "expect": [
+        "languages an offer lists together are settled one by one, never merged"
+      ]
     }
   }
 }

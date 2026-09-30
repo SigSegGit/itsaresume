@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.1d
-TITLE: the equivalents of 2.7 (relate()) measured on the corpus against the synthetic profile
+NEXT: 2.10
+TITLE: near-duplicate requirement rows count a must twice (a merged group and its members named alone; a listed name close to an analysed one)
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -193,6 +193,22 @@ Traps met, each cost time once:
   Done 2026-09-30: `analyse()` records every call (`step`, `backend`,
   `text`, in order), `tailorOffer` writes `raw.json`; 1 test, 3 defences.
   Rejected runs still keep only `rejected-attempt-N.txt`.
+- [x] **2.1g** (2026-09-30, found on a real offer) Languages an offer lists
+  together ("trilingual (English, Spanish, and French or Italian)") were
+  merged as examples into one row no longer read as a language, and the run
+  was refused twice. Fixed: a language the profile names is never merged
+  (`mergeExamples`); the rerun passed first time (126 s, 0.94 page, ATS
+  ok); replays of past runs unchanged; one test, one defence.
+- [ ] **2.10** Near-duplicate rows count a must twice, seen on the same
+  real run: (a) "IIS web server" and "Apache web server" stay beside the
+  merged "NGINX / Tomcat / IIS / Apache" (a row naming a group member plus
+  generic words is not folded into the group); (b) the listing's "Customer
+  meetings" is added as an unmet must beside the analysed "Customer-facing
+  meetings" (`mergeListed` matches exact names only). Fold (a) into the
+  group when the row names one member and nothing but generic words
+  ("web server"); for (b) match a listed name to an analysed one when
+  either `statedIn` the other by content words. Red tests from those
+  names; replay the real runs; rerun the offer and compare the score.
 - [x] **2.9** The crude stem (`stem = word.slice(0, 6)` in `src/text.js`,
   copied in `src/evidence.js`) makes "product" and "production", "config"
   and "configuration", "develop" and "developer" one word: a requirement
