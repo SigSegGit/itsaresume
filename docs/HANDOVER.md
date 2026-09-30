@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.16
-TITLE: Test and doc honesty, then 8.17 (one completion at a time per lm-studio backend)
-WRITTEN-AT: 2026-09-29
-BASE: acc5284
+NEXT: 8.17
+TITLE: One completion at a time per lm-studio backend
+WRITTEN-AT: 2026-09-30
+BASE: 14a09c2
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -48,15 +48,9 @@ Bionic's single slot busy.
 own `cv/docs/HANDOVER.md`; the `/itsaresume` skill covers both. The owner's
 private notes are in `~/.itsaresume/HANDOVER-prive.md`, never here.
 
-**2026-09-28.** PR #6 and PR #7 (8.13) are merged. 8.14 (endpoint
-hardening) is done on `m1/endpoint-hardening`: JSON only (415), any `Origin`
-refused (403), loopback `Host` only (403, `/healthz` included), a declared
-body above 64 MiB answered 413 without being read (it used to abort the
-process: measured, `memory allocation … failed`), `serve` exits 1 with the
-error that stopped tiny_http, at most 4 completions at once (503 `busy`).
-Each has a red test and a sabotage defence.
-
-**2026-09-29.** 8.14 merged (PR #10). 8.15 done on
+**2026-09-29.** 8.14 (endpoint hardening: JSON only, no `Origin`, loopback
+`Host` only, huge bodies 413 unread, `serve` exits 1 on error, 4 completions
+at most) merged (PR #10). 8.15 done on
 `m1/system-prompt-file`: the system prompt reaches `claude` through
 `--system-prompt-file` (hidden option, observed on 2.1.162: UTF-8, missing
 file → exit 1 and nothing on stdout), a private file per request deleted on
@@ -65,7 +59,15 @@ return; a 100 KB prompt with a NUL used to fail the spawn. Same observation:
 its plan on the repository's drive (`relpath`); put a partial plan in
 `target/`.
 
-Next: 8.16 → 8.17. Still open from 8.14(d)'s note: the cap is global (4),
+**2026-09-30.** 8.16 done on `m1/test-doc-honesty`:
+`scripts/check-testing.py` (CI job with `check-handover.py`) holds every
+TESTING.md row to the sabotage plan's `expect` lists, both ways (it found 25
+gaps, all closed: wrong citations removed, 11 missing rows added). The
+timeout test now proves the child dead: the fake creates a file if it
+outlives its sleep, and the defence that drops `child.kill()` turns it red.
+`check-handover.py`'s BASE check is no longer vacuous (`main` has merges).
+
+Next: 8.17. Still open from 8.14(d)'s note: the cap is global (4),
 not **one at a time per `lm-studio` backend**; with Bionic's single slot, a
 second local request still waits on Bionic, not on the router (8.17).
 
@@ -256,7 +258,7 @@ branch with the local gates of §3 green.
   red test: a 100 KB system prompt reaches the fake intact. Done: `SystemFile`
   in `claude_code.rs` (`create_new`, 0600 on Unix, pid + counter, absolute
   path, removed on drop); six tests, four sabotage defences.
-- [ ] **8.16** Test and doc honesty (all confirmed, low): TESTING.md cites
+- [x] **8.16** Test and doc honesty (all confirmed, low): TESTING.md cites
   defences whose `expect` lists do not name those tests — make each row match
   `scripts/sabotage/itsaresume-router.json` exactly (a small gate script can
   check it); the timeout test must prove the child is dead (fake writes its
