@@ -73,3 +73,12 @@ test('a denied must that the offer still wants stays, and so does a plain mentio
   const plain = await listRequirements({ offer: 'Vous déployez sur Kubernetes. Terraform is not required.', llm: answering([{ name: 'Kubernetes', importance: 'must' }, { name: 'Terraform', importance: 'must' }]) });
   assert.deepEqual(plain.map((item) => item.name), ['Kubernetes']);
 });
+
+// 8.25: the listing asks for structured output (router 8.24), so no answer
+// is lost to a JSON document wrapped in prose.
+test('the listing call sends its schema', async () => {
+  const requests = [];
+  await listRequirements({ offer: 'Kafka.', llm: async (request) => (requests.push(request), { text: '{"requirements": []}' }) });
+  assert.equal(requests[0].schema?.properties?.requirements?.type, 'array');
+  assert.deepEqual(requests[0].schema.properties.requirements.items.properties.importance.enum, ['must', 'nice']);
+});
