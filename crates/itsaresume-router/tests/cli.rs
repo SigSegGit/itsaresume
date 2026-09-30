@@ -593,3 +593,40 @@ fn the_stats_by_day_option_prints_one_line_per_day() {
         "2026-09-30: 1 request; answered by lm-studio 1; no quota hit\n"
     );
 }
+
+/// 8.35: `--kind classify` on the command line, as `"kind"` on the endpoint.
+#[test]
+fn the_kind_option_reaches_a_classify_only_backend() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let (lm_url, _) = support::serve(200, LM_SUCCESS);
+    let config = dir.path().join("config.toml");
+    std::fs::write(
+        &config,
+        format!(
+            "journal = {}\n[[backend]]\nkind = \"lm-studio\"\nbase_url = {}\nmodel = \"m\"\nserves = [\"classify\"]\n",
+            Value::String(dir.path().join("journal.jsonl").to_string_lossy().into_owned()),
+            Value::String(lm_url)
+        ),
+    )
+    .expect("config");
+    let config = config.to_str().expect("utf-8");
+
+    let classified = run(
+        &["complete", "--config", config, "--kind", "classify"],
+        "p",
+        &[],
+    );
+    assert_eq!(classified.status.code(), Some(0), "{classified:?}");
+    let generated = run(&["complete", "--config", config], "p", &[]);
+    assert_eq!(generated.status.code(), Some(2), "{generated:?}");
+    assert!(
+        String::from_utf8_lossy(&generated.stderr).contains("Generate"),
+        "{generated:?}"
+    );
+    let unknown = run(
+        &["complete", "--config", config, "--kind", "translate"],
+        "p",
+        &[],
+    );
+    assert_eq!(unknown.status.code(), Some(2), "{unknown:?}");
+}
