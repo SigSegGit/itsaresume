@@ -34,4 +34,8 @@ kind = "lm-studio"
 base_url = "http://gpu-machine.example-tailnet.ts.net:1234/v1"
 # The model identifier as LM Studio lists it (GET /v1/models).
 model = "example-model-id"
+# Waiting for a free slot counts against this timeout.
 timeout_secs = 300
+# Completions on the server at once (1 when absent: a local server usually
+# has one slot, and a request queued there outlives the caller's timeout).
+# max_concurrent = 1

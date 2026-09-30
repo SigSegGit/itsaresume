@@ -79,12 +79,18 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `other_error_statuses_stop_with_the_servers_message` | `tests/lm_studio.rs` | 400 (other than no model), 401, 404, 500 are `Other` carrying LM Studio's message | LM Studio: other statuses stop |
 | `a_success_without_an_answer_is_other` | `tests/lm_studio.rs` | A 2xx without an answer (empty choices, not JSON, no content) is `Other` | — |
 | `a_truncated_or_empty_answer_is_other` | `tests/lm_studio.rs` | An answer cut by the length limit, or empty, is `Other`, never a success | A truncated answer is not a success; An empty answer is not a success |
+| `two_requests_never_overlap_on_a_one_slot_backend` | `tests/lm_studio.rs` | Two slow requests at once: the second waits in the router, never on the one-slot server | LM Studio: one completion at a time on the server |
+| `waiting_for_the_slot_past_the_timeout_is_unreachable` | `tests/lm_studio.rs` | A request still waiting for the slot at its timeout is `Unreachable` (falls back) and never reaches the server | LM Studio: one completion at a time on the server; LM Studio: waiting for the slot counts against the timeout |
+| `a_two_slot_backend_lets_two_requests_overlap` | `tests/lm_studio.rs` | `max_concurrent = 2` lets two completions overlap | LM Studio: max_concurrent sets the slots |
+| `a_configured_lm_studio_backend_keeps_one_slot` | `tests/lm_studio.rs` | A router built from a file without `max_concurrent` keeps one completion on the server | LM Studio: one completion at a time on the server; Config: lm-studio defaults to one slot; Config: the slot limit reaches the backend |
 | `the_committed_example_parses` | `tests/config.rs` | `config.example.toml` stays a valid configuration | — |
 | `backends_keep_their_order_and_settings` | `tests/config.rs` | Backends keep file order; settings and the 300 s default timeout are applied | — |
 | `an_unknown_backend_kind_is_refused` | `tests/config.rs` | A kind outside `claude-code`/`lm-studio` (e.g. `anthropic-api`) is refused, naming it | — (closed enum: nothing to remove) |
 | `a_credential_field_is_refused` | `tests/config.rs` | `api_key` or `authorization` in a backend is an error, not an ignored line | Config: credential fields refused |
 | `a_configuration_without_backends_cannot_build_a_router` | `tests/config.rs` | An empty backend list is refused when building the router | — |
 | `a_valid_configuration_builds_a_router` | `tests/config.rs` | The example configuration builds a router | — |
+| `lm_studio_takes_one_completion_at_a_time_by_default` | `tests/config.rs` | `lm-studio` defaults to one slot, `max_concurrent` overrides it, `claude-code` has no limit | Config: lm-studio defaults to one slot |
+| `max_concurrent_zero_or_on_claude_code_is_refused` | `tests/config.rs` | `max_concurrent = 0` cannot build a router; the field is unknown on `claude-code` | Config: max_concurrent = 0 is refused |
 | `complete_prints_the_answer_on_stdout_and_exits_0` | `tests/cli.rs` | The answer alone goes to stdout, the backend name to stderr, exit 0, one journal line | — |
 | `a_spent_claude_plan_falls_back_to_lm_studio` | `tests/cli.rs` | **End to end**: Claude reports a usage limit, LM Studio answers, the journal records both | — |
 | `a_stopped_request_exits_3_and_never_reaches_lm_studio` | `tests/cli.rs` | **End to end**: not logged in exits 3 and LM Studio's listener sees no connection | CLI: stopped exits 3 |
