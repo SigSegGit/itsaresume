@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.31
-TITLE: ROADMAP.md brought up to date with 8.17-8.30 (M1 closed, M3 started)
+NEXT: 8.32
+TITLE: The journal keeps the rate-limit event (status, type, overage) of each Claude answer (M4)
 WRITTEN-AT: 2026-09-30
 BASE: 14a09c2
 -->
@@ -412,11 +412,19 @@ branch with the local gates of §3 green.
   `src/stats.rs`; three tests, five defences; on the owner's own journal
   (56 requests) it read 40 answered by the local model (median 48 s), 13
   by Claude (26 s). README documents `--backend`, `--schema`, `stats`.
-- [ ] **8.31** `docs/ROADMAP.md` says what is done and what is next: bring
+- [x] **8.31** `docs/ROADMAP.md` says what is done and what is next: bring
   it up to 8.17-8.30 (one slot per local backend, named backends,
   structured output, the tripwires, stats), close M1 if nothing of it is
   left but 8.12 (the owner's token), and write M3's next items from cv
-  2.3 (the analysis schema, measured before it is sent).
+  2.3 (the analysis schema, measured before it is sent). Done: M1 row
+  and contents, M3 and M4 marked started, M3's "own repository" corrected.
+- [ ] **8.32** M4's second half starts in the journal: a Claude answer's
+  `rate_limit_event` (`status`, `rateLimitType`, `isUsingOverage`, never
+  `resetsAt` precision beyond the minute) goes into its journal line as
+  `rate_limit`, so `stats` can later say when the plan ran out. The
+  `Completion` gains an optional `meta` the Claude backend fills; the
+  journal writes it. Red tests: the observed success journaled with its
+  `rate_limit`; an LM Studio answer without one.
 
 ## 9. Deliberately open
 
