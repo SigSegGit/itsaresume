@@ -170,3 +170,27 @@ max_concurrent = 1
 ";
     assert!(Config::parse(claude).is_err());
 }
+
+/// A `base_url` with userinfo would be sent as Basic auth (a credential) and
+/// echoed in every error and journal line: refused, without echoing it.
+#[test]
+fn userinfo_in_a_base_url_is_refused_without_echoing_it() {
+    for url in ["http://alice:s3cret@h:1234/v1", "http://alice@h:1234/v1"] {
+        let text = format!(
+            "journal = \"j.jsonl\"\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{url}\"\nmodel = \"m\"\n"
+        );
+        let config = Config::parse(&text).expect("parses");
+        let Err(error) = config.router() else {
+            panic!("{url}: userinfo must not build a router")
+        };
+        let message = error.to_string();
+        assert!(message.contains("base_url"), "{message}");
+        assert!(!message.contains("alice") && !message.contains("s3cret"), "{message}");
+    }
+    for url in ["http://h:1234/v1", "http://h:1234/v1/@x"] {
+        let text = format!(
+            "journal = \"j.jsonl\"\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{url}\"\nmodel = \"m\"\n"
+        );
+        assert!(Config::parse(&text).expect("parses").router().is_ok(), "{url}");
+    }
+}
