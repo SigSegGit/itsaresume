@@ -55,3 +55,21 @@ test('an unreadable listing still keeps the floor', async () => {
   const listed = await listRequirements({ offer: startup, llm: async () => ({ text: 'no json' }) });
   assert.ok(listed.some((item) => item.name === 'Rust'));
 });
+
+// 2.1f: a name the offer only denies leaves the listing (both models listed
+// "Kubernetes is not required for this role" on the corpus).
+const corpusOffer = (id) => JSON.parse(readFileSync(new URL(`../corpus/${id}.json`, import.meta.url), 'utf8')).offer;
+
+test('a name the offer only denies leaves the listing', async () => {
+  for (const [id, name] of [['en-cloud-architect', 'Kubernetes'], ['fr-ingenieur-data-platform', 'Flink']]) {
+    const listed = await listRequirements({ offer: corpusOffer(id), llm: answering([{ name, importance: 'must' }, { name: 'Python', importance: 'must' }]) });
+    assert.ok(!listed.some((item) => item.name === name), `${id}: ${name} kept`);
+  }
+});
+
+test('a denied must that the offer still wants stays, and so does a plain mention', async () => {
+  const esn = await listRequirements({ offer: corpusOffer('fr-devops-esn'), llm: answering([{ name: 'Ansible', importance: 'nice' }]) });
+  assert.ok(esn.some((item) => item.name === 'Ansible'), "\"n'est pas obligatoire mais sera appréciée\" is still wanted");
+  const plain = await listRequirements({ offer: 'Vous déployez sur Kubernetes. Terraform is not required.', llm: answering([{ name: 'Kubernetes', importance: 'must' }, { name: 'Terraform', importance: 'must' }]) });
+  assert.deepEqual(plain.map((item) => item.name), ['Kubernetes']);
+});
