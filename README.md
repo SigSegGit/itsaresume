@@ -8,7 +8,16 @@ that can answer it, among backends that are **never billed per token**:
 2. **LM Studio** on a local GPU machine, reached over Tailscale through its
    OpenAI-compatible API.
 3. **A small local model** on a Raspberry Pi or a small VM, for light sorting
-   and classification only — never for long text *(milestone M2, not built)*.
+   and classification only — never for long text *(M2: the router side is
+   built, `kind` and `serves`; the runtime and model are not chosen)*.
+
+"Never billed per token" is enforced, not assumed: no backend has a
+credential field, metered variables are removed before `claude` runs, and
+tripwires refuse an answer the CLI reports as API-key billed or as extra
+usage (overage), then latch so no further request is sent. The overage
+tripwire acts **after** the call that reported it: that one was already
+billed. Keep extra usage off on the account; the tripwire is a detector,
+not a prevention.
 
 It exists to feed the CV generator in [`cv/`](cv/README.md) (Node.js): an
 offer in, a one-page CV and an honest qualification report out, every
