@@ -142,3 +142,18 @@ test('in public mode the page offers one offer at a time, with no email splittin
   assert.match(page.$('drop-help').textContent, /Alex MARTIN/);
   page.close();
 });
+
+// Regression of 2026-10-01: the public status lost `verdicts` and `truth`
+// (the owner's assessment stays private) and the page read
+// `profile.verdicts.verified`: "Statut indisponible", pills stuck. The page
+// must render the public status as served.
+test('the public status renders without the owner assessment', async () => {
+  const publicStatus = { profile: { name: 'Alex Martin', skills: 12, lab: 2, never: 1 }, router: { up: true }, layout: { word: true }, public: true };
+  const page = pageWith([], {}, { '/api/status': () => ({ body: publicStatus }) });
+  await page.settle();
+  assert.doesNotMatch(page.$('status-profile').textContent, /indisponible/);
+  assert.match(page.$('status-profile').textContent, /Alex Martin · 12 compétences/);
+  assert.match(page.$('status-router').textContent, /Routeur joignable/);
+  assert.match(page.$('status-layout').textContent, /Word/);
+  page.close();
+});

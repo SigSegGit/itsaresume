@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.3
-TITLE: measure the analysis call with a JSON schema (closed skill ids) on the corpus, both models, before any use
+NEXT: 3.1
+TITLE: generation on the Freebox VM, Claude first (ADR-11): a LibreOffice layout engine measured against Word
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -258,6 +258,32 @@ Traps met, each cost time once:
   kept since with their endings and tests. Profile provenance: 0 errors.
   The replay scripts' static imports were fixed (`CV_SRC`, dynamic).
 
+- [ ] **3.x** Generation on the VM, Claude first (ADR-11, the owner's
+  decision of 2026-10-01; ADR-7 kept the pipeline on the laptop). Steps:
+  - [ ] **3.1** A LibreOffice layout engine (`src/libre.js`, same
+    interface as `word.js`: `measure(docx, pdf?) -> {pages}`), used when
+    Word is absent and `soffice` is present: docx -> PDF headless, page
+    count and fill read from the PDF (PyMuPDF or pdf text). Red tests with
+    a fake `soffice`; then measure on the corpus against Word (same CVs:
+    pages and fill within 3 %?) before trusting it. Linux side checked in
+    WSL (install libreoffice there) and on the VM.
+  - [ ] **3.2** An image for the generator (Node + LibreOffice + fonts of
+    the template), and a compose on the VM: router (existing image, the
+    `claude` CLI, `CLAUDE_CODE_OAUTH_TOKEN` from the owner's `claude
+    setup-token`, never committed) + generator `--public-host`; Caddy
+    points `cv.<domain>` at it instead of the laptop tunnel. The private
+    profile (`~/.itsaresume/profile.json` and its truth document) copied to
+    the VM by a script, never in the image.
+  - [ ] **3.3** The local model as a second backend when the laptop is on:
+    the laptop opens a tunnel that exposes Bionic (54321) to the VM, the
+    VM's router lists it after Claude (`timeout_secs` below the
+    generator's); laptop off and Claude spent: the page says "réessaie plus
+    tard" (an `Exhausted` mapped to a clear message), never a crash.
+  - [ ] **3.4** Real check from outside, laptop OFF: one new offer on
+    cv.<domain>, a CV served by Claude from the VM; then the Bionic path
+    with the laptop on.
+  Waits on the owner: `claude setup-token` (the token goes into the VM's
+  env file); the VM's RAM and disk for LibreOffice (about 1 GB).
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
 shown by the CLI and the page; the page's message no longer claims "kept as

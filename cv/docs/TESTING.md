@@ -450,6 +450,7 @@ property it proves.
 | a match the profile does not name is shown as the model reading, to verify, in French | Page: gap labels in French; Page: a judged match shows its note, to verify |
 | the page sends its token with every call, reads included (in public mode it names the visitor) | Page: the token goes with reads |
 | in public mode the page offers one offer at a time, with no email splitting | Page: public mode hides splitting |
+| the public status renders without the owner assessment | Page: the public status renders without verdicts |
 
 ## `test/word.test.js`
 
@@ -465,6 +466,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**306 tests, 251 of them covered by at least one sabotage defence.**
+**307 tests, 252 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
