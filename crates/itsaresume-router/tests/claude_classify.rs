@@ -301,3 +301,15 @@ fn a_claude_answer_carries_its_rate_limit_event() {
     let without = edited(SYNTHETIC_SUCCESS, |_, _| {});
     assert_eq!(classify(&without).expect("an answer").rate_limit, None);
 }
+
+/// Same promise for the CLI: stdout that is not the JSON array is counted in
+/// the error, never quoted into the journal.
+#[test]
+fn stdout_that_is_not_json_is_not_quoted_in_the_error() {
+    let Err(error) = classify_for("Jane Doe is not JSON", false) else {
+        panic!("not an answer")
+    };
+    assert_eq!(error.kind(), "other");
+    assert!(!error.message().contains("Jane Doe"), "{error}");
+    assert!(error.message().contains("20 characters"), "{error}");
+}
