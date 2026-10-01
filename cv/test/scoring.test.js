@@ -161,3 +161,28 @@ test('the report counts the bullets the CV shows, not the model\'s picks', () =>
   assert.match(text, /## Experiences on the CV\n\n- \*\*SRE\*\* — Acme: 3 bullet\(s\)/);
   assert.match(report(analysis, v4(), { backend: 'b', attempts: 1 }), /## Experiences put forward/, 'without a rendered CV, the picks');
 });
+
+// 2.11: a gap the owner has not settled yet (the profile's `pending` list,
+// compiled from what waits for his confirmation) is a profile question, not
+// a proved lack: the report says so, so he knows which answer moves the score.
+test('a gap the profile lists as pending is marked as waiting for the owner', () => {
+  const profile = { ...v4(), pending: ['DNS', 'Windows Server'] };
+  const { analysis } = normalize(answer({
+    requirements: [
+      { name: 'PostgreSQL', importance: 'must', match: 'yes', skills: ['postgresql'], note: '' },
+      { name: 'DNS', importance: 'must', match: 'no', skills: [], note: '' },
+      { name: 'Kafka', importance: 'must', match: 'no', skills: [], note: '' },
+    ],
+  }), profile, {});
+  const text = report(analysis, profile, { backend: 'b', attempts: 1 });
+  assert.match(text, /^- DNS \(must\) — waiting for your confirmation \(pending in the profile\)$/m);
+  assert.match(text, /^- Kafka \(must\)$/m, 'a gap not pending stays plain');
+  assert.match(text, /\*\*1 gap waits for your confirmation\*\*: settling it may move the score\./);
+});
+
+test('without a pending list the gaps are unchanged', () => {
+  const { analysis } = normalize(answer({ requirements: [{ name: 'DNS', importance: 'must', match: 'no', skills: [], note: '' }] }), v4(), {});
+  const text = report(analysis, v4(), { backend: 'b', attempts: 1 });
+  assert.match(text, /^- DNS \(must\)$/m);
+  assert.ok(!/waits for your confirmation/.test(text));
+});
