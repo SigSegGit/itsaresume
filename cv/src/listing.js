@@ -158,8 +158,10 @@ const DENIAL = /(?<![\p{L}\p{N}])(?:pas|not|non|no)\s+(?:\p{L}+\s+)?(?:obligatoi
  * not required for this role" on the corpus.
  */
 function onlyDenied(offer, name) {
-  const sentences = canonical(String(offer ?? ''))
-    .split(/\r?\n|(?<=[.!?;])\s+/)
-    .filter((sentence) => mentions(sentence, name));
-  return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence) && !NICE.test(sentence));
+  // The clause is the judge, not the sentence: "Terraform est obligatoire,
+  // Kubernetes n'est pas requis" denies only Kubernetes.
+  const clauses = canonical(String(offer ?? ''))
+    .split(/\r?\n|(?<=[.!?;])\s+|,|\s;\s/)
+    .filter((clause) => mentions(clause, name));
+  return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause) && !NICE.test(clause));
 }
