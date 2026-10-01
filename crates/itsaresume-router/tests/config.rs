@@ -255,3 +255,23 @@ fn serves_declares_the_kinds_and_none_is_refused() {
     };
     assert!(error.to_string().contains("serves"), "{error}");
 }
+
+/// `Instant::now() + Duration::from_secs(u64::MAX)` panics: a timeout that
+/// large is a configuration error naming `timeout_secs`, for either kind.
+#[test]
+fn a_timeout_too_large_for_a_deadline_is_refused() {
+    let text = |kind_lines: &str, secs: &str| {
+        format!("journal = \"j.jsonl\"\n[[backend]]\n{kind_lines}\ntimeout_secs = {secs}\n")
+    };
+    let lm = "kind = \"lm-studio\"\nbase_url = \"http://h/v1\"\nmodel = \"m\"";
+    let claude = "kind = \"claude-code\"\nprogram = \"claude\"";
+    for kind_lines in [lm, claude] {
+        let config = Config::parse(&text(kind_lines, "18446744073709551615")).expect("parses");
+        let Err(error) = config.router() else {
+            panic!("u64::MAX seconds cannot be a deadline")
+        };
+        assert!(error.to_string().contains("timeout_secs"), "{error}");
+        let config = Config::parse(&text(kind_lines, "86400")).expect("parses");
+        assert!(config.router().is_ok());
+    }
+}
