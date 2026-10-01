@@ -487,3 +487,29 @@ test('outside public mode the owner still sees the repairs and the real error', 
     app.server.close();
   }
 });
+
+// Seen 2026-10-01 from a phone: closing and reopening cv.<domain> during a
+// several-minute run showed nothing, the CV unreachable. The visitor is
+// kept in a cookie: a reload is the same visitor, with its jobs.
+test('a reloaded public page is the same visitor, and sees its running job', async (t) => {
+  const app = await startPublic(t);
+  const first = await call(app.port, { headers: app.host });
+  const cookie = String(first.headers['set-cookie'] ?? '');
+  assert.match(cookie, /itsacv_visitor=[0-9a-f]{48}/);
+  assert.match(cookie, /HttpOnly/i);
+  assert.match(cookie, /Secure/i);
+  assert.match(cookie, /SameSite=Strict/i);
+  const token = first.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+  const headers = { ...app.host, Origin: 'https://cv.example.org', 'X-CSRF-Token': token, 'Content-Type': 'application/json' };
+  assert.equal((await call(app.port, { method: 'POST', path: '/api/jobs', headers, body: JSON.stringify({ offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] }) })).status, 202);
+
+  const visitorCookie = cookie.split(';')[0];
+  const again = await call(app.port, { headers: { ...app.host, Cookie: visitorCookie } });
+  const sameToken = again.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+  assert.equal(sameToken, token, 'a reload keeps the visitor');
+  const jobs = JSON.parse((await call(app.port, { path: '/api/jobs', headers: { ...app.host, 'X-CSRF-Token': sameToken } })).text);
+  assert.equal(jobs.length, 1);
+
+  const stranger = await call(app.port, { headers: { ...app.host, Cookie: 'itsacv_visitor=' + 'f'.repeat(48) } });
+  assert.notEqual(stranger.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1], token, 'an unknown cookie is a new visitor');
+});
