@@ -1,0 +1,23 @@
+# The router on the VM (ADR-11). Copy to $DATA/router.toml.
+# Claude first, on the owner's subscription: CLAUDE_CODE_OAUTH_TOKEN in
+# $DATA/.env (claude setup-token). Without the token, leave this block out:
+# a Claude that is not logged in STOPS the request ("Other"), it does not
+# fall back.
+journal = "/home/node/journal/journal.jsonl"
+
+[[backend]]
+kind = "claude-code"
+name = "claude"
+program = "claude"
+model = "sonnet"
+timeout_secs = 900
+
+# The laptop's local model, through the tunnel the laptop opens when it is
+# on (deploy/laptop/bionic-tunnel.sh). Off: an outage, the request is
+# exhausted, the page says so.
+[[backend]]
+kind = "lm-studio"
+name = "bionic"
+base_url = "http://127.0.0.1:54321/v1"
+model = "qwen/qwen3-coder-next"
+timeout_secs = 1500

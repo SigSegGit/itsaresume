@@ -1,0 +1,46 @@
+# ADR-11: the CV generator and its router on the always-on VM, Claude first.
+# Host networking: the router reaches the laptop's local model through the
+# tunnel the laptop opens on the VM's 127.0.0.1:54321 (deploy/laptop/
+# bionic-tunnel.sh), and the generator listens where Caddy already proxies
+# cv.<domain> (127.0.0.1:18790). Nothing listens beyond 127.0.0.1.
+#
+# Private, never in the repository, in $DATA (default ~/itsacv-data):
+#   profile.json + sources/   the owner's compiled profile (copied by the owner)
+#   router.toml               the router configuration (see router.example.toml)
+#   .env                      CLAUDE_CODE_OAUTH_TOKEN=... (claude setup-token)
+#                             CV_HOST=cv.example.org
+#   out/ journal/             runs and the router journal
+#
+#   DATA=~/itsacv-data docker compose up -d --build
+services:
+  router:
+    image: itsaresume-router:vm
+    build: ../../..
+    network_mode: host
+    env_file:
+      - path: ${DATA:-~/itsacv-data}/.env
+        required: false
+    volumes:
+      - ${DATA:-~/itsacv-data}/router.toml:/etc/itsaresume/config.toml:ro
+      - ${DATA:-~/itsacv-data}/journal:/home/node/journal
+    command: ["serve", "--config", "/etc/itsaresume/config.toml", "--listen", "127.0.0.1:8789"]
+    init: true
+    restart: unless-stopped
+
+  generator:
+    image: itsacv:vm
+    build: ../..
+    network_mode: host
+    depends_on: [router]
+    env_file:
+      - path: ${DATA:-~/itsacv-data}/.env
+        required: false
+    environment:
+      ITSACV_PROFILE: /data/profile.json
+    volumes:
+      - ${DATA:-~/itsacv-data}/profile.json:/data/profile.json:ro
+      - ${DATA:-~/itsacv-data}/sources:/data/sources:ro
+      - ${DATA:-~/itsacv-data}/out:/data/out
+    command: ["sh", "-c", "exec node bin/itsacv.js serve --port 18790 --url http://127.0.0.1:8789 --timeout 1800 --out /data/out --public-host \"$$CV_HOST\" --per-day 20 --per-hour 3 --max-queued 3"]
+    init: true
+    restart: unless-stopped
