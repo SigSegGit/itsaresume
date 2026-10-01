@@ -184,3 +184,15 @@ test('text reaching the docx is escaped, never read as XML', () => {
   const xml = new PizZip(docx).file('word/document.xml').asText();
   assert.ok(xml.includes('SRE &amp; DBA &lt;w:p/&gt;'));
 });
+
+// Red team: ".NET" is a platform, not a domain; real links stay refused.
+test('a name written with a capital .NET is plain, a real domain is not', () => {
+  assert.equal(cleanName('ASP.NET'), 'ASP.NET');
+  assert.equal(cleanName('VB.NET'), 'VB.NET');
+  assert.equal(cleanName('ASP.NET Core'), 'ASP.NET Core');
+  assert.equal(cleanName('evil.example.com'), null);
+  assert.equal(cleanName('evil.net'), null);
+  assert.equal(cleanName('evil.example.NET'), null);
+  assert.equal(cleanName('ASP.NET.evil.com'), null);
+  assert.equal(cleanName('Socket.io'), null);
+});
