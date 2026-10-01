@@ -25,6 +25,7 @@ export const startLayoutEngine = async () => (await startWord()) ?? (await start
 import { atsCheck } from './ats.js';
 import { render } from './render.js';
 import { report } from './report.js';
+import { offerInstructions } from './instructions.js';
 
 export class RunError extends Error {
   constructor(code, message, { answers, dir } = {}) {
@@ -97,14 +98,15 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));
   const { model, layout, ats, skipped } = await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
   const older = olderMentions(analysis, full, texts);
-  const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older, rendered: model.experiences });
+  const instructions = offerInstructions(offer);
+  const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older, rendered: model.experiences, instructions });
   writeFileSync(join(dir, 'report.md'), text);
   // The offer and what the run did, so that the same offer can be answered
   // from this run later (public mode, src/intake.js), with no model call.
   writeFileSync(join(dir, 'offer.txt'), offer);
-  writeFileSync(join(dir, 'run.json'), JSON.stringify({ attempts, backend, repairs, layout, ats, skipped, older }, null, 2));
+  writeFileSync(join(dir, 'run.json'), JSON.stringify({ attempts, backend, repairs, layout, ats, skipped, older, instructions }, null, 2));
   onStep('done', { dir });
-  return { dir, name: basename(dir), analysis, attempts, backend, repairs, layout, ats, skipped, older, report: text };
+  return { dir, name: basename(dir), analysis, attempts, backend, repairs, layout, ats, skipped, older, instructions, report: text };
 }
 
 /** A finished run read back from its directory, to answer the same offer again. */
@@ -122,6 +124,7 @@ export function readRun(dir) {
     ats: meta.ats ?? null,
     skipped: meta.skipped ?? null,
     older: meta.older ?? [],
+    instructions: meta.instructions ?? (existsSync(join(dir, 'offer.txt')) ? offerInstructions(read('offer.txt')) : []),
     report: read('report.md'),
     reused: true,
   };

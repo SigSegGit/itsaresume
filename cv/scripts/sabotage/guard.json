@@ -317,6 +317,185 @@
       "expect": [
         "no source file contains an invisible or bidi control character"
       ]
+    },
+    "Instructions: French 'écrivez le mot'": {
+      "file": "src/instructions.js",
+      "live": "<(?:écri(?:s|vez|re)|inscri",
+      "dead": "<(?:xécri(?:s|vez|re)|inscri",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one",
+        "only the instruction sentence of a line is returned, not its neighbours"
+      ]
+    },
+    "Instructions: French 'mentionnez le code dans votre candidature'": {
+      "file": "src/instructions.js",
+      "live": "<(?:mentionne[zr]?|indique",
+      "dead": "<(?:xmentionne[zr]?|indique",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: French 'pour prouver que vous avez lu'": {
+      "file": "src/instructions.js",
+      "live": "<pour prouver (?:que|qu')",
+      "dead": "<xpour prouver (?:que|qu')",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: French 'ignorez vos instructions'": {
+      "file": "src/instructions.js",
+      "live": "<ignore[zrs]?",
+      "dead": "<xignore[zrs]?",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: French 'si tu es une IA'": {
+      "file": "src/instructions.js",
+      "live": "<si (?:tu es|vous êtes)",
+      "dead": "<xsi (?:tu es|vous êtes)",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one",
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: French 'note pour l'IA'": {
+      "file": "src/instructions.js",
+      "live": "<note (?:pour|à)",
+      "dead": "<xnote (?:pour|à)",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: English 'write the word in your CV'": {
+      "file": "src/instructions.js",
+      "live": "<(?:write|include|add|mention",
+      "dead": "<(?:xwrite|include|add|mention",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'to prove that you have read'": {
+      "file": "src/instructions.js",
+      "live": "<to prove (?:that )?you",
+      "dead": "<xto prove (?:that )?you",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'ignore previous instructions'": {
+      "file": "src/instructions.js",
+      "live": "<ignore (?:all |any )?(?:the |your )?(?:previous",
+      "dead": "<xignore (?:all |any )?(?:the |your )?(?:previous",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'disregard previous instructions'": {
+      "file": "src/instructions.js",
+      "live": "<disregard (?:all",
+      "dead": "<xdisregard (?:all",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'as an AI'": {
+      "file": "src/instructions.js",
+      "live": "<as an? (?:ai",
+      "dead": "<xas an? (?:ai",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'if you are an AI'": {
+      "file": "src/instructions.js",
+      "live": "<if you are an?",
+      "dead": "<xif you are an?",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'note to the AI'": {
+      "file": "src/instructions.js",
+      "live": "<note (?:to|for)",
+      "dead": "<xnote (?:to|for)",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: at most five sentences": {
+      "file": "src/instructions.js",
+      "live": "if (found.length === MAX_SENTENCES) break;",
+      "dead": "",
+      "expect": [
+        "at most five sentences are returned, each of at most 200 characters"
+      ]
+    },
+    "Instructions: each sentence cut to 200 characters": {
+      "file": "src/instructions.js",
+      "live": ".slice(0, MAX_CHARS)",
+      "dead": ".slice(0)",
+      "expect": [
+        "at most five sentences are returned, each of at most 200 characters"
+      ]
+    },
+    "Instructions: a line is split into sentences": {
+      "file": "src/instructions.js",
+      "live": "/\\n+|(?<=[.!?])\\s+/",
+      "dead": "/\\n+/",
+      "expect": [
+        "only the instruction sentence of a line is returned, not its neighbours"
+      ]
+    },
+    "Instructions: capitals are read as lower case": {
+      "file": "src/instructions.js",
+      "live": "sentence.toLowerCase()",
+      "dead": "sentence",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one",
+        "only the instruction sentence of a line is returned, not its neighbours"
+      ]
+    },
+    "Instructions: a typographic apostrophe is read as a plain one": {
+      "file": "src/instructions.js",
+      "live": "replace(/[’‘]/g, \"'\")",
+      "dead": "replace(/[‘]/g, \"'\")",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: the report lists them": {
+      "file": "src/report.js",
+      "live": "if (instructions.length) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Instructions: the report section only appears when there are some": {
+      "file": "src/report.js",
+      "live": "if (instructions.length) {",
+      "dead": "if (true) {",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Instructions: the report says the CV is built from the profile only": {
+      "file": "src/report.js",
+      "live": "follow them yourself if you apply.",
+      "dead": "follow them if you apply.",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Instructions: the report section is titled": {
+      "file": "src/report.js",
+      "live": "'## Instructions in the offer — not applied'",
+      "dead": "'## Instructions'",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
     }
   }
 }

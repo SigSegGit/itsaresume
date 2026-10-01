@@ -14,7 +14,8 @@ const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
   itsacv serve [--port PORT] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
-               [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]]
+               [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
+               [--ban-after N] [--ban-hours N]]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -31,7 +32,9 @@ const USAGE = `usage:
   --public-host  serve anyone behind a reverse proxy that answers as NAME (e.g. cv.ngas.fr):
              job offers only, one visitor per page load, the owner's notes hidden, no split,
              an offer already answered reused; at most --per-day CVs a day for everyone
-             (default 20), --per-hour per visitor (default 3), --max-queued waiting (default 3)
+             (default 20), --per-hour per visitor (default 3), --max-queued waiting (default 3),
+             --ban-after N requests an hour from one IP or visitor ban both (default 10) for
+             --ban-hours hours (default 24)
 
 Each run writes <out>/<timestamp>-<offer>/ with cv.docx, report.md and
 analysis.json, and with Word (Windows) cv.pdf, fitted to one full page (two
@@ -43,7 +46,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued'];
+const VALUED = ['--profile', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true] };
 
 function fail(code, message) {
@@ -68,6 +71,8 @@ function parse(argv) {
     perDay: '20',
     perHour: '3',
     maxQueued: '3',
+    banAfter: '10',
+    banHours: '24',
   };
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i];
@@ -100,11 +105,11 @@ async function main() {
   const llm = ({ system, prompt, schema }) => complete({ url: options.url, system, prompt, schema, timeoutMs });
 
   if (options.command === 'serve') {
-    for (const key of ['perDay', 'perHour', 'maxQueued']) {
+    for (const key of ['perDay', 'perHour', 'maxQueued', 'banAfter', 'banHours']) {
       if (!/^[1-9]\d*$/.test(options[key])) fail(2, `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: a whole number, 1 or more`);
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
-    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), now: Date.now };
+    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), now: Date.now };
     const server = await serve({ ...options, port: Number(options.port), useWord: options.layout, llm, publicMode });
     const open = publicMode ? `, public as https://${publicMode.host} (at most ${publicMode.perDay} CVs a day)` : '';
     process.stderr.write(`itsacv: serving on http://127.0.0.1:${server.address().port}${open} (Ctrl+C to stop)\n`);

@@ -298,6 +298,7 @@ function resultOf(job, detail) {
       h('p', { class: 'headline', text: detail.headline }),
       h('ul', { class: 'summary' }, detail.summary.map((s) => h('li', { text: s }))),
       gaps.length ? h('p', { class: 'gaps', text: `Écarts sur l’essentiel : ${gaps.map(gapLabel).join(', ')}` }) : null,
+      detail.offer_instructions ? h('p', { class: 'gaps', text: "Cette offre contient des consignes adressées au candidat ou à une IA : elles n'ont pas été appliquées." }) : null,
       detail.skipped ? h('p', { class: 'gaps', text: `Non fait : ${detail.skipped.reason}` }) : null)),
     h('div', { class: 'downloads' }, downloads),
     h('details', {}, h('summary', { text: `Exigences de l’offre (${scored.length})` }), requirementsTable(scored)),

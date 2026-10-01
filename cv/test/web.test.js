@@ -65,6 +65,18 @@ test('a card whose layout was skipped says what was not done, and why', async ()
   page.close();
 });
 
+test('a card says when the offer held instructions, which were not applied, and shows no text of them', async () => {
+  const jobs = [{ id: 'j1', title: 'Senior SRE', status: 'done', steps: [], error: null }];
+  const flagged = pageWith(jobs, { j1: detail({ offer_instructions: true }) });
+  await flagged.settle();
+  assert.match(flagged.$('jobs').textContent, /Cette offre contient des consignes adressées au candidat ou à une IA : elles n'ont pas été appliquées\./);
+  flagged.close();
+  const plain = pageWith(jobs, { j1: detail({ offer_instructions: false }) });
+  await plain.settle();
+  assert.doesNotMatch(plain.$('jobs').textContent, /consignes adressées/);
+  plain.close();
+});
+
 test('a finished card never shows a literal null', async () => {
   const page = pageWith([{ id: 'j1', title: 'Senior SRE', status: 'done', steps: [], error: null }], { j1: detail() });
   await page.settle();

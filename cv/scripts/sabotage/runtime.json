@@ -218,10 +218,43 @@
     },
     "Run: the report gets the rendered CV": {
       "file": "src/run.js",
-      "live": "assessment, removed, older, rendered: model.experiences });",
-      "dead": "assessment, removed, older });",
+      "live": "assessment, removed, older, rendered: model.experiences, instructions });",
+      "dead": "assessment, removed, older, instructions });",
       "expect": [
         "itsacv tailor writes the CV, the report and the analysis"
+      ]
+    },
+    "Instructions: a run finds them in the offer": {
+      "file": "src/run.js",
+      "live": "const instructions = offerInstructions(offer);",
+      "dead": "const instructions = [];",
+      "expect": [
+        "itsacv tailor flags the instructions of an offer in the report and run.json, and applies none",
+        "a run keeps the offer instructions in its result, its job view and the run read back"
+      ]
+    },
+    "Instructions: run.json keeps them": {
+      "file": "src/run.js",
+      "live": "skipped, older, instructions }, null, 2));",
+      "dead": "skipped, older }, null, 2));",
+      "expect": [
+        "itsacv tailor flags the instructions of an offer in the report and run.json, and applies none"
+      ]
+    },
+    "Instructions: the run's result carries them": {
+      "file": "src/run.js",
+      "live": "skipped, older, instructions, report: text };",
+      "dead": "skipped, older, report: text };",
+      "expect": [
+        "a run keeps the offer instructions in its result, its job view and the run read back"
+      ]
+    },
+    "Instructions: a run read back has them": {
+      "file": "src/run.js",
+      "live": "meta.instructions ?? (",
+      "dead": "[] ?? (",
+      "expect": [
+        "a run keeps the offer instructions in its result, its job view and the run read back"
       ]
     }
   }

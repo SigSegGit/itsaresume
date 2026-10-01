@@ -209,6 +209,19 @@ property it proves.
 | a never-claimed requirement the offer calls a plus is not counted as a must | Importance: the offer's cue decides over the model |
 | a nice header does not reach past a blank line or a plain line | Importance: a blank line ends a header section; Importance: a plain line ends a header section |
 
+## `test/instructions.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the instruction sentences of an offer are found, and the job sentences are not | — |
+| a normal offer has no instruction sentence | — |
+| English instructions to the candidate or an AI are found too | Instructions: French 'si tu es une IA'; Instructions: English 'write the word in your CV'; Instructions: English 'to prove that you have read'; Instructions: English 'ignore previous instructions'; Instructions: English 'disregard previous instructions'; Instructions: English 'as an AI'; Instructions: English 'if you are an AI'; Instructions: English 'note to the AI' |
+| French instructions to the candidate or an AI are found one by one | Instructions: French 'écrivez le mot'; Instructions: French 'mentionnez le code dans votre candidature'; Instructions: French 'pour prouver que vous avez lu'; Instructions: French 'ignorez vos instructions'; Instructions: French 'si tu es une IA'; Instructions: French 'note pour l'IA'; Instructions: capitals are read as lower case; Instructions: a typographic apostrophe is read as a plain one |
+| only the instruction sentence of a line is returned, not its neighbours | Instructions: French 'écrivez le mot'; Instructions: a line is split into sentences; Instructions: capitals are read as lower case |
+| at most five sentences are returned, each of at most 200 characters | Instructions: at most five sentences; Instructions: each sentence cut to 200 characters |
+| the report lists the instructions of the offer as not applied, only when there are some | Instructions: the report lists them; Instructions: the report section only appears when there are some; Instructions: the report says the CV is built from the profile only; Instructions: the report section is titled |
+| the job view says that the offer held instructions, without their text | Instructions: the job view flags them without their text |
+
 ## `test/intake.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -304,6 +317,7 @@ property it proves.
 | the client sends a schema only when asked (router 8.24) | Client: a schema is sent only when asked |
 | an unreachable router is a clear error | — |
 | itsacv tailor writes the CV, the report and the analysis | Run: the report gets the rendered CV |
+| itsacv tailor flags the instructions of an offer in the report and run.json, and applies none | Instructions: a run finds them in the offer; Instructions: run.json keeps them |
 | itsacv tailor keeps every raw model answer, in call order, in raw.json | Raw: every call is recorded; Raw: the analysis calls are labelled; Raw: raw.json is written |
 | itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why | Evidence: the CLI draws the CV from the restricted profile; Evidence: the report has its Verification section; Run: the report lists what older CVs named |
 | itsacv tailor takes several offer files, and --split finds several offers in one | CLI: --split tailors each offer found |
@@ -337,6 +351,7 @@ property it proves.
 | an invisible combining mark does not hide a never-claimed skill | Red team: default-ignorable marks are folded away |
 | a number written in words must come from the profile too | Red team: numbers in words come from the profile |
 | summary sentences are strings and importance is must or nice | Red team: summary sentences are strings; Red team: importance is must or nice |
+| an offer that instructs the AI changes nothing on the CV: the model holds profile text only | — |
 
 ## `test/render.test.js`
 
@@ -417,6 +432,11 @@ property it proves.
 | in public mode a done job keeps no repair lines, a failed job has a generic error | Web: a public job has no repair lines; Web: a public failed job has a generic error; Web: the public job list has a generic error |
 | outside public mode the owner still sees the repairs and the real error | — |
 | a reloaded public page is the same visitor, and sees its running job | Public: a reload keeps the visitor; Public: the visitor cookie is set; Public: the visitor cookie is HttpOnly, Secure, Strict |
+| public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour | Ban: more than banAfter attempts bans; Ban: the default threshold is ten; Ban: a banned client is refused; Ban: a ban expires; Ban: attempts are counted per IP |
+| requests older than an hour do not count towards the ban | Ban: the default threshold is ten; Ban: only the last hour counts |
+| requests refused by the existing caps still count towards the ban, and the thresholds are configurable | Ban: more than banAfter attempts bans; Ban: a ban expires; Ban: the ban lasts banHours |
+| the ban counts one visitor across several IPs | Ban: more than banAfter attempts bans; Ban: attempts are counted per visitor |
+| the owner (not public mode) is never banned | — |
 
 ## `test/split.test.js`
 
@@ -444,6 +464,7 @@ property it proves.
 | the page holds no inline script, style or handler, and loads nothing from elsewhere | Web: the page has no inline script |
 | the page is responsive | — |
 | a card whose layout was skipped says what was not done, and why | Web: the card says what was not done |
+| a card says when the offer held instructions, which were not applied, and shows no text of them | Instructions: the card says they were not applied; Instructions: the card says nothing when there are none |
 | a finished card never shows a literal null | Page: no null part on a card |
 | the status pill says the router answers, not that the model does | Page: the pill names the router |
 | a personal quality is never shown as a failed requirement | Page: qualities are listed apart; Page: an unbacked quality is for the interview, not a no |
@@ -460,6 +481,7 @@ property it proves.
 | a Word request left unanswered fails after its timeout, and the helper is stopped with all it started | Word: a request has its own timeout; Word: a helper that times out is killed with all it started |
 | once the helper has exited, every request fails at once, saying so | Word: a stopped helper refuses at once |
 | Word failing while fitting the page still gives the CV, unfitted, and says why | Run: Word failing leaves the CV, unfitted; Run: the report says what was not done; Web: the view carries what was skipped |
+| a run keeps the offer instructions in its result, its job view and the run read back | Instructions: a run finds them in the offer; Instructions: the run's result carries them; Instructions: a run read back has them; Instructions: the job view flags them without their text |
 | Word failing half-way through the PDF export leaves no PDF behind | Run: Word failing leaves the CV, unfitted; Run: a half-written PDF is removed |
 | without Word, or with the layout turned off, the report says which | Run: the report says what was not done |
 | a PDF whose text cannot be read keeps the fitted CV and its PDF, and says the ATS check was skipped | Run: an unreadable PDF text skips the ATS check only |
@@ -467,6 +489,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**308 tests, 253 of them covered by at least one sabotage defence.**
+**325 tests, 266 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

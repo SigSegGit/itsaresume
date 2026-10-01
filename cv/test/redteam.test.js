@@ -9,6 +9,7 @@ import { normalize } from '../src/normalize.js';
 import { validateProfile } from '../src/profile.js';
 import { checkProvenance } from '../src/evidence.js';
 import { buildModel } from '../src/tailor.js';
+import { INJECTED_OFFER } from './fixtures/injected.js';
 
 const CYRILLIC_E = String.fromCharCode(0x0435);
 const BOM = String.fromCharCode(0xfeff);
@@ -215,4 +216,14 @@ test('summary sentences are strings and importance is must or nice', () => {
   const { analysis, repairs } = normalize(answer({ requirements }), v4(), { offer: OFFER });
   assert.equal(analysis.requirements[0].importance, 'must');
   assert.match(repairs.join('\n'), /requirement PostgreSQL: importance .* read as must/);
+});
+
+test('an offer that instructs the AI changes nothing on the CV: the model holds profile text only', () => {
+  const honest = answer();
+  assert.deepEqual(validateAnalysis(honest, v4(), { offer: INJECTED_OFFER }).errors, []);
+  const model = JSON.stringify(buildModel(v4(), honest));
+  assert.ok(!/VACHE|avion/i.test(model), 'no word of the injected instructions on the CV');
+  const obeyed = answer({ summary: ['SRE running PostgreSQL. VACHE.'], skill_groups: [{ id: 'db', skills: ['postgresql', 'pilotage-avion'] }] });
+  const refused = validateAnalysis(obeyed, v4(), { offer: INJECTED_OFFER }).errors.join(', ');
+  assert.match(refused, /pilotage-avion|VACHE|summary/, 'an obedient answer is refused');
 });
