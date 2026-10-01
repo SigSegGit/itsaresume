@@ -90,9 +90,24 @@ const sameToken = (given, token) =>
 /** What a public visitor sees of a finished run: never the owner's notes. */
 const PUBLIC_FILES = new Set(['cv.pdf', 'cv.docx']);
 
+/**
+ * The header a public visitor sees: whose CV, and what can run. Not how the
+ * owner's sources judge the profile (verdicts, the truth document), and no
+ * raw error (a path, a router address).
+ */
+function publicStatus(status) {
+  const { profile = {} } = status;
+  const shown = profile.error !== undefined
+    ? { error: 'profil indisponible' }
+    : { name: profile.name, skills: profile.skills, lab: profile.lab, never: profile.never };
+  return { ...status, profile: shown, public: true };
+}
+
 /** A job as the page sees it. */
 function view(job, { detail = false, publicMode = null } = {}) {
-  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error: job.error ?? null, elapsed_ms: job.elapsed?.() ?? null };
+  // Router text and paths are the owner's: a visitor only learns that it failed.
+  const error = publicMode && job.status === 'failed' ? 'échec' : job.error ?? null;
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null };
   if (!job.result) return base;
   const { fit } = job.result.view;
   base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
@@ -107,6 +122,7 @@ function view(job, { detail = false, publicMode = null } = {}) {
     older: [],
     flags: [],
     verification: [],
+    repairs: [],
     report: undefined,
     files: full.files.filter((name) => PUBLIC_FILES.has(name)),
   };
@@ -202,10 +218,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, html, 'text/html; charset=utf-8');
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
-        if (path === '/api/status') return send(response, 200, { ...(await deps.status()), ...(publicMode ? { public: true } : {}) });
+        if (path === '/api/status') return send(response, 200, publicMode ? publicStatus(await deps.status()) : await deps.status());
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
-          return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job)));
+          return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode })));
         }
         const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+))?$/);
         const job = match && jobs.get(match[1]);
