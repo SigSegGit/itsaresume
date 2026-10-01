@@ -71,10 +71,18 @@
     },
     "Denied: a nice cue keeps it": {
       "file": "src/listing.js",
-      "live": "return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence) && !NICE.test(sentence));",
-      "dead": "return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence));",
+      "live": "return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause) && !NICE.test(clause));",
+      "dead": "return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause));",
       "expect": [
         "a denied must that the offer still wants stays, and so does a plain mention"
+      ]
+    },
+    "Denied: the clause judges, not the sentence": {
+      "file": "src/listing.js",
+      "live": ".split(/\\r?\\n|(?<=[.!?;])\\s+|,|\\s;\\s/)",
+      "dead": ".split(/\\r?\\n|(?<=[.!?;])\\s+/)",
+      "expect": [
+        "a denial judges the clause that names the requirement, not the sentence"
       ]
     },
     "Listing: the schema only when asked": {
