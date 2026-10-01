@@ -84,6 +84,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `metered_credentials_never_reach_the_child` | `tests/claude_process.rs` | None of `METERED_ENV` reaches the child (checked by the child itself); `CLAUDE_CODE_OAUTH_TOKEN` and `PATH` do | Claude process: metered env removed |
 | `the_metered_list_names_the_known_metered_switches` | `tests/claude_process.rs` | `METERED_ENV` names the API-key, auth-token, Bedrock and Vertex switches and not the subscription token | CLAUDE_CONFIG_DIR is scrubbed |
 | `the_child_runs_in_the_dedicated_working_directory` | `tests/claude_process.rs` | The child's working directory is the dedicated one, created if missing | Claude process: dedicated workdir |
+| `the_cli_writes_its_answer_into_a_file_not_a_pipe` | `tests/claude_process.rs` (Linux) | The CLI's stdout is a private file, never a pipe (the real CLI loses what it wrote past 128 KiB into a pipe on exit) | Claude: the answer goes to a file, not a pipe |
+| `a_large_answer_arrives_whole` | `tests/claude_process.rs` | A 300 KB answer arrives whole | — |
 | `a_missing_working_directory_is_created_private` | `tests/claude_process.rs` (Unix) | A missing working directory is created 0700 | — (the tightening step covers a looser create) |
 | `a_working_directory_others_could_write_into_is_refused` | `tests/claude_process.rs` (Unix) | A 0777 working directory is `Other`, naming it, and the CLI never runs | Claude workdir: others cannot write into it |
 | `a_working_directory_that_is_a_link_is_refused` | `tests/claude_process.rs` (Unix) | A symlink as working directory is `Other`, naming it, and the CLI never runs | Claude workdir: not a link |

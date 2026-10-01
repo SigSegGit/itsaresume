@@ -598,3 +598,39 @@ fn a_schema_reaches_the_cli_as_json_schema() {
             .contains(&"--json-schema".to_owned())
     );
 }
+
+/// Seen on the VM (2026-10-01): the real CLI, writing a 150 KB answer into a
+/// pipe, lost everything past 128 KiB when it exited, and the analysis failed
+/// as "not the expected JSON array". Its stdout must be a file.
+#[cfg(target_os = "linux")]
+#[test]
+fn the_cli_writes_its_answer_into_a_file_not_a_pipe() {
+    let scene = scene();
+    let mut env = success_env(&scene);
+    env.push(("FAKE_CLAUDE_REFUSE_PIPE".into(), "1".into()));
+    let answer = backend(&scene)
+        .complete_with_env(&Request::new("p"), env)
+        .expect("the fake answers when its stdout is a file");
+    assert!(!answer.text.is_empty());
+}
+
+/// A large answer arrives whole, on every platform.
+#[test]
+fn a_large_answer_arrives_whole() {
+    let scene = scene();
+    let big = "x".repeat(300_000);
+    let fixture =
+        std::fs::read_to_string(fixture("synthetic-success.verbose.json")).expect("fixture");
+    let mut messages: Vec<serde_json::Value> = serde_json::from_str(&fixture).expect("array");
+    if let Some(last) = messages.last_mut() {
+        last["result"] = serde_json::Value::String(big.clone());
+    }
+    let stdout = scene.record.parent().expect("root").join("big.json");
+    std::fs::write(&stdout, serde_json::Value::Array(messages).to_string()).expect("write");
+    let mut env = env_with(&[]);
+    env.push(("FAKE_CLAUDE_STDOUT".into(), stdout.into_os_string()));
+    let answer = backend(&scene)
+        .complete_with_env(&Request::new("p"), env)
+        .expect("answer");
+    assert_eq!(answer.text.len(), big.len());
+}
