@@ -38,7 +38,10 @@ async function status({ profilePath, url, useWord }) {
   } catch (error) {
     profile = { error: error.message };
   }
-  return { profile, router: { up: await routerUp(url) }, layout: { word: useWord && process.platform === 'win32' } };
+  const word = useWord && process.platform === 'win32';
+  // ADR-11: on Linux, LibreOffice makes the PDF; $ITSACV_SOFFICE says it is there.
+  const libre = useWord && !word && Boolean(process.env.ITSACV_SOFFICE);
+  return { profile, router: { up: await routerUp(url) }, layout: { word, libre } };
 }
 
 export async function serve({ profile: profilePath, out, url, port, useWord, llm, publicMode = null }) {
