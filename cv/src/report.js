@@ -4,6 +4,8 @@
 // a heading or a column of its own, so every piece is flattened to one line,
 // and table cells escape their pipes.
 
+import { mentions } from './text.js';
+
 /** The model's text on one line. */
 const line = (text) => String(text ?? '').replace(/\s*[\r\n]+\s*/g, ' ');
 /** The model's text in a table cell. */
@@ -93,8 +95,15 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
   // but it is one: said so.
   const unclaimed = scored.filter((requirement) => requirement.match !== 'no').flatMap((requirement) => (requirement.never_members ?? [])
     .map((name) => `- ${line(name)} (never claimed; the offer gives it as an example of ${line(requirement.name)}, met otherwise)`));
+  // 2.11: a gap the owner has not settled yet (`profile.pending`) is a
+  // profile question, not a proved lack: said so, and counted.
+  const pending = (gap) => (profile.pending ?? []).some((name) => mentions(gap.name, name) || mentions(name, gap.name));
+  const waiting = gaps.filter(pending).length;
   if (gaps.length || unclaimed.length) {
-    lines.push('', '## Gaps', '', ...gaps.map((gap) => `- ${line(gap.name)} (${line(gap.importance)})`), ...unclaimed);
+    lines.push('', '## Gaps', '',
+      ...gaps.map((gap) => `- ${line(gap.name)} (${line(gap.importance)})${pending(gap) ? ' — waiting for your confirmation (pending in the profile)' : ''}`),
+      ...unclaimed);
+    if (waiting) lines.push('', `**${waiting} gap${waiting > 1 ? 's wait' : ' waits'} for your confirmation**: settling ${waiting > 1 ? 'them' : 'it'} may move the score.`);
   }
   if (qualities.length) {
     lines.push('', '## Personal qualities — not scored, to show in interview', '',
