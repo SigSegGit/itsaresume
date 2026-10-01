@@ -81,4 +81,5 @@ test('a nice header does not reach past a blank line or a plain line', () => {
   assert.equal(importanceIn(offer, 'Terraform'), null);
   assert.equal(importanceIn(offer, 'Kafka'), 'nice');
   assert.equal(importanceIn('Nice to have:\n- Kafka\nYou will operate Terraform.', 'Terraform'), null);
+  assert.equal(importanceIn('Nice to have:\n- Kafka\n\n- Terraform', 'Terraform'), null);
 });
