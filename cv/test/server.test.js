@@ -262,7 +262,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
@@ -288,7 +288,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
         return result;
       },
     },
-    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, now: () => clock.now },
+    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, now: () => clock.now },
   });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   t.after(() => { app.server.closeAllConnections(); app.server.close(); });
@@ -301,7 +301,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
     const headers = { ...host, 'X-Forwarded-For': ip, Origin: 'https://cv.example.org', 'X-CSRF-Token': token, 'Content-Type': 'application/json' };
     return {
       token,
-      post: (path, value) => call(port, { method: 'POST', path, headers, body: JSON.stringify(value) }),
+      post: (path, value, from) => call(port, { method: 'POST', path, headers: from ? { ...headers, 'X-Forwarded-For': from } : headers, body: JSON.stringify(value) }),
       get: (path) => call(port, { path, headers }),
     };
   };
@@ -512,4 +512,53 @@ test('a reloaded public page is the same visitor, and sees its running job', asy
 
   const stranger = await call(app.port, { headers: { ...app.host, Cookie: 'itsacv_visitor=' + 'f'.repeat(48) } });
   assert.notEqual(stranger.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1], token, 'an unknown cookie is a new visitor');
+});
+
+const BAN = 'Trop de demandes : accès suspendu pour 24 h.';
+const banned = (response) => response.status === 429 && JSON.parse(response.text).error === BAN;
+
+test('public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour', async (t) => {
+  const app = await startPublic(t, { perDay: 1000, perVisitorPerHour: 1000, maxQueued: 1000 });
+  const one = { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] };
+  const alice = await app.visit('203.0.113.7');
+  for (let i = 0; i < 10; i += 1) assert.ok(!banned(await alice.post('/api/jobs', one)), `request ${i + 1}`);
+  assert.ok(banned(await alice.post('/api/jobs', one)), 'the 11th is refused by the ban');
+  const second = await app.visit('203.0.113.7');
+  assert.ok(banned(await second.post('/api/jobs', one)), 'another visitor behind the same IP');
+  assert.equal((await alice.get('/api/jobs')).status, 200, 'the page and status still work');
+  const other = await app.visit('198.51.100.9');
+  assert.equal((await other.post('/api/jobs', one)).status, 202, 'another IP is not banned');
+  app.clock.now += 24 * 3600 * 1000 + 60 * 1000;
+  assert.equal((await second.post('/api/jobs', one)).status, 202, 'the ban ends after 24 h');
+});
+
+test('requests refused by the existing caps still count towards the ban, and the thresholds are configurable', async (t) => {
+  const app = await startPublic(t, { perVisitorPerHour: 1, banAfter: 3, banHours: 1 });
+  const one = { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] };
+  const alice = await app.visit('203.0.113.7');
+  const answers = [];
+  for (let i = 0; i < 4; i += 1) answers.push(await alice.post('/api/jobs', one));
+  assert.deepEqual(answers.map((a) => a.status), [202, 429, 429, 429]);
+  assert.deepEqual(answers.map(banned), [false, false, false, true]);
+  app.clock.now += 61 * 60 * 1000;
+  assert.notEqual((await alice.post('/api/jobs', one)).status, 429, 'banHours: 1');
+});
+
+test('the ban counts one visitor across several IPs', async (t) => {
+  const app = await startPublic(t, { perDay: 1000, perVisitorPerHour: 1000, maxQueued: 1000 });
+  const one = { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] };
+  const alice = await app.visit('203.0.113.7');
+  for (let i = 0; i < 10; i += 1) assert.ok(!banned(await alice.post('/api/jobs', one, `198.51.100.${i}`)));
+  assert.ok(banned(await alice.post('/api/jobs', one, '192.0.2.1')), 'a fresh IP, the same visitor');
+});
+
+test('the owner (not public mode) is never banned', async () => {
+  const app = await start();
+  try {
+    const one = { offers: [{ title: 'A', text: 'offer' }] };
+    for (let i = 0; i < 15; i += 1) assert.equal((await post(app, '/api/jobs', one)).status, 202);
+  } finally {
+    app.server.closeAllConnections();
+    app.server.close();
+  }
 });
