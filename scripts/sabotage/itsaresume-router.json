@@ -886,8 +886,8 @@
     },
     "Stats by day: the first hit stays": {
       "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "day.first_hit.get_or_insert_with(|| ts[11..16].to_owned());",
-      "dead": "day.first_hit = Some(ts[11..16].to_owned());",
+      "live": "day.first_hit.get_or_insert_with(|| time.to_owned());",
+      "dead": "day.first_hit = Some(time.to_owned());",
       "expect": [
         "the_journal_by_day_says_when_the_plan_ran_out"
       ]
