@@ -459,8 +459,8 @@
     },
     "Endpoint caps concurrent completions": {
       "file": "crates/itsaresume-router/src/server.rs",
-      "live": "(n < MAX_CONCURRENT_COMPLETIONS).then_some(n + 1)",
-      "dead": "Some(n + 1)",
+      "live": "if current >= MAX_CONCURRENT_COMPLETIONS {",
+      "dead": "if current >= usize::MAX {",
       "expect": [
         "completions_beyond_the_cap_are_503_busy"
       ]
