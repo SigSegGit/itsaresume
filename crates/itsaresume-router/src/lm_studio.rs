@@ -155,8 +155,8 @@ impl Backend for LmStudioBackend {
         let completion = classify(status, &body)?;
         if request.schema.is_some() && serde_json::from_str::<Value>(&completion.text).is_err() {
             return Err(BackendError::Other(format!(
-                "LM Studio answered a schema request with text that is not JSON: {}",
-                excerpt(&completion.text, 160)
+                "LM Studio answered a schema request with text that is not JSON ({} characters)",
+                completion.text.chars().count()
             )));
         }
         Ok(completion)

@@ -980,6 +980,22 @@
       "expect": [
         "a_timeout_too_large_for_a_deadline_is_refused"
       ]
+    },
+    "LM Studio: a non-JSON schema answer is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "completion.text.chars().count()",
+      "dead": "excerpt(&completion.text, 160)",
+      "expect": [
+        "a_non_json_answer_to_a_schema_request_is_not_quoted_in_the_error"
+      ]
+    },
+    "Claude: non-JSON stdout is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "stdout.chars().count()",
+      "dead": "excerpt(stdout, 160)",
+      "expect": [
+        "stdout_that_is_not_json_is_not_quoted_in_the_error"
+      ]
     }
   }
 }

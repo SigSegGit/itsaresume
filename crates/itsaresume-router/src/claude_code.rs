@@ -38,8 +38,8 @@ const RATE_LIMIT_KEYS: [&str; 4] = ["status", "rateLimitType", "isUsingOverage",
 pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendError> {
     let messages: Vec<Value> = serde_json::from_str(stdout.trim()).map_err(|error| {
         BackendError::Other(format!(
-            "claude output is not the expected JSON array ({error}): {}",
-            excerpt(stdout, 160)
+            "claude output is not the expected JSON array ({error}; {} characters)",
+            stdout.chars().count()
         ))
     })?;
 
