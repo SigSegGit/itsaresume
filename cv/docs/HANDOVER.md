@@ -222,6 +222,15 @@ Traps met, each cost time once:
   (no model call, 2.8's purpose): 36 → 42, the web servers one gap, the
   duplicate "Customer meetings" gone; past runs' replays unchanged. Replay
   script: `~/.itsaresume/migrations/raw-replay.mjs <run dir>`.
+- [x] **2.12** (2026-10-01) Red team of the 2026-09-30 work, every finding
+  reproduced then fixed red/green with a defence: a denial judged per clause
+  ("Terraform est obligatoire, Kubernetes n'est pas requis" no longer drops
+  Terraform); a nice header ends at a blank or plain line; certifications
+  never merged as examples; a listed must not absorbed by a longer or a nice
+  row (SQL / SQL Server); "ASP.NET" a name, not a link; `pending` validated;
+  public mode hides the evidence verdicts, the truth document, repairs and
+  raw errors. Also the flaky server test (1 in 30): a declared oversize up
+  to the drain limit is drained before its 413 (0 in 40 since).
 - [x] **2.11** (2026-10-01) A gap the owner has not settled yet is a profile
   question, not a proved lack: the profile may carry `pending` (names that
   wait for his confirmation; compiled privately by
