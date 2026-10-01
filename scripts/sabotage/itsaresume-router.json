@@ -964,6 +964,14 @@
       "expect": [
         "the_kind_option_reaches_a_classify_only_backend"
       ]
+    },
+    "Stats by day: a multi-byte ts is skipped": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "let (Some(date), Some(time)) = (ts.get(..10), ts.get(11..16)) else {",
+      "dead": "let (Some(date), Some(time)) = (Some(&ts[..10]), Some(&ts[11..16])) else {",
+      "expect": [
+        "a_timestamp_of_multibyte_characters_is_skipped_not_fatal"
+      ]
     }
   }
 }

@@ -98,10 +98,14 @@ pub fn summarize_by_day(journal: &str) -> String {
         let Ok(entry) = serde_json::from_str::<Value>(line) else {
             continue;
         };
-        let Some(ts) = entry["ts"].as_str().filter(|ts| ts.len() >= 16) else {
+        let Some(ts) = entry["ts"].as_str() else {
             continue;
         };
-        let day = days.entry(ts[..10].to_owned()).or_default();
+        // `get`, not slicing: a multi-byte `ts` has no char boundary at 10.
+        let (Some(date), Some(time)) = (ts.get(..10), ts.get(11..16)) else {
+            continue;
+        };
+        let day = days.entry(date.to_owned()).or_default();
         day.requests += 1;
         if entry["outcome"] == "answered" {
             let backend = entry["backend"].as_str().unwrap_or("?").to_owned();
@@ -120,7 +124,7 @@ pub fn summarize_by_day(journal: &str) -> String {
         if hits > 0 {
             day.hits += hits;
             // The journal is in time order: the first hit of the day stays.
-            day.first_hit.get_or_insert_with(|| ts[11..16].to_owned());
+            day.first_hit.get_or_insert_with(|| time.to_owned());
         }
     }
     let mut out = String::new();
