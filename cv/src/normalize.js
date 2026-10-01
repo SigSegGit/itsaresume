@@ -167,7 +167,7 @@ function mergeExamples(requirements, offer, profile, repairs, lang) {
     // Italian" became one row no longer read as a language, and the run was
     // refused twice).
     const named = requirements.flatMap((requirement, index) =>
-      requirement.kind !== 'quality' && languageOf(requirement, profile, lang) === null && mentions(inside, core(requirement.name)) ? [index] : []);
+      requirement.kind !== 'quality' && requirement.kind !== 'certification' && languageOf(requirement, profile, lang) === null && mentions(inside, core(requirement.name)) ? [index] : []);
     for (const index of named.slice(1)) parent[root(index)] = root(named[0]);
   }
   const groups = new Map();
