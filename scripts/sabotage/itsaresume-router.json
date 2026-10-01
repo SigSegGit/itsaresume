@@ -972,6 +972,14 @@
       "expect": [
         "a_timestamp_of_multibyte_characters_is_skipped_not_fatal"
       ]
+    },
+    "Config: a timeout above a day is refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": ".any(|b| b.timeout() > Duration::from_secs(MAX_TIMEOUT_SECS))",
+      "dead": ".any(|b| b.timeout() > Duration::from_secs(u64::MAX))",
+      "expect": [
+        "a_timeout_too_large_for_a_deadline_is_refused"
+      ]
     }
   }
 }
