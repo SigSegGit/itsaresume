@@ -222,6 +222,13 @@ Traps met, each cost time once:
   (no model call, 2.8's purpose): 36 → 42, the web servers one gap, the
   duplicate "Customer meetings" gone; past runs' replays unchanged. Replay
   script: `~/.itsaresume/migrations/raw-replay.mjs <run dir>`.
+- [x] **2.11** (2026-10-01) A gap the owner has not settled yet is a profile
+  question, not a proved lack: the profile may carry `pending` (names that
+  wait for his confirmation; compiled privately by
+  `~/.itsaresume/migrations/2026-10-01-pending.py`, run after the v4 and
+  addendum scripts), and the report marks such a gap "waiting for your
+  confirmation" and counts them. Two tests, two defences. On the real Palo
+  Alto run: "Windows Server administration" marked.
 - [x] **2.9** The crude stem (`stem = word.slice(0, 6)` in `src/text.js`,
   copied in `src/evidence.js`) makes "product" and "production", "config"
   and "configuration", "develop" and "developer" one word: a requirement

@@ -232,6 +232,22 @@
       "expect": [
         "the report counts the bullets the CV shows, not the model's picks"
       ]
+    },
+    "Report: a pending gap is said": {
+      "file": "src/report.js",
+      "live": "const pending = (gap) => (profile.pending ?? []).some((name) => mentions(gap.name, name) || mentions(name, gap.name));",
+      "dead": "const pending = (gap) => (profile.pending ?? []).some(() => false);",
+      "expect": [
+        "a gap the profile lists as pending is marked as waiting for the owner"
+      ]
+    },
+    "Report: a pending gap is counted": {
+      "file": "src/report.js",
+      "live": "if (waiting) lines.push(",
+      "dead": "if (false) lines.push(",
+      "expect": [
+        "a gap the profile lists as pending is marked as waiting for the owner"
+      ]
     }
   }
 }
