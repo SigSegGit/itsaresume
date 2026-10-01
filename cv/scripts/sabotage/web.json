@@ -504,6 +504,31 @@
       "expect": [
         "requests older than an hour do not count towards the ban"
       ]
+    },
+    "Instructions: the job view flags them without their text": {
+      "file": "src/view.js",
+      "live": "offer_instructions: instructions.length > 0,",
+      "dead": "offer_instructions: false,",
+      "expect": [
+        "the job view says that the offer held instructions, without their text",
+        "a run keeps the offer instructions in its result, its job view and the run read back"
+      ]
+    },
+    "Instructions: the card says they were not applied": {
+      "file": "web/app.js",
+      "live": "detail.offer_instructions ? h(",
+      "dead": "false ? h(",
+      "expect": [
+        "a card says when the offer held instructions, which were not applied, and shows no text of them"
+      ]
+    },
+    "Instructions: the card says nothing when there are none": {
+      "file": "web/app.js",
+      "live": "detail.offer_instructions ? h(",
+      "dead": "true ? h(",
+      "expect": [
+        "a card says when the offer held instructions, which were not applied, and shows no text of them"
+      ]
     }
   }
 }

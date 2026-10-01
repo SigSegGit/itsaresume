@@ -60,7 +60,7 @@ function describeQualification(fit) {
   return ['', `**Qualification:** ${QUALIFICATION[q.level]}${q.gaps.length ? ` — must-haves not covered by client experience: ${q.gaps.map(line).join(', ')}` : ''}`];
 }
 
-export function report(analysis, profile, { backend, attempts, repairs = [], layout, ats, skipped, assessment, removed = [], older = [], rendered }) {
+export function report(analysis, profile, { backend, attempts, repairs = [], layout, ats, skipped, assessment, removed = [], older = [], rendered, instructions = [] }) {
   const skills = new Map(profile.skills.map((skill) => [skill.id, skill]));
   const experiences = new Map(profile.experiences.map((experience) => [experience.id, experience]));
   const lang = analysis.language;
@@ -128,6 +128,10 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
     lines.push(...older.map((item) => `- ${line(item.requirement)} — ${item.sources.map(line).join(', ')}`));
   }
   if (assessment) lines.push(...describeVerification(analysis, profile, assessment, removed));
+  if (instructions.length) {
+    lines.push('', '## Instructions in the offer — not applied', '', ...instructions.map((sentence) => `- ${line(sentence)}`),
+      '', 'The CV is built from the profile only; follow them yourself if you apply.');
+  }
   lines.push('', '## Layout and ATS', '', `**Layout:** ${describeLayout(layout)}`, '', ...describeAts(ats));
   if (skipped) lines.push('', `**Not done:** ${line(skipped.reason)}`);
   if (repairs.length) {

@@ -8,7 +8,7 @@ export const FILES = ['cv.pdf', 'cv.docx', 'report.md'];
 
 /** The run's result as the page needs it. */
 export function jobView(result, loaded) {
-  const { analysis, layout, ats, skipped, older = [], repairs = [], backend, attempts, dir } = result;
+  const { analysis, layout, ats, skipped, older = [], repairs = [], instructions = [], backend, attempts, dir } = result;
   const skills = new Map(loaded.full.skills.map((skill) => [skill.id, skill]));
   const titles = new Map((loaded.full.sources ?? []).map((source) => [source.id, source.title]));
   const assessment = new Map((loaded.assessment ?? []).map((entry) => [entry.id, entry]));
@@ -48,6 +48,7 @@ export function jobView(result, loaded) {
     }),
     flags: used.flatMap((id) => assessment.get(id)?.flags ?? []),
     older,
+    offer_instructions: instructions.length > 0,
     repairs,
     backend,
     attempts,
