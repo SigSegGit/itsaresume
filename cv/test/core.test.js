@@ -175,3 +175,16 @@ test('a hidden skill group backs requirements but never shows in the sidebar', (
   assert.deepEqual(validateAnalysis(a, p).errors, []);
   assert.ok(buildModel(p, a).skill_groups.every((group) => group.title !== 'Meta'));
 });
+
+// Red team: `pending` is a list of names; a string made the report throw
+// after every model call had been paid for.
+test('a profile whose pending is not a list of non-empty names is refused, naming pending', () => {
+  for (const bad of ['Kubernetes', [''], [3], [null]]) {
+    const p = load();
+    p.pending = bad;
+    assert.match(validateProfile(p).errors.join('\n'), /pending/, JSON.stringify(bad));
+  }
+  const ok = load();
+  ok.pending = ['Kubernetes'];
+  assert.deepEqual(validateProfile(ok).errors, []);
+});

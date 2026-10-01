@@ -79,12 +79,14 @@ export function mergeListed(analysis, listed) {
   // A listed name whose every content word the analysis already names, in
   // one row, is that row ("Customer meetings" / "Customer-facing
   // meetings", 2.10): added again, it counted a must twice.
-  const analysed = (analysis.requirements ?? []).map((requirement) => new Set(wordsOf(requirement.name).map(stem)));
-  const covered = (name) => {
-    const words = wordsOf(name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
-    return words.length > 0 && analysed.some((row) => words.every((word) => row.has(word)));
+  // Covered only by two content words at least ("SQL" is not "SQL Server",
+  // "DevOps" is not "Azure DevOps"), and never a must by a nice row.
+  const analysed = (analysis.requirements ?? []).map((requirement) => ({ words: new Set(wordsOf(requirement.name).map(stem)), importance: requirement.importance }));
+  const covered = (item) => {
+    const words = wordsOf(item.name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
+    return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));
   };
-  const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !covered(item.name));
+  const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !covered(item));
   return {
     analysis: {
       ...analysis,
@@ -158,8 +160,10 @@ const DENIAL = /(?<![\p{L}\p{N}])(?:pas|not|non|no)\s+(?:\p{L}+\s+)?(?:obligatoi
  * not required for this role" on the corpus.
  */
 function onlyDenied(offer, name) {
-  const sentences = canonical(String(offer ?? ''))
-    .split(/\r?\n|(?<=[.!?;])\s+/)
-    .filter((sentence) => mentions(sentence, name));
-  return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence) && !NICE.test(sentence));
+  // The clause is the judge, not the sentence: "Terraform est obligatoire,
+  // Kubernetes n'est pas requis" denies only Kubernetes.
+  const clauses = canonical(String(offer ?? ''))
+    .split(/\r?\n|(?<=[.!?;])\s+|,|\s;\s/)
+    .filter((clause) => mentions(clause, name));
+  return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause) && !NICE.test(clause));
 }

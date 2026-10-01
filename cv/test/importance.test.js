@@ -74,3 +74,12 @@ test('a never-claimed requirement the offer calls a plus is not counted as a mus
   assert.equal(out.requirements.find((r) => r.name === 'Kafka').importance, 'nice');
   assert.equal(out.fit.qualification.level, 'qualified');
 });
+
+// Red team: a header section ends at a blank line or a plain line.
+test('a nice header does not reach past a blank line or a plain line', () => {
+  const offer = 'Nice to have:\n- Kafka\n\nYour mission\nYou will operate Terraform in production.';
+  assert.equal(importanceIn(offer, 'Terraform'), null);
+  assert.equal(importanceIn(offer, 'Kafka'), 'nice');
+  assert.equal(importanceIn('Nice to have:\n- Kafka\nYou will operate Terraform.', 'Terraform'), null);
+  assert.equal(importanceIn('Nice to have:\n- Kafka\n\n- Terraform', 'Terraform'), null);
+});

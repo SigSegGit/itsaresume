@@ -186,3 +186,16 @@ test('without a pending list the gaps are unchanged', () => {
   assert.match(text, /^- DNS \(must\)$/m);
   assert.ok(!/waits for your confirmation/.test(text));
 });
+
+// Red team: a certification the profile does not hold is never merged into an
+// enumeration with a skill it does (CKA no + AWS yes was one "yes" row).
+test('a certification is not merged into an enumeration with a held skill', () => {
+  const offer = 'We want certifications (CKA, AWS) and Terraform.';
+  const requirements = [row('CKA'), row('AWS', 'yes', ['aws']), row('Terraform', 'yes', ['terraform'])];
+  const { analysis } = normalize(answer({ requirements }), v4(), { offer });
+  const cka = analysis.requirements.find((r) => r.name === 'CKA');
+  assert.ok(cka, 'CKA stays a row of its own');
+  assert.equal(cka.match, 'no');
+  assert.equal(cka.kind, 'certification');
+  assert.ok(analysis.requirements.some((r) => r.name === 'AWS' && r.match === 'yes'));
+});

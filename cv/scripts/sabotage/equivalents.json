@@ -144,10 +144,18 @@
     },
     "Languages are never merged as examples": {
       "file": "src/normalize.js",
-      "live": "requirement.kind !== 'quality' && languageOf(requirement, profile, lang) === null && mentions(inside, core(requirement.name)) ? [index] : []);",
-      "dead": "requirement.kind !== 'quality' && mentions(inside, core(requirement.name)) ? [index] : []);",
+      "live": "requirement.kind !== 'quality' && requirement.kind !== 'certification' && languageOf(requirement, profile, lang) === null && mentions(inside, core(requirement.name)) ? [index] : []);",
+      "dead": "requirement.kind !== 'quality' && requirement.kind !== 'certification' && mentions(inside, core(requirement.name)) ? [index] : []);",
       "expect": [
         "languages an offer lists together are settled one by one, never merged"
+      ]
+    },
+    "Certifications are never merged as examples": {
+      "file": "src/normalize.js",
+      "live": "requirement.kind !== 'quality' && requirement.kind !== 'certification' && languageOf(",
+      "dead": "requirement.kind !== 'quality' && languageOf(",
+      "expect": [
+        "a certification is not merged into an enumeration with a held skill"
       ]
     },
     "Category words do not hide a listed example": {

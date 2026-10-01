@@ -71,10 +71,18 @@
     },
     "Denied: a nice cue keeps it": {
       "file": "src/listing.js",
-      "live": "return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence) && !NICE.test(sentence));",
-      "dead": "return sentences.length > 0 && sentences.every((sentence) => DENIAL.test(sentence));",
+      "live": "return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause) && !NICE.test(clause));",
+      "dead": "return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause));",
       "expect": [
         "a denied must that the offer still wants stays, and so does a plain mention"
+      ]
+    },
+    "Denied: the clause judges, not the sentence": {
+      "file": "src/listing.js",
+      "live": ".split(/\\r?\\n|(?<=[.!?;])\\s+|,|\\s;\\s/)",
+      "dead": ".split(/\\r?\\n|(?<=[.!?;])\\s+/)",
+      "expect": [
+        "a denial judges the clause that names the requirement, not the sentence"
       ]
     },
     "Listing: the schema only when asked": {
@@ -87,10 +95,26 @@
     },
     "Listing: a name the analysis already covers is not added": {
       "file": "src/listing.js",
-      "live": "return words.length > 0 && analysed.some((row) => words.every((word) => row.has(word)));",
+      "live": "return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));",
       "dead": "return false;",
       "expect": [
         "a listed name whose words the analysis already names is not added twice"
+      ]
+    },
+    "Listing: one word is not covered by a longer row": {
+      "file": "src/listing.js",
+      "live": "return words.length >= 2 && analysed",
+      "dead": "return words.length >= 1 && analysed",
+      "expect": [
+        "a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps)"
+      ]
+    },
+    "Listing: a must is not covered by a nice row": {
+      "file": "src/listing.js",
+      "live": " && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": ");",
+      "expect": [
+        "a two-word listed must is not absorbed by a nice row that names its words"
       ]
     }
   }

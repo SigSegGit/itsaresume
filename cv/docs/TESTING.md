@@ -76,6 +76,7 @@ property it proves.
 | an experience selected without any bullet shows its requirement-backed ones, or at least its first | Model: every experience shows at least one bullet |
 | bullets backing a matched requirement are added after the model picks, up to the limit | Model: requirement-backed bullets fill experiences |
 | a hidden skill group backs requirements but never shows in the sidebar | Model: hidden groups stay out of the sidebar |
+| a profile whose pending is not a list of non-empty names is refused, naming pending | Profile: pending must be a list; Profile: pending names are non-empty strings |
 
 ## `test/corpus.test.js`
 
@@ -153,6 +154,9 @@ property it proves.
 | a denied must that the offer still wants stays, and so does a plain mention | Denied: a nice cue keeps it |
 | the listing call sends its schema only when asked | Listing: the schema only when asked |
 | a listed name whose words the analysis already names is not added twice | Listing: a name the analysis already covers is not added |
+| a denial judges the clause that names the requirement, not the sentence | Denied: the clause judges, not the sentence |
+| a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps) | Listing: one word is not covered by a longer row |
+| a two-word listed must is not absorbed by a nice row that names its words | Listing: a must is not covered by a nice row |
 
 ## `test/guard.test.js`
 
@@ -176,6 +180,7 @@ property it proves.
 | a requirement name from the analysis is held to the same rule | Injection: an unsafe name is dropped; Injection: a requirement name must be plain |
 | the report cannot be broken by what the model wrote | Injection: a report cell escapes its pipes; Injection: the report puts the model's text on one line |
 | text reaching the docx is escaped, never read as XML | — |
+| a name written with a capital .NET is plain, a real domain is not | Injection: .NET in capitals is not a domain |
 
 ## `test/honesty.test.js`
 
@@ -202,6 +207,7 @@ property it proves.
 |---|---|
 | normalize applies the offer's cues over the model's importance, and says so | Importance: the offer's cue decides over the model |
 | a never-claimed requirement the offer calls a plus is not counted as a must | Importance: the offer's cue decides over the model |
+| a nice header does not reach past a blank line or a plain line | Importance: a blank line ends a header section; Importance: a plain line ends a header section |
 
 ## `test/intake.test.js`
 
@@ -374,6 +380,7 @@ property it proves.
 | the report counts the bullets the CV shows, not the model's picks | Report: the bullets the CV shows; Report: rendered, when there is a CV |
 | a gap the profile lists as pending is marked as waiting for the owner | Report: a pending gap is said; Report: a pending gap is counted |
 | without a pending list the gaps are unchanged | — |
+| a certification is not merged into an enumeration with a held skill | Certifications are never merged as examples |
 
 ## `test/server.test.js`
 
@@ -396,6 +403,9 @@ property it proves.
 | in public mode an offer already answered is reused at once, with no model call and outside the caps | Server: a reused offer is outside the caps |
 | a declared oversize body is refused at once, unread | Web: a declared oversize is refused unread |
 | a job says how long it ran, from start to end | Web: a job carries its elapsed time; Web: the elapsed time stops at the end |
+| in public mode the status carries no verdicts, truth document or raw error | Web: public status hides the assessment; Web: public status shows only the plain header; Web: public status hides a raw error |
+| in public mode a done job keeps no repair lines, a failed job has a generic error | Web: a public job has no repair lines; Web: a public failed job has a generic error; Web: the public job list has a generic error |
+| outside public mode the owner still sees the repairs and the real error | — |
 
 ## `test/split.test.js`
 
@@ -445,6 +455,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**291 tests, 242 of them covered by at least one sabotage defence.**
+**301 tests, 251 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -335,7 +335,7 @@
     },
     "Web: a declared oversize is refused unread": {
       "file": "src/server.js",
-      "live": "if (Number(request.headers['content-length']) > MAX_BODY) {",
+      "live": "if (Number(request.headers['content-length']) > DRAIN_LIMIT) {",
       "dead": "if (false) {",
       "expect": [
         "a declared oversize body is refused at once, unread"
@@ -343,8 +343,8 @@
     },
     "Web: a job carries its elapsed time": {
       "file": "src/server.js",
-      "live": "error: job.error ?? null, elapsed_ms: job.elapsed?.() ?? null };",
-      "dead": "error: job.error ?? null, elapsed_ms: null };",
+      "live": "error, elapsed_ms: job.elapsed?.() ?? null };",
+      "dead": "error, elapsed_ms: null };",
       "expect": [
         "a job says how long it ran, from start to end"
       ]
@@ -355,6 +355,54 @@
       "dead": "job.elapsed = () => clock() - job.startedAt;",
       "expect": [
         "a job says how long it ran, from start to end"
+      ]
+    },
+    "Web: public status hides the assessment": {
+      "file": "src/server.js",
+      "live": "publicMode ? publicStatus(await deps.status()) : await deps.status()",
+      "dead": "await deps.status()",
+      "expect": [
+        "in public mode the status carries no verdicts, truth document or raw error"
+      ]
+    },
+    "Web: public status shows only the plain header": {
+      "file": "src/server.js",
+      "live": ": { name: profile.name, skills: profile.skills, lab: profile.lab, never: profile.never };",
+      "dead": ": profile;",
+      "expect": [
+        "in public mode the status carries no verdicts, truth document or raw error"
+      ]
+    },
+    "Web: public status hides a raw error": {
+      "file": "src/server.js",
+      "live": "{ error: 'profil indisponible' }",
+      "dead": "{ error: profile.error }",
+      "expect": [
+        "in public mode the status carries no verdicts, truth document or raw error"
+      ]
+    },
+    "Web: a public job has no repair lines": {
+      "file": "src/server.js",
+      "live": "    repairs: [],\n    report: undefined,",
+      "dead": "    report: undefined,",
+      "expect": [
+        "in public mode a done job keeps no repair lines, a failed job has a generic error"
+      ]
+    },
+    "Web: a public failed job has a generic error": {
+      "file": "src/server.js",
+      "live": "publicMode && job.status === 'failed' ? 'échec'",
+      "dead": "false ? 'échec'",
+      "expect": [
+        "in public mode a done job keeps no repair lines, a failed job has a generic error"
+      ]
+    },
+    "Web: the public job list has a generic error": {
+      "file": "src/server.js",
+      "live": ".map((job) => view(job, { publicMode })));",
+      "dead": ".map((job) => view(job)));",
+      "expect": [
+        "in public mode a done job keeps no repair lines, a failed job has a generic error"
       ]
     }
   }

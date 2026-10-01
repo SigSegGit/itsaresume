@@ -5,6 +5,14 @@
     "--test-reporter=tap"
   ],
   "defences": {
+    "Injection: .NET in capitals is not a domain": {
+      "file": "src/guard.js",
+      "live": "const unlinked = folded.replace(DOT_NET, '$1');",
+      "dead": "const unlinked = folded;",
+      "expect": [
+        "a name written with a capital .NET is plain, a real domain is not"
+      ]
+    },
     "Injection: links are refused": {
       "file": "src/guard.js",
       "live": "['a link', /\\b(?:https?|ftp|javascript|data):|\\bwww\\.|\\b[\\w-]+\\.(?:com|net|org|io|fr|dev|ai|co|uk|xyz|ru|info|biz|app|me)\\b/i],",

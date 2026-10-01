@@ -31,7 +31,7 @@
     },
     "Red team: the guard reads the folded text": {
       "file": "src/guard.js",
-      "live": "pattern.test(what === 'a control character' ? text : folded)",
+      "live": "pattern.test(what === 'a control character' ? text : what === 'a link' ? unlinked : folded)",
       "dead": "pattern.test(text)",
       "expect": [
         "a never-claimed skill written with a lookalike letter or an invisible character is still refused"

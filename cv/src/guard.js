@@ -61,6 +61,8 @@ const INVISIBLE = new RegExp(`[${[[0x00, 0x09], [0x0b, 0x1f], [0x7f, 0x7f]]
   .map(([from, to]) => `${String.fromCharCode(from)}-${String.fromCharCode(to)}`)
   .join('')}]|\\p{Cf}|\\p{Default_Ignorable_Code_Point}`, 'u');
 
+const DOT_NET = /(?<![\w-]\.)(\b[\w-]+)\.NET\b/g;
+
 const PATTERNS = [
   ['a link', /\b(?:https?|ftp|javascript|data):|\bwww\.|\b[\w-]+\.(?:com|net|org|io|fr|dev|ai|co|uk|xyz|ru|info|biz|app|me)\b/i],
   ['an email address', /[\w.+-]+@[\w-]+\.[\w.-]+/],
@@ -79,7 +81,12 @@ const PATTERNS = [
  */
 function unsafe(text) {
   const folded = canonical(text);
-  return PATTERNS.filter(([what, pattern]) => pattern.test(what === 'a control character' ? text : folded)).map(([what]) => what);
+  // ".NET" written in capitals, right after one word ("ASP.NET", "VB.NET"),
+  // is a platform, not a domain. Lowercase ".net" and a longer dotted name
+  // stay links. "Socket.io" is a real
+  // domain shape and stays refused.
+  const unlinked = folded.replace(DOT_NET, '$1');
+  return PATTERNS.filter(([what, pattern]) => pattern.test(what === 'a control character' ? text : what === 'a link' ? unlinked : folded)).map(([what]) => what);
 }
 
 /**

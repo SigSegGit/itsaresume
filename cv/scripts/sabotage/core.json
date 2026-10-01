@@ -7,6 +7,18 @@
       "dead": "need(skills.has(skill) || true, `bullet ${bullet.id}: unknown skill ${skill}`);",
       "expect": ["a profile whose bullet cites an unknown skill is refused"]
     },
+    "Profile: pending must be a list": {
+      "file": "src/profile.js",
+      "live": "(Array.isArray(profile.pending) && ",
+      "dead": "(true && ",
+      "expect": ["a profile whose pending is not a list of non-empty names is refused, naming pending"]
+    },
+    "Profile: pending names are non-empty strings": {
+      "file": "src/profile.js",
+      "live": "typeof name === 'string' && name.trim() !== '')), 'pending must",
+      "dead": "true)), 'pending must",
+      "expect": ["a profile whose pending is not a list of non-empty names is refused, naming pending"]
+    },
     "Profile: duplicate ids refused": {
       "file": "src/profile.js",
       "live": "for (const id of duplicates(ids)) errors.push(`duplicate id ${id}`);",

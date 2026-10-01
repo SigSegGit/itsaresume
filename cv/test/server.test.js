@@ -262,17 +262,18 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3 } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
     deps: {
-      status: async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } }),
+      status: status ?? (async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } })),
       split: async () => { throw new Error('split must not run publicly'); },
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer }) => {
         calls.tailored += 1;
+        if (offer.includes('boom')) throw new Error('router http://10.0.0.5:54321 refused: model qwen3 not loaded');
         const result = fakeResult(offer);
         writeFileSync(join(result.dir, 'report.md'), '# private notes');
         result.view = {
@@ -281,6 +282,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
           older: [{ requirement: 'Kafka', sources: ['CV for another company'] }],
           flags: ['confirm the phone number'],
           verification: [{ name: 'Docker', verdict: 'verified', sources: [{ title: 'CV for another company', grade: 'C', quote: 'Docker' }] }],
+          repairs: ['skill Kafka: contradicted by the evidence'],
           files: ['cv.pdf', 'report.md'],
         };
         return result;
@@ -432,6 +434,55 @@ test('a job says how long it ran, from start to end', async () => {
     now = 60_000;
     const later = JSON.parse((await call(port, { path: '/api/jobs' })).text);
     assert.equal(later[0].elapsed_ms, 3_000, 'fixed once done');
+  } finally {
+    app.server.close();
+  }
+});
+
+// Red team: in public mode the header and a job's detail leaked the owner's
+// assessment of his own profile, a raw router error, and the repair lines.
+const finished = async (visitor, id, want) => {
+  let detail;
+  for (let i = 0; i < 100; i += 1) {
+    detail = JSON.parse((await visitor.get(`/api/jobs/${id}`)).text);
+    if (detail.status === want) return detail;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`the job never became ${want}`);
+};
+
+test('in public mode the status carries no verdicts, truth document or raw error', async (t) => {
+  const leaky = async () => ({ profile: { name: 'Alex', skills: 12, verdicts: { verified: 3 }, truth: 'CV for another company' }, router: { up: true }, layout: { word: false } });
+  const visitor = await (await startPublic(t, { status: leaky })).visit();
+  const status = JSON.parse((await visitor.get('/api/status')).text);
+  assert.equal(status.profile.name, 'Alex');
+  assert.ok(!('verdicts' in status.profile) && !('truth' in status.profile), JSON.stringify(status));
+  const broken = async () => ({ profile: { error: 'ENOENT: /home/owner/private/profile.json' }, router: { up: false }, layout: { word: false } });
+  const other = await (await startPublic(t, { status: broken })).visit();
+  const failed = JSON.parse((await other.get('/api/status')).text);
+  assert.ok(!JSON.stringify(failed).includes('/home/owner'), JSON.stringify(failed));
+  assert.equal(typeof failed.profile.error, 'string');
+});
+
+test('in public mode a done job keeps no repair lines, a failed job has a generic error', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  const [good] = JSON.parse((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] })).text);
+  const done = await finished(visitor, good.id, 'done');
+  assert.deepEqual(done.repairs, []);
+  const [bad] = JSON.parse((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE boom') }] })).text);
+  const failed = await finished(visitor, bad.id, 'failed');
+  assert.equal(failed.error, 'échec');
+  const listed = JSON.parse((await visitor.get('/api/jobs')).text).find((job) => job.id === bad.id);
+  assert.equal(listed.error, 'échec');
+});
+
+test('outside public mode the owner still sees the repairs and the real error', async () => {
+  const app = await start();
+  try {
+    await post(app, '/api/jobs', { offers: [{ title: 'x', text: 'boom' }] });
+    const jobs = await until(app, (list) => list.length === 1 && list[0].status === 'failed');
+    assert.match(jobs[0].error, /still invalid/);
   } finally {
     app.server.close();
   }

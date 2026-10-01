@@ -105,6 +105,22 @@
       "expect": [
         "\"It would be a big plus to know Sigstore.\": Sigstore is nice"
       ]
+    },
+    "Importance: a blank line ends a header section": {
+      "file": "src/importance.js",
+      "live": "    if (!line) {\n      section = null;\n      continue;\n    }",
+      "dead": "    if (!line) {\n      continue;\n    }",
+      "expect": [
+        "a nice header does not reach past a blank line or a plain line"
+      ]
+    },
+    "Importance: a plain line ends a header section": {
+      "file": "src/importance.js",
+      "live": "    if (!header && !BULLET.test(line)) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "a nice header does not reach past a blank line or a plain line"
+      ]
     }
   }
 }

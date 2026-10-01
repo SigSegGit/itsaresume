@@ -74,6 +74,8 @@ function onlyCertified(clause, name) {
 
 /** A header: a short head before ":" (the rest of the line may list items). */
 const HEADER = /^([^:.!?]{1,80}):(.*)$/;
+/** A list item: a bullet, then the item. */
+const BULLET = /^(?:[-*•·–]|\d+[.)])\s+(.+)$/;
 
 /**
  * The importance the offer gives `name`, or null when it gives none.
@@ -83,10 +85,18 @@ export function importanceIn(offer, name) {
   let section = null;
   for (const raw of canonical(String(offer ?? '')).split(/\r?\n/)) {
     const line = raw.trim();
-    if (!line) continue;
+    if (!line) {
+      section = null;
+      continue;
+    }
     let body = line;
     let lineCue = section;
     const header = HEADER.exec(line);
+    // A plain line (no bullet, no header) ends the section, as floorItems does.
+    if (!header && !BULLET.test(line)) {
+      section = null;
+      lineCue = null;
+    }
     if (header) {
       const own = cueOf(header[1]);
       if (header[2].trim() === '') {
