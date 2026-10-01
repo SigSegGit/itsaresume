@@ -335,7 +335,7 @@
     },
     "Web: a declared oversize is refused unread": {
       "file": "src/server.js",
-      "live": "if (Number(request.headers['content-length']) > MAX_BODY) {",
+      "live": "if (Number(request.headers['content-length']) > DRAIN_LIMIT) {",
       "dead": "if (false) {",
       "expect": [
         "a declared oversize body is refused at once, unread"

@@ -61,14 +61,17 @@ function send(response, status, body, type = 'application/json; charset=utf-8', 
 
 /**
  * The body, at most MAX_BODY bytes. Over it the answer is a 413 the client
- * receives (audit 2026-09-27: the socket used to be cut first): a declared
- * length is refused unread; a streamed body is drained, discarded, up to
- * DRAIN_LIMIT, and only past that is the socket cut.
+ * receives (audit 2026-09-27: the socket used to be cut first). Up to
+ * DRAIN_LIMIT a body, declared or streamed, is drained, discarded, then
+ * answered: answering before the client has sent its body made the close
+ * reset the connection under the response (1 run in 30, 2026-10-01). Only a
+ * length declared past DRAIN_LIMIT is refused unread, and there a reset is
+ * accepted.
  */
 function readBody(request) {
   return new Promise((resolve, reject) => {
     const tooLarge = () => new HttpError(413, `the request is larger than ${MAX_BODY} bytes`, { close: true });
-    if (Number(request.headers['content-length']) > MAX_BODY) {
+    if (Number(request.headers['content-length']) > DRAIN_LIMIT) {
       reject(tooLarge());
       return;
     }
