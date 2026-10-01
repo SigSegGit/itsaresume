@@ -71,7 +71,7 @@
     },
     "Web: the page carries the token": {
       "file": "src/server.js",
-      "live": ".replace('__CSRF_TOKEN__', pageToken())",
+      "live": ".replace('__CSRF_TOKEN__', issued.value)",
       "dead": ".replace('__CSRF_TOKEN__', '')",
       "expect": [
         "the page carries its CSRF token, and every response forbids framing, sniffing and foreign scripts"
@@ -263,8 +263,8 @@
     },
     "Public: one token per page load": {
       "file": "src/server.js",
-      "live": "    if (!publicMode) return token;\n    const fresh = randomBytes(24).toString('hex');",
-      "dead": "    const fresh = token;",
+      "live": "    if (kept && visitors.has(kept)) return { value: kept };\n    const fresh = randomBytes(24).toString('hex');",
+      "dead": "    if (kept && visitors.has(kept)) return { value: kept };\n    const fresh = visitors.keys().next().value ?? randomBytes(24).toString('hex');",
       "expect": [
         "in public mode a visitor sees only the jobs of its own page"
       ]
@@ -411,6 +411,30 @@
       "dead": "const verified = ` · ${profile.verdicts.verified ?? 0} vérifiées`;",
       "expect": [
         "the public status renders without the owner assessment"
+      ]
+    },
+    "Public: a reload keeps the visitor": {
+      "file": "src/server.js",
+      "live": "if (kept && visitors.has(kept)) return { value: kept };",
+      "dead": "if (kept && visitors.has(kept) && false) return { value: kept };",
+      "expect": [
+        "a reloaded public page is the same visitor, and sees its running job"
+      ]
+    },
+    "Public: the visitor cookie is set": {
+      "file": "src/server.js",
+      "live": "issued.cookie ? { 'Set-Cookie': issued.cookie } : {}",
+      "dead": "{}",
+      "expect": [
+        "a reloaded public page is the same visitor, and sees its running job"
+      ]
+    },
+    "Public: the visitor cookie is HttpOnly, Secure, Strict": {
+      "file": "src/server.js",
+      "live": "; HttpOnly; Secure; SameSite=Strict`",
+      "dead": "; SameSite=Lax`",
+      "expect": [
+        "a reloaded public page is the same visitor, and sees its running job"
       ]
     }
   }

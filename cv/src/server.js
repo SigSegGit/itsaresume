@@ -135,6 +135,8 @@ const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 /** Page loads remembered in public mode (each is a visitor with its own jobs). */
 const MAX_VISITORS = 10_000;
+/** How long a public visitor keeps their jobs across reloads. */
+const VISITOR_DAYS = 7;
 
 /**
  * The server, not yet listening. Everything that touches a model, Word or the
@@ -151,12 +153,17 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // nobody can spend the owner's model quota beyond a known bound.
   const visitors = new Map();
   const accepted = [];
-  const pageToken = () => {
-    if (!publicMode) return token;
+  // A reload is the same visitor (seen 2026-10-01: reopening the page during
+  // a several-minute run lost the CV): the visitor's token rides in a cookie
+  // the page cannot read (HttpOnly) and other sites cannot send (Strict).
+  const pageToken = (request) => {
+    if (!publicMode) return { value: token };
+    const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
+    if (kept && visitors.has(kept)) return { value: kept };
     const fresh = randomBytes(24).toString('hex');
     visitors.set(fresh, new Set());
     if (visitors.size > MAX_VISITORS) visitors.delete(visitors.keys().next().value);
-    return fresh;
+    return { value: fresh, cookie: `itsacv_visitor=${fresh}; Path=/; Max-Age=${VISITOR_DAYS * 24 * 3600}; HttpOnly; Secure; SameSite=Strict` };
   };
   const visitorOf = (request) => {
     const given = request.headers['x-csrf-token'];
@@ -217,8 +224,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
 
       if (request.method === 'GET') {
         if (path === '/') {
-          const html = readFileSync(join(WEB, 'index.html'), 'utf8').replace('__CSRF_TOKEN__', pageToken());
-          return send(response, 200, html, 'text/html; charset=utf-8');
+          const issued = pageToken(request);
+          const html = readFileSync(join(WEB, 'index.html'), 'utf8').replace('__CSRF_TOKEN__', issued.value);
+          return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
         if (path === '/api/status') return send(response, 200, publicMode ? publicStatus(await deps.status()) : await deps.status());
