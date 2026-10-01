@@ -515,7 +515,8 @@ test('a reloaded public page is the same visitor, and sees its running job', asy
 });
 
 const BAN = 'Trop de demandes : accès suspendu pour 24 h.';
-const banned = (response) => response.status === 429 && JSON.parse(response.text).error === BAN;
+// The message names the configured duration ("24 h" by default).
+const banned = (response, hours = 24) => response.status === 429 && JSON.parse(response.text).error === BAN.replace('24', String(hours));
 
 test('public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour', async (t) => {
   const app = await startPublic(t, { perDay: 1000, perVisitorPerHour: 1000, maxQueued: 1000 });
@@ -551,7 +552,7 @@ test('requests refused by the existing caps still count towards the ban, and the
   const answers = [];
   for (let i = 0; i < 4; i += 1) answers.push(await alice.post('/api/jobs', one));
   assert.deepEqual(answers.map((a) => a.status), [202, 429, 429, 429]);
-  assert.deepEqual(answers.map(banned), [false, false, false, true]);
+  assert.deepEqual(answers.map((answer) => banned(answer, 1)), [false, false, false, true], 'the message says 1 h');
   app.clock.now += 61 * 60 * 1000;
   assert.notEqual((await alice.post('/api/jobs', one)).status, 429, 'banHours: 1');
 });

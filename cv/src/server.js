@@ -192,7 +192,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // banHours. Every attempt counts, including those the caps refuse.
   const hits = new Map();
   const bans = new Map();
-  const BAN_MESSAGE = 'Trop de demandes : accès suspendu pour 24 h.';
+  const BAN_MESSAGE = `Trop de demandes : accès suspendu pour ${publicMode?.banHours ?? 24} h.`;
   function checkBan(request) {
     const now = publicMode.now();
     const banAfter = publicMode.banAfter ?? 10;
