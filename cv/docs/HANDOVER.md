@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 3.4
-TITLE: Claude on the VM: the owner adds CLAUDE_CODE_OAUTH_TOKEN, the claude block goes first in router.toml, a CV checked laptop off
+NEXT: 2.3
+TITLE: measure the analysis call with a JSON schema (closed skill ids) on the corpus, both models, before any use
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -279,7 +279,7 @@ Traps met, each cost time once:
     VM's router lists it after Claude (`timeout_secs` below the
     generator's); laptop off and Claude spent: the page says "réessaie plus
     tard" (an `Exhausted` mapped to a clear message), never a crash.
-  - [ ] **3.4** Real check from outside, laptop OFF: one new offer on
+  - [x] **3.4** Real check from outside, laptop OFF: one new offer on
     cv.<domain>, a CV served by Claude from the VM; then the Bionic path
     with the laptop on.
   Done 2026-10-01: `src/libre.js` + `tools/pdfmeasure.py` (5 tests);
@@ -295,6 +295,13 @@ Traps met, each cost time once:
   Waits on the owner: `claude setup-token`, the token in the VM's
   `~/itsacv-data/.env`; then router.toml takes the claude block first
   (router.example.toml) and `docker compose up -d router`.
+  3.4 done 2026-10-01: the owner's token on the VM, router.toml Claude
+  then Bionic; with the laptop tunnel cut, a new offer on cv.ngas.fr was
+  served by Claude from the VM (108 s, 0.92 page, PDF and Word). Found on
+  the way and fixed: the CLI lost output past 128 KiB written into a pipe
+  (router #54); a reload lost the visitor's jobs (cookie, #53); CI's newer
+  stable deprecated fetch_update (#55). The intake refusing a short real
+  offer stays to look at.
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
 shown by the CLI and the page; the page's message no longer claims "kept as
