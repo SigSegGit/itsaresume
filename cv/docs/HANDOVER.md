@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 3.1
-TITLE: generation on the Freebox VM, Claude first (ADR-11): a LibreOffice layout engine measured against Word
+NEXT: 3.4
+TITLE: Claude on the VM: the owner adds CLAUDE_CODE_OAUTH_TOKEN, the claude block goes first in router.toml, a CV checked laptop off
 WRITTEN-AT: 2026-09-30
 -->
 
@@ -260,21 +260,21 @@ Traps met, each cost time once:
 
 - [ ] **3.x** Generation on the VM, Claude first (ADR-11, the owner's
   decision of 2026-10-01; ADR-7 kept the pipeline on the laptop). Steps:
-  - [ ] **3.1** A LibreOffice layout engine (`src/libre.js`, same
+  - [x] **3.1** A LibreOffice layout engine (`src/libre.js`, same
     interface as `word.js`: `measure(docx, pdf?) -> {pages}`), used when
     Word is absent and `soffice` is present: docx -> PDF headless, page
     count and fill read from the PDF (PyMuPDF or pdf text). Red tests with
     a fake `soffice`; then measure on the corpus against Word (same CVs:
     pages and fill within 3 %?) before trusting it. Linux side checked in
     WSL (install libreoffice there) and on the VM.
-  - [ ] **3.2** An image for the generator (Node + LibreOffice + fonts of
+  - [x] **3.2** An image for the generator (Node + LibreOffice + fonts of
     the template), and a compose on the VM: router (existing image, the
     `claude` CLI, `CLAUDE_CODE_OAUTH_TOKEN` from the owner's `claude
     setup-token`, never committed) + generator `--public-host`; Caddy
     points `cv.<domain>` at it instead of the laptop tunnel. The private
     profile (`~/.itsaresume/profile.json` and its truth document) copied to
     the VM by a script, never in the image.
-  - [ ] **3.3** The local model as a second backend when the laptop is on:
+  - [x] **3.3** The local model as a second backend when the laptop is on:
     the laptop opens a tunnel that exposes Bionic (54321) to the VM, the
     VM's router lists it after Claude (`timeout_secs` below the
     generator's); laptop off and Claude spent: the page says "réessaie plus
@@ -282,8 +282,19 @@ Traps met, each cost time once:
   - [ ] **3.4** Real check from outside, laptop OFF: one new offer on
     cv.<domain>, a CV served by Claude from the VM; then the Bionic path
     with the laptop on.
-  Waits on the owner: `claude setup-token` (the token goes into the VM's
-  env file); the VM's RAM and disk for LibreOffice (about 1 GB).
+  Done 2026-10-01: `src/libre.js` + `tools/pdfmeasure.py` (5 tests);
+  measured on the VM against Word on 14 CVs: LibreOffice reads 1-2 % shorter
+  every time (never longer: no overflow), about 3 s a measure. `cv/Dockerfile`
+  (1.05 GB on aarch64), `deploy/vm-generator/compose.yaml` (router and
+  generator, host network, the generator on 127.0.0.1:18790 where Caddy
+  already proxies), `deploy/laptop/bionic-tunnel.sh`; private data in
+  `~/itsacv-data` on the VM (0700). Real check from outside: a new offer on
+  cv.ngas.fr generated ON THE VM through Bionic (tunnel), 173 s, 0.90 page,
+  ATS ok, PDF and Word served. The public intake refused a 286-character
+  offer as "not an offer": look at its rule with real short offers.
+  Waits on the owner: `claude setup-token`, the token in the VM's
+  `~/itsacv-data/.env`; then router.toml takes the claude block first
+  (router.example.toml) and `docker compose up -d router`.
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
 shown by the CLI and the page; the page's message no longer claims "kept as
