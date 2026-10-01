@@ -100,3 +100,10 @@ test('a listed name whose words the analysis already names is not added twice', 
   ]);
   assert.deepEqual(merged.requirements.map((row) => row.name), ['Customer-facing meetings', 'Customer support']);
 });
+
+// Red team: the denial of one clause must not remove a name of another.
+test('a denial judges the clause that names the requirement, not the sentence', async () => {
+  const offer = "Terraform est obligatoire, Kubernetes n'est pas requis.";
+  const listed = await listRequirements({ offer, llm: answering([{ name: 'Terraform', importance: 'must' }, { name: 'Kubernetes', importance: 'must' }]) });
+  assert.deepEqual(listed.map((item) => item.name), ['Terraform']);
+});
