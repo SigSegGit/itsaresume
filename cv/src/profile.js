@@ -114,6 +114,7 @@ export function validateProfile(profile) {
     if (experience.title_empty !== undefined) need(bilingual(experience.title_empty), `experience ${experience.id}: title_empty needs fr and en`);
   }
 
+  need(profile.pending === undefined || (Array.isArray(profile.pending) && profile.pending.every((name) => typeof name === 'string' && name.trim() !== '')), 'pending must be absent or a list of non-empty names');
   for (const entry of profile.never ?? []) {
     need(typeof entry.name === 'string' && entry.name !== '', 'a never-claimed entry has no name');
   }
