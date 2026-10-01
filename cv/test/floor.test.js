@@ -107,3 +107,18 @@ test('a denial judges the clause that names the requirement, not the sentence', 
   const listed = await listRequirements({ offer, llm: answering([{ name: 'Terraform', importance: 'must' }, { name: 'Kubernetes', importance: 'must' }]) });
   assert.deepEqual(listed.map((item) => item.name), ['Terraform']);
 });
+
+// Red team: a short listed name is not absorbed by a longer, different row.
+test('a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps)', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const analysis = { requirements: [{ name: 'SQL Server', importance: 'nice', match: 'no', skills: [], note: '' }, { name: 'Azure DevOps', importance: 'must', match: 'no', skills: [], note: '' }] };
+  const { analysis: merged } = mergeListed(analysis, [{ name: 'SQL', importance: 'must' }, { name: 'DevOps', importance: 'must' }]);
+  assert.deepEqual(merged.requirements.map((row) => row.name), ['SQL Server', 'Azure DevOps', 'SQL', 'DevOps']);
+});
+
+test('a two-word listed must is not absorbed by a nice row that names its words', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const analysis = { requirements: [{ name: 'Customer-facing meetings', importance: 'nice', match: 'no', skills: [], note: '' }] };
+  const { analysis: merged } = mergeListed(analysis, [{ name: 'Customer meetings', importance: 'must' }]);
+  assert.deepEqual(merged.requirements.map((row) => row.name), ['Customer-facing meetings', 'Customer meetings']);
+});
