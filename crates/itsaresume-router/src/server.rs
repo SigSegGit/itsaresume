@@ -180,12 +180,20 @@ struct Slot<'a>(&'a AtomicUsize);
 
 impl<'a> Slot<'a> {
     fn take(running: &'a AtomicUsize) -> Option<Self> {
-        running
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| {
-                (n < MAX_CONCURRENT_COMPLETIONS).then_some(n + 1)
-            })
-            .ok()
-            .map(|_| Self(running))
+        // A compare-exchange loop, not `fetch_update`: deprecated in a newer
+        // stable (renamed `try_update`, absent from older ones), and CI
+        // builds with -D warnings (2026-10-01).
+        let mut current = running.load(Ordering::SeqCst);
+        loop {
+            if current >= MAX_CONCURRENT_COMPLETIONS {
+                return None;
+            }
+            match running.compare_exchange(current, current + 1, Ordering::SeqCst, Ordering::SeqCst)
+            {
+                Ok(_) => return Some(Self(running)),
+                Err(actual) => current = actual,
+            }
+        }
     }
 }
 
