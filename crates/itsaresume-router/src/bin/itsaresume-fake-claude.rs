@@ -14,7 +14,10 @@
 //!   (a child killed during its sleep never does);
 //! - `FAKE_CLAUDE_STDOUT=<file>`: print that file on stdout;
 //! - `FAKE_CLAUDE_STDERR=<text>`: print that text on stderr;
-//! - `FAKE_CLAUDE_EXIT=<code>`: exit with that code (default 0).
+//! - `FAKE_CLAUDE_EXIT=<code>`: exit with that code (default 0);
+//! - `FAKE_CLAUDE_REFUSE_PIPE=1` (Linux): exit 9 when stdout is a pipe. The
+//!   real CLI (Node) loses what it wrote past 128 KiB into a pipe when it
+//!   exits (seen on the VM, 2026-10-01): the backend must give it a file.
 
 use std::io::{Read, Write};
 use std::path::Path;
@@ -27,6 +30,13 @@ fn main() {
 
     if let Ok(dir) = std::env::var("FAKE_CLAUDE_RECORD") {
         record(Path::new(&dir), &stdin);
+    }
+    if std::env::var("FAKE_CLAUDE_REFUSE_PIPE").is_ok() {
+        let target = std::fs::read_link("/proc/self/fd/1").unwrap_or_default();
+        if target.to_string_lossy().starts_with("pipe:") {
+            eprintln!("stdout is a pipe");
+            std::process::exit(9);
+        }
     }
     if let Some(ms) = number("FAKE_CLAUDE_SLEEP_MS") {
         std::thread::sleep(Duration::from_millis(ms));
