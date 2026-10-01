@@ -508,12 +508,15 @@ Nothing blocks M1 code, and LM Studio runs on this laptop (the XPS), so the
 LM Studio half of 8.12 needs nobody. One action only Nicolas can do, because
 it is an interactive login to his account:
 
-- **Merges** (2026-09-28): the auto-mode classifier refuses `gh pr merge`
-  ("merge without review"). The rule that lets the session merge its own
-  green PRs is `Bash(gh pr merge:*)` in his Claude Code permissions; until
-  then they stay open (PR #7).
+- **Merges**: settled. Since 2026-09-30 the session merges its own green
+  PRs through `scripts/merge-when-green.sh` (26 merged that day).
 - `claude setup-token` in a terminal, then put the printed token in `.env` as
   `CLAUDE_CODE_OAUTH_TOKEN=…` (git-ignored). That is the subscription path;
   it is not an API key and is not billed per token.
+- A manual check of the generator on five new real offers, every bullet
+  read against the profile (Rodin, 2026-10-01): the honesty of a plausible
+  sentence is measured by no test; what he finds becomes corpus cases.
+- After the first week of real use: a look at the account's billing page
+  (the overage tripwire detects extra usage after the call it billed).
 - When the router runs on another machine than the XPS: the XPS's Tailscale
   name in that machine's `config.local.toml` (never committed).
