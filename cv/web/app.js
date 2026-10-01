@@ -52,8 +52,9 @@ async function refreshStatus() {
     }
     if (profile.error) setPill('status-profile', 'bad', 'Profil invalide');
     else {
-      const verified = profile.verdicts.verified ?? 0;
-      setPill('status-profile', 'ok', `${profile.name} · ${profile.skills} compétences · ${verified} vérifiées`);
+      // Public mode serves no assessment (verdicts, truth): the owner's.
+      const verified = profile.verdicts ? ` · ${profile.verdicts.verified ?? 0} vérifiées` : '';
+      setPill('status-profile', 'ok', `${profile.name} · ${profile.skills} compétences${verified}`);
       $('status-profile').title = profile.truth ?? '';
     }
     setPill('status-router', router.up ? 'ok' : 'bad', router.up ? 'Routeur joignable' : 'Routeur injoignable');

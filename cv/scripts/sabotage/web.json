@@ -404,6 +404,14 @@
       "expect": [
         "in public mode a done job keeps no repair lines, a failed job has a generic error"
       ]
+    },
+    "Page: the public status renders without verdicts": {
+      "file": "web/app.js",
+      "live": "const verified = profile.verdicts ? ` · ${profile.verdicts.verified ?? 0} vérifiées` : '';",
+      "dead": "const verified = ` · ${profile.verdicts.verified ?? 0} vérifiées`;",
+      "expect": [
+        "the public status renders without the owner assessment"
+      ]
     }
   }
 }
