@@ -329,6 +329,10 @@ impl ClaudeCodeBackend {
         let system = request.system.as_deref().unwrap_or(DEFAULT_SYSTEM_PROMPT);
         // Removed when this function returns, whatever the outcome.
         let system_file = SystemFile::write(&self.workdir, system)?;
+        // The answer goes into a private file, not a pipe: the CLI (Node)
+        // loses what it wrote past 128 KiB into a pipe when it exits (seen on
+        // the Linux VM, 2026-10-01: an analysis cut, refused as not JSON).
+        let (answer_file, answer_handle) = SystemFile::create(&self.workdir, "answer")?;
 
         let mut command = Command::new(&self.program);
         command
@@ -337,7 +341,7 @@ impl ClaudeCodeBackend {
             .env_clear()
             .envs(env.into_iter().filter(|(name, _)| !is_metered(name)))
             .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
+            .stdout(Stdio::from(answer_handle))
             .stderr(Stdio::piped());
 
         let mut child = match command.spawn() {
@@ -365,7 +369,6 @@ impl ClaudeCodeBackend {
                 let _ = stdin.write_all(prompt.as_bytes());
             }
         });
-        let stdout = drain(child.stdout.take());
         let stderr = drain(child.stderr.take());
 
         let status = match child.wait_timeout(self.timeout) {
@@ -386,7 +389,7 @@ impl ClaudeCodeBackend {
             }
         };
         let _ = writer.join();
-        let stdout = stdout.join().unwrap_or_default();
+        let stdout = std::fs::read_to_string(&answer_file.path).unwrap_or_default();
         let stderr = stderr.join().unwrap_or_default();
 
         if stdout.trim().is_empty() {
@@ -488,8 +491,20 @@ struct SystemFile {
 
 impl SystemFile {
     fn write(workdir: &Path, system: &str) -> Result<Self, BackendError> {
+        let (file, mut handle) = Self::create(workdir, "system")?;
+        handle.write_all(system.as_bytes()).map_err(|error| {
+            BackendError::Other(format!(
+                "cannot write the system prompt file {}: {error}",
+                file.path.display()
+            ))
+        })?;
+        Ok(file)
+    }
+
+    /// A new private file in `workdir` (removed on drop) and its handle.
+    fn create(workdir: &Path, stem: &str) -> Result<(Self, std::fs::File), BackendError> {
         let name = format!(
-            "system-{}-{}.txt",
+            "{stem}-{}-{}.txt",
             std::process::id(),
             SYSTEM_FILES.fetch_add(1, Ordering::Relaxed)
         );
@@ -505,19 +520,11 @@ impl SystemFile {
         options.write(true).create_new(true);
         #[cfg(unix)]
         std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
-        let cannot = |path: &Path, error: std::io::Error| {
-            BackendError::Other(format!(
-                "cannot write the system prompt file {}: {error}",
-                path.display()
-            ))
-        };
-        let mut handle = options.open(&path).map_err(|error| cannot(&path, error))?;
-        // Ours from here on, so removed on drop even if the write fails.
-        let file = Self { path };
-        handle
-            .write_all(system.as_bytes())
-            .map_err(|error| cannot(&file.path, error))?;
-        Ok(file)
+        let handle = options.open(&path).map_err(|error| {
+            BackendError::Other(format!("cannot create {}: {error}", path.display()))
+        })?;
+        // Ours from here on, so removed on drop even if a write fails.
+        Ok((Self { path }, handle))
     }
 }
 

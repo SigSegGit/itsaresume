@@ -619,7 +619,8 @@ fn the_cli_writes_its_answer_into_a_file_not_a_pipe() {
 fn a_large_answer_arrives_whole() {
     let scene = scene();
     let big = "x".repeat(300_000);
-    let fixture = std::fs::read_to_string(fixture("synthetic-success.verbose.json")).expect("fixture");
+    let fixture =
+        std::fs::read_to_string(fixture("synthetic-success.verbose.json")).expect("fixture");
     let mut messages: Vec<serde_json::Value> = serde_json::from_str(&fixture).expect("array");
     if let Some(last) = messages.last_mut() {
         last["result"] = serde_json::Value::String(big.clone());
@@ -628,6 +629,8 @@ fn a_large_answer_arrives_whole() {
     std::fs::write(&stdout, serde_json::Value::Array(messages).to_string()).expect("write");
     let mut env = env_with(&[]);
     env.push(("FAKE_CLAUDE_STDOUT".into(), stdout.into_os_string()));
-    let answer = backend(&scene).complete_with_env(&Request::new("p"), env).expect("answer");
+    let answer = backend(&scene)
+        .complete_with_env(&Request::new("p"), env)
+        .expect("answer");
     assert_eq!(answer.text.len(), big.len());
 }
