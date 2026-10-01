@@ -245,6 +245,23 @@ against someone with many addresses: it caps what the owner's quota can lose
 in a day. Residual: a Claude Pro subscription is personal, and serving it to
 strangers may conflict with its terms; the owner decided with that stated.
 
+### ADR-11 — Generation on the always-on VM, Claude first (2026-10-01)
+
+*Context.* With ADR-7 the site is offline whenever the laptop is. The owner
+decided (2026-10-01) that cv.<domain> must generate on the Freebox VM,
+using his Claude subscription first.
+
+*Decision.* The router (its Docker image, the `claude` CLI on a
+subscription OAuth token) and the generator run on the VM; Word is replaced
+there by a LibreOffice layout engine, trusted only once measured against
+Word on the corpus; the laptop's local model joins as a second backend when
+the laptop is on (tunnel). Supersedes ADR-7's "the pipeline needs the
+laptop"; Caddy and the caps stay. Steps: HANDOVER 3.1-3.4.
+
+*Cost.* Without the laptop and with the Claude quota spent, no CV can be
+made: the page says so. A Pro subscription serving strangers may conflict
+with its terms (ADR-7's residual, unchanged).
+
 ### ADR-8 — The model is behind one HTTP contract
 
 `src/llm.js` is the generator's only model client: `POST {system, prompt}`
