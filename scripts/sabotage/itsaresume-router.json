@@ -886,8 +886,8 @@
     },
     "Stats by day: the first hit stays": {
       "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "day.first_hit.get_or_insert_with(|| ts[11..16].to_owned());",
-      "dead": "day.first_hit = Some(ts[11..16].to_owned());",
+      "live": "day.first_hit.get_or_insert_with(|| time.to_owned());",
+      "dead": "day.first_hit = Some(time.to_owned());",
       "expect": [
         "the_journal_by_day_says_when_the_plan_ran_out"
       ]
@@ -963,6 +963,38 @@
       "dead": "system,\n            schema,\n            kind: if kind == Kind::Classify { Kind::Generate } else { kind },\n        },",
       "expect": [
         "the_kind_option_reaches_a_classify_only_backend"
+      ]
+    },
+    "Stats by day: a multi-byte ts is skipped": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "let (Some(date), Some(time)) = (ts.get(..10), ts.get(11..16)) else {",
+      "dead": "let (Some(date), Some(time)) = (Some(&ts[..10]), Some(&ts[11..16])) else {",
+      "expect": [
+        "a_timestamp_of_multibyte_characters_is_skipped_not_fatal"
+      ]
+    },
+    "Config: a timeout above a day is refused": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": ".any(|b| b.timeout() > Duration::from_secs(MAX_TIMEOUT_SECS))",
+      "dead": ".any(|b| b.timeout() > Duration::from_secs(u64::MAX))",
+      "expect": [
+        "a_timeout_too_large_for_a_deadline_is_refused"
+      ]
+    },
+    "LM Studio: a non-JSON schema answer is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "completion.text.chars().count()",
+      "dead": "excerpt(&completion.text, 160)",
+      "expect": [
+        "a_non_json_answer_to_a_schema_request_is_not_quoted_in_the_error"
+      ]
+    },
+    "Claude: non-JSON stdout is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "stdout.chars().count()",
+      "dead": "excerpt(stdout, 160)",
+      "expect": [
+        "stdout_that_is_not_json_is_not_quoted_in_the_error"
       ]
     }
   }

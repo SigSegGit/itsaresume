@@ -13,6 +13,10 @@ use std::time::Duration;
 /// How long a backend may take when the file does not say.
 pub const DEFAULT_TIMEOUT_SECS: u64 = 300;
 
+/// The longest `timeout_secs` accepted (one day): a deadline is `now +
+/// timeout`, which panics on overflow for a huge value.
+pub const MAX_TIMEOUT_SECS: u64 = 86_400;
+
 /// The whole file.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -170,6 +174,15 @@ impl Config {
 
     /// The router this configuration describes.
     pub fn router(&self) -> Result<Router, ConfigError> {
+        if self
+            .backends
+            .iter()
+            .any(|b| b.timeout() > Duration::from_secs(MAX_TIMEOUT_SECS))
+        {
+            return Err(ConfigError(format!(
+                "invalid configuration: timeout_secs above {MAX_TIMEOUT_SECS} (one day) is refused"
+            )));
+        }
         if self.backends.iter().any(|b| b.max_concurrent() == Some(0)) {
             return Err(ConfigError(
                 "invalid configuration: max_concurrent = 0 would never answer".into(),

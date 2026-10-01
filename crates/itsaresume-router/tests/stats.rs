@@ -59,3 +59,16 @@ fn the_journal_by_day_says_when_the_plan_ran_out() {
         "2026-09-30: 1 request; answered by lm-studio 1; no quota hit\n"
     );
 }
+
+/// A `ts` of multi-byte characters is long enough in bytes but cannot be cut
+/// at byte 10: the line is skipped, nothing panics, the others are summed.
+#[test]
+fn a_timestamp_of_multibyte_characters_is_skipped_not_fatal() {
+    let journal = "{\"ts\":\"€€€€€€\",\"outcome\":\"answered\",\"backend\":\"claude-code\"}\n\
+{\"ts\":\"2026-09-29T09:00:00.000Z\",\"outcome\":\"answered\",\"backend\":\"claude-code\"}\n";
+    let text = summarize_by_day(journal);
+    assert_eq!(
+        text,
+        "2026-09-29: 1 request; answered by claude-code 1; no quota hit\n"
+    );
+}

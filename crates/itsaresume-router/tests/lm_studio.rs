@@ -312,3 +312,21 @@ fn a_schema_request_sends_response_format_and_needs_json() {
             .is_none()
     );
 }
+
+/// The journal promises lengths only, and an attempt's message goes into it:
+/// the text of an answer that is not JSON is counted, never quoted.
+#[test]
+fn a_non_json_answer_to_a_schema_request_is_not_quoted_in_the_error() {
+    let schema = serde_json::json!({"type": "object"});
+    let (base_url, _) = serve(
+        200,
+        r#"{"choices":[{"message":{"content":"Jane Doe, 12 rue X"},"finish_reason":"stop"}]}"#,
+    );
+    let outcome = backend(&base_url).complete(&Request::new("p").with_schema(schema));
+    let Err(error) = outcome else {
+        panic!("text that is not JSON is no answer to a schema request")
+    };
+    assert_eq!(error.kind(), "other");
+    assert!(!error.message().contains("Jane Doe"), "{error}");
+    assert!(error.message().contains("18 characters"), "{error}");
+}
