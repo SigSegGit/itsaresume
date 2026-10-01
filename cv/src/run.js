@@ -18,6 +18,10 @@ import { analyse } from './pipeline.js';
 import { buildModel, rankBullets, defaultBullets } from './tailor.js';
 import { fitToPage } from './fit.js';
 import { startWord } from './word.js';
+import { startLibre } from './libre.js';
+
+/** Word where it runs, else LibreOffice (ADR-11, the Linux VM), else none. */
+export const startLayoutEngine = async () => (await startWord()) ?? (await startLibre());
 import { atsCheck } from './ats.js';
 import { render } from './render.js';
 import { report } from './report.js';
@@ -73,7 +77,7 @@ export function runName(offer, now = new Date()) {
  * analysis ({attempt}), layout ({layouts}), pdf, ats, done ({dir}).
  * `startLayout` starts the layout engine (Word; tests fake it).
  */
-export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startWord, onStep = () => {} }) {
+export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {} }) {
   const { full, profile, assessment, removed, texts } = loaded;
   const dir = join(outDir, runName(offer));
   let result;
@@ -182,7 +186,7 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep })
 function pdfText(pdf) {
   const script = fileURLToPath(new URL('../tools/pdftext.py', import.meta.url));
   try {
-    return execFileSync('python', [script, pdf], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return execFileSync(process.env.ITSACV_PYTHON || 'python', [script, pdf], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (error) {
     // Python's last line says what went wrong; the traceback above it does not.
     throw new Error(String(error.stderr ?? '').trim().split(/\r?\n/).at(-1) || error.message);

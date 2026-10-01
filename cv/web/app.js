@@ -58,7 +58,7 @@ async function refreshStatus() {
       $('status-profile').title = profile.truth ?? '';
     }
     setPill('status-router', router.up ? 'ok' : 'bad', router.up ? 'Routeur joignable' : 'Routeur injoignable');
-    setPill('status-layout', layout.word ? 'ok' : 'warn', layout.word ? 'Word : PDF et page pleine' : 'Sans Word : DOCX seul');
+    setPill('status-layout', layout.word || layout.libre ? 'ok' : 'warn', layout.word ? 'Word : PDF et page pleine' : layout.libre ? 'LibreOffice : PDF et page pleine' : 'Sans moteur de mise en page : DOCX seul');
   } catch (error) {
     setPill('status-profile', 'bad', `Statut indisponible : ${error.message}`);
   }
