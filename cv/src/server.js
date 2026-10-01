@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanName } from './guard.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
+import { MODELS } from './qa.js';
 
 export const MAX_BODY = 256 * 1024;
 export const MAX_OFFERS = 6;
@@ -110,7 +111,7 @@ function publicStatus(status) {
 function view(job, { detail = false, publicMode = null } = {}) {
   // Router text and paths are the owner's: a visitor only learns that it failed.
   const error = publicMode && job.status === 'failed' ? 'échec' : job.error ?? null;
-  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null };
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via };
   if (!job.result) return base;
   const { fit } = job.result.view;
   base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
@@ -218,6 +219,37 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     }
   }
 
+  /** Manual QA: one line per run, kept by the owner (deps.log), never shown to visitors. */
+  function log(job) {
+    if (!deps.log) return;
+    const result = job.result ?? {};
+    try {
+      deps.log({
+        at: new Date(clock()).toISOString(),
+        id: job.id,
+        title: job.title,
+        offer: job.text,
+        model: job.model,
+        via: job.via,
+        visitor: job.visitor,
+        status: job.status,
+        reused: job.reused ?? false,
+        error: job.error ?? null,
+        elapsed_ms: job.endedAt != null ? job.endedAt - job.startedAt : null,
+        steps: job.times,
+        backend: result.backend ?? null,
+        attempts: result.attempts ?? null,
+        repairs: result.repairs ?? null,
+        dir: result.dir ?? null,
+        fit: result.view?.fit ?? null,
+        analysis: result.analysis ?? null,
+      });
+    } catch (error) {
+      process.stderr.write(`itsacv serve: the QA log failed: ${error.message ?? error}
+`);
+    }
+  }
+
   async function work() {
     if (running) return;
     running = true;
@@ -228,7 +260,11 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       // Read by the view: running, it grows; done or failed, it stays.
       job.elapsed = () => (job.endedAt ?? clock()) - job.startedAt;
       try {
-        job.result = await deps.tailor({ offer: job.text, onStep: (step, detail = {}) => job.steps.push({ step, ...detail }) });
+        const onStep = (step, detail = {}) => {
+          job.steps.push({ step, ...detail });
+          job.times.push({ step, at: clock() - job.startedAt });
+        };
+        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep });
         job.status = 'done';
         job.endedAt = clock();
       } catch (error) {
@@ -236,6 +272,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         job.endedAt = clock();
         job.error = String(error.message ?? error).slice(0, 2000);
       }
+      log(job);
     }
     running = false;
   }
@@ -301,6 +338,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (path === '/api/jobs') {
         if (publicMode) checkBan(request);
         const offers = body?.offers;
+        const model = body?.model ?? 'auto';
+        if (!MODELS.includes(model)) throw new HttpError(400, `model: one of ${MODELS.join(', ')}`);
+        // The VM forwards the public name; the laptop page is reached on 127.0.0.1.
+        const via = publicMode && request.headers.host === publicMode.host ? 'vm' : 'laptop';
         if (!Array.isArray(offers) || offers.length === 0 || offers.length > MAX_OFFERS) {
           throw new HttpError(400, `offers: from 1 to ${MAX_OFFERS}`);
         }
@@ -311,10 +352,11 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (publicMode && !looksLikeOffer(offer.text)) {
             throw new HttpError(400, `Ce texte ne ressemble pas à une offre d’emploi (entre ${OFFER_CHARS.min} et ${OFFER_CHARS.max} caractères) : colle le texte d’une offre.`);
           }
-          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [] };
+          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor };
         });
         // An offer already answered is answered from its run: no model call, not counted.
-        const reused = created.map((job) => (publicMode && deps.reuse ? deps.reuse(job.text) : null));
+        // A model chosen by hand is a measure: it always runs.
+        const reused = created.map((job) => (publicMode && deps.reuse && job.model === 'auto' ? deps.reuse(job.text) : null));
         if (publicMode) admit(request, reused.filter((result) => !result).length);
         created.forEach((job, index) => {
           jobs.set(job.id, job);
@@ -322,6 +364,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (reused[index]) {
             job.result = reused[index];
             job.status = 'done';
+            job.reused = true;
+            log(job);
           } else {
             queue.push(job);
           }

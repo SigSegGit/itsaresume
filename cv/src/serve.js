@@ -3,6 +3,7 @@
 import { request } from 'node:http';
 import { createApp } from './server.js';
 import { loadProfile, readRun, tailorOffer } from './run.js';
+import { appendQaLog, withModel } from './qa.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
@@ -48,9 +49,9 @@ export async function serve({ profile: profilePath, out, url, port, useWord, llm
   const deps = {
     status: () => status({ profilePath, url, useWord }),
     split: (text) => splitOffers({ text, llm }),
-    tailor: async ({ offer, onStep }) => {
+    tailor: async ({ offer, model = 'auto', onStep }) => {
       const loaded = loadProfile(profilePath);
-      const result = await tailorOffer({ loaded, offer, llm, outDir: out, useWord, onStep });
+      const result = await tailorOffer({ loaded, offer, llm: withModel(llm, model), outDir: out, useWord, onStep });
       return { ...result, view: jobView(result, loaded) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.
@@ -62,6 +63,7 @@ export async function serve({ profile: profilePath, out, url, port, useWord, llm
           return { ...result, view: jobView(result, loadProfile(profilePath)) };
         }
       : undefined,
+    log: (entry) => appendQaLog(out, entry),
   };
   const { server } = createApp({ deps, publicMode });
   await new Promise((resolve, reject) => {

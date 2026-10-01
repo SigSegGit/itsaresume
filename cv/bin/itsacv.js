@@ -102,7 +102,7 @@ const read = (file) => {
 async function main() {
   const options = parse(process.argv.slice(2));
   const timeoutMs = Number(options.timeout) * 1000;
-  const llm = ({ system, prompt, schema }) => complete({ url: options.url, system, prompt, schema, timeoutMs });
+  const llm = ({ system, prompt, schema, backend }) => complete({ url: options.url, system, prompt, schema, backend, timeoutMs });
 
   if (options.command === 'serve') {
     for (const key of ['perDay', 'perHour', 'maxQueued', 'banAfter', 'banHours']) {

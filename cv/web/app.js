@@ -6,6 +6,8 @@ const token = document.querySelector('meta[name="csrf-token"]').content;
 const $ = (id) => document.getElementById(id);
 const MAX_TEXT = 60000;
 const POLL_MS = 1500;
+const MODEL_NAMES = { auto: 'auto', claude: 'Claude seul', local: 'IA locale seule' };
+const seconds = (ms) => (Number.isFinite(ms) ? `${Math.round(ms / 1000)} s` : 'durée inconnue');
 
 /** An element with text only: attrs are properties, children are nodes or strings. */
 function h(tag, attrs = {}, ...children) {
@@ -182,7 +184,7 @@ function setupOffers() {
     const batch = offers.splice(0, offers.length);
     renderOffers();
     try {
-      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })) });
+      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value });
       poll();
     } catch (error) {
       offers.push(...batch);
@@ -307,7 +309,7 @@ function resultOf(job, detail) {
       h('ul', { class: 'list' }, toConfirm.map((t) => h('li', { text: t })))) : null,
     h('details', {}, h('summary', { text: `Preuves des compétences affichées (${detail.verification.length})` }), verification(detail.verification)),
     detail.fit.rationale ? h('details', {}, h('summary', { text: 'Commentaire du modèle (non vérifié)' }), h('p', { class: 'quote', text: detail.fit.rationale })) : null,
-    h('p', { class: 'help', text: `Répondu par ${detail.backend} en ${detail.attempts} essai(s).` }),
+    h('p', { class: 'help', text: `Modèle demandé : ${MODEL_NAMES[detail.model] ?? detail.model}, via ${detail.via === 'vm' ? 'la VM' : 'le portable'} · répondu par ${detail.backend} en ${detail.attempts} essai(s), ${seconds(detail.elapsed_ms)}.` }),
   ];
 }
 
