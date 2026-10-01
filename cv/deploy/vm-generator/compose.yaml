@@ -41,6 +41,8 @@ services:
       - ${DATA:-~/itsacv-data}/profile.json:/data/profile.json:ro
       - ${DATA:-~/itsacv-data}/sources:/data/sources:ro
       - ${DATA:-~/itsacv-data}/out:/data/out
-    command: ["sh", "-c", "exec node bin/itsacv.js serve --port 18790 --url http://127.0.0.1:8789 --timeout 1800 --out /data/out --public-host \"$$CV_HOST\" --per-day 20 --per-hour 3 --max-queued 3"]
+    # A shell for $CV_HOST: the image's entrypoint is node itself.
+    entrypoint: ["sh", "-c"]
+    command: ["exec node bin/itsacv.js serve --port 18790 --url http://127.0.0.1:8789 --timeout 1800 --out /data/out --public-host \"$$CV_HOST\" --per-day 20 --per-hour 3 --max-queued 3"]
     init: true
     restart: unless-stopped
