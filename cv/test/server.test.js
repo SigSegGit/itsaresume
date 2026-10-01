@@ -528,8 +528,20 @@ test('public mode bans an IP and its visitors for 24 hours after more than ten r
   assert.equal((await alice.get('/api/jobs')).status, 200, 'the page and status still work');
   const other = await app.visit('198.51.100.9');
   assert.equal((await other.post('/api/jobs', one)).status, 202, 'another IP is not banned');
-  app.clock.now += 24 * 3600 * 1000 + 60 * 1000;
+  app.clock.now += 5 * 3600 * 1000;
+  assert.ok(banned(await alice.post('/api/jobs', one)), 'still banned five hours later');
+  app.clock.now += 19 * 3600 * 1000 + 60 * 1000;
   assert.equal((await second.post('/api/jobs', one)).status, 202, 'the ban ends after 24 h');
+});
+
+test('requests older than an hour do not count towards the ban', async (t) => {
+  const app = await startPublic(t, { perDay: 1000, perVisitorPerHour: 1000, maxQueued: 1000 });
+  const one = { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] };
+  const alice = await app.visit('203.0.113.7');
+  for (let round = 0; round < 3; round += 1) {
+    for (let i = 0; i < 6; i += 1) assert.ok(!banned(await alice.post('/api/jobs', one)), `round ${round} request ${i}`);
+    app.clock.now += 61 * 60 * 1000;
+  }
 });
 
 test('requests refused by the existing caps still count towards the ban, and the thresholds are configurable', async (t) => {

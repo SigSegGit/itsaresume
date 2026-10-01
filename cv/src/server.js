@@ -187,6 +187,37 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });
   }
 
+  // Hammering is banned (public mode, memory only): more than banAfter attempts
+  // at POST /api/jobs within an hour from one IP or one visitor bans both for
+  // banHours. Every attempt counts, including those the caps refuse.
+  const hits = new Map();
+  const bans = new Map();
+  const BAN_MESSAGE = 'Trop de demandes : accès suspendu pour 24 h.';
+  function checkBan(request) {
+    const now = publicMode.now();
+    const banAfter = publicMode.banAfter ?? 10;
+    const keys = [`ip:${clientOf(request)}`, `visitor:${visitorOf(request)}`];
+    for (const [key, until] of bans) if (until <= now) bans.delete(key);
+    if (keys.some((key) => bans.has(key))) throw new HttpError(429, BAN_MESSAGE);
+    let over = false;
+    for (const key of keys) {
+      const recent = (hits.get(key) ?? []).filter((at) => at > now - HOUR);
+      recent.push(now);
+      hits.delete(key);
+      hits.set(key, recent);
+      if (recent.length > banAfter) over = true;
+    }
+    for (const [key, list] of hits) {
+      if (list[list.length - 1] <= now - HOUR) hits.delete(key);
+    }
+    while (hits.size > MAX_VISITORS) hits.delete(hits.keys().next().value);
+    if (over) {
+      for (const key of keys) bans.set(key, now + (publicMode.banHours ?? 24) * HOUR);
+      while (bans.size > MAX_VISITORS) bans.delete(bans.keys().next().value);
+      throw new HttpError(429, BAN_MESSAGE);
+    }
+  }
+
   async function work() {
     if (running) return;
     running = true;
@@ -268,6 +299,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         return send(response, 200, await deps.split(body.text));
       }
       if (path === '/api/jobs') {
+        if (publicMode) checkBan(request);
         const offers = body?.offers;
         if (!Array.isArray(offers) || offers.length === 0 || offers.length > MAX_OFFERS) {
           throw new HttpError(400, `offers: from 1 to ${MAX_OFFERS}`);

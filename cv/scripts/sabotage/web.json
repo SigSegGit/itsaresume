@@ -436,6 +436,74 @@
       "expect": [
         "a reloaded public page is the same visitor, and sees its running job"
       ]
+    },
+    "Ban: more than banAfter attempts bans": {
+      "file": "src/server.js",
+      "live": "if (recent.length > banAfter) over = true;",
+      "dead": "if (false) over = true;",
+      "expect": [
+        "public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour",
+        "requests refused by the existing caps still count towards the ban, and the thresholds are configurable",
+        "the ban counts one visitor across several IPs"
+      ]
+    },
+    "Ban: the default threshold is ten": {
+      "file": "src/server.js",
+      "live": "publicMode.banAfter ?? 10",
+      "dead": "publicMode.banAfter ?? 5",
+      "expect": [
+        "public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour",
+        "requests older than an hour do not count towards the ban"
+      ]
+    },
+    "Ban: a banned client is refused": {
+      "file": "src/server.js",
+      "live": "if (keys.some((key) => bans.has(key))) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour"
+      ]
+    },
+    "Ban: a ban expires": {
+      "file": "src/server.js",
+      "live": "if (until <= now) bans.delete(key);",
+      "dead": "if (false) bans.delete(key);",
+      "expect": [
+        "public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour",
+        "requests refused by the existing caps still count towards the ban, and the thresholds are configurable"
+      ]
+    },
+    "Ban: the ban lasts banHours": {
+      "file": "src/server.js",
+      "live": "(publicMode.banHours ?? 24) * HOUR",
+      "dead": "24 * HOUR",
+      "expect": [
+        "requests refused by the existing caps still count towards the ban, and the thresholds are configurable"
+      ]
+    },
+    "Ban: attempts are counted per IP": {
+      "file": "src/server.js",
+      "live": "`ip:${clientOf(request)}`",
+      "dead": "`ip:x`",
+      "expect": [
+        "public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour"
+      ]
+    },
+    "Ban: attempts are counted per visitor": {
+      "file": "src/server.js",
+      "live": "`visitor:${visitorOf(request)}`",
+      "dead": "`visitor:${clientOf(request)}`",
+      "expect": [
+        "the ban counts one visitor across several IPs"
+      ]
+    },
+    "Ban: only the last hour counts": {
+      "file": "src/server.js",
+      "live": "filter((at) => at > now - HOUR)",
+      "dead": "filter(() => true)",
+      "expect": [
+        "requests older than an hour do not count towards the ban"
+      ]
     }
   }
 }
