@@ -33,6 +33,13 @@ test('the page is responsive', () => {
   assert.match(web('style.css'), /@media \(max-width: \d+px\)/);
 });
 
+test('the footer never claims the analysis stays local: it names Claude and the local fallback', () => {
+  const foot = web('index.html').match(/<footer[\s\S]*?<\/footer>/)[0];
+  assert.ok(!/100\s*%\s*local/i.test(foot), 'claims 100 % local');
+  assert.match(foot, /Claude/);
+  assert.match(foot, /IA locale/);
+});
+
 /* ---------- The page's script, run over a minimal DOM (test/fixtures/page.js) ---------- */
 
 const STATUS = { profile: { name: 'Alex MARTIN', skills: 7, verdicts: { verified: 2 } }, router: { up: true }, layout: { word: true } };

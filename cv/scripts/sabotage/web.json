@@ -529,6 +529,14 @@
       "expect": [
         "a card says when the offer held instructions, which were not applied, and shows no text of them"
       ]
+    },
+    "Web: the footer never claims the analysis stays local": {
+      "file": "web/index.html",
+      "live": "L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours",
+      "dead": "100 % local",
+      "expect": [
+        "the footer never claims the analysis stays local: it names Claude and the local fallback"
+      ]
     }
   }
 }
