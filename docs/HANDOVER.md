@@ -499,6 +499,12 @@ branch with the local gates of §3 green.
   body" stays green there (seen 2026-09-29, 60 of 61 verified); the Linux CI
   verifies it (PR #10). Not investigated: tiny_http's drain probably does not
   abort on Windows. Trust the CI's sabotage job for that defence.
+- **Error texts still quoted into the journal** (red team, 2026-10-01): the
+  non-JSON cases now give a length, not the text; four excerpts remain
+  (LM Studio "without choices[0].message.content" and HTTP bodies with no
+  `error.message`; Claude "result message is not understood"; the Claude
+  stderr excerpt). They are server or CLI texts, but can carry model-shaped
+  text: give lengths there too.
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 - **Contract with the Node.js generator** — M3.
 
