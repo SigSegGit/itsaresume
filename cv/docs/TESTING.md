@@ -331,6 +331,14 @@ property it proves.
 | requirements the analysis left out are added from a focused listing | Listing: requirements left out are added |
 | a listing that cannot be read leaves the analysis as it was | — |
 
+## `test/qa.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| auto lets the router choose; claude and local name its backends | QA: claude and local name the router backends |
+| each run appends one JSON line to the QA log, never rewriting it | QA: the log appends |
+| a chosen model goes with every call to the router; auto sends none | QA: every call of a run goes to the chosen backend |
+
 ## `test/redteam.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -437,6 +445,9 @@ property it proves.
 | requests refused by the existing caps still count towards the ban, and the thresholds are configurable | Ban: more than banAfter attempts bans; Ban: a ban expires; Ban: the ban lasts banHours |
 | the ban counts one visitor across several IPs | Ban: more than banAfter attempts bans; Ban: attempts are counted per visitor |
 | the owner (not public mode) is never banned | — |
+| a job carries the chosen model to the generation; none means auto; an unknown one is refused | QA: an unknown model is refused; QA: the chosen model reaches the generation |
+| every finished job is logged: offer, model, entry point, backend, steps with times, outcome | QA: every run is logged; QA: the log keeps the step times |
+| in public mode the entry point is the VM, and a chosen model is never answered from a reused run | QA: a chosen model is never answered from a reused run; QA: the entry point is the VM on the public name |
 
 ## `test/split.test.js`
 
@@ -474,6 +485,7 @@ property it proves.
 | the page sends its token with every call, reads included (in public mode it names the visitor) | Page: the token goes with reads |
 | in public mode the page offers one offer at a time, with no email splitting | Page: public mode hides splitting |
 | the public status renders without the owner assessment | Page: the public status renders without verdicts |
+| the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 
 ## `test/word.test.js`
 
@@ -490,6 +502,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**326 tests, 267 of them covered by at least one sabotage defence.**
+**333 tests, 274 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

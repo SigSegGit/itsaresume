@@ -40,6 +40,13 @@
         <button type="button" class="secondary" id="split">Détecter plusieurs offres</button>
       </div>
       <ol class="offers" id="offers" aria-live="polite"></ol>
+      <label class="model" for="model">Modèle
+        <select id="model">
+          <option value="auto">Auto : Claude, puis l'IA locale en secours</option>
+          <option value="claude">Claude seul</option>
+          <option value="local">IA locale seule (lente)</option>
+        </select>
+      </label>
       <button type="button" class="primary" id="generate" disabled>Générer les CV</button>
       <p class="error" id="offers-error" role="alert" hidden></p>
     </section>

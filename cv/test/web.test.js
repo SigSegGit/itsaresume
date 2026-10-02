@@ -176,3 +176,10 @@ test('the public status renders without the owner assessment', async () => {
   assert.match(page.$('status-layout').textContent, /Word/);
   page.close();
 });
+
+test('the page lets the owner pick the model, and sends the choice with the offers', () => {
+  const html = web('index.html');
+  const select = html.match(/<select id="model"[\s\S]*?<\/select>/)?.[0] ?? '';
+  assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'local']);
+  assert.match(web('app.js'), /api\('\/api\/jobs', \{ offers: [^\n]*, model: \$\('model'\)\.value \}\)/);
+});

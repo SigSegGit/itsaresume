@@ -343,8 +343,8 @@
     },
     "Web: a job carries its elapsed time": {
       "file": "src/server.js",
-      "live": "error, elapsed_ms: job.elapsed?.() ?? null };",
-      "dead": "error, elapsed_ms: null };",
+      "live": "error, elapsed_ms: job.elapsed?.() ?? null, model:",
+      "dead": "error, elapsed_ms: null, model:",
       "expect": [
         "a job says how long it ran, from start to end"
       ]

@@ -575,3 +575,54 @@ test('the owner (not public mode) is never banned', async () => {
     app.server.close();
   }
 });
+
+test('a job carries the chosen model to the generation; none means auto; an unknown one is refused', async () => {
+  const seen = [];
+  const app = await start({ tailor: async ({ offer, model }) => (seen.push(model), fakeResult(offer)) });
+  try {
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'one' }], model: 'local' })).status, 202);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'two' }] })).status, 202);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'three' }], model: 'gpt-4' })).status, 400);
+    const jobs = await until(app, (all) => all.length === 2 && all.every((job) => job.status === 'done'));
+    assert.deepEqual(seen, ['local', 'auto']);
+    assert.deepEqual(jobs.map((job) => [job.model, job.via]), [['local', 'laptop'], ['auto', 'laptop']]);
+  } finally {
+    app.server.close();
+  }
+});
+
+test('every finished job is logged: offer, model, entry point, backend, steps with times, outcome', async () => {
+  const logged = [];
+  const app = await start({ log: (entry) => logged.push(entry) });
+  try {
+    await post(app, '/api/jobs', { offers: [{ title: 'SRE', text: 'an offer' }, { text: 'boom' }], model: 'claude' });
+    await until(app, (all) => all.length === 2 && all.every((job) => job.status === 'done' || job.status === 'failed'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(logged.length, 2);
+    const [done, failed] = logged;
+    assert.equal(done.title, 'SRE');
+    assert.equal(done.offer, 'an offer');
+    assert.equal(done.model, 'claude');
+    assert.equal(done.via, 'laptop');
+    assert.equal(done.status, 'done');
+    assert.equal(done.dir, logged[0].dir);
+    assert.ok(done.dir);
+    assert.equal(typeof done.elapsed_ms, 'number');
+    assert.ok(done.steps.length >= 2 && done.steps.every((step) => step.step && typeof step.at === 'number'));
+    assert.match(done.at, /^\d{4}-\d\d-\d\dT/);
+    assert.equal(failed.status, 'failed');
+    assert.match(failed.error, /still invalid/);
+  } finally {
+    app.server.close();
+  }
+});
+
+test('in public mode the entry point is the VM, and a chosen model is never answered from a reused run', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  const [job] = JSON.parse((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Déjà vue : Senior SRE') }], model: 'local' })).text);
+  assert.equal(job.via, 'vm');
+  assert.notEqual(job.status, 'done');
+  for (let i = 0; i < 100 && app.calls.tailored === 0; i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(app.calls.tailored, 1);
+});

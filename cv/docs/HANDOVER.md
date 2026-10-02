@@ -184,6 +184,15 @@ Traps met, each cost time once:
   block and has no production caller yet.
 - [x] **2.4** Public go-live (2026-09-28). Not checked by an agent: one
   offer end to end from a phone on 4G (the owner).
+- [x] **2.4b** Manual QA (2026-10-02): the page picks the model per run
+  (auto = the router's order, Claude alone, the local AI alone; `src/qa.js`
+  maps them to the router's backend names), a hand-picked model is never
+  answered from a reused run, and every run (reused ones too) appends one
+  JSON line to `<out>/qa-log.jsonl`: offer, model, entry point (`vm` when
+  the public name was used, else `laptop`), backend, attempts, step times,
+  outcome, fit and the model's analysis. The entry point is the URL opened,
+  not a choice: both run on the laptop. The owner reads the log; a study of
+  it comes before any change of model or prompt.
 - [ ] **2.5** The owner's profile edits, recompiled (private data).
 - [x] **2.6** must/nice decided by code from the offer's cues (2026-09-29;
   `src/importance.js`, 9 defences). No real offer changed: the ones at hand
