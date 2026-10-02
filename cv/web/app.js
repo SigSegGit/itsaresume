@@ -275,7 +275,8 @@ function verification(items) {
 
 function resultOf(job, detail) {
   const fit = detail.fit;
-  const scored = detail.requirements.filter((r) => r.kind !== 'quality');
+  const scored = detail.requirements.filter((r) => r.kind !== 'quality' && r.kind !== 'condition');
+  const conditions = detail.requirements.filter((r) => r.kind === 'condition');
   const qualities = detail.requirements.filter((r) => r.kind === 'quality');
   const [qTone, qLabel] = QUALIFICATION[fit.qualification?.level] ?? ['', 'Qualification inconnue'];
   const gaps = fit.qualification?.gaps ?? [];
@@ -305,6 +306,8 @@ function resultOf(job, detail) {
     h('div', { class: 'downloads' }, downloads),
     h('details', {}, h('summary', { text: `Exigences de l’offre (${scored.length})` }), requirementsTable(scored)),
     qualities.length ? h('details', {}, h('summary', { text: `Savoir-être, non notés (${qualities.length})` }), qualitiesList(qualities)) : null,
+    conditions.length ? h('details', {}, h('summary', { text: `Conditions à confirmer, non notées (${conditions.length})` }),
+      h('ul', { class: 'list' }, conditions.map((r) => h('li', { text: `${r.name} — à confirmer : ton profil n’en dit rien` })))) : null,
     toConfirm.length ? h('details', { open: true }, h('summary', { text: `À confirmer avant envoi (${toConfirm.length})` }),
       h('ul', { class: 'list' }, toConfirm.map((t) => h('li', { text: t })))) : null,
     h('details', {}, h('summary', { text: `Preuves des compétences affichées (${detail.verification.length})` }), verification(detail.verification)),

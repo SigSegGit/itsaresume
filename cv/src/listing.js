@@ -86,7 +86,10 @@ export function mergeListed(analysis, listed) {
     const words = wordsOf(item.name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
     return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));
   };
-  const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !covered(item));
+  // A name that heads a row before its parenthesis is that row ("HA" /
+  // "HA (haute disponibilité réseau)", 2026-10-02); "SQL" still is not "SQL Server".
+  const heads = new Set((analysis.requirements ?? []).map((requirement) => String(requirement.name).split('(')[0].trim().toLowerCase()));
+  const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !heads.has(item.name.toLowerCase()) && !covered(item));
   return {
     analysis: {
       ...analysis,

@@ -23,8 +23,8 @@
     },
     "Equivalents: never-claimed stays no": {
       "file": "src/normalize.js",
-      "live": "if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
-      "dead": "if (requirement.match === 'no' && requirement.kind !== 'quality' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "live": "if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "dead": "if (requirement.match === 'no' && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
       "expect": [
         "a never-claimed requirement stays no, whatever its category holds"
       ]
@@ -47,7 +47,7 @@
     },
     "Languages: a language requirement is judged by the profile": {
       "file": "src/normalize.js",
-      "live": "const spoken = requirement.never || requirement.kind === 'quality' ? null : languageOf(requirement, profile, analysis.language);",
+      "live": "const spoken = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' ? null : languageOf(requirement, profile, analysis.language);",
       "dead": "const spoken = null;",
       "expect": [
         "\"Anglais professionnel\" is met by the profile's \"Anglais — bilingue\", and counts"

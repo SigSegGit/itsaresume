@@ -32,12 +32,29 @@ export const QUALITIES = `communica rigueur rigoureu rigor rigour organis organi
   fédérer fédérateur fédératrice leadership polyvalen versatil curios curieu curious autonom adaptab relationnel relational
   interpersonal posture interagir interact bienveillan empath créativ creativ diplomat teamwork`.split(/\s+/)
   .concat(['esprit équipe', 'travail équipe', 'team player', 'team spirit', 'force proposition',
-    'monter rapidement', 'nouveaux sujets', 'montée compétence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact']);
+    'monter rapidement', 'nouveaux sujets', 'montée compétence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact'])
+  .concat(['binôm', 'binom', 'pair work']);
+
+/**
+ * Administrative conditions (2026-10-02: "Nationalité française", "Profil
+ * habilitable" shown as failed): a status the candidate confirms, not a skill.
+ */
+export const CONDITIONS = `nationalit citoyen citizen habilit clearance permis visa`.split(/\s+/)
+  .concat(['work permit', 'driving licen', 'right work']);
+
+/** Whether a name holds a word, or a run of words, of the conditions above. */
+export function namesCondition(name) {
+  return holds(name, CONDITIONS);
+}
 
 /** Whether a name holds a word, or a run of words, of the qualities above. */
 export function namesQuality(name) {
+  return holds(name, QUALITIES);
+}
+
+function holds(name, entries) {
   const words = wordsOf(name);
-  return QUALITIES.some((entry) => {
+  return entries.some((entry) => {
     const starts = entry.split(' ');
     return words.some((_, i) => starts.every((start, j) => words[i + j]?.startsWith(start)));
   });

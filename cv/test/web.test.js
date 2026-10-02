@@ -183,3 +183,17 @@ test('the page lets the owner pick the model, and sends the choice with the offe
   assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'local']);
   assert.match(web('app.js'), /api\('\/api\/jobs', \{ offers: [^\n]*, model: \$\('model'\)\.value \}\)/);
 });
+
+test('an administrative condition is shown apart, to confirm, never as a failed requirement', async () => {
+  const requirements = [
+    { name: 'Kubernetes', importance: 'must', match: 'no', never: true, note: '', skills: [], kind: 'skill' },
+    { name: 'Nationalité française', importance: 'must', match: 'no', never: false, note: '', skills: [], kind: 'condition' },
+  ];
+  const page = pageWith([{ id: 'j1', title: 'Réseau', status: 'done', steps: [], error: null }], { j1: detail({ requirements }) });
+  await page.settle();
+  const text = page.$('jobs').textContent;
+  assert.match(text, /Exigences de l’offre \(1\)/);
+  assert.match(text, /Conditions à confirmer, non notées \(1\)/);
+  assert.match(text, /Nationalité française — à confirmer : ton profil n’en dit rien/);
+  page.close();
+});

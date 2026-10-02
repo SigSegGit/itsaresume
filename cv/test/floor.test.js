@@ -122,3 +122,12 @@ test('a two-word listed must is not absorbed by a nice row that names its words'
   const { analysis: merged } = mergeListed(analysis, [{ name: 'Customer meetings', importance: 'must' }]);
   assert.deepEqual(merged.requirements.map((row) => row.name), ['Customer-facing meetings', 'Customer meetings']);
 });
+
+// Seen 2026-10-02: the listing named "HA", the analysis "HA (haute
+// disponibilité réseau)"; "HA" came back as an unmet must, a second time.
+test('a listed name that heads an analysed row before its parenthesis is that row', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const analysis = { requirements: [{ name: 'HA (haute disponibilité réseau)', importance: 'must', match: 'adjacent', skills: [], note: '' }] };
+  const { analysis: merged } = mergeListed(analysis, [{ name: 'HA', importance: 'must' }, { name: 'BGP', importance: 'must' }]);
+  assert.deepEqual(merged.requirements.map((row) => row.name), ['HA (haute disponibilité réseau)', 'BGP']);
+});
