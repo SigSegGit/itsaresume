@@ -629,8 +629,8 @@
     },
     "Named backend: found by its name": {
       "file": "crates/itsaresume-router/src/router.rs",
-      "live": "Some(name) => match self.backends.iter().find(|b| b.name() == name) {",
-      "dead": "Some(name) => match self.backends.iter().find(|_| !name.is_empty()) {",
+      "live": "Some(name) => match (self.backends.iter().find(|b| b.name() == name))",
+      "dead": "Some(name) => match (self.backends.iter().find(|_| !name.is_empty()))",
       "expect": [
         "a_named_backend_is_the_only_one_tried",
         "an_unknown_backend_name_is_refused_with_the_configured_names",
@@ -1005,6 +1005,22 @@
         "the_cli_writes_its_answer_into_a_file_not_a_pipe"
       ],
       "unix_only": true
+    },
+    "Named backend: found by its kind too": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".or_else(|| self.backends.iter().find(|b| b.kind() == name))",
+      "dead": ".or_else(|| None)",
+      "expect": [
+        "a_named_backend_is_found_by_its_kind_too"
+      ]
+    },
+    "Named backend: a configured name keeps its kind": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "    fn kind(&self) -> &str {\n        self.inner.name()",
+      "dead": "    fn kind(&self) -> &str {\n        &self.name",
+      "expect": [
+        "a_named_backend_is_found_by_its_kind_too"
+      ]
     }
   }
 }

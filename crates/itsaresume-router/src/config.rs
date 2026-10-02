@@ -237,6 +237,10 @@ impl Backend for Named {
         &self.name
     }
 
+    fn kind(&self) -> &str {
+        self.inner.name()
+    }
+
     fn serves(&self, kind: Kind) -> bool {
         self.serves.contains(&kind)
     }

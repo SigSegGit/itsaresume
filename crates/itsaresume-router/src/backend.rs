@@ -134,6 +134,11 @@ pub trait Backend: Send + Sync {
     /// A short stable name, as written in the journal (`claude-code`, …).
     fn name(&self) -> &str;
 
+    /// What it is (`claude-code`, `lm-studio`): its name unless configured otherwise.
+    fn kind(&self) -> &str {
+        self.name()
+    }
+
     /// Whether this backend serves requests of `kind` (all, by default).
     fn serves(&self, kind: Kind) -> bool {
         let _ = kind;
