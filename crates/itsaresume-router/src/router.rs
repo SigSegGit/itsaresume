@@ -156,7 +156,10 @@ impl Router {
     ) -> Result<Outcome, UnknownBackend> {
         let chosen: Vec<&dyn Backend> = match only {
             None => self.backends.iter().map(AsRef::as_ref).collect(),
-            Some(name) => match self.backends.iter().find(|b| b.name() == name) {
+            // The configured name first, else the first backend of that kind.
+            Some(name) => match (self.backends.iter().find(|b| b.name() == name))
+                .or_else(|| self.backends.iter().find(|b| b.kind() == name))
+            {
                 Some(backend) => vec![backend.as_ref()],
                 None => {
                     return Err(UnknownBackend {
