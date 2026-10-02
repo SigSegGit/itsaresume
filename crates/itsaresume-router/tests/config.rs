@@ -275,3 +275,32 @@ fn a_timeout_too_large_for_a_deadline_is_refused() {
         assert!(config.router().is_ok());
     }
 }
+
+/// A request may name a backend by its kind as well as by its configured
+/// name: the generator asks for `lm-studio` whether the owner called it
+/// `bionic` (the VM) or left the default (the laptop).
+#[test]
+fn a_named_backend_is_found_by_its_kind_too() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let journal = dir.path().join("journal.jsonl");
+    let config = Config::parse(&format!(
+        r#"journal = {journal:?}
+
+[[backend]]
+kind = "lm-studio"
+name = "bionic"
+base_url = "http://127.0.0.1:9/v1"
+model = "m"
+timeout_secs = 2
+"#
+    ))
+    .expect("valid");
+    let router = config.router().expect("router");
+    let request = itsaresume_router::Request::new("p");
+    assert!(router.complete_on(&request, Some("bionic")).is_ok());
+    assert!(
+        router.complete_on(&request, Some("lm-studio")).is_ok(),
+        "found by kind"
+    );
+    assert!(router.complete_on(&request, Some("claude-code")).is_err());
+}
