@@ -15,8 +15,8 @@
     },
     "Listing: requirements left out are added": {
       "file": "src/listing.js",
-      "live": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !covered(item));",
-      "dead": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !covered(item) && false);",
+      "live": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !heads.has(item.name.toLowerCase()) && !covered(item));",
+      "dead": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !heads.has(item.name.toLowerCase()) && !covered(item) && false);",
       "expect": [
         "requirements the analysis left out are added from a focused listing"
       ]

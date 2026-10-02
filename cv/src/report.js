@@ -80,7 +80,8 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
     '| Requirement | Importance | Match | From the profile | Note |',
     '|---|---|---|---|---|',
   ];
-  const scored = analysis.requirements.filter((requirement) => requirement.kind !== 'quality');
+  const scored = analysis.requirements.filter((requirement) => requirement.kind !== 'quality' && requirement.kind !== 'condition');
+  const conditions = analysis.requirements.filter((requirement) => requirement.kind === 'condition');
   const qualities = analysis.requirements.filter((requirement) => requirement.kind === 'quality');
   for (const requirement of scored) {
     const evidence = requirement.skills
@@ -109,6 +110,11 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
     lines.push('', '## Personal qualities — not scored, to show in interview', '',
       'The offer asks for these; no skill of the profile can back them, so they count neither in the score nor in the qualification.', '',
       ...qualities.map((quality) => `- ${line(quality.name)} (${line(quality.importance)})`));
+  }
+  if (conditions.length) {
+    lines.push('', '## Conditions — not scored, to confirm', '',
+      'The offer sets these conditions (nationality, clearance, permit); the profile does not state them: confirm them yourself.', '',
+      ...conditions.map((condition) => `- ${line(condition.name)} (${line(condition.importance)})`));
   }
   lines.push('', '## Summary on the CV', '', ...analysis.summary.map((sentence) => `> ${line(sentence)}`));
   if (rendered) {

@@ -26,7 +26,7 @@ export const isNever = (requirement, never = []) =>
   (!requirement.members && never.some((entry) => [entry.name, ...(entry.aliases ?? [])].some((name) => mentions(String(requirement.name ?? ''), name))));
 
 /** The requirements that count: a personal quality is for the interview (normalize.js says which). */
-const scored = (requirements) => requirements.filter((requirement) => requirement.kind !== 'quality');
+const scored = (requirements) => requirements.filter((requirement) => requirement.kind !== 'quality' && requirement.kind !== 'condition');
 
 /** 0-100, or null when there is nothing to score. `lab`: ids of lab skills. */
 export function scoreOf(requirements, { lab = new Set() } = {}) {

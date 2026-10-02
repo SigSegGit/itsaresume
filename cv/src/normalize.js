@@ -13,7 +13,7 @@ import { backsRequirement } from './tailor.js';
 import { cleanName, LIMITS } from './guard.js';
 import { alike, defaultIndex, members, skillConcepts } from './lexicon.js';
 import { importanceIn } from './importance.js';
-import { canonical, enumerations, GENERIC, mentions, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
+import { canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
 
 /** Lower is stricter: of two rows for one requirement, the stricter match is kept. */
 const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
@@ -42,8 +42,23 @@ function grounded(name, matched) {
  */
 function isQuality(requirement, profile) {
   const name = canonical(requirement.name);
-  if (!namesQuality(name) || /\p{N}|[\p{L}\p{N}]\p{Lu}/u.test(name) || isNever(requirement, profile.never)) return false;
+  return namesQuality(name) && !/\p{N}|[\p{L}\p{N}]\p{Lu}/u.test(name) && unbacked(requirement, profile);
+}
+
+/** Nothing never claimed, and no profile skill, names the requirement. */
+function unbacked(requirement, profile) {
+  const name = canonical(requirement.name);
+  if (isNever(requirement, profile.never)) return false;
   return !profile.skills.some((skill) => skillNames(skill).some((named) => mentions(name, named)));
+}
+
+/**
+ * Whether a requirement is an administrative condition the profile does not
+ * state ("Nationalité française", "Profil habilitable"): named with a
+ * condition word (text.js), and no profile skill names it.
+ */
+function isCondition(requirement, profile) {
+  return namesCondition(canonical(requirement.name)) && unbacked(requirement, profile);
 }
 
 /** Words that state a language's level or use, nothing else ("Anglais courant (écrit et oral)"). */
@@ -367,10 +382,18 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       requirement.skills = [];
       repairs.push(`requirement ${requirement.name}: a personal quality, not scored (to show in interview)`);
     }
+    // An administrative condition the profile does not state (nationality,
+    // clearance, permit) is for the candidate to confirm: "no" read as a
+    // refusal on the public page (2026-10-02).
+    if (requirement.kind !== 'quality' && requirement.match === 'no' && isCondition(requirement, profile)) {
+      requirement.kind = 'condition';
+      requirement.skills = [];
+      repairs.push(`requirement ${requirement.name}: an administrative condition, to confirm (not scored)`);
+    }
     // A language is the profile's languages to answer, not a skill's (seen:
     // "Anglais professionnel" no beside "Anglais — bilingue"): met at a
     // working level, no at "notions", the profile's line said either way.
-    const spoken = requirement.never || requirement.kind === 'quality' ? null : languageOf(requirement, profile, analysis.language);
+    const spoken = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' ? null : languageOf(requirement, profile, analysis.language);
     if (spoken) {
       const { match } = spoken;
       if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a language, ${match} by the profile (${spoken.stated.join(', ')})`);
@@ -383,7 +406,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // A certification is the profile's certifications to answer, never a
     // skill's: met when a certification line names it, adjacent when that
     // line says it expired, no otherwise, whatever the model read.
-    const certified = requirement.never || requirement.kind === 'quality' || spoken ? null : certificationOf(requirement, profile, analysis.language);
+    const certified = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' || spoken ? null : certificationOf(requirement, profile, analysis.language);
     if (certified) {
       const match = certified.stated.length === 0 ? 'no' : certified.expired ? 'adjacent' : 'yes';
       if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a certification, ${match} by the profile's certifications`);
@@ -396,7 +419,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // A category the offer names loosely ("Conteneurisation", "Cloud public")
     // that holds skills of the profile is not a gap: adjacent, by code, with
     // the equivalent named for the owner (seen: false "non" on generic rows).
-    if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'language' && requirement.kind !== 'certification') {
+    if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {
       const found = members(defaultIndex(), asked(requirement.name), placed());
       if (found.length) {
         const names = found.map((id) => skills.get(id).name);

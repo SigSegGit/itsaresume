@@ -7,7 +7,7 @@
   "defences": {
     "Must stay no: a certification is answered by the profile's certifications": {
       "file": "src/normalize.js",
-      "live": "const certified = requirement.never || requirement.kind === 'quality' || spoken ? null : certificationOf(requirement, profile, analysis.language);",
+      "live": "const certified = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' || spoken ? null : certificationOf(requirement, profile, analysis.language);",
       "dead": "const certified = null;",
       "expect": [
         "a certification the profile does not hold stays no, though the skill is owned",

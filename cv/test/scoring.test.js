@@ -212,11 +212,11 @@ test('working in pairs is a personal quality, never a failed requirement', () =>
 // a status the profile does not state is to confirm, not a missing skill.
 test('an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart', () => {
   const conditions = ['Nationalité française', 'Profil habilitable', 'Habilitation secret défense', 'Permis B', 'EU work permit'];
-  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), row('Kafka'), ...conditions.map((name) => row(name))];
-  const { analysis, repairs } = normalize(answer({ requirements }), v4(), { offer: `Must have: PostgreSQL, Kafka, ${conditions.join(', ')}.` });
+  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), row('Terraform', 'yes', ['terraform']), row('Kafka'), ...conditions.map((name) => row(name))];
+  const { analysis, repairs } = normalize(answer({ requirements }), v4(), { offer: `Must have: PostgreSQL, Terraform, Kafka, ${conditions.join(', ')}.` });
   assert.deepEqual(analysis.requirements.filter((r) => r.kind === 'condition').map((r) => r.name), conditions);
   assert.deepEqual(analysis.fit.qualification, { level: 'partial', gaps: ['Kafka'] });
-  assert.equal(analysis.fit.score, 50, 'PostgreSQL of two musts');
+  assert.equal(analysis.fit.score, 67, 'PostgreSQL and Terraform of three musts');
   assert.match(repairs.join('\n'), /requirement Permis B: an administrative condition, to confirm \(not scored\)/);
   const text = report(analysis, v4(), { backend: 'b', attempts: 1 });
   assert.match(text, /## Conditions — not scored, to confirm\n\n[^\n]*\n\n- Nationalité française \(must\)/);

@@ -157,6 +157,7 @@ property it proves.
 | a denial judges the clause that names the requirement, not the sentence | Denied: the clause judges, not the sentence |
 | a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps) | Listing: one word is not covered by a longer row |
 | a two-word listed must is not absorbed by a nice row that names its words | Listing: a must is not covered by a nice row |
+| a listed name that heads an analysed row before its parenthesis is that row | Listing: a name heading a row before its parenthesis is that row |
 
 ## `test/guard.test.js`
 
@@ -414,6 +415,8 @@ property it proves.
 | a gap the profile lists as pending is marked as waiting for the owner | Report: a pending gap is said; Report: a pending gap is counted |
 | without a pending list the gaps are unchanged | — |
 | a certification is not merged into an enumeration with a held skill | Certifications are never merged as examples |
+| working in pairs is a personal quality, never a failed requirement | Quality: working in pairs is a quality |
+| an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart | Condition: an unstated administrative condition is to confirm; Condition: not scored; Condition: the report lists conditions apart |
 
 ## `test/server.test.js`
 
@@ -486,6 +489,7 @@ property it proves.
 | in public mode the page offers one offer at a time, with no email splitting | Page: public mode hides splitting |
 | the public status renders without the owner assessment | Page: the public status renders without verdicts |
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
+| an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
 
 ## `test/word.test.js`
 
@@ -502,6 +506,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**333 tests, 274 of them covered by at least one sabotage defence.**
+**337 tests, 278 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
