@@ -67,7 +67,8 @@ answer (8.39), per job in the generator's QA log (cv 2.13); a public job
 readable by its own visitor only (cv 2.14); favicon and link preview (cv
 2.15); another profile and matchmaking written as cv 4.x and 5.x
 (merged, #69). Then invitation links per ESN with `invite --usage` (cv
-2.16, branch `cv/invitations`). Done in
+2.16, PR #70) and a profile per job (cv 4.1, `cv/profile-per-job`, on top
+of #70). Done in
 a cloud session (Linux, no Claude, no Bionic): nothing measured on a real
 call; the token counts are read from the observed fixtures. Next: M3's
 frozen contract (8.37), after cv 2.3 (needs the laptop's models).
@@ -170,6 +171,10 @@ what was redacted). Findings, each one a trap for a naive parser:
   settings change it needs, built from **his current file read first**
   (other projects' sessions manage permissions too: merge, never replace),
   in one block ready to paste.
+- **Sabotage runs on a clean, committed tree, and nothing is edited or
+  staged while it runs** (2026-10-04: a `git add -A` during a run committed
+  a sabotaged `server.js`; tests run beside it failed for nothing). Start
+  it in the background, wait for its end, then edit.
 
 ## 8. Ordered steps to the MVP
 
@@ -576,6 +581,11 @@ it is an interactive login to his account:
   one more generation)? (2) invitation links per ESN exist (cv 2.16,
   `itsacv invite`): keep the anonymous page too (today), or turn
   invite-only on (`CV_FLAGS=--invite-only` in the VM's data `.env`)?
+- **Other profiles (cv 4.x), three closed questions** before anything
+  public: (a) upload a compiled `profile.json`, or a CV the tool compiles
+  (a model call, an unverified profile)? (b) owner only, or visitors too
+  (their data in your quota and on your disk)? (c) kept on disk or for the
+  session only? 4.1 (owner-only, `--profiles DIR`) needed none of them.
 - Once the public instance is up with 2.15: paste its link in LinkedIn or
   a chat once, and say whether the preview shows the banner.
 - When the router runs on another machine than the XPS: the XPS's Tailscale
