@@ -102,7 +102,14 @@ class FakeElement extends FakeNode {
  */
 export function loadPage(server, { token = 't'.repeat(48) } = {}) {
   const byId = new Map();
-  for (const match of HTML.matchAll(/<(\w+)[^>]*\sid="([^"]+)"/g)) byId.set(match[2], new FakeElement(match[1], match[2]));
+  // An element written with the hidden attribute starts hidden, as in a browser.
+  for (const match of HTML.matchAll(/<(\w+)([^>]*)>/g)) {
+    const id = match[2].match(/\sid="([^"]+)"/)?.[1];
+    if (!id) continue;
+    const element = new FakeElement(match[1], id);
+    element.hidden = /\shidden(?=[\s>]|$)/.test(match[2]);
+    byId.set(id, element);
+  }
   const document = {
     createElement: (tag) => new FakeElement(tag),
     createTextNode: (data) => new FakeText(String(data)),
