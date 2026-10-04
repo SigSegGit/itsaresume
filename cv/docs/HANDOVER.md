@@ -348,6 +348,21 @@ Traps met, each cost time once:
   (`chromium-headless-shell`; a full Chromium in headless mode crops the
   viewport). Not checked: how LinkedIn or WhatsApp actually render the
   preview (needs the public instance up: the owner pastes the link once).
+- [ ] **2.16** (Rodin, 2026-10-04) **Name who consumes.** 2.13 traces
+  tokens per *visitor*, a random token: the log cannot say which ESN spent
+  what. Proposed in session, not yet answered by the owner: invitation
+  links, one per ESN, made by the owner (`itsacv invite <label>` prints
+  `https://<host>/?i=<code>`; codes in `<out>/invites.json`, owner only).
+  A page opened with a valid code binds its visitor to the label; the QA
+  log line gets `invite: <label>`; with `--invite-only`, a page without a
+  valid code can read but not generate (403 on `POST /api/jobs`). No
+  password, no account. Red tests in `test/server.test.js`: a code binds
+  the label into the log line; an unknown or revoked code is no
+  invitation; two invitees still see only their own jobs (2.14 holds);
+  `--invite-only` refuses a job without one. Sabotage: the label dropped
+  from the log; the invite-only check bypassed. Ask the owner first
+  (closed question): invitations only, or invitations plus the anonymous
+  page as today.
 - [ ] **4.x** (the owner, 2026-10-04: "later") **Another profile than the
   owner's.** Today one profile is loaded at start (`--profile`,
   `loadProfile`), compiled privately with its truth document and verdicts.

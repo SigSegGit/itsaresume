@@ -559,5 +559,13 @@ it is an interactive login to his account:
   sentence is measured by no test; what he finds becomes corpus cases.
 - After the first week of real use: a look at the account's billing page
   (the overage tripwire detects extra usage after the call it billed).
+- **Two closed questions from 2026-10-04** (cv 2.14, 2.16): (1) the same
+  offer pasted by a second ESN is answered from the first one's run (no
+  model call), which tells the second ESN this offer was tested before:
+  keep (saves the quota) or answer each visitor afresh (no trace at all,
+  one more generation)? (2) invitation links per ESN, so the log names who
+  spent what: invitations only, or invitations plus the anonymous page?
+- Once the public instance is up with 2.15: paste its link in LinkedIn or
+  a chat once, and say whether the preview shows the banner.
 - When the router runs on another machine than the XPS: the XPS's Tailscale
   name in that machine's `config.local.toml` (never committed).
