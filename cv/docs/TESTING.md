@@ -25,7 +25,6 @@ property it proves.
 |---|---|
 | a connection cut mid-answer is an error at once, not a wait for the timer | Client: a cut answer fails at once |
 | a router refusal carries each backend's own reason | Client: a refusal carries each backend's reason |
-| a call marked classify sends its kind; an unmarked call sends none | Client: a call's kind reaches the router; Client: a call without a kind sends none |
 | --timeout and ITSACV_TIMEOUT set how long one answer may take | Client: the timeout is the owner's to set; Client: ITSACV_TIMEOUT sets the default; Client: a timeout is a number of seconds above 0 |
 | the usage says the client's timeout must exceed the router backend's | Client: the usage ties the timeout to the router's |
 
@@ -319,6 +318,7 @@ property it proves.
 | the client posts JSON to /v1/complete and surfaces a router refusal | Client: JSON content type; Client: a refusal is an error |
 | the client names a backend only when asked (router 8.22) | Client: a backend name is sent only when asked |
 | the client sends a schema only when asked (router 8.24) | Client: a schema is sent only when asked |
+| a call marked classify sends its kind; an unmarked call sends none | Client: a call's kind reaches the router; Client: a call without a kind sends none |
 | an unreachable router is a clear error | — |
 | itsacv tailor writes the CV, the report and the analysis | Run: the report gets the rendered CV |
 | itsacv tailor flags the instructions of an offer in the report and run.json, and applies none | Instructions: a run finds them in the offer; Instructions: run.json keeps them |

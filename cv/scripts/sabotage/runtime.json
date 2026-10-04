@@ -37,22 +37,6 @@
         "the usage says the client's timeout must exceed the router backend's"
       ]
     },
-    "Client: a call's kind reaches the router": {
-      "file": "src/llm.js",
-      "live": ", ...(kind ? { kind } : {}) });",
-      "dead": " });",
-      "expect": [
-        "a call marked classify sends its kind; an unmarked call sends none"
-      ]
-    },
-    "Client: a call without a kind sends none": {
-      "file": "src/llm.js",
-      "live": ", ...(kind ? { kind } : {}) });",
-      "dead": ", kind: kind ?? 'generate' });",
-      "expect": [
-        "a call marked classify sends its kind; an unmarked call sends none"
-      ]
-    },
     "Client: a cut answer fails at once": {
       "file": "src/llm.js",
       "live": "          if (!ended) {",

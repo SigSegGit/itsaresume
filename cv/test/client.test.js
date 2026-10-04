@@ -64,31 +64,6 @@ test("a router refusal carries each backend's own reason", async () => {
   }
 });
 
-/** A call that only chooses says so (router M2, 8.34): a classify-only
- * backend may take it. A call that does not say sends no kind at all. */
-test('a call marked classify sends its kind; an unmarked call sends none', async () => {
-  const bodies = [];
-  const server = createServer((request, response) => {
-    let raw = '';
-    request.on('data', (chunk) => (raw += chunk));
-    request.on('end', () => {
-      bodies.push(JSON.parse(raw));
-      response.writeHead(200, { 'Content-Type': 'application/json' });
-      response.end(JSON.stringify({ backend: 'stub', text: 'ok' }));
-    });
-  });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const url = `http://127.0.0.1:${server.address().port}`;
-  try {
-    await complete({ url, system: 's', prompt: 'p', kind: 'classify' });
-    await complete({ url, system: 's', prompt: 'p' });
-    assert.equal(bodies[0].kind, 'classify');
-    assert.equal('kind' in bodies[1], false);
-  } finally {
-    stop(server);
-  }
-});
-
 const CLI = new URL('../bin/itsacv.js', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
 const PROFILE = new URL('./fixtures/profile.synthetic.json', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
 
