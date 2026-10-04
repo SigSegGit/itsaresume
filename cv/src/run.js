@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
+import { DEFAULT_PROFILE } from './profiles.js';
 import { validateProfile } from './profile.js';
 import { assess, checkProvenance, checkQuotes, olderMentions, readSources, restrict, scanSources } from './evidence.js';
 import { analyse } from './pipeline.js';
@@ -78,7 +79,7 @@ export function runName(offer, now = new Date()) {
  * analysis ({attempt}), layout ({layouts}), pdf, ats, done ({dir}).
  * `startLayout` starts the layout engine (Word; tests fake it).
  */
-export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {} }) {
+export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE }) {
   const { full, profile, assessment, removed, texts } = loaded;
   const dir = join(outDir, runName(offer));
   let result;
@@ -104,7 +105,7 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   // The offer and what the run did, so that the same offer can be answered
   // from this run later (public mode, src/intake.js), with no model call.
   writeFileSync(join(dir, 'offer.txt'), offer);
-  writeFileSync(join(dir, 'run.json'), JSON.stringify({ attempts, backend, repairs, layout, ats, skipped, older, instructions }, null, 2));
+  writeFileSync(join(dir, 'run.json'), JSON.stringify({ profile: profileId, attempts, backend, repairs, layout, ats, skipped, older, instructions }, null, 2));
   onStep('done', { dir });
   return { dir, name: basename(dir), analysis, attempts, backend, repairs, layout, ats, skipped, older, instructions, report: text };
 }

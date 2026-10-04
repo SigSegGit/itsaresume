@@ -262,7 +262,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
@@ -271,6 +271,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       split: async () => { throw new Error('split must not run publicly'); },
       ...(invites ? { invites: () => invites } : {}),
       ...(log ? { log } : {}),
+      ...(profiles ? { profiles } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer }) => {
@@ -779,7 +780,7 @@ test('a job may name a profile from the closed list; none is the default, an unk
 });
 
 test('in public mode the profiles are neither listed nor chosen: another than the default is 400', async (t) => {
-  const app = await startPublic(t, { status: async () => ({ profile: { name: 'Alex' }, profiles: ['default', 'bob'], router: { up: true }, layout: { word: false } }) });
+  const app = await startPublic(t, { profiles: () => ['default', 'bob'], status: async () => ({ profile: { name: 'Alex' }, profiles: ['default', 'bob'], router: { up: true }, layout: { word: false } }) });
   const visitor = await app.visit();
   assert.ok(!('profiles' in JSON.parse((await visitor.get('/api/status')).text)), 'other people\'s names stay the owner\'s');
   assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }], profile: 'bob' })).status, 400);

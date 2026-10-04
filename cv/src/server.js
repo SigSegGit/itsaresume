@@ -20,6 +20,7 @@ import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
 import { addTokens } from './llm.js';
 import { invitationOf } from './invites.js';
+import { DEFAULT_PROFILE } from './profiles.js';
 
 export const MAX_BODY = 256 * 1024;
 export const MAX_OFFERS = 6;
@@ -108,11 +109,12 @@ const PUBLIC_FILES = new Set(['cv.pdf', 'cv.docx']);
  * raw error (a path, a router address).
  */
 function publicStatus(status) {
-  const { profile = {} } = status;
+  // The other profiles' names (4.1) are people's: never listed publicly.
+  const { profile = {}, profiles: _others, ...rest } = status;
   const shown = profile.error !== undefined
     ? { error: 'profil indisponible' }
     : { name: profile.name, skills: profile.skills, lab: profile.lab, never: profile.never };
-  return { ...status, profile: shown, public: true };
+  return { ...rest, profile: shown, public: true };
 }
 
 /** A job as the page sees it. */
@@ -264,6 +266,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         via: job.via,
         visitor: job.visitor,
         invite: job.invite ?? null,
+        profile: job.profile ?? DEFAULT_PROFILE,
         status: job.status,
         reused: job.reused ?? false,
         error: job.error ?? null,
@@ -299,7 +302,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         };
         // Every model answer's tokens, kept on the job: a failed run spent them too.
         const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);
-        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer });
+        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer, profile: job.profile });
         job.status = 'done';
         job.endedAt = clock();
       } catch (error) {
@@ -335,7 +338,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
-        if (path === '/api/status') return send(response, 200, publicMode ? publicStatus(await deps.status()) : await deps.status());
+        if (path === '/api/status') {
+          const status = await deps.status();
+          return send(response, 200, publicMode ? publicStatus(status) : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}) });
+        }
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
           return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode })));
@@ -383,6 +389,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         const offers = body?.offers;
         const model = body?.model ?? 'auto';
         if (!MODELS.includes(model)) throw new HttpError(400, `model: one of ${MODELS.join(', ')}`);
+        // 4.1: a profile from the owner's closed list; in public, the owner's alone.
+        const profile = body?.profile ?? DEFAULT_PROFILE;
+        const known = publicMode ? [DEFAULT_PROFILE] : deps.profiles?.() ?? [DEFAULT_PROFILE];
+        if (typeof profile !== 'string' || !known.includes(profile)) throw new HttpError(400, `profile: one of ${known.join(', ')}`);
         // The VM forwards the public name; the laptop page is reached on 127.0.0.1.
         const via = publicMode && request.headers.host === publicMode.host ? 'vm' : 'laptop';
         if (!Array.isArray(offers) || offers.length === 0 || offers.length > MAX_OFFERS) {
@@ -395,7 +405,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (publicMode && !looksLikeOffer(offer.text)) {
             throw new HttpError(400, `Ce texte ne ressemble pas à une offre d’emploi (entre ${OFFER_CHARS.min} et ${OFFER_CHARS.max} caractères) : colle le texte d’une offre.`);
           }
-          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor, invite };
+          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor, invite, profile };
         });
         // An offer already answered is answered from its run: no model call, not counted.
         // A model chosen by hand is a measure: it always runs.
