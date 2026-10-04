@@ -15,6 +15,8 @@ pub fn summarize(journal: &str) -> String {
     let mut structured = 0usize;
     // (outcome order, label) -> durations, so answered < stopped < exhausted.
     let mut groups: BTreeMap<(u8, String), Vec<u64>> = BTreeMap::new();
+    // Per backend (8.38): answers that reported tokens, read, from cache, written.
+    let mut tokens: BTreeMap<String, [u64; 4]> = BTreeMap::new();
 
     for line in journal.lines().filter(|line| !line.trim().is_empty()) {
         let Ok(entry) = serde_json::from_str::<Value>(line) else {
@@ -42,6 +44,15 @@ pub fn summarize(journal: &str) -> String {
         }
         let duration = entry["duration_ms"].as_u64();
         groups.entry(key).or_default().extend(duration);
+        let usage = &entry["usage"];
+        if usage.is_object() {
+            let count = |key: &str| usage[key].as_u64().unwrap_or(0);
+            let sum = tokens.entry(backend.to_owned()).or_default();
+            sum[0] += 1;
+            sum[1] += count("input") + count("cache_read") + count("cache_creation");
+            sum[2] += count("cache_read");
+            sum[3] += count("output");
+        }
     }
 
     let mut out = String::new();
@@ -63,6 +74,17 @@ pub fn summarize(journal: &str) -> String {
         "fallbacks: {fallbacks} answered after a failed attempt"
     );
     let _ = writeln!(out, "structured: {structured} of {requests}");
+    for (backend, [answers, read, cached, written]) in &tokens {
+        let cached = match cached {
+            0 => String::new(),
+            n => format!(" ({n} from cache)"),
+        };
+        let plural = if *answers == 1 { "" } else { "s" };
+        let _ = writeln!(
+            out,
+            "tokens by {backend}: {read} read{cached}, {written} written, over {answers} answer{plural}"
+        );
+    }
     out
 }
 

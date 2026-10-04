@@ -1021,6 +1021,92 @@
       "expect": [
         "a_named_backend_is_found_by_its_kind_too"
       ]
+    },
+    "Tokens: a Claude answer carries its usage": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "    let usage = usage_of(result);",
+      "dead": "    let usage = usage_of(result).filter(|_| false);",
+      "expect": [
+        "a_claude_answer_carries_its_token_usage",
+        "a_successful_run_is_an_answer",
+        "the_prompt_goes_on_stdin_and_the_answer_comes_back",
+        "a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line"
+      ]
+    },
+    "Tokens: Claude's cache reads are counted apart": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "        cache_read: count(\"cache_read_input_tokens\"),",
+      "dead": "        cache_read: count(\"cache_read_input_tokens\") + 1,",
+      "expect": [
+        "a_claude_answer_carries_its_token_usage",
+        "a_successful_run_is_an_answer",
+        "the_prompt_goes_on_stdin_and_the_answer_comes_back",
+        "a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line"
+      ]
+    },
+    "Tokens: a Claude result without usage reports none": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "    let usage = result.get(\"usage\").filter(|usage| usage.is_object())?;",
+      "dead": "    let usage = result.get(\"usage\").unwrap_or(&Value::Null);",
+      "expect": [
+        "a_claude_answer_carries_its_token_usage"
+      ]
+    },
+    "Tokens: an LM Studio answer carries its usage": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "                usage: usage_of(&parsed),",
+      "dead": "                usage: usage_of(&parsed).filter(|_| false),",
+      "expect": [
+        "the_observed_success_is_an_answer"
+      ]
+    },
+    "Tokens: LM Studio's output is completion_tokens": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "        output: count(\"completion_tokens\"),",
+      "dead": "        output: count(\"total_tokens\"),",
+      "expect": [
+        "the_observed_success_is_an_answer"
+      ]
+    },
+    "Tokens: the router hands the usage on": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "                        usage: completion.usage,",
+      "dead": "                        usage: None,",
+      "expect": [
+        "the_token_usage_of_an_answer_is_journaled"
+      ]
+    },
+    "Tokens: the journal writes each count under its own name": {
+      "file": "crates/itsaresume-router/src/journal.rs",
+      "live": "                \"cache_read\": usage.cache_read,",
+      "dead": "                \"cache_read\": usage.cache_creation,",
+      "expect": [
+        "the_token_usage_of_an_answer_is_journaled"
+      ]
+    },
+    "Tokens: stats counts cache writes as read": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "            sum[1] += count(\"input\") + count(\"cache_read\") + count(\"cache_creation\");",
+      "dead": "            sum[1] += count(\"input\") + count(\"cache_read\");",
+      "expect": [
+        "tokens_are_summed_per_backend"
+      ]
+    },
+    "Tokens: stats says no cache when there was none": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "        let cached = match cached {",
+      "dead": "        let cached = match cached + 1 {",
+      "expect": [
+        "tokens_are_summed_per_backend"
+      ]
+    },
+    "Tokens: stats says one answer, not one answers": {
+      "file": "crates/itsaresume-router/src/stats.rs",
+      "live": "        let plural = if *answers == 1 { \"\" } else { \"s\" };",
+      "dead": "        let plural = if *answers == 0 { \"\" } else { \"s\" };",
+      "expect": [
+        "tokens_are_summed_per_backend"
+      ]
     }
   }
 }

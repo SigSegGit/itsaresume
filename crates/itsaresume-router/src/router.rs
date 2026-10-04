@@ -198,7 +198,7 @@ impl Router {
                         backend: backend.name().to_owned(),
                         text: completion.text,
                         rate_limit: completion.rate_limit,
-                        usage: None,
+                        usage: completion.usage,
                     };
                     return Outcome {
                         result: Ok(answer),

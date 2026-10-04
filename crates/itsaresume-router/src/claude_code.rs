@@ -3,7 +3,7 @@
 //! The output shapes this module relies on were observed before it was
 //! written (docs/HANDOVER.md §4; fixtures in `tests/fixtures/claude/`).
 
-use crate::backend::{Backend, BackendError, Completion, Request, excerpt};
+use crate::backend::{Backend, BackendError, Completion, Request, Usage, excerpt};
 use serde_json::Value;
 use std::ffi::{OsStr, OsString};
 use std::io::{ErrorKind, Read, Write};
@@ -117,13 +117,14 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         .rev()
         .find(|message| message["type"] == "result")
         .ok_or_else(|| BackendError::Other("claude output has no result message".into()))?;
+    let usage = usage_of(result);
 
     if schema && result["is_error"] == false {
         return match result.get("structured_output") {
             Some(object) if !object.is_null() => Ok(Completion {
                 text: object.to_string(),
                 rate_limit: rate_limit.clone(),
-                usage: None,
+                usage,
             }),
             _ => Err(BackendError::Other(
                 "claude answered a schema request without structured_output".into(),
@@ -136,7 +137,7 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         (Some(false), Some(text)) => Ok(Completion {
             text: text.to_owned(),
             rate_limit,
-            usage: None,
+            usage,
         }),
         (Some(true), text) => Err(classify_error(
             result["api_error_status"].as_u64(),
@@ -168,6 +169,18 @@ fn classify_error(status: Option<u64>, message: &str) -> BackendError {
 /// Hypothesis, not observed (docs/HANDOVER.md §9): the wordings Claude Code
 /// has used for plan limits. A limit message that matches none of them is
 /// classified `Other` and stops loudly, which is the safe direction.
+/// The tokens of a result message's `usage` (8.38); `None` when it has none.
+fn usage_of(result: &Value) -> Option<Usage> {
+    let usage = result.get("usage").filter(|usage| usage.is_object())?;
+    let count = |key: &str| usage[key].as_u64().unwrap_or(0);
+    Some(Usage {
+        input: count("input_tokens"),
+        output: count("output_tokens"),
+        cache_read: count("cache_read_input_tokens"),
+        cache_creation: count("cache_creation_input_tokens"),
+    })
+}
+
 fn looks_like_usage_limit(message: &str) -> bool {
     let message = message.to_lowercase();
     if message.contains("context") || message.contains("too long") {
