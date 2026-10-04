@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { request } from 'node:http';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp, MAX_BODY, MAX_OFFERS } from '../src/server.js';
@@ -672,4 +672,26 @@ test('in public mode the entry point is the VM, and a chosen model is never answ
   assert.notEqual(job.status, 'done');
   for (let i = 0; i < 100 && app.calls.tailored === 0; i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(app.calls.tailored, 1);
+});
+
+// Seen by the owner, 2026-10-04: a site with no icon in its tab and no
+// preview when its link is pasted (LinkedIn, a mail, a chat).
+test('the page has an icon and a link preview: icons served, Open Graph names the public banner', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  const page = (await visitor.get('/')).text;
+  assert.match(page, /<link rel="icon" href="\/favicon.svg" type="image\/svg\+xml">/);
+  assert.match(page, /<link rel="apple-touch-icon" href="\/icon-180.png">/);
+  assert.match(page, /<meta property="og:image" content="https:\/\/cv\.example\.org\/banner\.png">/, 'a scraper needs an absolute URL');
+  assert.match(page, /<meta property="og:title" content="[^"]+">/);
+  assert.match(page, /<meta property="og:description" content="[^"]+">/);
+  assert.match(page, /<meta name="twitter:card" content="summary_large_image">/);
+  for (const [path, type] of [['/favicon.svg', 'image/svg+xml'], ['/favicon.ico', 'image/png'], ['/icon-180.png', 'image/png'], ['/banner.png', 'image/png']]) {
+    const served = await call(app.port, { path, headers: app.host });
+    assert.equal(served.status, 200, path);
+    assert.equal(served.headers['content-type'], type, path);
+  }
+  // 1200x630, the size every preview expects: the PNG header says so.
+  const png = readFileSync(new URL('../web/banner.png', import.meta.url));
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
 });
