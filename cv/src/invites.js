@@ -63,6 +63,49 @@ export function invitationOf(invites, code) {
   return invite && !invite.revoked && typeof invite.label === 'string' ? invite.label : null;
 }
 
-export function usageByInvite() {
-  return undefined;
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/**
+ * Per invitation, from the QA log's text (2.13, 2.16): jobs (reused and
+ * failed said apart) and tokens per backend, read (cache included) and
+ * written. Anonymous jobs come last; a line that is not JSON is skipped.
+ */
+export function usageByInvite(log) {
+  const byInvite = new Map();
+  for (const line of String(log).split('\n')) {
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!entry || typeof entry !== 'object') continue;
+    const label = typeof entry.invite === 'string' ? entry.invite : null;
+    const sum = byInvite.get(label) ?? { jobs: 0, reused: 0, failed: 0, tokens: new Map() };
+    byInvite.set(label, sum);
+    sum.jobs += 1;
+    if (entry.reused) sum.reused += 1;
+    if (entry.status === 'failed') sum.failed += 1;
+    for (const [backend, counts] of Object.entries(entry.tokens ?? {})) {
+      const count = (key) => (Number.isSafeInteger(counts?.[key]) ? counts[key] : 0);
+      const total = sum.tokens.get(backend) ?? { read: 0, written: 0 };
+      sum.tokens.set(backend, total);
+      total.read += count('input') + count('cache_read') + count('cache_creation');
+      total.written += count('output');
+    }
+  }
+  const labels = [...byInvite.keys()].filter((label) => label !== null).sort();
+  if (byInvite.has(null)) labels.push(null);
+  return labels
+    .map((label) => {
+      const sum = byInvite.get(label);
+      const notes = [sum.reused && `${sum.reused} reused`, sum.failed && `${sum.failed} failed`].filter(Boolean);
+      const jobs = `${plural(sum.jobs, 'job')}${notes.length ? ` (${notes.join(', ')})` : ''}`;
+      const tokens = [...sum.tokens.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([backend, total]) => `${backend} ${total.read} read ${total.written} written`)
+        .join('; ');
+      return `${label ?? '(no invitation)'}\t${jobs}\t${tokens || 'no tokens'}\n`;
+    })
+    .join('');
 }

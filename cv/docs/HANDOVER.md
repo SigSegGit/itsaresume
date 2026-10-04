@@ -51,7 +51,7 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 406 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 416 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
@@ -365,9 +365,12 @@ Traps met, each cost time once:
   on the VM `CV_FLAGS=--invite-only` in the data `.env`), off by default,
   so the anonymous page stays as today until the owner turns it on.
   `src/invites.js`, `itsacv invite` (`--list`, `--revoke`), the code read
-  again at each job (a revocation holds at once, no restart). Eight tests,
-  seven defences (`scripts/sabotage/invitations.json`). Not done: the
-  page does not say "on invitation" before a refused click.
+  again at each job (a revocation holds at once, no restart). Rodin: the
+  label was worth nothing without a reader, so `itsacv invite --usage`
+  prints, per label, the jobs (reused, failed) and the tokens per backend
+  from `qa-log.jsonl`. Ten tests, eleven defences
+  (`scripts/sabotage/invitations.json`). Not done: the page does not say
+  "on invitation" before a refused click.
 - [ ] **4.x** (the owner, 2026-10-04: "later") **Another profile than the
   owner's.** Today one profile is loaded at start (`--profile`,
   `loadProfile`), compiled privately with its truth document and verdicts.
@@ -417,6 +420,10 @@ the status chip). The audit list is closed. One rare flake seen once in
 three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
+
+- An invitation code rides in the URL (`?i=`): it stays in the visitor's
+  history and address bar and in the VM's Caddy access log. 96 random
+  bits, revocable at once (2.16); not hidden further on purpose.
 
 - The honesty checks cannot judge a plausible sentence made of the profile's
   own words; the owner reads the report, and the tool sends nothing.

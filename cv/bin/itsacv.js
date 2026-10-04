@@ -2,14 +2,15 @@
 // itsacv: tailor CVs and fit reports to job offers, from the command line or
 // from a local web page.
 
-import { mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { complete, TIMEOUT_MS } from '../src/llm.js';
 import { loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
-import { createInvite, loadInvites, revokeInvite } from '../src/invites.js';
+import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/invites.js';
+import { QA_LOG } from '../src/qa.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -18,7 +19,7 @@ const USAGE = `usage:
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
                [--ban-after N] [--ban-hours N] [--invite-only]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
-  itsacv invite --list | --revoke <label|code> [--out DIR]
+  itsacv invite --list | --usage | --revoke <label|code> [--out DIR]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -26,6 +27,7 @@ const USAGE = `usage:
   serve      the local web page, on http://127.0.0.1:PORT (default 8790)
   invite     an invitation link for one ESN (printed): the jobs of a page opened
              with it name the label in <out>/qa-log.jsonl; --list shows them,
+             --usage the jobs and tokens per backend of each, read from that log,
              --revoke ends one (by label or code), at once, no restart
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
@@ -54,7 +56,7 @@ else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
 const VALUED = ['--profile', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true] };
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -82,6 +84,7 @@ function parse(argv) {
     banHours: '24',
     inviteOnly: false,
     list: false,
+    usage: false,
     revoke: null,
   };
   for (let i = 0; i < rest.length; i += 1) {
@@ -94,7 +97,7 @@ function parse(argv) {
     else options.files.push(arg);
   }
   if (command === 'invite') {
-    if (!options.list && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
+    if (!options.list && !options.usage && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
   if (command !== 'serve' && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
@@ -120,7 +123,10 @@ async function main() {
 
   if (options.command === 'invite') {
     try {
-      if (options.list) {
+      if (options.usage) {
+        const log = join(options.out, QA_LOG);
+        process.stdout.write(usageByInvite(existsSync(log) ? readFileSync(log, 'utf8') : ''));
+      } else if (options.list) {
         for (const [code, invite] of Object.entries(loadInvites(options.out))) {
           process.stdout.write(`${invite.label}\t${code}${invite.revoked ? '\trevoked' : ''}\n`);
         }

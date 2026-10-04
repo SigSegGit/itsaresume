@@ -116,6 +116,7 @@ them, give each one its own link:
 ```bash
 itsacv invite "Alten" --out <out> --public-host cv.example.org   # prints https://cv.example.org/?i=<code>
 itsacv invite --list --out <out>
+itsacv invite --usage --out <out>                                  # per ESN: jobs, tokens per backend
 itsacv invite --revoke "Alten" --out <out>                         # at once, no restart
 ```
 

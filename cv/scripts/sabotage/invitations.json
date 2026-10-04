@@ -64,6 +64,38 @@
         "an invitation is revoked by its label or its code; a revoked or unknown code names nobody",
         "itsacv invite prints the link, --list shows each one, --revoke ends it"
       ]
+    },
+    "Invite usage: read tokens include the cache writes": {
+      "file": "src/invites.js",
+      "live": "total.read += count('input') + count('cache_read') + count('cache_creation');",
+      "dead": "total.read += count('input') + count('cache_read');",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: reused jobs are said apart": {
+      "file": "src/invites.js",
+      "live": "if (entry.reused) sum.reused += 1;",
+      "dead": "if (entry.reused && false) sum.reused += 1;",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: anonymous jobs are listed too": {
+      "file": "src/invites.js",
+      "live": "if (byInvite.has(null)) labels.push(null);",
+      "dead": "if (byInvite.has(null) && false) labels.push(null);",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: the CLI reads the QA log": {
+      "file": "bin/itsacv.js",
+      "live": "process.stdout.write(usageByInvite(existsSync(log) ? readFileSync(log, 'utf8') : ''));",
+      "dead": "process.stdout.write(usageByInvite(''));",
+      "expect": [
+        "itsacv invite --usage reads the QA log of --out"
+      ]
     }
   }
 }
