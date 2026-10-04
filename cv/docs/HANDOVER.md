@@ -193,6 +193,13 @@ Traps met, each cost time once:
   outcome, fit and the model's analysis. The entry point is the URL opened,
   not a choice: both run on the laptop. The owner reads the log; a study of
   it comes before any change of model or prompt.
+- [x] **2.4c** (2026-10-04) A requirement whose every part, before any
+  parenthesis, is a profile skill's name or alias ("Fortinet / FortiGate",
+  "HA (haute disponibilité réseau)") is met by those skills; a term is too
+  loose ("Sécurité (IA)" is not SecOps), one unnamed part leaves it. Measured
+  on the 27 real runs: one change ("Prometheus / Grafana" gains Grafana).
+  Same day: soft skills (pair work) are qualities and administrative
+  conditions are to confirm, never "non" (#65).
 - [ ] **2.5** The owner's profile edits, recompiled (private data).
 - [x] **2.6** must/nice decided by code from the offer's cues (2026-09-29;
   `src/importance.js`, 9 defences). No real offer changed: the ones at hand

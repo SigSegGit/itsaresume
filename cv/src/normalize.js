@@ -7,7 +7,7 @@
 // invention lives, and it is either valid as written or refused.
 
 import { isNever, qualification, scoreOf } from './score.js';
-import { kindOf, LANGUAGES, skillNames } from './profile.js';
+import { identityNames, kindOf, LANGUAGES, skillNames } from './profile.js';
 import { blocked } from './evidence.js';
 import { backsRequirement } from './tailor.js';
 import { cleanName, LIMITS } from './guard.js';
@@ -59,6 +59,13 @@ function unbacked(requirement, profile) {
  */
 function isCondition(requirement, profile) {
   return namesCondition(canonical(requirement.name)) && unbacked(requirement, profile);
+}
+
+/** The profile skills a name's parts name, each one, before any parenthesis; null when a part names none. */
+function partsNamed(name, byName) {
+  const parts = String(name ?? '').split('(')[0].split(/[/,&+]/).map((part) => part.trim().toLowerCase()).filter(Boolean);
+  const ids = parts.map((part) => byName.get(part));
+  return ids.length && ids.every(Boolean) ? [...new Set(ids)] : null;
 }
 
 /** Words that state a language's level or use, nothing else ("Anglais courant (écrit et oral)"). */
@@ -291,6 +298,13 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     if (out.has(skill.id)) continue;
     for (const name of skillNames(skill)) if (!byName.has(name)) byName.set(name, skill.id);
   }
+  // Names and aliases only: a term is too loose for a part ("Sécurité (IA)"
+  // is not SecOps; measured on the real runs, 2026-10-04).
+  const byIdentity = new Map();
+  for (const skill of profile.skills) {
+    if (out.has(skill.id)) continue;
+    for (const name of identityNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);
+  }
 
   // A requirement the offer does not state is the model's invention (it would
   // bring R&D projects and short missions onto the CV, and score): dropped.
@@ -330,7 +344,16 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       requirement.match = 'yes';
       requirement.skills = [named];
     }
-    keys.push(named ? `skill:${named}` : `name:${String(requirement.name ?? '').trim().toLowerCase()}`);
+    // Every part of the name names a profile skill ("Fortinet / FortiGate",
+    // "HA (haute disponibilité réseau)", 2026-10-02): those skills meet it.
+    // One part the profile does not name ("Kubernetes / Docker") leaves it.
+    const parts = named ? null : partsNamed(requirement.name, byIdentity);
+    if (parts && (requirement.match !== 'yes' || requirement.skills.join() !== parts.join())) {
+      repairs.push(`requirement ${requirement.name}: each part named like a profile skill (${parts.join(', ')}), now yes`);
+      requirement.match = 'yes';
+      requirement.skills = parts;
+    }
+    keys.push(named ? `skill:${named}` : parts ? `skill:${parts.join('+')}` : `name:${String(requirement.name ?? '').trim().toLowerCase()}`);
     // Profile v4, §3.10: what the candidate never claims stays a gap, whatever the model thought.
     if (isNever(requirement, profile.never)) {
       if (requirement.match !== 'no' || !requirement.never) repairs.push(`requirement ${requirement.name}: never claimed in the profile, now no`);

@@ -296,6 +296,30 @@
       "expect": [
         "a listed name that heads an analysed row before its parenthesis is that row"
       ]
+    },
+    "Parts: every part naming a profile skill meets the requirement": {
+      "file": "src/normalize.js",
+      "live": "const parts = named ? null : partsNamed(requirement.name, byIdentity);",
+      "dead": "const parts = null;",
+      "expect": [
+        "a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is"
+      ]
+    },
+    "Parts: a term does not name a part": {
+      "file": "src/normalize.js",
+      "live": "    for (const name of identityNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);",
+      "dead": "    for (const name of skillNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);",
+      "expect": [
+        "a part named only by a skill term does not meet the requirement"
+      ]
+    },
+    "Parts: one unnamed part leaves the requirement": {
+      "file": "src/normalize.js",
+      "live": "return ids.length && ids.every(Boolean) ? [...new Set(ids)] : null;",
+      "dead": "return ids.some(Boolean) ? [...new Set(ids.filter(Boolean))] : null;",
+      "expect": [
+        "a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is"
+      ]
     }
   }
 }
