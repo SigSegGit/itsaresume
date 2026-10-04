@@ -432,6 +432,10 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
 
+- The VM deploys whatever `main` holds (3.5): the gate is the CI that a
+  merge needs, nothing after it. No rollback but a revert on `main`; a
+  failed build leaves the running containers as they were.
+
 - An invitation code rides in the URL (`?i=`): it stays in the visitor's
   history and address bar and in the VM's Caddy access log. 96 random
   bits, revocable at once (2.16); not hidden further on purpose.
