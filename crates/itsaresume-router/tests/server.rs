@@ -1,7 +1,7 @@
 //! The HTTP endpoint, over real sockets, in front of scripted backends.
 
 use itsaresume_router::server::{DEFAULT_LISTEN, MAX_BODY_BYTES, Server};
-use itsaresume_router::{Backend, BackendError, Completion, Journal, Request, Router};
+use itsaresume_router::{Backend, BackendError, Completion, Journal, Request, Router, Usage};
 use serde_json::{Value, json};
 use std::net::SocketAddr;
 use std::thread;
@@ -500,4 +500,37 @@ fn a_request_kind_is_generate_or_classify() {
         post(address, r#"{"prompt": "p", "kind": "translate"}"#).0,
         400
     );
+}
+
+/// 8.39: the answer reports the tokens its backend reported, so the
+/// generator can count them per run; none reported, no `usage` key.
+#[test]
+fn an_answer_reports_its_tokens() {
+    let counted = Box::new(Scripted {
+        name: "claude-code",
+        reply: Ok(Completion {
+            text: "hi".into(),
+            rate_limit: None,
+            usage: Some(Usage {
+                input: 1,
+                output: 2,
+                cache_read: 3,
+                cache_creation: 4,
+            }),
+        }),
+        delay: Duration::ZERO,
+    });
+    let (address, _dir) = start(vec![counted]);
+    let (status, body) = post(address, r#"{"prompt":"hi"}"#);
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(
+        body["usage"],
+        serde_json::json!({"input": 1, "output": 2, "cache_read": 3, "cache_creation": 4}),
+        "{body}"
+    );
+
+    let (address, _dir) = start(vec![answers("lm-studio", "hi")]);
+    let (status, body) = post(address, r#"{"prompt":"hi"}"#);
+    assert_eq!(status, 200, "{body}");
+    assert!(body.get("usage").is_none(), "{body}");
 }
