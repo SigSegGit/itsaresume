@@ -1,0 +1,10 @@
+# Every five minutes, and two minutes after boot (cv HANDOVER 3.5).
+[Unit]
+Description=itsaresume: look for a new origin/main every five minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

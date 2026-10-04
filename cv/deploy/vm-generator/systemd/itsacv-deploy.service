@@ -1,0 +1,11 @@
+# itsaresume on the VM: deploy origin/main when it moves (cv HANDOVER 3.5).
+# A user unit: copy to ~/.config/systemd/user/, adjust the two paths, then
+#   systemctl --user daemon-reload && systemctl --user enable --now itsacv-deploy.timer
+#   loginctl enable-linger "$USER"     # so it runs with nobody logged in
+[Unit]
+Description=itsaresume: deploy origin/main when it moves
+
+[Service]
+Type=oneshot
+Environment=DATA=%h/itsacv-data
+ExecStart=%h/itsaresume/cv/deploy/vm-generator/auto-deploy.sh

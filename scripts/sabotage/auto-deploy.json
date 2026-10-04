@@ -1,0 +1,49 @@
+{
+  "command": [
+    "bash",
+    "cv/deploy/vm-generator/test-auto-deploy.sh"
+  ],
+  "defences": {
+    "Auto-deploy: main only": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if [ \"$branch\" != main ]; then",
+      "dead": "if false; then",
+      "expect": [
+        "another_branch_is_not_deployed"
+      ]
+    },
+    "Auto-deploy: local changes stop it": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if [ -n \"$(git status --porcelain --untracked-files=no)\" ]; then",
+      "dead": "if false; then",
+      "expect": [
+        "local_changes_stop_the_deploy"
+      ]
+    },
+    "Auto-deploy: fast-forward only": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if ! git merge --ff-only --quiet origin/main 2>/dev/null; then",
+      "dead": "if ! git merge --quiet --no-edit origin/main 2>/dev/null; then",
+      "expect": [
+        "a_diverged_checkout_is_not_merged"
+      ]
+    },
+    "Auto-deploy: a new commit is deployed": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if [ \"$(cat \"$state\" 2>/dev/null)\" = \"$head\" ]; then",
+      "dead": "if [ \"$(cat \"$state\" 2>/dev/null)\" = \"$head\" ] || true; then",
+      "expect": [
+        "a_new_commit_is_pulled_and_deployed",
+        "a_failed_build_is_retried"
+      ]
+    },
+    "Auto-deploy: a failed build is not recorded as deployed": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "docker compose -f \"$compose\" up -d --build\n",
+      "dead": "docker compose -f \"$compose\" up -d --build || true\n",
+      "expect": [
+        "a_failed_build_is_retried"
+      ]
+    }
+  }
+}

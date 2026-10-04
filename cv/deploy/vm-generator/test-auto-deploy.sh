@@ -19,7 +19,7 @@ exit 0
 FAKE
 chmod +x "$work/bin/docker"
 export FAKE_DIR=$work PATH="$work/bin:$PATH"
-export GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.org GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.org
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.org GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.org
 
 # Output in cargo's shape so that scripts/sabotage.py can name a red case.
 failures=0
@@ -39,6 +39,7 @@ fresh() {
     mkdir -p "$work/seed/cv/deploy/vm-generator"
     cp "$here/auto-deploy.sh" "$work/seed/cv/deploy/vm-generator/"
     echo one > "$work/seed/file"
+    echo kept > "$work/seed/config"
     git -C "$work/seed" add -A && git -C "$work/seed" commit -qm one && git -C "$work/seed" push -q origin main
     git clone -q "$work/origin.git" "$work/vm"
 }
@@ -71,10 +72,11 @@ deploy || fail "the retry failed: $(cat "$work/out")"
 [ "$(calls)" -eq 1 ] || fail "the failed deploy was not retried"
 report a_failed_build_is_retried
 
-# 4. Local changes on the VM: refused, untouched, no docker.
-fresh; deploy; rm -f "$work/docker-calls"; upstream two; echo mine > "$work/vm/file"
+# 4. Local changes on the VM, even in a file origin did not touch (git would
+# fast-forward over it): refused, untouched, no docker.
+fresh; deploy; rm -f "$work/docker-calls"; upstream two; echo mine > "$work/vm/config"
 deploy && fail "a dirty checkout was deployed"
-[ "$(cat "$work/vm/file")" = mine ] || fail "the local change was lost"
+[ "$(cat "$work/vm/config")" = mine ] || fail "the local change was lost"
 [ "$(calls)" -eq 0 ] || fail "docker ran on a dirty checkout"
 report local_changes_stop_the_deploy
 

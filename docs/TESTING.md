@@ -172,3 +172,9 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |
 | `too_few_checks_stop_the_merge` | `scripts/test-merge-when-green.sh` | One passing check out of a suite of twelve: no merge | Merge: the suite's minimum of checks |
 | `the_head_is_read_before_the_checks` | `scripts/test-merge-when-green.sh` | A push while the checks are counted: the merge names the head read before, so GitHub refuses it | Merge: pinned to the counted head |
+| `a_new_commit_is_pulled_and_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | cv 3.5: a new commit on origin/main is fast-forwarded on the VM's checkout, then `docker compose ... up -d --build` runs | Auto-deploy: a new commit is deployed |
+| `nothing_new_deploys_nothing` | `cv/deploy/vm-generator/test-auto-deploy.sh` | Nothing new since the last deploy: docker is not called | — |
+| `a_failed_build_is_retried` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A failed compose is an error and is not recorded: the next run builds again | Auto-deploy: a new commit is deployed; Auto-deploy: a failed build is not recorded as deployed |
+| `local_changes_stop_the_deploy` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A local edit on the VM, even in a file origin did not touch: refused, kept, no docker | Auto-deploy: local changes stop it |
+| `a_diverged_checkout_is_not_merged` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A local commit origin does not have: never merged, no docker | Auto-deploy: fast-forward only |
+| `another_branch_is_not_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A checkout on another branch than main: refused | Auto-deploy: main only |

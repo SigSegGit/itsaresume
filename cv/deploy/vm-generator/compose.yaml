@@ -15,6 +15,15 @@
 #   out/ journal/             runs and the router journal
 #
 #   DATA=~/itsacv-data docker compose up -d --build
+#
+# Or let the VM follow main by itself (cv HANDOVER 3.5): auto-deploy.sh,
+# run every five minutes by systemd/itsacv-deploy.timer, fast-forwards the
+# checkout and runs the line above when origin/main moves; it refuses local
+# edits, local commits and another branch. Install once, as the VM's user:
+#   cp systemd/itsacv-deploy.* ~/.config/systemd/user/   # adjust the paths in .service
+#   systemctl --user daemon-reload && systemctl --user enable --now itsacv-deploy.timer
+#   loginctl enable-linger "$USER"
+#   journalctl --user -u itsacv-deploy                   # what it did
 services:
   router:
     image: itsaresume-router:vm
