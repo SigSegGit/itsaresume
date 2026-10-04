@@ -128,3 +128,31 @@ test('a requirement named exactly like a profile skill is met by that skill', ()
   assert.deepEqual(analysis.requirements[2].skills, ['terraform']);
   assert.match(repairs.join('\n'), /Amazon Web Services.*aws/);
 });
+
+// Seen 2026-10-02: "Fortinet / FortiGate" stayed a gap beside the profile's
+// Fortinet skill, "HA (haute disponibilité réseau)" went to a lab skill.
+test('a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is', () => {
+  const a = answer();
+  a.requirements.push(
+    { name: 'AWS / GCP', importance: 'must', match: 'no', skills: [], note: '' },
+    { name: 'Python (scripting)', importance: 'must', match: 'adjacent', skills: ['oracle'], note: '' },
+    { name: 'Kubernetes / Docker', importance: 'must', match: 'no', skills: [], note: '' },
+  );
+  const { analysis, repairs } = normalize(a, profile());
+  const row = (name) => analysis.requirements.find((r) => r.name === name);
+  assert.deepEqual([row('AWS / GCP').match, row('AWS / GCP').skills], ['yes', ['aws', 'gcp']]);
+  assert.deepEqual([row('Python (scripting)').match, row('Python (scripting)').skills], ['yes', ['python']]);
+  assert.notEqual(row('Kubernetes / Docker').match, 'yes', 'Kubernetes is not in the profile');
+  assert.match(repairs.join('\n'), /requirement AWS \/ GCP: each part named like a profile skill \(aws, gcp\), now yes/);
+});
+
+// Measured on the real runs (2026-10-04): a skill's term is too loose for a
+// part, "Sécurité (IA)" went to yes by SecOps's term "sécurité".
+test('a part named only by a skill term does not meet the requirement', () => {
+  const p = profile();
+  p.skills.find((skill) => skill.id === 'docker').terms = ['conteneurs'];
+  const a = answer();
+  a.requirements.push({ name: 'Conteneurs (IA)', importance: 'must', match: 'adjacent', skills: ['docker'], note: '' });
+  const { analysis } = normalize(a, p);
+  assert.equal(analysis.requirements.find((r) => r.name === 'Conteneurs (IA)').match, 'adjacent');
+});
