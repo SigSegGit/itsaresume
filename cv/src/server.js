@@ -158,10 +158,14 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // A reload is the same visitor (seen 2026-10-01: reopening the page during
   // a several-minute run lost the CV): the visitor's token rides in a cookie
   // the page cannot read (HttpOnly) and other sites cannot send (Strict).
+  const cookieOf = (request) => {
+    const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
+    return kept && visitors.has(kept) ? kept : null;
+  };
   const pageToken = (request) => {
     if (!publicMode) return { value: token };
-    const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
-    if (kept && visitors.has(kept)) return { value: kept };
+    const kept = cookieOf(request);
+    if (kept) return { value: kept };
     const fresh = randomBytes(24).toString('hex');
     visitors.set(fresh, new Set());
     if (visitors.size > MAX_VISITORS) visitors.delete(visitors.keys().next().value);
@@ -171,6 +175,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const given = request.headers['x-csrf-token'];
     return typeof given === 'string' && visitors.has(given) ? given : null;
   };
+  // A read: the page's header, or the cookie alone for a link it renders (a
+  // download). Never enough to write: a POST needs the header (CSRF).
+  const readerOf = (request) => visitorOf(request) ?? cookieOf(request);
   // The proxy sets X-Forwarded-For to the client's address; the last entry is its own.
   const clientOf = (request) => String(request.headers['x-forwarded-for'] ?? '').split(',').pop().trim() || request.socket.remoteAddress;
   function admit(request, count) {
@@ -307,7 +314,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode })));
         }
         const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+))?$/);
-        const job = match && jobs.get(match[1]);
+        // Public: a job is its visitor's alone; to anyone else it does not exist.
+        const job = match && (!publicMode || visitors.get(readerOf(request))?.has(match[1])) && jobs.get(match[1]);
         if (!job) throw new HttpError(404, 'not found');
         if (!match[2]) return send(response, 200, view(job, { detail: true, publicMode }));
         const type = DOWNLOADS[match[2]];
