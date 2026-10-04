@@ -98,3 +98,20 @@ fn tokens_are_summed_per_backend() {
         "{text}"
     );
 }
+
+/// 8.40 (Rodin): the tokens per day, per backend, so the day the plan ran
+/// out also says what it was spent on; a day without `usage` says nothing.
+#[test]
+fn the_journal_by_day_sums_the_tokens_per_backend() {
+    let journal = r#"{"ts":"2026-10-03T09:00:00.000Z","outcome":"answered","backend":"claude-code","attempts":[],"usage":{"input":3,"output":179,"cache_read":6914,"cache_creation":7109}}
+{"ts":"2026-10-03T10:00:00.000Z","outcome":"answered","backend":"claude-code","attempts":[],"usage":{"input":7,"output":21,"cache_read":86,"cache_creation":0}}
+{"ts":"2026-10-03T11:00:00.000Z","outcome":"answered","backend":"lm-studio","attempts":[],"usage":{"input":24,"output":5}}
+{"ts":"2026-10-04T09:00:00.000Z","outcome":"answered","backend":"lm-studio","attempts":[]}
+"#;
+    assert_eq!(
+        summarize_by_day(journal),
+        "2026-10-03: 3 requests; answered by claude-code 2, lm-studio 1; no quota hit; \
+         tokens claude-code 14119 read 200 written, lm-studio 24 read 5 written\n\
+         2026-10-04: 1 request; answered by lm-studio 1; no quota hit\n"
+    );
+}
