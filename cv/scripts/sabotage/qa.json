@@ -57,8 +57,8 @@
     },
     "QA: the page sends the chosen model": {
       "file": "web/app.js",
-      "live": ", model: $('model').value });",
-      "dead": " });",
+      "live": ", model: $('model').value, profile:",
+      "dead": ", profile:",
       "expect": ["the page lets the owner pick the model, and sends the choice with the offers"]
     }
   }
