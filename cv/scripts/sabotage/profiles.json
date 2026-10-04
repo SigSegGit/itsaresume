@@ -102,6 +102,14 @@
       "expect": [
         "no directory, or a missing one, is the default alone"
       ]
+    },
+    "Profile: serve --profiles reaches the server": {
+      "file": "bin/itsacv.js",
+      "live": "{ ...options, profilesDir: options.profiles, port:",
+      "dead": "{ ...options, profilesDir: null, port:",
+      "expect": [
+        "itsacv serve --profiles DIR offers the directory's profiles on the page"
+      ]
     }
   }
 }
