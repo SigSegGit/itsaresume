@@ -10,6 +10,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { DEFAULT_PROFILE } from './profiles.js';
 import { STOP, wordsOf } from './text.js';
 
 /** An offer's size: shorter is a question, longer is not one offer. */
@@ -67,13 +68,28 @@ export function loadRuns(out) {
     .filter((dir) => ['offer.txt', 'analysis.json', 'cv.pdf'].every((file) => existsSync(join(dir, file))))
     .map((dir) => {
       const name = dir.split(/[\\/]/).at(-1);
-      return { dir, name, offer: readFileSync(join(dir, 'offer.txt'), 'utf8'), quality: qualityOf(name) };
+      return { dir, name, offer: readFileSync(join(dir, 'offer.txt'), 'utf8'), quality: qualityOf(name), profile: profileOf(dir) };
     });
 }
 
-/** The run to answer this offer with: the best rated among the same offer's, then the newest; or null. */
-export function findReusable(offer, runs) {
+/** The profile a run was tailored to (4.1): its run.json says; none, the owner's. */
+function profileOf(dir) {
+  try {
+    const { profile } = JSON.parse(readFileSync(join(dir, 'run.json'), 'utf8'));
+    return typeof profile === 'string' ? profile : DEFAULT_PROFILE;
+  } catch {
+    return DEFAULT_PROFILE;
+  }
+}
+
+/**
+ * The run to answer this offer with, for this profile: the best rated among
+ * the same offer's, then the newest; or null. Another profile's run is never
+ * an answer (4.1).
+ */
+export function findReusable(offer, runs, profile = DEFAULT_PROFILE) {
   const candidates = runs
+    .filter((run) => (run.profile ?? DEFAULT_PROFILE) === profile)
     .filter((run) => (run.quality ?? MIN_REUSED_QUALITY) >= MIN_REUSED_QUALITY)
     .filter((run) => similarity(offer, run.offer) >= SAME_OFFER);
   candidates.sort((a, b) => (b.quality ?? MIN_REUSED_QUALITY) - (a.quality ?? MIN_REUSED_QUALITY) || b.name.localeCompare(a.name));

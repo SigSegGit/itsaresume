@@ -234,6 +234,7 @@ property it proves.
 | the same offer, reformatted or with a changed date, is recognised; another offer is not | Intake: similarity counts shared words |
 | the owner rates a run by its directory name, .q0 to .q5 | — |
 | a reusable run is the closest well-rated one; a run rated below 3 is never reused | Intake: only close offers are the same; Intake: a run rated below 3 is never reused; Intake: the best rated run first |
+| a reused run is one of the same profile; a run without one is the owner's | Profile: a reuse never crosses profiles; Profile: a run without run.json is the owner's |
 
 ## `test/invites.test.js`
 
@@ -350,6 +351,15 @@ property it proves.
 | requirements the analysis left out are added from a focused listing | Listing: requirements left out are added |
 | a listing that cannot be read leaves the analysis as it was | — |
 | serve() writes each job's tokens per backend to the QA log, through the real pipeline | Tokens: serve() counts the real pipeline's answers |
+| serve() tailors a job to the profile it names, from --profiles, and the run records it | Profile: the log line names the profile; Profile: serve() loads the named profile's file; Profile: the run records its profile |
+
+## `test/profiles.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the profiles are the default and each <id>.json of the directory; other names are not profiles | Profile: a profile id is a closed name; Profile: a directory named .json is no profile |
+| no directory, or a missing one, is the default alone | Profile: a missing directory is the default alone |
+| itsacv serve --profiles DIR offers the directory's profiles on the page | Profile: serve --profiles reaches the server |
 
 ## `test/qa.test.js`
 
@@ -476,6 +486,8 @@ property it proves.
 | an invitation link names its visitor in every log line, and a reload keeps the name | Invite: the log line names the invitation; Invite: a page opened with a live code binds its visitor |
 | an unknown or revoked code is no invitation | Invite: a revoked code names nobody |
 | with --invite-only a job needs a live invitation: none, or a revoked one, is 403 | Invite: a page opened with a live code binds its visitor; Invite: --invite-only refuses a job without a live invitation; Invite: a revoked code names nobody |
+| a job may name a profile from the closed list; none is the default, an unknown one is 400 | Profile: an unknown profile is refused; Profile: the job's profile reaches the generation; Profile: the log line names the profile |
+| in public mode the profiles are neither listed nor chosen: another than the default is 400 | Profile: an unknown profile is refused; Profile: public mode knows the default alone; Profile: public status lists no profiles |
 
 ## `test/split.test.js`
 
@@ -515,6 +527,7 @@ property it proves.
 | the public status renders without the owner assessment | Page: the public status renders without verdicts |
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 | an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
+| the page offers a profile choice only when the status lists several, and sends the one chosen | — |
 
 ## `test/word.test.js`
 
@@ -531,6 +544,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**357 tests, 297 of them covered by at least one sabotage defence.**
+**365 tests, 304 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

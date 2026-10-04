@@ -9,6 +9,7 @@ import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
 import { counted } from './llm.js';
 import { loadInvites } from './invites.js';
+import { DEFAULT_PROFILE, listProfiles } from './profiles.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -47,13 +48,18 @@ async function status({ profilePath, url, useWord }) {
   return { profile, router: { up: await routerUp(url) }, layout: { word, libre } };
 }
 
-export async function serve({ profile: profilePath, out, url, port, useWord, llm, publicMode = null }) {
+export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null }) {
+  // 4.1: the owner's profile, and the files of --profiles DIR (read at each use).
+  const profiles = () => listProfiles({ profile: profilePath, profilesDir });
   const deps = {
     status: () => status({ profilePath, url, useWord }),
+    profiles: () => [...profiles().keys()],
     split: (text) => splitOffers({ text, llm }),
-    tailor: async ({ offer, model = 'auto', onStep, onAnswer = () => {} }) => {
-      const loaded = loadProfile(profilePath);
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep });
+    tailor: async ({ offer, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE }) => {
+      const path = profiles().get(profile);
+      if (!path) throw new Error(`no profile "${profile}"`);
+      const loaded = loadProfile(path);
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep, profileId: profile });
       return { ...result, view: jobView(result, loaded) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.

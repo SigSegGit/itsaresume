@@ -61,3 +61,21 @@ test('a reusable run is the closest well-rated one; a run rated below 3 is never
   assert.equal(findReusable(OFFER, low), null, 'rated 2: regenerate instead');
   assert.equal(findReusable('AI Tech Lead GenAI\nContexte\nCopilot.\nProfil\nPédagogie.', runs), null);
 });
+
+// 4.1: a run tailored to another profile is never someone else's answer.
+test('a reused run is one of the same profile; a run without one is the owner\'s', () => {
+  const out = mkdtempSync(join(tmpdir(), 'itsacv-intake-'));
+  const run = (name, profile) => {
+    mkdirSync(join(out, name));
+    writeFileSync(join(out, name, 'offer.txt'), OFFER);
+    writeFileSync(join(out, name, 'analysis.json'), '{}');
+    writeFileSync(join(out, name, 'cv.pdf'), '%PDF');
+    if (profile !== undefined) writeFileSync(join(out, name, 'run.json'), JSON.stringify({ profile }));
+  };
+  run('20260905-000000-archi.q5', 'bob');
+  run('20260901-000000-archi', undefined);
+  const runs = loadRuns(out);
+  assert.equal(findReusable(OFFER, runs).name, '20260901-000000-archi', 'the default profile: Bob\'s better run is not the owner\'s');
+  assert.equal(findReusable(OFFER, runs, 'bob').name, '20260905-000000-archi.q5');
+  assert.equal(findReusable(OFFER, runs, 'carol'), null);
+});

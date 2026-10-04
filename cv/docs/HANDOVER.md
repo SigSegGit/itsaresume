@@ -51,7 +51,7 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 416 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 424 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
@@ -382,7 +382,7 @@ Traps met, each cost time once:
   from `qa-log.jsonl`. Ten tests, eleven defences
   (`scripts/sabotage/invitations.json`). Not done: the page does not say
   "on invitation" before a refused click.
-- [ ] **4.x** (the owner, 2026-10-04: "later") **Another profile than the
+- [~] **4.x** (the owner, 2026-10-04: "later") **Another profile than the
   owner's.** Today one profile is loaded at start (`--profile`,
   `loadProfile`), compiled privately with its truth document and verdicts.
   Before any code, settle with the owner (closed questions):
@@ -403,6 +403,15 @@ Traps met, each cost time once:
   unknown profile id 400; a reuse never crosses profiles; in public mode
   the profile list is the owner's choice (`--public-profiles`), never the
   directory. Sabotage: the reuse key without the profile.
+  **4.1 done 2026-10-04** (`cv/profile-per-job`): `src/profiles.js`,
+  `serve --profiles DIR`, the page's profile choice (shown only with
+  several), `run.json` records the profile, reuse matches it, public mode
+  knows `default` alone and lists none (`publicStatus` drops `profiles`:
+  other people's names). Eight tests, thirteen defences
+  (`scripts/sabotage/profiles.json`). Not done, waiting on the owner's
+  answers to (a)-(c): an upload, a public choice, retention. `itsacv
+  tailor` has no `--profiles` (use `--profile FILE`). Next: 5.1, the
+  code-only matrix, now unblocked.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).
