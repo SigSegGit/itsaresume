@@ -11,7 +11,7 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-09-30)
+## 0. Where things stand (2026-10-04)
 
 - **MVP works end to end**: an offer pasted in the local page → the router
   (Claude on the owner's subscription, a local model as fallback; never
@@ -44,10 +44,14 @@ the decisions waiting for him, how to reach his machines — are in
   exactly that list. The listing model (Bionic) finds 84-88 % of the labels
   and dropped whole "Nice to have" lists (2.1c); with the floor of 2.1e,
   92 % (69/75). Sonnet lists 75/75 (100 %), 5-16 s an offer.
+- 2026-10-04: tokens per job in `qa-log.jsonl`, Claude and local apart
+  (2.13); a public job readable by its own visitor only (2.14); favicon
+  and link preview (2.15). Later, written as steps: another profile (4.x),
+  matchmaking (5.x).
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 399 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 406 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
@@ -321,6 +325,64 @@ Traps met, each cost time once:
   (router #54); a reload lost the visitor's jobs (cookie, #53); CI's newer
   stable deprecated fetch_update (#55). The intake refusing a short real
   offer stays to look at.
+- [x] **2.13** (2026-10-04, asked by the owner) Tokens traced on the
+  server, Claude and the local model apart. The router journals each
+  answer's `usage` and `stats` sums it per backend (router 8.38); its HTTP
+  answer carries it (8.39); the client keeps it, the server counts every
+  answer of a job (`addTokens`, `counted` in `src/llm.js`) into
+  `qa-log.jsonl` as `tokens` per backend (`calls`, `input`, `output`,
+  `cache_read`, `cache_creation`), a failed job's included, never in the
+  page. `scripts/sabotage/tokens.json`. `/api/split` (owner only) is not
+  counted per job: its tokens are in the router's journal only.
+- [x] **2.14** (2026-10-04, asked by the owner: an ESN must not see what
+  another tested) In public mode a job's detail and files were served to
+  anyone holding its id (the list was already per visitor). Now only to
+  its visitor: the page's header, or the cookie alone for a download link;
+  404 to anyone else. Left as is: the same offer pasted by another visitor
+  is answered from the earlier run (`reuse`), which tells them only that
+  this offer was seen before, with the owner's CV they would get anyway.
+- [x] **2.15** (2026-10-04, the owner: "a site with no favicon or banner")
+  `web/favicon.svg`, `/favicon.ico` and the touch icon (PNG), Open Graph
+  and Twitter tags whose image is `https://<public host>/banner.png`
+  (1200×630). Rendered from `tools/brand/` by `tools/brand/render.sh`
+  (`chromium-headless-shell`; a full Chromium in headless mode crops the
+  viewport). Not checked: how LinkedIn or WhatsApp actually render the
+  preview (needs the public instance up: the owner pastes the link once).
+- [ ] **4.x** (the owner, 2026-10-04: "later") **Another profile than the
+  owner's.** Today one profile is loaded at start (`--profile`,
+  `loadProfile`), compiled privately with its truth document and verdicts.
+  Before any code, settle with the owner (closed questions):
+  (a) what is uploaded: the compiled `profile.json` (schema of
+  `src/profile.js`, only someone with the tooling can make one) or a CV
+  (docx/PDF) the tool compiles (a model call, and every honesty check
+  rests on a profile nobody verified); (b) who may: the owner only (local
+  page, `--profile-dir`), or public visitors (their personal data on the
+  owner's machine and in the owner's Claude quota: GDPR, retention,
+  deletion); (c) where it lives: memory only for the visitor's session, or
+  disk. Recommended first step, whatever (b) says: **4.1** the server
+  takes a profile per job, not per process: `deps.tailor({ profile })`,
+  `POST /api/jobs` with a `profile` id from a closed list of files in a
+  directory the owner fills (`--profiles DIR`); the job, its log line and
+  its run directory name the profile; reuse (`findReusable`) keys on
+  (offer, profile), never the offer alone. Red tests in
+  `test/server.test.js`: two profiles, one offer, two different CVs; an
+  unknown profile id 400; a reuse never crosses profiles; in public mode
+  the profile list is the owner's choice (`--public-profiles`), never the
+  directory. Sabotage: the reuse key without the profile.
+- [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
+  offers × M profiles.** Needs 4.1. The cost is the model calls: the
+  listing is per offer (N calls, cacheable), the analysis per pair (N×M).
+  So: **5.1** code first, no model: for every pair, the share of the
+  offer's listed requirements the profile's skills name (`relate()` in
+  `src/lexicon.js`, ESCO), a matrix written as CSV/Markdown; red tests on
+  two synthetic profiles and three corpus offers with a hand-made expected
+  ranking. **5.2** the model only on the top K pairs per offer (K set by
+  the owner), through the existing pipeline; each pair's tokens from 2.13
+  summed, so the bill of a matchmaking run is known before it is run
+  (estimate) and after (measure). Measure first: does 5.1's ranking agree
+  with the full pipeline's qualification on the corpus? If not, 5.2 is
+  not worth its tokens.
+
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
 shown by the CLI and the page; the page's message no longer claims "kept as

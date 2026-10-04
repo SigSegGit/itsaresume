@@ -435,3 +435,35 @@ test('a listing that cannot be read leaves the analysis as it was', async () => 
   const { analysis } = await analyse({ profile: profile(), offer: OFFER, llm });
   assert.equal(analysis.requirements.length, valid().requirements.length);
 });
+
+// Rodin, 2026-10-04: the server tests count tokens through a fake tailor; this
+// one goes through serve() itself, the path the public instance runs.
+test('serve() writes each job\'s tokens per backend to the QA log, through the real pipeline', async () => {
+  const { serve } = await import('../src/serve.js');
+  const out = mkdtempSync(join(tmpdir(), 'itsacv-serve-'));
+  const answers = [
+    { text: EMPTY_LISTING, backend: 'lm-studio', usage: { input: 24, output: 5 } },
+    { text: JSON.stringify(valid()), backend: 'claude-code', usage: { input: 3, output: 179, cache_read: 6914, cache_creation: 7109 } },
+  ];
+  const llm = async () => answers.shift();
+  const server = await serve({ profile: PROFILE_PATH.pathname.replace(/^\/(\w:)/, '$1'), out, url: 'http://127.0.0.1:9', port: 0, useWord: false, llm });
+  try {
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const token = (await (await fetch(base)).text()).match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+    const posted = await fetch(`${base}/api/jobs`, { method: 'POST', headers: { Origin: base, 'X-CSRF-Token': token, 'Content-Type': 'application/json' }, body: JSON.stringify({ offers: [{ title: 'SRE', text: OFFER }] }) });
+    assert.equal(posted.status, 202);
+    let line;
+    for (let i = 0; i < 300 && !line; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (existsSync(join(out, 'qa-log.jsonl'))) line = JSON.parse(readFileSync(join(out, 'qa-log.jsonl'), 'utf8').split('\n')[0]);
+    }
+    assert.ok(line, 'the job was logged');
+    assert.deepEqual(line.tokens, {
+      'lm-studio': { calls: 1, input: 24, output: 5, cache_read: 0, cache_creation: 0 },
+      'claude-code': { calls: 1, input: 3, output: 179, cache_read: 6914, cache_creation: 7109 },
+    }, JSON.stringify({ status: line.status, error: line.error }));
+  } finally {
+    server.closeAllConnections();
+    server.close();
+  }
+});
