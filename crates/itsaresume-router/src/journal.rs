@@ -109,12 +109,7 @@ impl Journal {
             usage: Some(usage), ..
         }) = &outcome.result
         {
-            entry["usage"] = json!({
-                "input": usage.input,
-                "output": usage.output,
-                "cache_read": usage.cache_read,
-                "cache_creation": usage.cache_creation,
-            });
+            entry["usage"] = usage.to_json();
         }
         let mut line = entry.to_string();
         line.push('\n');

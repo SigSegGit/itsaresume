@@ -195,7 +195,7 @@ usage error, 3 stopped (`Other`), 4 exhausted.
 
 | Request | Response |
 |---|---|
-| `POST /v1/complete` `{"prompt": "…", "system": "…"}` | 200 `{"backend", "text", "attempts"}` |
+| `POST /v1/complete` `{"prompt": "…", "system": "…"}` | 200 `{"backend", "text", "attempts"}`, and `"usage"` when the backend reported tokens (8.39) |
 | same, a backend returned `Other` | 502 `{"error": {"kind": "stopped", "backend", "message"}}` |
 | same, every backend failed with a fallback kind | 503 `{"error": {"kind": "exhausted", "attempts"}}` |
 | malformed body | 400 |

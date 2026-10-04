@@ -81,6 +81,19 @@ pub struct Usage {
     pub cache_creation: u64,
 }
 
+impl Usage {
+    /// The counts as the journal and the HTTP answer write them, each under
+    /// its own name.
+    pub fn to_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "input": self.input,
+            "output": self.output,
+            "cache_read": self.cache_read,
+            "cache_creation": self.cache_creation,
+        })
+    }
+}
+
 /// Why a backend did not answer. The kind decides whether the router tries
 /// the next backend: see [`BackendError::allows_fallback`].
 #[derive(Debug, Clone, PartialEq, Eq)]

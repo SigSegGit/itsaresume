@@ -145,6 +145,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `an_overage_answer_latches_the_next_process_too` | `tests/cli.rs` | An overage answer exits 3 saying so, writes the latch, and the next process stops before claude runs | Claude: overage trips the billing wire; Claude: overage refusal latches |
 | `a_proxy_in_the_environment_is_never_used` | `tests/cli.rs` | `HTTP(S)_PROXY` in the environment never carries a request to LM Studio | No proxy from the environment |
 | `a_completion_returns_the_text_the_backend_and_the_failed_attempts` | `tests/server.rs` | 200 carries the text, the answering backend and the failed attempts | — |
+| `an_answer_reports_its_tokens` | `tests/server.rs` | 8.39: 200 carries the backend's `usage`, each count under its own name; a backend reporting none, no `usage` key | Tokens: the HTTP answer reports them; Tokens: the journal writes each count under its own name; Tokens: the router hands the usage on |
 | `a_stopped_request_is_502_with_the_reason` | `tests/server.rs` | A stop (`Other`) is 502 with kind `stopped`, the backend and its message | Server: stopped is 502 |
 | `an_exhausted_request_is_503` | `tests/server.rs` | Every backend failing with a fallback kind is 503 `exhausted` with the attempts | — |
 | `a_malformed_request_is_400` | `tests/server.rs` | Non-JSON, missing/blank/non-string prompt, non-string system are 400 | Server: blank prompt is 400 |

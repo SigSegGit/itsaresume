@@ -1073,15 +1073,17 @@
       "live": "                        usage: completion.usage,",
       "dead": "                        usage: None,",
       "expect": [
-        "the_token_usage_of_an_answer_is_journaled"
+        "the_token_usage_of_an_answer_is_journaled",
+        "an_answer_reports_its_tokens"
       ]
     },
     "Tokens: the journal writes each count under its own name": {
-      "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "                \"cache_read\": usage.cache_read,",
-      "dead": "                \"cache_read\": usage.cache_creation,",
+      "file": "crates/itsaresume-router/src/backend.rs",
+      "live": "            \"cache_read\": self.cache_read,",
+      "dead": "            \"cache_read\": self.cache_creation,",
       "expect": [
-        "the_token_usage_of_an_answer_is_journaled"
+        "the_token_usage_of_an_answer_is_journaled",
+        "an_answer_reports_its_tokens"
       ]
     },
     "Tokens: stats counts cache writes as read": {
@@ -1106,6 +1108,14 @@
       "dead": "        let plural = if *answers == 0 { \"\" } else { \"s\" };",
       "expect": [
         "tokens_are_summed_per_backend"
+      ]
+    },
+    "Tokens: the HTTP answer reports them": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "                body[\"usage\"] = usage.to_json();",
+      "dead": "                body[\"usage\"] = Some(usage).filter(|_| false).map(|usage| usage.to_json()).into();",
+      "expect": [
+        "an_answer_reports_its_tokens"
       ]
     }
   }

@@ -233,10 +233,15 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
     };
     let attempts = attempts_json(&outcome.attempts);
     let (status, mut body) = match outcome.result {
-        Ok(answer) => (
-            200,
-            json!({"backend": answer.backend, "text": answer.text, "attempts": attempts}),
-        ),
+        Ok(answer) => {
+            let mut body =
+                json!({"backend": answer.backend, "text": answer.text, "attempts": attempts});
+            // The tokens, for the caller's own accounting (8.39).
+            if let Some(usage) = answer.usage {
+                body["usage"] = usage.to_json();
+            }
+            (200, body)
+        }
         Err(RouteError::Stopped { backend, error }) => (
             502,
             json!({"error": {
