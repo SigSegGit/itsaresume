@@ -303,6 +303,8 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       token,
       post: (path, value, from) => call(port, { method: 'POST', path, headers: from ? { ...headers, 'X-Forwarded-For': from } : headers, body: JSON.stringify(value) }),
       get: (path) => call(port, { path, headers }),
+      // A link the page renders (a download): the browser sends the cookie, no header.
+      follow: (path) => call(port, { path, headers: { ...host, 'X-Forwarded-For': ip, Cookie: String(page.headers['set-cookie'] ?? '').split(';')[0] } }),
     };
   };
   return { ...app, port, clock, calls, host, visit };
@@ -325,6 +327,20 @@ test('in public mode a visitor sees only the jobs of its own page', async (t) =>
   assert.equal((await alice.post('/api/jobs', { offers: [{ title: 'Alice offer', text: PUBLIC_OFFER('Senior SRE') }] })).status, 202);
   assert.deepEqual(JSON.parse((await bob.get('/api/jobs')).text), []);
   assert.equal(JSON.parse((await alice.get('/api/jobs')).text).length, 1);
+});
+
+// Another ESN must not read what one tested: a job's id is no key to it.
+test('in public mode a job and its files are served only to the visitor whose page created it', async (t) => {
+  const app = await startPublic(t);
+  const alice = await app.visit('203.0.113.7');
+  const bob = await app.visit('198.51.100.9');
+  const [job] = JSON.parse((await alice.post('/api/jobs', { offers: [{ title: 'Alice offer', text: PUBLIC_OFFER('Senior SRE') }] })).text);
+  await finished(alice, job.id, 'done');
+  assert.equal((await alice.follow(`/api/jobs/${job.id}/files/cv.pdf`)).status, 200, 'its own download, by the cookie alone');
+  assert.equal((await bob.get(`/api/jobs/${job.id}`)).status, 404);
+  assert.equal((await bob.follow(`/api/jobs/${job.id}`)).status, 404);
+  assert.equal((await bob.follow(`/api/jobs/${job.id}/files/cv.pdf`)).status, 404);
+  assert.equal((await call(app.port, { path: `/api/jobs/${job.id}/files/cv.pdf`, headers: app.host })).status, 404, 'nobody');
 });
 
 test('in public mode generations are capped per visitor per hour and per day, and the queue is bounded', async (t) => {
