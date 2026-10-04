@@ -263,8 +263,8 @@
     },
     "Public: one token per page load": {
       "file": "src/server.js",
-      "live": "    if (kept) return { value: kept };\n    const fresh = randomBytes(24).toString('hex');",
-      "dead": "    if (kept) return { value: kept };\n    const fresh = visitors.keys().next().value ?? randomBytes(24).toString('hex');",
+      "live": "    const fresh = randomBytes(24).toString('hex');\n    visitors.set(fresh, new Set());",
+      "dead": "    const fresh = visitors.keys().next().value ?? randomBytes(24).toString('hex');\n    visitors.set(fresh, new Set());",
       "expect": [
         "in public mode a visitor sees only the jobs of its own page"
       ]

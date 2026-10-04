@@ -262,13 +262,15 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
     deps: {
       status: status ?? (async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } })),
       split: async () => { throw new Error('split must not run publicly'); },
+      ...(invites ? { invites: () => invites } : {}),
+      ...(log ? { log } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer }) => {
@@ -288,23 +290,24 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
         return result;
       },
     },
-    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, now: () => clock.now },
+    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), now: () => clock.now },
   });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   t.after(() => { app.server.closeAllConnections(); app.server.close(); });
   const port = app.server.address().port;
   const host = { Host: 'cv.example.org', 'X-Forwarded-For': '203.0.113.7' };
   /** A visitor: a page load gives its own token. */
-  const visit = async (ip = '203.0.113.7') => {
-    const page = await call(port, { headers: { ...host, 'X-Forwarded-For': ip } });
+  const visit = async (ip = '203.0.113.7', path = '/', cookie) => {
+    const page = await call(port, { path, headers: { ...host, 'X-Forwarded-For': ip, ...(cookie ? { Cookie: cookie } : {}) } });
     const token = page.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
     const headers = { ...host, 'X-Forwarded-For': ip, Origin: 'https://cv.example.org', 'X-CSRF-Token': token, 'Content-Type': 'application/json' };
     return {
       token,
       post: (path, value, from) => call(port, { method: 'POST', path, headers: from ? { ...headers, 'X-Forwarded-For': from } : headers, body: JSON.stringify(value) }),
       get: (path) => call(port, { path, headers }),
+      cookie: cookie ?? String(page.headers['set-cookie'] ?? '').split(';')[0],
       // A link the page renders (a download): the browser sends the cookie, no header.
-      follow: (path) => call(port, { path, headers: { ...host, 'X-Forwarded-For': ip, Cookie: String(page.headers['set-cookie'] ?? '').split(';')[0] } }),
+      follow: (path) => call(port, { path, headers: { ...host, 'X-Forwarded-For': ip, Cookie: cookie ?? String(page.headers['set-cookie'] ?? '').split(';')[0] } }),
     };
   };
   return { ...app, port, clock, calls, host, visit };
@@ -694,4 +697,54 @@ test('the page has an icon and a link preview: icons served, Open Graph names th
   // 1200x630, the size every preview expects: the PNG header says so.
   const png = readFileSync(new URL('../web/banner.png', import.meta.url));
   assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
+});
+
+// 2.16: the owner reads who spent what. An invitation link names its ESN;
+// the label rides with the visitor (a reload keeps it) into each log line.
+const INVITES = {
+  a1b2c3d4e5f6a1b2c3d4e5f6: { label: 'Alten' },
+  b1b2c3d4e5f6a1b2c3d4e5f6: { label: 'Sopra', revoked: true },
+};
+const logged = async (entries, count) => {
+  for (let i = 0; i < 200 && entries.length < count; i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
+  return entries;
+};
+
+test('an invitation link names its visitor in every log line, and a reload keeps the name', async (t) => {
+  const entries = [];
+  const app = await startPublic(t, { invites: INVITES, log: (entry) => entries.push(entry), perVisitorPerHour: 5 });
+  const invited = await app.visit('203.0.113.7', '/?i=a1b2c3d4e5f6a1b2c3d4e5f6');
+  assert.equal((await invited.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] })).status, 202);
+  const reloaded = await app.visit('203.0.113.7', '/', invited.cookie);
+  assert.equal(reloaded.token, invited.token, 'the same visitor');
+  assert.equal((await reloaded.post('/api/jobs', { offers: [{ title: 'DBA', text: PUBLIC_OFFER('DBA Postgres') }] })).status, 202);
+  const anonymous = await app.visit('198.51.100.9');
+  assert.equal((await anonymous.post('/api/jobs', { offers: [{ title: 'Dev', text: PUBLIC_OFFER('Dev Go') }] })).status, 202);
+  await logged(entries, 3);
+  assert.deepEqual(entries.map((entry) => [entry.title, entry.invite]).sort(), [['DBA', 'Alten'], ['Dev', null], ['SRE', 'Alten']]);
+  assert.equal(JSON.parse((await anonymous.get('/api/jobs')).text).length, 1, 'still one\'s own jobs only (2.14)');
+});
+
+test('an unknown or revoked code is no invitation', async (t) => {
+  const entries = [];
+  const app = await startPublic(t, { invites: INVITES, log: (entry) => entries.push(entry) });
+  const revoked = await app.visit('203.0.113.7', '/?i=b1b2c3d4e5f6a1b2c3d4e5f6');
+  const unknown = await app.visit('198.51.100.9', '/?i=ffffffffffffffffffffffff');
+  await revoked.post('/api/jobs', { offers: [{ title: 'A', text: PUBLIC_OFFER('Senior SRE') }] });
+  await unknown.post('/api/jobs', { offers: [{ title: 'B', text: PUBLIC_OFFER('DBA Postgres') }] });
+  await logged(entries, 2);
+  assert.deepEqual(entries.map((entry) => entry.invite), [null, null]);
+});
+
+test('with --invite-only a job needs a live invitation: none, or a revoked one, is 403', async (t) => {
+  const invites = structuredClone(INVITES);
+  const app = await startPublic(t, { invites, inviteOnly: true });
+  const anonymous = await app.visit('198.51.100.9');
+  const refused = await anonymous.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }] });
+  assert.equal(refused.status, 403);
+  assert.match(JSON.parse(refused.text).error, /invitation/);
+  const invited = await app.visit('203.0.113.7', '/?i=a1b2c3d4e5f6a1b2c3d4e5f6');
+  assert.equal((await invited.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }] })).status, 202);
+  invites.a1b2c3d4e5f6a1b2c3d4e5f6.revoked = true;
+  assert.equal((await invited.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('DBA Postgres') }] })).status, 403, 'revoked after the visit');
 });

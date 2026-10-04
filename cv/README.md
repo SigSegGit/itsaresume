@@ -109,6 +109,23 @@ shown. `deploy/vm` is the Docker front (Caddy, one block per sub-domain),
 `deploy/laptop/public.sh` the tunnel from the laptop. Why and what it costs:
 [ADR-7](docs/ARCHITECTURE.md#adr-7--public-on-a-sub-domain-through-an-always-on-front).
 
+Each job leaves one line in `<out>/qa-log.jsonl`, with the tokens it took
+per backend (Claude and the local model apart). To know which ESN spent
+them, give each one its own link:
+
+```bash
+itsacv invite "Alten" --out <out> --public-host cv.example.org   # prints https://cv.example.org/?i=<code>
+itsacv invite --list --out <out>
+itsacv invite --usage --out <out>                                  # per ESN: jobs, tokens per backend
+itsacv invite --revoke "Alten" --out <out>                         # at once, no restart
+```
+
+A page opened from a link names its label in every log line (a reload keeps
+it); `serve --invite-only` lets only such a page generate. On the VM:
+`docker compose exec generator node bin/itsacv.js invite "Alten" --out
+/data/out --public-host "$CV_HOST"`, and `CV_FLAGS=--invite-only` in the
+data directory's `.env` turns invite-only on.
+
 ## Stack
 
 | Layer | Choice |

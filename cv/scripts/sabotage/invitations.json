@@ -1,0 +1,101 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Invite: the log line names the invitation": {
+      "file": "src/server.js",
+      "live": "        invite: job.invite ?? null,",
+      "dead": "        invite: null,",
+      "expect": [
+        "an invitation link names its visitor in every log line, and a reload keeps the name"
+      ]
+    },
+    "Invite: a page opened with a live code binds its visitor": {
+      "file": "src/server.js",
+      "live": "    if (live) invited.set(fresh, live);",
+      "dead": "    if (live && false) invited.set(fresh, live);",
+      "expect": [
+        "an invitation link names its visitor in every log line, and a reload keeps the name",
+        "with --invite-only a job needs a live invitation: none, or a revoked one, is 403"
+      ]
+    },
+    "Invite: --invite-only refuses a job without a live invitation": {
+      "file": "src/server.js",
+      "live": "if (publicMode?.inviteOnly && !invite) {",
+      "dead": "if (publicMode?.inviteOnly && false) {",
+      "expect": [
+        "with --invite-only a job needs a live invitation: none, or a revoked one, is 403"
+      ]
+    },
+    "Invite: a revoked code names nobody": {
+      "file": "src/invites.js",
+      "live": "return invite && !invite.revoked && typeof invite.label === 'string' ? invite.label : null;",
+      "dead": "return invite && typeof invite.label === 'string' ? invite.label : null;",
+      "expect": [
+        "an unknown or revoked code is no invitation",
+        "with --invite-only a job needs a live invitation: none, or a revoked one, is 403",
+        "an invitation is revoked by its label or its code; a revoked or unknown code names nobody"
+      ]
+    },
+    "Invite: a label is checked": {
+      "file": "src/invites.js",
+      "live": "if (!clean || clean.length > LABEL_MAX || /[\\u0000-\\u001f\\u007f]/.test(clean)) {",
+      "dead": "if (!clean) {",
+      "expect": [
+        "a label is a short line of text: empty, too long or with control characters is refused"
+      ]
+    },
+    "Invite: the file is the owner's alone": {
+      "file": "src/invites.js",
+      "live": "{ mode: 0o600 });",
+      "dead": "{ mode: 0o644 });",
+      "expect": [
+        "an invitation is a fresh 24-hex code naming its label, kept in invites.json for the owner alone"
+      ]
+    },
+    "Invite: revoked by label too": {
+      "file": "src/invites.js",
+      "live": "if ((code === which || invite.label === which) && !invite.revoked) {",
+      "dead": "if (code === which && !invite.revoked) {",
+      "expect": [
+        "an invitation is revoked by its label or its code; a revoked or unknown code names nobody",
+        "itsacv invite prints the link, --list shows each one, --revoke ends it"
+      ]
+    },
+    "Invite usage: read tokens include the cache writes": {
+      "file": "src/invites.js",
+      "live": "total.read += count('input') + count('cache_read') + count('cache_creation');",
+      "dead": "total.read += count('input') + count('cache_read');",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: reused jobs are said apart": {
+      "file": "src/invites.js",
+      "live": "if (entry.reused) sum.reused += 1;",
+      "dead": "if (entry.reused && false) sum.reused += 1;",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: anonymous jobs are listed too": {
+      "file": "src/invites.js",
+      "live": "if (byInvite.has(null)) labels.push(null);",
+      "dead": "if (byInvite.has(null) && false) labels.push(null);",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: the CLI reads the QA log": {
+      "file": "bin/itsacv.js",
+      "live": "process.stdout.write(usageByInvite(existsSync(log) ? readFileSync(log, 'utf8') : ''));",
+      "dead": "process.stdout.write(usageByInvite(''));",
+      "expect": [
+        "itsacv invite --usage reads the QA log of --out"
+      ]
+    }
+  }
+}

@@ -8,6 +8,7 @@ import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
 import { counted } from './llm.js';
+import { loadInvites } from './invites.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -65,6 +66,7 @@ export async function serve({ profile: profilePath, out, url, port, useWord, llm
         }
       : undefined,
     log: (entry) => appendQaLog(out, entry),
+    invites: () => loadInvites(out),
   };
   const { server } = createApp({ deps, publicMode });
   await new Promise((resolve, reject) => {

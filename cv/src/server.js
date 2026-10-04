@@ -19,6 +19,7 @@ import { cleanName } from './guard.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
 import { addTokens } from './llm.js';
+import { invitationOf } from './invites.js';
 
 export const MAX_BODY = 256 * 1024;
 export const MAX_OFFERS = 6;
@@ -160,6 +161,13 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // capped per visitor per hour, per day for everyone, and in the queue, so
   // nobody can spend the owner's model quota beyond a known bound.
   const visitors = new Map();
+  // 2.16: the invitation code a visitor's page was opened with, so each of
+  // its jobs names the ESN; read again at each job, so a revocation holds.
+  const invited = new Map();
+  const inviteOf = (visitor) => {
+    const code = invited.get(visitor);
+    return code && deps.invites ? invitationOf(deps.invites(), code) : null;
+  };
   const accepted = [];
   // A reload is the same visitor (seen 2026-10-01: reopening the page during
   // a several-minute run lost the CV): the visitor's token rides in a cookie
@@ -168,13 +176,22 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
     return kept && visitors.has(kept) ? kept : null;
   };
-  const pageToken = (request) => {
+  const pageToken = (request, code) => {
     if (!publicMode) return { value: token };
+    const live = code && deps.invites && invitationOf(deps.invites(), code) ? code : null;
     const kept = cookieOf(request);
-    if (kept) return { value: kept };
+    if (kept) {
+      if (live) invited.set(kept, live);
+      return { value: kept };
+    }
     const fresh = randomBytes(24).toString('hex');
     visitors.set(fresh, new Set());
-    if (visitors.size > MAX_VISITORS) visitors.delete(visitors.keys().next().value);
+    if (live) invited.set(fresh, live);
+    if (visitors.size > MAX_VISITORS) {
+      const oldest = visitors.keys().next().value;
+      visitors.delete(oldest);
+      invited.delete(oldest);
+    }
     return { value: fresh, cookie: `itsacv_visitor=${fresh}; Path=/; Max-Age=${VISITOR_DAYS * 24 * 3600}; HttpOnly; Secure; SameSite=Strict` };
   };
   const visitorOf = (request) => {
@@ -246,6 +263,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         model: job.model,
         via: job.via,
         visitor: job.visitor,
+        invite: job.invite ?? null,
         status: job.status,
         reused: job.reused ?? false,
         error: job.error ?? null,
@@ -309,7 +327,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
 
       if (request.method === 'GET') {
         if (path === '/') {
-          const issued = pageToken(request);
+          const issued = pageToken(request, url.searchParams.get('i'));
           // A link preview's image must be an absolute URL: the public name, or none locally.
           const html = readFileSync(join(WEB, 'index.html'), 'utf8')
             .replace('__CSRF_TOKEN__', issued.value)
@@ -358,6 +376,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       }
       if (path === '/api/jobs') {
         if (publicMode) checkBan(request);
+        const invite = publicMode ? inviteOf(visitor) : null;
+        if (publicMode?.inviteOnly && !invite) {
+          throw new HttpError(403, 'Accès sur invitation : ouvre le lien que tu as reçu, ou demande-en un.');
+        }
         const offers = body?.offers;
         const model = body?.model ?? 'auto';
         if (!MODELS.includes(model)) throw new HttpError(400, `model: one of ${MODELS.join(', ')}`);
@@ -373,7 +395,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (publicMode && !looksLikeOffer(offer.text)) {
             throw new HttpError(400, `Ce texte ne ressemble pas à une offre d’emploi (entre ${OFFER_CHARS.min} et ${OFFER_CHARS.max} caractères) : colle le texte d’une offre.`);
           }
-          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor };
+          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor, invite };
         });
         // An offer already answered is answered from its run: no model call, not counted.
         // A model chosen by hand is a measure: it always runs.

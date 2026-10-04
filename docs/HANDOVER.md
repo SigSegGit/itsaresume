@@ -4,7 +4,7 @@
 NEXT: 8.37
 TITLE: Freeze the generator/router contract: a version and contract tests on both sides
 WRITTEN-AT: 2026-10-04
-BASE: 4328d8d
+BASE: 7ee1e41
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -65,7 +65,9 @@ Same day, asked by the owner (branch `router/token-usage`): tokens traced,
 Claude and local apart, in the journal and `stats` (8.38, by day 8.40), in the HTTP
 answer (8.39), per job in the generator's QA log (cv 2.13); a public job
 readable by its own visitor only (cv 2.14); favicon and link preview (cv
-2.15); another profile and matchmaking written as cv 4.x and 5.x. Done in
+2.15); another profile and matchmaking written as cv 4.x and 5.x
+(merged, #69). Then invitation links per ESN with `invite --usage` (cv
+2.16, branch `cv/invitations`). Done in
 a cloud session (Linux, no Claude, no Bionic): nothing measured on a real
 call; the token counts are read from the observed fixtures. Next: M3's
 frozen contract (8.37), after cv 2.3 (needs the laptop's models).
@@ -160,6 +162,14 @@ what was redacted). Findings, each one a trap for a naive parser:
   the tests that must go red; CI runs them all.
 - Before freezing a step: audit with the `rodin` skill if available.
 - Docs change in the same commit as the code they describe.
+- **A merge that changes what runs on the VM is redeployed by the session**
+  (Nicolas, 2026-10-04): `git pull`, then `docker compose -f
+  cv/deploy/vm-generator/compose.yaml up -d --build` with `DATA` set. A
+  session that cannot reach the VM (a cloud container has neither its
+  address nor a key) says so and hands Nicolas the exact permission or
+  settings change it needs, built from **his current file read first**
+  (other projects' sessions manage permissions too: merge, never replace),
+  in one block ready to paste.
 
 ## 8. Ordered steps to the MVP
 
@@ -563,8 +573,9 @@ it is an interactive login to his account:
   offer pasted by a second ESN is answered from the first one's run (no
   model call), which tells the second ESN this offer was tested before:
   keep (saves the quota) or answer each visitor afresh (no trace at all,
-  one more generation)? (2) invitation links per ESN, so the log names who
-  spent what: invitations only, or invitations plus the anonymous page?
+  one more generation)? (2) invitation links per ESN exist (cv 2.16,
+  `itsacv invite`): keep the anonymous page too (today), or turn
+  invite-only on (`CV_FLAGS=--invite-only` in the VM's data `.env`)?
 - Once the public instance is up with 2.15: paste its link in LinkedIn or
   a chat once, and say whether the preview shows the banner.
 - When the router runs on another machine than the XPS: the XPS's Tailscale
