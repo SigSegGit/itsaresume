@@ -63,7 +63,10 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
   on a subscription) per call, and a `rate_limit_event` (`status`,
   `rateLimitType`, `isUsingOverage`). Journal them, then summarise per day:
   share per backend, quota hits and when they happened. `itsaresume stats`
-  (8.30) is the first half, over the whole journal.
+  (8.30) is the first half, over the whole journal. Done: `rate_limit`
+  (8.32), `--by-day` (8.33), tokens per backend (`usage`, 8.38).
+  `total_cost_usd` is not journaled: on a plan it is notional, and a dollar
+  figure in the journal would read as a bill.
 
 ## Dependencies between steps
 

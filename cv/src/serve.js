@@ -7,6 +7,7 @@ import { appendQaLog, withModel } from './qa.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
+import { counted } from './llm.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -49,9 +50,9 @@ export async function serve({ profile: profilePath, out, url, port, useWord, llm
   const deps = {
     status: () => status({ profilePath, url, useWord }),
     split: (text) => splitOffers({ text, llm }),
-    tailor: async ({ offer, model = 'auto', onStep }) => {
+    tailor: async ({ offer, model = 'auto', onStep, onAnswer = () => {} }) => {
       const loaded = loadProfile(profilePath);
-      const result = await tailorOffer({ loaded, offer, llm: withModel(llm, model), outDir: out, useWord, onStep });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep });
       return { ...result, view: jobView(result, loaded) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.

@@ -54,7 +54,9 @@ A request has a kind (`--kind`, or `"kind"`: `generate` by default, or
 `classify`), and a backend may serve only some kinds (`serves` in the
 configuration): a small model never gets a generation.
 `itsaresume stats` sums the journal up: per backend and outcome, the
-fallbacks, the share of structured requests.
+fallbacks, the share of structured requests, and the tokens each backend
+reported (read, from cache, written), so Claude's and the local model's are
+read apart; `stats --by-day` gives the same per UTC day.
 
 The endpoint has no authentication and spends the plan of whoever's token it
 holds: it listens on `127.0.0.1` only, in and out of Docker.

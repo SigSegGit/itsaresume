@@ -15,6 +15,8 @@ pub fn summarize(journal: &str) -> String {
     let mut structured = 0usize;
     // (outcome order, label) -> durations, so answered < stopped < exhausted.
     let mut groups: BTreeMap<(u8, String), Vec<u64>> = BTreeMap::new();
+    // Per backend (8.38): answers that reported tokens, read, from cache, written.
+    let mut tokens: BTreeMap<String, [u64; 4]> = BTreeMap::new();
 
     for line in journal.lines().filter(|line| !line.trim().is_empty()) {
         let Ok(entry) = serde_json::from_str::<Value>(line) else {
@@ -42,6 +44,13 @@ pub fn summarize(journal: &str) -> String {
         }
         let duration = entry["duration_ms"].as_u64();
         groups.entry(key).or_default().extend(duration);
+        if let Some([read, cached, written]) = tokens_of(&entry) {
+            let sum = tokens.entry(backend.to_owned()).or_default();
+            sum[0] += 1;
+            sum[1] += read;
+            sum[2] += cached;
+            sum[3] += written;
+        }
     }
 
     let mut out = String::new();
@@ -63,7 +72,30 @@ pub fn summarize(journal: &str) -> String {
         "fallbacks: {fallbacks} answered after a failed attempt"
     );
     let _ = writeln!(out, "structured: {structured} of {requests}");
+    for (backend, [answers, read, cached, written]) in &tokens {
+        let cached = match cached {
+            0 => String::new(),
+            n => format!(" ({n} from cache)"),
+        };
+        let plural = if *answers == 1 { "" } else { "s" };
+        let _ = writeln!(
+            out,
+            "tokens by {backend}: {read} read{cached}, {written} written, over {answers} answer{plural}"
+        );
+    }
     out
+}
+
+/// An entry's tokens (8.38): read (the cache included), read from the
+/// cache, written; `None` when its backend reported none.
+fn tokens_of(entry: &Value) -> Option<[u64; 3]> {
+    let usage = entry.get("usage").filter(|usage| usage.is_object())?;
+    let count = |key: &str| usage[key].as_u64().unwrap_or(0);
+    Some([
+        count("input") + count("cache_read") + count("cache_creation"),
+        count("cache_read"),
+        count("output"),
+    ])
 }
 
 /// The median of `values` (the mean of the two middle ones for an even
@@ -92,6 +124,8 @@ pub fn summarize_by_day(journal: &str) -> String {
         answered: BTreeMap<String, usize>,
         hits: usize,
         first_hit: Option<String>,
+        // Per backend: read, written (8.40).
+        tokens: BTreeMap<String, [u64; 2]>,
     }
     let mut days: BTreeMap<String, Day> = BTreeMap::new();
     for line in journal.lines().filter(|line| !line.trim().is_empty()) {
@@ -109,6 +143,11 @@ pub fn summarize_by_day(journal: &str) -> String {
         day.requests += 1;
         if entry["outcome"] == "answered" {
             let backend = entry["backend"].as_str().unwrap_or("?").to_owned();
+            if let Some([read, _, written]) = tokens_of(&entry) {
+                let sum = day.tokens.entry(backend.clone()).or_default();
+                sum[0] += read;
+                sum[1] += written;
+            }
             *day.answered.entry(backend).or_default() += 1;
         }
         let quota_attempts = entry["attempts"].as_array().map_or(0, |attempts| {
@@ -145,7 +184,23 @@ pub fn summarize_by_day(journal: &str) -> String {
             (1, Some(at)) => format!("1 quota hit, first at {at} UTC"),
             (n, Some(at)) => format!("{n} quota hits, first at {at} UTC"),
         };
-        let _ = writeln!(out, "{date}: {requests}; answered by {answered}; {hits}");
+        let tokens = if day.tokens.is_empty() {
+            String::new()
+        } else {
+            let each = day
+                .tokens
+                .iter()
+                .map(|(backend, [read, written])| {
+                    format!("{backend} {read} read {written} written")
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!("; tokens {each}")
+        };
+        let _ = writeln!(
+            out,
+            "{date}: {requests}; answered by {answered}; {hits}{tokens}"
+        );
     }
     out
 }

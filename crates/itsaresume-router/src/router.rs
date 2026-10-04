@@ -23,6 +23,8 @@ pub struct Answer {
     pub text: String,
     /// The backend's report on the plan's limits, if any (8.32).
     pub rate_limit: Option<serde_json::Value>,
+    /// The tokens the answering backend reported (8.38).
+    pub usage: Option<crate::backend::Usage>,
 }
 
 /// Why no answer came back.
@@ -196,6 +198,7 @@ impl Router {
                         backend: backend.name().to_owned(),
                         text: completion.text,
                         rate_limit: completion.rate_limit,
+                        usage: completion.usage,
                     };
                     return Outcome {
                         result: Ok(answer),

@@ -171,6 +171,17 @@ are never written**, only their lengths: prompts will carry CV data. Error
 messages are truncated to 200 characters. A journal that cannot be written
 does not cost the caller the answer; the failure is reported alongside it.
 
+An answer also carries, when its backend reports them, `rate_limit` (Claude's
+`rate_limit_event`, 8.32) and `usage` (8.38): the tokens it took,
+`{"input":3,"output":179,"cache_read":6914,"cache_creation":7109}`. Claude's
+come from the result message's `usage` (`input_tokens`, `output_tokens`,
+`cache_read_input_tokens`, `cache_creation_input_tokens`); the local
+model's from the OpenAI-compatible `usage` (`prompt_tokens`,
+`completion_tokens`; no cache, 0). Observed: a real Claude call reads almost
+all its input from the prompt cache, hence the counts kept apart.
+`itsaresume stats` sums them per backend, so Claude and the local model are
+read apart.
+
 ## Configuration and CLI ✅
 
 `config.local.toml` (git-ignored; `config.example.toml` shows the shape).
@@ -184,7 +195,7 @@ usage error, 3 stopped (`Other`), 4 exhausted.
 
 | Request | Response |
 |---|---|
-| `POST /v1/complete` `{"prompt": "…", "system": "…"}` | 200 `{"backend", "text", "attempts"}` |
+| `POST /v1/complete` `{"prompt": "…", "system": "…"}` | 200 `{"backend", "text", "attempts"}`, and `"usage"` when the backend reported tokens (8.39) |
 | same, a backend returned `Other` | 502 `{"error": {"kind": "stopped", "backend", "message"}}` |
 | same, every backend failed with a fallback kind | 503 `{"error": {"kind": "exhausted", "attempts"}}` |
 | malformed body | 400 |

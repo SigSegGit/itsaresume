@@ -263,8 +263,8 @@
     },
     "Public: one token per page load": {
       "file": "src/server.js",
-      "live": "    if (kept && visitors.has(kept)) return { value: kept };\n    const fresh = randomBytes(24).toString('hex');",
-      "dead": "    if (kept && visitors.has(kept)) return { value: kept };\n    const fresh = visitors.keys().next().value ?? randomBytes(24).toString('hex');",
+      "live": "    if (kept) return { value: kept };\n    const fresh = randomBytes(24).toString('hex');",
+      "dead": "    if (kept) return { value: kept };\n    const fresh = visitors.keys().next().value ?? randomBytes(24).toString('hex');",
       "expect": [
         "in public mode a visitor sees only the jobs of its own page"
       ]
@@ -415,10 +415,11 @@
     },
     "Public: a reload keeps the visitor": {
       "file": "src/server.js",
-      "live": "if (kept && visitors.has(kept)) return { value: kept };",
-      "dead": "if (kept && visitors.has(kept) && false) return { value: kept };",
+      "live": "    return kept && visitors.has(kept) ? kept : null;",
+      "dead": "    return kept && visitors.has(kept) && false ? kept : null;",
       "expect": [
-        "a reloaded public page is the same visitor, and sees its running job"
+        "a reloaded public page is the same visitor, and sees its running job",
+        "in public mode a job and its files are served only to the visitor whose page created it"
       ]
     },
     "Public: the visitor cookie is set": {
@@ -536,6 +537,38 @@
       "dead": "100 % local",
       "expect": [
         "the footer never claims the analysis stays local: it names Claude and the local fallback"
+      ]
+    },
+    "Public: a job is its visitor's alone": {
+      "file": "src/server.js",
+      "live": "const job = match && (!publicMode || visitors.get(readerOf(request))?.has(match[1])) && jobs.get(match[1]);",
+      "dead": "const job = match && jobs.get(match[1]);",
+      "expect": [
+        "in public mode a job and its files are served only to the visitor whose page created it"
+      ]
+    },
+    "Public: a download is read by the cookie": {
+      "file": "src/server.js",
+      "live": "  const readerOf = (request) => visitorOf(request) ?? cookieOf(request);",
+      "dead": "  const readerOf = (request) => visitorOf(request) ?? (cookieOf(request) && null);",
+      "expect": [
+        "in public mode a job and its files are served only to the visitor whose page created it"
+      ]
+    },
+    "Brand: the link preview's image is an absolute public URL": {
+      "file": "src/server.js",
+      "live": ".replace('__ORIGIN__', publicMode ? `https://${publicMode.host}` : '');",
+      "dead": ".replace('__ORIGIN__', '');",
+      "expect": [
+        "the page has an icon and a link preview: icons served, Open Graph names the public banner"
+      ]
+    },
+    "Brand: the browser's own /favicon.ico is served": {
+      "file": "src/server.js",
+      "live": "  '/favicon.ico': ['icon-180.png', 'image/png'],",
+      "dead": "  '/favicon.ico-': ['icon-180.png', 'image/png'],",
+      "expect": [
+        "the page has an icon and a link preview: icons served, Open Graph names the public banner"
       ]
     }
   }

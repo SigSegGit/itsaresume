@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanName } from './guard.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
+import { addTokens } from './llm.js';
 
 export const MAX_BODY = 256 * 1024;
 export const MAX_OFFERS = 6;
@@ -27,6 +28,12 @@ const WEB = fileURLToPath(new URL('../web/', import.meta.url));
 const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  // The tab's icon and the link preview (Open Graph); a browser asks for
+  // /favicon.ico on its own, and takes a PNG there.
+  '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
+  '/favicon.ico': ['icon-180.png', 'image/png'],
+  '/icon-180.png': ['icon-180.png', 'image/png'],
+  '/banner.png': ['banner.png', 'image/png'],
 };
 const DOWNLOADS = {
   'cv.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -157,10 +164,14 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // A reload is the same visitor (seen 2026-10-01: reopening the page during
   // a several-minute run lost the CV): the visitor's token rides in a cookie
   // the page cannot read (HttpOnly) and other sites cannot send (Strict).
+  const cookieOf = (request) => {
+    const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
+    return kept && visitors.has(kept) ? kept : null;
+  };
   const pageToken = (request) => {
     if (!publicMode) return { value: token };
-    const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
-    if (kept && visitors.has(kept)) return { value: kept };
+    const kept = cookieOf(request);
+    if (kept) return { value: kept };
     const fresh = randomBytes(24).toString('hex');
     visitors.set(fresh, new Set());
     if (visitors.size > MAX_VISITORS) visitors.delete(visitors.keys().next().value);
@@ -170,6 +181,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const given = request.headers['x-csrf-token'];
     return typeof given === 'string' && visitors.has(given) ? given : null;
   };
+  // A read: the page's header, or the cookie alone for a link it renders (a
+  // download). Never enough to write: a POST needs the header (CSRF).
+  const readerOf = (request) => visitorOf(request) ?? cookieOf(request);
   // The proxy sets X-Forwarded-For to the client's address; the last entry is its own.
   const clientOf = (request) => String(request.headers['x-forwarded-for'] ?? '').split(',').pop().trim() || request.socket.remoteAddress;
   function admit(request, count) {
@@ -238,6 +252,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         elapsed_ms: job.endedAt != null ? job.endedAt - job.startedAt : null,
         steps: job.times,
         backend: result.backend ?? null,
+        tokens: job.tokens ?? null,
         attempts: result.attempts ?? null,
         repairs: result.repairs ?? null,
         dir: result.dir ?? null,
@@ -264,7 +279,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           job.steps.push({ step, ...detail });
           job.times.push({ step, at: clock() - job.startedAt });
         };
-        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep });
+        // Every model answer's tokens, kept on the job: a failed run spent them too.
+        const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);
+        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer });
         job.status = 'done';
         job.endedAt = clock();
       } catch (error) {
@@ -293,7 +310,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (request.method === 'GET') {
         if (path === '/') {
           const issued = pageToken(request);
-          const html = readFileSync(join(WEB, 'index.html'), 'utf8').replace('__CSRF_TOKEN__', issued.value);
+          // A link preview's image must be an absolute URL: the public name, or none locally.
+          const html = readFileSync(join(WEB, 'index.html'), 'utf8')
+            .replace('__CSRF_TOKEN__', issued.value)
+            .replace('__ORIGIN__', publicMode ? `https://${publicMode.host}` : '');
           return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
@@ -303,7 +323,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode })));
         }
         const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+))?$/);
-        const job = match && jobs.get(match[1]);
+        // Public: a job is its visitor's alone; to anyone else it does not exist.
+        const job = match && (!publicMode || visitors.get(readerOf(request))?.has(match[1])) && jobs.get(match[1]);
         if (!job) throw new HttpError(404, 'not found');
         if (!match[2]) return send(response, 200, view(job, { detail: true, publicMode }));
         const type = DOWNLOADS[match[2]];

@@ -2,7 +2,7 @@
 //! from `src/bin/itsaresume-fake-claude.rs`, which records what it received.
 
 use itsaresume_router::claude_code::{ClaudeCodeBackend, DEFAULT_SYSTEM_PROMPT, METERED_ENV};
-use itsaresume_router::{BackendError, Completion, Request};
+use itsaresume_router::{BackendError, Completion, Request, Usage};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -93,6 +93,11 @@ fn the_prompt_goes_on_stdin_and_the_answer_comes_back() {
         Ok(Completion {
             text: "Synthetic answer.".into(),
             rate_limit: None,
+            usage: Some(Usage {
+                input: 12,
+                output: 3,
+                ..Usage::default()
+            }),
         })
     );
     let stdin = std::fs::read_to_string(scene.record.join("stdin.txt")).expect("stdin recorded");
@@ -187,6 +192,11 @@ fn a_long_system_prompt_reaches_the_cli_whole_and_off_the_command_line() {
         Ok(Completion {
             text: "Synthetic answer.".into(),
             rate_limit: None,
+            usage: Some(Usage {
+                input: 12,
+                output: 3,
+                ..Usage::default()
+            }),
         })
     );
     assert!(

@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { request } from 'node:http';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp, MAX_BODY, MAX_OFFERS } from '../src/server.js';
@@ -303,6 +303,8 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       token,
       post: (path, value, from) => call(port, { method: 'POST', path, headers: from ? { ...headers, 'X-Forwarded-For': from } : headers, body: JSON.stringify(value) }),
       get: (path) => call(port, { path, headers }),
+      // A link the page renders (a download): the browser sends the cookie, no header.
+      follow: (path) => call(port, { path, headers: { ...host, 'X-Forwarded-For': ip, Cookie: String(page.headers['set-cookie'] ?? '').split(';')[0] } }),
     };
   };
   return { ...app, port, clock, calls, host, visit };
@@ -325,6 +327,20 @@ test('in public mode a visitor sees only the jobs of its own page', async (t) =>
   assert.equal((await alice.post('/api/jobs', { offers: [{ title: 'Alice offer', text: PUBLIC_OFFER('Senior SRE') }] })).status, 202);
   assert.deepEqual(JSON.parse((await bob.get('/api/jobs')).text), []);
   assert.equal(JSON.parse((await alice.get('/api/jobs')).text).length, 1);
+});
+
+// Another ESN must not read what one tested: a job's id is no key to it.
+test('in public mode a job and its files are served only to the visitor whose page created it', async (t) => {
+  const app = await startPublic(t);
+  const alice = await app.visit('203.0.113.7');
+  const bob = await app.visit('198.51.100.9');
+  const [job] = JSON.parse((await alice.post('/api/jobs', { offers: [{ title: 'Alice offer', text: PUBLIC_OFFER('Senior SRE') }] })).text);
+  await finished(alice, job.id, 'done');
+  assert.equal((await alice.follow(`/api/jobs/${job.id}/files/cv.pdf`)).status, 200, 'its own download, by the cookie alone');
+  assert.equal((await bob.get(`/api/jobs/${job.id}`)).status, 404);
+  assert.equal((await bob.follow(`/api/jobs/${job.id}`)).status, 404);
+  assert.equal((await bob.follow(`/api/jobs/${job.id}/files/cv.pdf`)).status, 404);
+  assert.equal((await call(app.port, { path: `/api/jobs/${job.id}/files/cv.pdf`, headers: app.host })).status, 404, 'nobody');
 });
 
 test('in public mode generations are capped per visitor per hour and per day, and the queue is bounded', async (t) => {
@@ -617,6 +633,37 @@ test('every finished job is logged: offer, model, entry point, backend, steps wi
   }
 });
 
+// Every model answer of a job is counted, per backend, into its log line;
+// a failed job spent them too. Never shown to a visitor.
+test('a job\'s log line sums the tokens of its model answers per backend, failed or not', async () => {
+  const logged = [];
+  const app = await start({
+    log: (entry) => logged.push(entry),
+    tailor: async ({ offer, onStep, onAnswer }) => {
+      onStep('listing');
+      onAnswer({ backend: 'lm-studio', text: 'x', usage: { input: 24, output: 5 } });
+      onAnswer({ backend: 'claude-code', text: 'y', usage: { input: 3, output: 179, cache_read: 6914, cache_creation: 7109 } });
+      if (offer.includes('boom')) throw new Error('the model\'s analysis is still invalid');
+      return fakeResult(offer);
+    },
+  });
+  try {
+    await post(app, '/api/jobs', { offers: [{ title: 'SRE', text: 'an offer' }, { text: 'boom' }], model: 'claude' });
+    await until(app, (all) => all.length === 2 && all.every((job) => job.status === 'done' || job.status === 'failed'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const want = {
+      'lm-studio': { calls: 1, input: 24, output: 5, cache_read: 0, cache_creation: 0 },
+      'claude-code': { calls: 1, input: 3, output: 179, cache_read: 6914, cache_creation: 7109 },
+    };
+    assert.deepEqual(logged.map((entry) => [entry.status, entry.tokens]), [['done', want], ['failed', want]]);
+    const listed = JSON.parse((await call(app.port, { path: '/api/jobs' })).text);
+    const details = await Promise.all(listed.map(async (job) => (await call(app.port, { path: `/api/jobs/${job.id}` })).text));
+    assert.ok(![JSON.stringify(listed), ...details].some((text) => text.includes('cache_read')), 'tokens are the owner\'s, never in the page');
+  } finally {
+    app.server.close();
+  }
+});
+
 test('in public mode the entry point is the VM, and a chosen model is never answered from a reused run', async (t) => {
   const app = await startPublic(t);
   const visitor = await app.visit();
@@ -625,4 +672,26 @@ test('in public mode the entry point is the VM, and a chosen model is never answ
   assert.notEqual(job.status, 'done');
   for (let i = 0; i < 100 && app.calls.tailored === 0; i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(app.calls.tailored, 1);
+});
+
+// Seen by the owner, 2026-10-04: a site with no icon in its tab and no
+// preview when its link is pasted (LinkedIn, a mail, a chat).
+test('the page has an icon and a link preview: icons served, Open Graph names the public banner', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  const page = (await visitor.get('/')).text;
+  assert.match(page, /<link rel="icon" href="\/favicon.svg" type="image\/svg\+xml">/);
+  assert.match(page, /<link rel="apple-touch-icon" href="\/icon-180.png">/);
+  assert.match(page, /<meta property="og:image" content="https:\/\/cv\.example\.org\/banner\.png">/, 'a scraper needs an absolute URL');
+  assert.match(page, /<meta property="og:title" content="[^"]+">/);
+  assert.match(page, /<meta property="og:description" content="[^"]+">/);
+  assert.match(page, /<meta name="twitter:card" content="summary_large_image">/);
+  for (const [path, type] of [['/favicon.svg', 'image/svg+xml'], ['/favicon.ico', 'image/png'], ['/icon-180.png', 'image/png'], ['/banner.png', 'image/png']]) {
+    const served = await call(app.port, { path, headers: app.host });
+    assert.equal(served.status, 200, path);
+    assert.equal(served.headers['content-type'], type, path);
+  }
+  // 1200x630, the size every preview expects: the PNG header says so.
+  const png = readFileSync(new URL('../web/banner.png', import.meta.url));
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
 });

@@ -1,6 +1,6 @@
 //! What the router writes to the journal, read back from the real file.
 
-use itsaresume_router::{Backend, BackendError, Completion, Journal, Request, Router};
+use itsaresume_router::{Backend, BackendError, Completion, Journal, Request, Router, Usage};
 use serde_json::Value;
 use std::path::Path;
 
@@ -25,6 +25,7 @@ fn answers(name: &'static str, text: &str) -> Box<dyn Backend> {
         reply: Ok(Completion {
             text: text.into(),
             rate_limit: None,
+            usage: None,
         }),
     })
 }
@@ -225,6 +226,7 @@ fn the_rate_limit_of_an_answer_is_journaled() {
         reply: Ok(Completion {
             text: "hi".into(),
             rate_limit: Some(serde_json::json!({"status": "allowed", "isUsingOverage": false})),
+            usage: None,
         }),
     };
     let router = Router::new(vec![Box::new(limited)], Journal::new(&path)).expect("one backend");
@@ -236,4 +238,39 @@ fn the_rate_limit_of_an_answer_is_journaled() {
     let lines = lines(&path);
     assert_eq!(lines[0]["rate_limit"]["status"], "allowed");
     assert!(lines[1].get("rate_limit").is_none(), "{}", lines[1]);
+}
+
+/// 8.38: an answer's tokens go into its journal line, through the router;
+/// a backend that reports none writes no `usage`.
+#[test]
+fn the_token_usage_of_an_answer_is_journaled() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let path = dir.path().join("journal.jsonl");
+    let counted = Fixed {
+        name: "claude-code",
+        reply: Ok(Completion {
+            text: "hi".into(),
+            rate_limit: None,
+            usage: Some(Usage {
+                input: 1,
+                output: 2,
+                cache_read: 3,
+                cache_creation: 4,
+            }),
+        }),
+    };
+    let router = Router::new(vec![Box::new(counted)], Journal::new(&path)).expect("one backend");
+    router.complete(&Request::new("one"));
+    let other =
+        Router::new(vec![answers("lm-studio", "hi")], Journal::new(&path)).expect("one backend");
+    other.complete(&Request::new("two"));
+
+    let lines = lines(&path);
+    assert_eq!(
+        lines[0]["usage"],
+        serde_json::json!({"input": 1, "output": 2, "cache_read": 3, "cache_creation": 4}),
+        "{}",
+        lines[0]
+    );
+    assert!(lines[1].get("usage").is_none(), "{}", lines[1]);
 }

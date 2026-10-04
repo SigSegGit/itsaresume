@@ -4,7 +4,7 @@
 NEXT: 8.37
 TITLE: Freeze the generator/router contract: a version and contract tests on both sides
 WRITTEN-AT: 2026-10-04
-BASE: 11e6f31
+BASE: 4328d8d
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -52,22 +52,23 @@ timeout test now proves the child dead: the fake creates a file if it
 outlives its sleep, and the defence that drops `child.kill()` turns it red.
 `check-handover.py`'s BASE check is no longer vacuous (`main` has merges).
 
-**2026-09-30.** 8.17 done on `m1/lm-studio-one-slot`: an `lm-studio`
-backend lets `max_concurrent` completions reach the server (1 when absent;
-`0` refused; unknown on `claude-code`). A second request waits in the router
-(a `Condvar` slot shared by clones), the wait counts against `timeout_secs`,
-and past it the request is `Unreachable` (falls back) without ever reaching
-Bionic. Seven tests, six sabotage defences. 8.18: a `base_url` with
+**2026-09-30.** 8.17: one completion at a time per local backend
+(`max_concurrent`; the wait counts against `timeout_secs`). 8.18: a `base_url` with
 userinfo is refused (never echoed). 8.19: `merge-when-green.sh` merges only
 the head it counted (`--match-head-commit`), tested with a fake `gh`.
 8.20: the Claude workdir is a private directory of ours, not a link (Unix
 tests, verified under WSL: `cargo` is installed there).
 
-**2026-10-04.** 8.34-8.35 (request `kind`, backend `serves`) and 8.36 (the
-generator sends `kind`) done: M2's criterion holds in code, but no call is
-marked `classify`, because the measures say the local model already loses
-quality on both calls that only choose (8.36). Next: M3's frozen contract
-(8.37), after the generator's analysis-schema measure (cv 2.3).
+**2026-10-04.** 8.34-8.36 (`kind`, `serves`; no call marked `classify`:
+the local model already loses quality on both calls that only choose).
+Same day, asked by the owner (branch `router/token-usage`): tokens traced,
+Claude and local apart, in the journal and `stats` (8.38, by day 8.40), in the HTTP
+answer (8.39), per job in the generator's QA log (cv 2.13); a public job
+readable by its own visitor only (cv 2.14); favicon and link preview (cv
+2.15); another profile and matchmaking written as cv 4.x and 5.x. Done in
+a cloud session (Linux, no Claude, no Bionic): nothing measured on a real
+call; the token counts are read from the observed fixtures. Next: M3's
+frozen contract (8.37), after cv 2.3 (needs the laptop's models).
 
 ## 1. Decisions never to reverse silently
 
@@ -471,6 +472,24 @@ branch with the local gates of §3 green.
   refuses an answer whose `contract` major is not the one it speaks
   (clear error naming both), and accepts one without `contract` only from
   a router older than the field (decide and write which, in ADR form).
+  The answer's optional `usage` (8.39) is part of the frozen set.
+- [x] **8.38** (2026-10-04, asked by the owner: tokens traced on the
+  server, Claude and the local model apart) `Completion` and `Answer` gain
+  `usage: Option<Usage>` (`input`, `output`, `cache_read`,
+  `cache_creation`): Claude's from the result message's `usage`
+  (observed: a real call reads almost all its input from the cache, 3
+  uncached against 6914 read and 7109 written), the local model's from
+  the OpenAI-compatible `usage` (`prompt_tokens`, `completion_tokens`).
+  The journal writes it; `stats` prints `tokens by <backend>: N read (M
+  from cache), K written, over A answers`. Five tests, ten defences.
+  `total_cost_usd` is not journaled (notional on a plan; ROADMAP M4).
+- [x] **8.39** The HTTP answer carries `usage` when the backend reported
+  it, so the generator counts tokens per run (cv 2.13). One test, one
+  defence.
+- [x] **8.40** (Rodin) `stats --by-day` adds, per day and backend, the
+  tokens read and written (`; tokens claude-code 14119 read 200 written,
+  …`), so the day the plan ran out says what it went on. One test, three
+  defences.
 
 ## 9. Deliberately open
 
@@ -517,6 +536,10 @@ branch with the local gates of §3 green.
   `error.message`; Claude "result message is not understood"; the Claude
   stderr excerpt). They are server or CLI texts, but can carry model-shaped
   text: give lengths there too.
+- **Tokens of a refused answer are not counted** (8.38): an answer the
+  router refuses (the billing tripwire, LM Studio's `finish_reason:
+  length`) took tokens no journal line reports. Small next to the rest;
+  count them if the plan runs out unexplained.
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 - **Contract with the Node.js generator** — M3.
 
@@ -536,5 +559,13 @@ it is an interactive login to his account:
   sentence is measured by no test; what he finds becomes corpus cases.
 - After the first week of real use: a look at the account's billing page
   (the overage tripwire detects extra usage after the call it billed).
+- **Two closed questions from 2026-10-04** (cv 2.14, 2.16): (1) the same
+  offer pasted by a second ESN is answered from the first one's run (no
+  model call), which tells the second ESN this offer was tested before:
+  keep (saves the quota) or answer each visitor afresh (no trace at all,
+  one more generation)? (2) invitation links per ESN, so the log names who
+  spent what: invitations only, or invitations plus the anonymous page?
+- Once the public instance is up with 2.15: paste its link in LinkedIn or
+  a chat once, and say whether the preview shows the banner.
 - When the router runs on another machine than the XPS: the XPS's Tailscale
   name in that machine's `config.local.toml` (never committed).

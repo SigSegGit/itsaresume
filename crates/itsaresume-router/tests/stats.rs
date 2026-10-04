@@ -72,3 +72,46 @@ fn a_timestamp_of_multibyte_characters_is_skipped_not_fatal() {
         "2026-09-29: 1 request; answered by claude-code 1; no quota hit\n"
     );
 }
+
+/// 8.38: the tokens are summed per backend, Claude and the local model apart:
+/// read (the cache included: what it served is said apart), and written, over the answers
+/// that reported them. A journal without any `usage` prints no token line
+/// (the first test).
+#[test]
+fn tokens_are_summed_per_backend() {
+    let journal = r#"{"outcome":"answered","backend":"claude-code","attempts":[],"duration_ms":10,"usage":{"input":3,"output":179,"cache_read":6914,"cache_creation":7109}}
+{"outcome":"answered","backend":"claude-code","attempts":[],"duration_ms":10,"usage":{"input":7,"output":21,"cache_read":86,"cache_creation":0}}
+{"outcome":"answered","backend":"claude-code","attempts":[],"duration_ms":10}
+{"outcome":"answered","backend":"lm-studio","attempts":[],"duration_ms":10,"usage":{"input":24,"output":5}}
+"#;
+    let text = summarize(journal);
+    let tokens: Vec<&str> = text
+        .lines()
+        .filter(|line| line.starts_with("tokens"))
+        .collect();
+    assert_eq!(
+        tokens,
+        [
+            "tokens by claude-code: 14119 read (7000 from cache), 200 written, over 2 answers",
+            "tokens by lm-studio: 24 read, 5 written, over 1 answer",
+        ],
+        "{text}"
+    );
+}
+
+/// 8.40 (Rodin): the tokens per day, per backend, so the day the plan ran
+/// out also says what it was spent on; a day without `usage` says nothing.
+#[test]
+fn the_journal_by_day_sums_the_tokens_per_backend() {
+    let journal = r#"{"ts":"2026-10-03T09:00:00.000Z","outcome":"answered","backend":"claude-code","attempts":[],"usage":{"input":3,"output":179,"cache_read":6914,"cache_creation":7109}}
+{"ts":"2026-10-03T10:00:00.000Z","outcome":"answered","backend":"claude-code","attempts":[],"usage":{"input":7,"output":21,"cache_read":86,"cache_creation":0}}
+{"ts":"2026-10-03T11:00:00.000Z","outcome":"answered","backend":"lm-studio","attempts":[],"usage":{"input":24,"output":5}}
+{"ts":"2026-10-04T09:00:00.000Z","outcome":"answered","backend":"lm-studio","attempts":[]}
+"#;
+    assert_eq!(
+        summarize_by_day(journal),
+        "2026-10-03: 3 requests; answered by claude-code 2, lm-studio 1; no quota hit; \
+         tokens claude-code 14119 read 200 written, lm-studio 24 read 5 written\n\
+         2026-10-04: 1 request; answered by lm-studio 1; no quota hit\n"
+    );
+}

@@ -104,6 +104,13 @@ impl Journal {
         {
             entry["rate_limit"] = limit.clone();
         }
+        // The tokens the answer took, as its backend reported them (8.38).
+        if let Ok(Answer {
+            usage: Some(usage), ..
+        }) = &outcome.result
+        {
+            entry["usage"] = usage.to_json();
+        }
         let mut line = entry.to_string();
         line.push('\n');
 

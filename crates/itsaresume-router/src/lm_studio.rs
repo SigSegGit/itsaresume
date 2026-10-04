@@ -4,7 +4,7 @@
 //! it, and on the same machine it is loopback. The response shapes were
 //! observed first (`tests/fixtures/lm-studio/`).
 
-use crate::backend::{Backend, BackendError, Completion, Request, excerpt};
+use crate::backend::{Backend, BackendError, Completion, Request, Usage, excerpt};
 use serde_json::{Value, json};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
@@ -175,6 +175,17 @@ fn transport(url: &str, error: ureq::Error) -> BackendError {
     }
 }
 
+/// The tokens of an OpenAI-compatible `usage` (8.38); `None` when absent.
+fn usage_of(parsed: &Value) -> Option<Usage> {
+    let usage = parsed.get("usage").filter(|usage| usage.is_object())?;
+    let count = |key: &str| usage[key].as_u64().unwrap_or(0);
+    Some(Usage {
+        input: count("prompt_tokens"),
+        output: count("completion_tokens"),
+        ..Usage::default()
+    })
+}
+
 /// An HTTP answer, by status first (docs/ARCHITECTURE.md, LM Studio table).
 fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
     let parsed: Value = serde_json::from_str(body).unwrap_or(Value::Null);
@@ -193,6 +204,7 @@ fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
             Some(text) => Ok(Completion {
                 text: text.to_owned(),
                 rate_limit: None,
+                usage: usage_of(&parsed),
             }),
             None => Err(BackendError::Other(format!(
                 "LM Studio answered {status} without choices[0].message.content: {}",
