@@ -30,6 +30,7 @@ fn answers(name: &'static str, text: &str) -> Box<dyn Backend> {
         reply: Ok(Completion {
             text: text.into(),
             rate_limit: None,
+            usage: None,
         }),
         delay: Duration::ZERO,
     })
@@ -175,6 +176,7 @@ fn a_slow_completion_does_not_block_other_requests() {
         reply: Ok(Completion {
             text: "slow".into(),
             rate_limit: None,
+            usage: None,
         }),
         delay: Duration::from_secs(3),
     })]);
@@ -400,6 +402,7 @@ fn completions_beyond_the_cap_are_503_busy() {
         reply: Ok(Completion {
             text: "slow".into(),
             rate_limit: None,
+            usage: None,
         }),
         delay: Duration::from_secs(3),
     })]);
@@ -470,6 +473,7 @@ impl Backend for EchoSchema {
                 .as_ref()
                 .map_or_else(|| "none".to_owned(), ToString::to_string),
             rate_limit: None,
+            usage: None,
         })
     }
 }

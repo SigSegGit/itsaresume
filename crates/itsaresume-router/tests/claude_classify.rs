@@ -3,7 +3,7 @@
 //! marked as hypotheses — see that directory's README).
 
 use itsaresume_router::claude_code::{classify, classify_for};
-use itsaresume_router::{BackendError, Completion};
+use itsaresume_router::{BackendError, Completion, Usage};
 use serde_json::{Value, json};
 
 const OBSERVED_NOT_LOGGED_IN: &str =
@@ -56,6 +56,12 @@ fn a_successful_run_is_an_answer() {
         Ok(Completion {
             text: "Synthetic answer.".into(),
             rate_limit: None,
+            usage: Some(Usage {
+                input: 12,
+                output: 3,
+                cache_read: 0,
+                cache_creation: 0,
+            }),
         })
     );
 }
@@ -300,6 +306,27 @@ fn a_claude_answer_carries_its_rate_limit_event() {
     assert_eq!(limit["isUsingOverage"], false);
     let without = edited(SYNTHETIC_SUCCESS, |_, _| {});
     assert_eq!(classify(&without).expect("an answer").rate_limit, None);
+}
+
+/// 8.38: the tokens of the result message's `usage`, the cached ones apart
+/// (observed: a real call reads almost all of its input from the cache), so
+/// the journal can sum what each backend took.
+#[test]
+fn a_claude_answer_carries_its_token_usage() {
+    let answer = classify_for(OBSERVED_STRUCTURED, true).expect("a structured answer");
+    assert_eq!(
+        answer.usage,
+        Some(Usage {
+            input: 3,
+            output: 179,
+            cache_read: 6914,
+            cache_creation: 7109,
+        })
+    );
+    let without = edited(SYNTHETIC_SUCCESS, |_, result| {
+        result.as_object_mut().expect("an object").remove("usage");
+    });
+    assert_eq!(classify(&without).expect("an answer").usage, None);
 }
 
 /// Same promise for the CLI: stdout that is not the JSON array is counted in

@@ -61,6 +61,24 @@ pub struct Completion {
     /// (Claude's `rate_limit_event`), for the journal (M4); `None` when it
     /// reports nothing.
     pub rate_limit: Option<serde_json::Value>,
+    /// The tokens the backend reported for this answer (8.38); `None` when
+    /// it reports none.
+    pub usage: Option<Usage>,
+}
+
+/// The tokens one answer took, as the backend reported them (8.38), so the
+/// journal shows how much of the plan, or of the local machine, each request
+/// used. A count the backend does not report is 0.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Usage {
+    /// Tokens read and not cached: the prompt and the system prompt.
+    pub input: u64,
+    /// Tokens generated.
+    pub output: u64,
+    /// Tokens read from the prompt cache (Claude only).
+    pub cache_read: u64,
+    /// Tokens written to the prompt cache (Claude only).
+    pub cache_creation: u64,
 }
 
 /// Why a backend did not answer. The kind decides whether the router tries

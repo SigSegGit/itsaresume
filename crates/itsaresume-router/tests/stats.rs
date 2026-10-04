@@ -72,3 +72,29 @@ fn a_timestamp_of_multibyte_characters_is_skipped_not_fatal() {
         "2026-09-29: 1 request; answered by claude-code 1; no quota hit\n"
     );
 }
+
+/// 8.38: the tokens are summed per backend, Claude and the local model apart:
+/// read (the cache included: what it served is said apart), and written, over the answers
+/// that reported them. A journal without any `usage` prints no token line
+/// (the first test).
+#[test]
+fn tokens_are_summed_per_backend() {
+    let journal = r#"{"outcome":"answered","backend":"claude-code","attempts":[],"duration_ms":10,"usage":{"input":3,"output":179,"cache_read":6914,"cache_creation":7109}}
+{"outcome":"answered","backend":"claude-code","attempts":[],"duration_ms":10,"usage":{"input":7,"output":21,"cache_read":86,"cache_creation":0}}
+{"outcome":"answered","backend":"claude-code","attempts":[],"duration_ms":10}
+{"outcome":"answered","backend":"lm-studio","attempts":[],"duration_ms":10,"usage":{"input":24,"output":5}}
+"#;
+    let text = summarize(journal);
+    let tokens: Vec<&str> = text
+        .lines()
+        .filter(|line| line.starts_with("tokens"))
+        .collect();
+    assert_eq!(
+        tokens,
+        [
+            "tokens by claude-code: 14119 read (7000 from cache), 200 written, over 2 answers",
+            "tokens by lm-studio: 24 read, 5 written, over 1 answer",
+        ],
+        "{text}"
+    );
+}

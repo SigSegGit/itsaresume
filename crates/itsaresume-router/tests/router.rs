@@ -23,6 +23,7 @@ fn scripted(
         reply: reply.map(|text| Completion {
             text: text.into(),
             rate_limit: None,
+            usage: None,
         }),
         calls: Arc::clone(&calls),
     };
@@ -64,6 +65,7 @@ fn first_backend_answers_and_the_next_is_not_called() {
             backend: "a".into(),
             text: "from a".into(),
             rate_limit: None,
+            usage: None,
         })
     );
     assert!(outcome.attempts.is_empty());

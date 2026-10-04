@@ -5,7 +5,7 @@
 mod support;
 
 use itsaresume_router::lm_studio::LmStudioBackend;
-use itsaresume_router::{Backend, BackendError, Completion, Request};
+use itsaresume_router::{Backend, BackendError, Completion, Request, Usage};
 use std::net::TcpListener;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -34,6 +34,12 @@ fn the_observed_success_is_an_answer() {
         Ok(Completion {
             text: "Hello!".into(),
             rate_limit: None,
+            // 8.38: the OpenAI-compatible `usage`, as observed.
+            usage: Some(Usage {
+                input: 24,
+                output: 5,
+                ..Usage::default()
+            }),
         })
     );
 }
