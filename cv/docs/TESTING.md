@@ -235,6 +235,16 @@ property it proves.
 | the owner rates a run by its directory name, .q0 to .q5 | — |
 | a reusable run is the closest well-rated one; a run rated below 3 is never reused | Intake: only close offers are the same; Intake: a run rated below 3 is never reused; Intake: the best rated run first |
 
+## `test/invites.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| an invitation is a fresh 24-hex code naming its label, kept in invites.json for the owner alone | Invite: the file is the owner's alone |
+| a label is a short line of text: empty, too long or with control characters is refused | Invite: a label is checked |
+| an invitation is revoked by its label or its code; a revoked or unknown code names nobody | Invite: a revoked code names nobody; Invite: revoked by label too |
+| no invites.json is no invitation | — |
+| itsacv invite prints the link, --list shows each one, --revoke ends it | Invite: revoked by label too |
+
 ## `test/layout.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -461,6 +471,9 @@ property it proves.
 | a job's log line sums the tokens of its model answers per backend, failed or not | Tokens: a job keeps the sum of its answers; Tokens: the log line carries the job's tokens |
 | in public mode the entry point is the VM, and a chosen model is never answered from a reused run | QA: a chosen model is never answered from a reused run; QA: the entry point is the VM on the public name |
 | the page has an icon and a link preview: icons served, Open Graph names the public banner | Brand: the link preview's image is an absolute public URL; Brand: the browser's own /favicon.ico is served |
+| an invitation link names its visitor in every log line, and a reload keeps the name | Invite: the log line names the invitation; Invite: a page opened with a live code binds its visitor |
+| an unknown or revoked code is no invitation | Invite: a revoked code names nobody |
+| with --invite-only a job needs a live invitation: none, or a revoked one, is 403 | Invite: a page opened with a live code binds its visitor; Invite: --invite-only refuses a job without a live invitation; Invite: a revoked code names nobody |
 
 ## `test/split.test.js`
 
@@ -516,6 +529,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**347 tests, 288 of them covered by at least one sabotage defence.**
+**355 tests, 295 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

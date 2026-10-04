@@ -2,25 +2,31 @@
 // itsacv: tailor CVs and fit reports to job offers, from the command line or
 // from a local web page.
 
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { complete, TIMEOUT_MS } from '../src/llm.js';
 import { loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
+import { createInvite, loadInvites, revokeInvite } from '../src/invites.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
   itsacv serve [--port PORT] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
-               [--ban-after N] [--ban-hours N]]
+               [--ban-after N] [--ban-hours N] [--invite-only]]
+  itsacv invite <label> [--out DIR] [--public-host NAME]
+  itsacv invite --list | --revoke <label|code> [--out DIR]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
   split      print the offers found in a file, without tailoring
   serve      the local web page, on http://127.0.0.1:PORT (default 8790)
+  invite     an invitation link for one ESN (printed): the jobs of a page opened
+             with it name the label in <out>/qa-log.jsonl; --list shows them,
+             --revoke ends one (by label or code), at once, no restart
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
   --out      where to write the run directories (default: ./out)
@@ -34,7 +40,8 @@ const USAGE = `usage:
              an offer already answered reused; at most --per-day CVs a day for everyone
              (default 20), --per-hour per visitor (default 3), --max-queued waiting (default 3),
              --ban-after N requests an hour from one IP or visitor ban both (default 10) for
-             --ban-hours hours (default 24)
+             --ban-hours hours (default 24); with --invite-only, only a page opened
+             from a live invitation link may generate
 
 Each run writes <out>/<timestamp>-<offer>/ with cv.docx, report.md and
 analysis.json, and with Word (Windows) cv.pdf, fitted to one full page (two
@@ -46,8 +53,8 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true] };
+const VALUED = ['--profile', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke'];
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -56,7 +63,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -73,6 +80,9 @@ function parse(argv) {
     maxQueued: '3',
     banAfter: '10',
     banHours: '24',
+    inviteOnly: false,
+    list: false,
+    revoke: null,
   };
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i];
@@ -82,6 +92,10 @@ function parse(argv) {
       options[arg.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())] = rest[(i += 1)];
     } else if (arg.startsWith('--')) fail(2, `bad option ${arg}\n\n${USAGE}`);
     else options.files.push(arg);
+  }
+  if (command === 'invite') {
+    if (!options.list && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
+    return options;
   }
   if (command !== 'serve' && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
@@ -104,12 +118,34 @@ async function main() {
   const timeoutMs = Number(options.timeout) * 1000;
   const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs });
 
+  if (options.command === 'invite') {
+    try {
+      if (options.list) {
+        for (const [code, invite] of Object.entries(loadInvites(options.out))) {
+          process.stdout.write(`${invite.label}\t${code}${invite.revoked ? '\trevoked' : ''}\n`);
+        }
+      } else if (options.revoke !== null) {
+        const count = revokeInvite(options.out, options.revoke);
+        if (!count) fail(2, `no invitation "${options.revoke}" to revoke`);
+        process.stderr.write(`itsacv: ${count} invitation(s) revoked\n`);
+      } else {
+        mkdirSync(options.out, { recursive: true });
+        const code = createInvite(options.out, options.files[0]);
+        process.stdout.write(`${options.publicHost ? `https://${options.publicHost}` : ''}/?i=${code}\n`);
+      }
+    } catch (error) {
+      fail(2, error.message);
+    }
+    return;
+  }
+
   if (options.command === 'serve') {
+    if (options.inviteOnly && options.publicHost === null) fail(2, '--invite-only goes with --public-host');
     for (const key of ['perDay', 'perHour', 'maxQueued', 'banAfter', 'banHours']) {
       if (!/^[1-9]\d*$/.test(options[key])) fail(2, `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: a whole number, 1 or more`);
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
-    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), now: Date.now };
+    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, now: Date.now };
     const server = await serve({ ...options, port: Number(options.port), useWord: options.layout, llm, publicMode });
     const open = publicMode ? `, public as https://${publicMode.host} (at most ${publicMode.perDay} CVs a day)` : '';
     process.stderr.write(`itsacv: serving on http://127.0.0.1:${server.address().port}${open} (Ctrl+C to stop)\n`);

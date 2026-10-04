@@ -348,7 +348,7 @@ Traps met, each cost time once:
   (`chromium-headless-shell`; a full Chromium in headless mode crops the
   viewport). Not checked: how LinkedIn or WhatsApp actually render the
   preview (needs the public instance up: the owner pastes the link once).
-- [ ] **2.16** (Rodin, 2026-10-04) **Name who consumes.** 2.13 traces
+- [x] **2.16** (Rodin, 2026-10-04) **Name who consumes.** 2.13 traces
   tokens per *visitor*, a random token: the log cannot say which ESN spent
   what. Proposed in session, not yet answered by the owner: invitation
   links, one per ESN, made by the owner (`itsacv invite <label>` prints
@@ -360,9 +360,14 @@ Traps met, each cost time once:
   the label into the log line; an unknown or revoked code is no
   invitation; two invitees still see only their own jobs (2.14 holds);
   `--invite-only` refuses a job without one. Sabotage: the label dropped
-  from the log; the invite-only check bypassed. Ask the owner first
-  (closed question): invitations only, or invitations plus the anonymous
-  page as today.
+  from the log; the invite-only check bypassed. Done 2026-10-04 without
+  settling the owner's question: invite-only is a flag (`--invite-only`,
+  on the VM `CV_FLAGS=--invite-only` in the data `.env`), off by default,
+  so the anonymous page stays as today until the owner turns it on.
+  `src/invites.js`, `itsacv invite` (`--list`, `--revoke`), the code read
+  again at each job (a revocation holds at once, no restart). Eight tests,
+  seven defences (`scripts/sabotage/invitations.json`). Not done: the
+  page does not say "on invitation" before a refused click.
 - [ ] **4.x** (the owner, 2026-10-04: "later") **Another profile than the
   owner's.** Today one profile is loaded at start (`--profile`,
   `loadProfile`), compiled privately with its truth document and verdicts.
