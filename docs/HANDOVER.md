@@ -62,7 +62,7 @@ tests, verified under WSL: `cargo` is installed there).
 **2026-10-04.** 8.34-8.36 (`kind`, `serves`; no call marked `classify`:
 the local model already loses quality on both calls that only choose).
 Same day, asked by the owner (branch `router/token-usage`): tokens traced,
-Claude and local apart, in the journal and `stats` (8.38), in the HTTP
+Claude and local apart, in the journal and `stats` (8.38, by day 8.40), in the HTTP
 answer (8.39), per job in the generator's QA log (cv 2.13); a public job
 readable by its own visitor only (cv 2.14); favicon and link preview (cv
 2.15); another profile and matchmaking written as cv 4.x and 5.x. Done in
@@ -486,6 +486,10 @@ branch with the local gates of §3 green.
 - [x] **8.39** The HTTP answer carries `usage` when the backend reported
   it, so the generator counts tokens per run (cv 2.13). One test, one
   defence.
+- [x] **8.40** (Rodin) `stats --by-day` adds, per day and backend, the
+  tokens read and written (`; tokens claude-code 14119 read 200 written,
+  …`), so the day the plan ran out says what it went on. One test, three
+  defences.
 
 ## 9. Deliberately open
 
@@ -532,6 +536,10 @@ branch with the local gates of §3 green.
   `error.message`; Claude "result message is not understood"; the Claude
   stderr excerpt). They are server or CLI texts, but can carry model-shaped
   text: give lengths there too.
+- **Tokens of a refused answer are not counted** (8.38): an answer the
+  router refuses (the billing tripwire, LM Studio's `finish_reason:
+  length`) took tokens no journal line reports. Small next to the rest;
+  count them if the plan runs out unexplained.
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 - **Contract with the Node.js generator** — M3.
 
