@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.36
-TITLE: The generator marks its classification calls (kind) so a small model can take them
-WRITTEN-AT: 2026-09-30
-BASE: 14a09c2
+NEXT: 8.37
+TITLE: Freeze the generator/router contract: a version and contract tests on both sides
+WRITTEN-AT: 2026-10-04
+BASE: 11e6f31
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -71,6 +71,12 @@ userinfo is refused (never echoed). 8.19: `merge-when-green.sh` merges only
 the head it counted (`--match-head-commit`), tested with a fake `gh`.
 8.20: the Claude workdir is a private directory of ours, not a link (Unix
 tests, verified under WSL: `cargo` is installed there).
+
+**2026-10-04.** 8.34-8.35 (request `kind`, backend `serves`) and 8.36 (the
+generator sends `kind`) done: M2's criterion holds in code, but no call is
+marked `classify`, because the measures say the local model already loses
+quality on both calls that only choose (8.36). Next: M3's frozen contract
+(8.37), after the generator's analysis-schema measure (cv 2.3).
 
 ## 1. Decisions never to reverse silently
 
@@ -453,12 +459,27 @@ branch with the local gates of §3 green.
   `config.example.toml` and README. Red test in `tests/cli.rs`: a config
   whose only backend serves classify: `--kind classify` answers, no flag
   exits 2 naming the kind. Done: one test, two defences (one anchor moved).
-- [ ] **8.36** The generator side of M2 (in `cv/`): `complete()` sends
-  `kind` when asked, and the calls that only choose (the offer split's
-  ranges? the listing's must/nice?) are marked `classify` where a small
-  model could serve them; measure first on the corpus whether such a call
-  keeps its quality with the local model before marking it (`measure-*`).
-  Nothing changes for a router without a classify-only backend.
+- [x] **8.36** The generator side of M2 (in `cv/`): `complete()` sends
+  `kind` when asked, none otherwise (one test, two defences); the CLI
+  passes it through. **Measured, 2026-10-04, before marking any call:**
+  `cv/scripts/measure-split.mjs` (each corpus offer alone, and six
+  agency emails of two or three offers) gives the split Sonnet 14/14, the
+  local model 7/14 (it leaves requirement lines out and merges offers);
+  the listing was already 75/75 against 69/75 (cv 2.1e). **So no call is
+  marked `classify` yet**: a small model, weaker than the local one, would
+  lose more. Mark a call only when a candidate small model measures equal
+  to Sonnet on its `measure-*` script (`--backend <name>` alone).
+- [ ] **8.37** M3's exit: freeze the contract between `cv/` and the
+  router. After cv 2.3 (the analysis schema measured, whatever it
+  decides). A `contract` version the router returns in every answer of
+  `POST /v1/complete` (and `GET /health`); the request fields
+  (`prompt`, `system`, `backend`, `schema`, `kind`) and the answer fields
+  (`text`, `backend`, `attempts`, `error.kind`, `error.attempts`) written
+  once in `docs/ARCHITECTURE.md`. Red tests: in `tests/` a request with
+  every field and the answer's exact key set; in `cv/test/` the client
+  refuses an answer whose `contract` major is not the one it speaks
+  (clear error naming both), and accepts one without `contract` only from
+  a router older than the field (decide and write which, in ADR form).
 
 ## 9. Deliberately open
 
