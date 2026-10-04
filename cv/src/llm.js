@@ -21,11 +21,12 @@ function attemptsOf(error) {
   return said.length ? ` (${said.join('; ')})` : '';
 }
 
-export function complete({ url, system, prompt, backend, schema, timeoutMs = TIMEOUT_MS }) {
+export function complete({ url, system, prompt, backend, schema, kind, timeoutMs = TIMEOUT_MS }) {
   const target = new URL(`${url.replace(/\/$/, '')}/v1/complete`);
   // A named backend is tried alone by the router (8.22): a measure per model.
   // A schema asks for structured output (8.24); an older router ignores it.
-  const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}) });
+  // A kind (8.34) lets a classify-only backend take a call that only chooses.
+  const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}), ...(kind ? { kind } : {}) });
   return new Promise((resolve, reject) => {
     const outgoing = httpRequest(
       target,

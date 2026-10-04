@@ -7,8 +7,8 @@
   "defences": {
     "Client: the timeout is the owner's to set": {
       "file": "bin/itsacv.js",
-      "live": "complete({ url: options.url, system, prompt, schema, backend, timeoutMs })",
-      "dead": "complete({ url: options.url, system, prompt, schema, backend })",
+      "live": "complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs })",
+      "dead": "complete({ url: options.url, system, prompt, schema, backend, kind })",
       "expect": [
         "--timeout and ITSACV_TIMEOUT set how long one answer may take"
       ]
@@ -35,6 +35,22 @@
       "dead": "should be long enough",
       "expect": [
         "the usage says the client's timeout must exceed the router backend's"
+      ]
+    },
+    "Client: a call's kind reaches the router": {
+      "file": "src/llm.js",
+      "live": ", ...(kind ? { kind } : {}) });",
+      "dead": " });",
+      "expect": [
+        "a call marked classify sends its kind; an unmarked call sends none"
+      ]
+    },
+    "Client: a call without a kind sends none": {
+      "file": "src/llm.js",
+      "live": ", ...(kind ? { kind } : {}) });",
+      "dead": ", kind: kind ?? 'generate' });",
+      "expect": [
+        "a call marked classify sends its kind; an unmarked call sends none"
       ]
     },
     "Client: a cut answer fails at once": {
