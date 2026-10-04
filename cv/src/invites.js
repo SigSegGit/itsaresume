@@ -62,3 +62,7 @@ export function invitationOf(invites, code) {
   const invite = invites[code];
   return invite && !invite.revoked && typeof invite.label === 'string' ? invite.label : null;
 }
+
+export function usageByInvite() {
+  return undefined;
+}
