@@ -116,7 +116,7 @@ test('the client posts JSON to /v1/complete and surfaces a router refusal', asyn
   ]);
   try {
     const answer = await complete({ url, system: 'sys', prompt: 'p' });
-    assert.deepEqual(answer, { text: 'hello', backend: 'lm-studio' });
+    assert.deepEqual(answer, { text: 'hello', backend: 'lm-studio', usage: null });
     assert.equal(seen[0].url, '/v1/complete');
     assert.equal(seen[0].type, 'application/json');
     assert.deepEqual(seen[0].body, { prompt: 'p', system: 'sys' });

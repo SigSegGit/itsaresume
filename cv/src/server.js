@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanName } from './guard.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
+import { addTokens } from './llm.js';
 
 export const MAX_BODY = 256 * 1024;
 export const MAX_OFFERS = 6;
@@ -238,6 +239,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         elapsed_ms: job.endedAt != null ? job.endedAt - job.startedAt : null,
         steps: job.times,
         backend: result.backend ?? null,
+        tokens: job.tokens ?? null,
         attempts: result.attempts ?? null,
         repairs: result.repairs ?? null,
         dir: result.dir ?? null,
@@ -264,7 +266,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           job.steps.push({ step, ...detail });
           job.times.push({ step, at: clock() - job.startedAt });
         };
-        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer: () => {} });
+        // Every model answer's tokens, kept on the job: a failed run spent them too.
+        const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);
+        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer });
         job.status = 'done';
         job.endedAt = clock();
       } catch (error) {

@@ -58,7 +58,7 @@ export function complete({ url, system, prompt, backend, schema, kind, timeoutMs
             reject(new Error(`itsaresume answered ${response.statusCode}: ${reason}${attemptsOf(parsed.error)}`));
           } else {
             if (typeof parsed.text !== 'string') reject(new Error('itsaresume answered without a text'));
-            else resolve({ text: parsed.text, backend: parsed.backend });
+            else resolve({ text: parsed.text, backend: parsed.backend, usage: parsed.usage ?? null });
           }
         });
       },
@@ -90,10 +90,29 @@ export function extractJson(text) {
   throw new Error(`the model's answer holds no JSON object: ${text.slice(0, 200)}`);
 }
 
-/** Adds one answer's tokens into `tokens`, per backend. */
-export function addTokens(tokens, answer) {}
+const TOKEN_KEYS = ['input', 'output', 'cache_read', 'cache_creation'];
 
-/** `llm`, calling `onAnswer` with each answer. */
+/**
+ * Adds one answer's tokens into `tokens`, per backend (router 8.39), so the
+ * owner reads what each run took of Claude's plan and of the local machine,
+ * apart. An answer whose backend reported none counts as a call only.
+ */
+export function addTokens(tokens, answer) {
+  const backend = answer.backend ?? '?';
+  const sum = (tokens[backend] ??= { calls: 0, ...Object.fromEntries(TOKEN_KEYS.map((key) => [key, 0])) });
+  sum.calls += 1;
+  for (const key of TOKEN_KEYS) {
+    const count = answer.usage?.[key];
+    if (Number.isSafeInteger(count) && count > 0) sum[key] += count;
+  }
+  return tokens;
+}
+
+/** `llm`, calling `onAnswer` with each answer once the model gave it. */
 export function counted(llm, onAnswer) {
-  return llm;
+  return async (request) => {
+    const answer = await llm(request);
+    onAnswer(answer);
+    return answer;
+  };
 }
