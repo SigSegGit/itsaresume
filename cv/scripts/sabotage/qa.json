@@ -9,8 +9,8 @@
     },
     "QA: the chosen model reaches the generation": {
       "file": "src/server.js",
-      "live": "offer: job.text, model: job.model, onStep, onAnswer });",
-      "dead": "offer: job.text, onStep, onAnswer });",
+      "live": "offer: job.text, model: job.model, onStep, onAnswer, profile: job.profile });",
+      "dead": "offer: job.text, onStep, onAnswer, profile: job.profile });",
       "expect": ["a job carries the chosen model to the generation; none means auto; an unknown one is refused"]
     },
     "QA: a chosen model is never answered from a reused run": {
@@ -57,8 +57,8 @@
     },
     "QA: the page sends the chosen model": {
       "file": "web/app.js",
-      "live": ", model: $('model').value });",
-      "dead": " });",
+      "live": ", model: $('model').value, profile:",
+      "dead": ", profile:",
       "expect": ["the page lets the owner pick the model, and sends the choice with the offers"]
     }
   }

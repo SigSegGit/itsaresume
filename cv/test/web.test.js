@@ -181,7 +181,7 @@ test('the page lets the owner pick the model, and sends the choice with the offe
   const html = web('index.html');
   const select = html.match(/<select id="model"[\s\S]*?<\/select>/)?.[0] ?? '';
   assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'local']);
-  assert.match(web('app.js'), /api\('\/api\/jobs', \{ offers: [^\n]*, model: \$\('model'\)\.value \}\)/);
+  assert.match(web('app.js'), /api\('\/api\/jobs', \{ offers: [^\n]*, model: \$\('model'\)\.value[,} ]/);
 });
 
 test('an administrative condition is shown apart, to confirm, never as a failed requirement', async () => {
@@ -196,4 +196,33 @@ test('an administrative condition is shown apart, to confirm, never as a failed 
   assert.match(text, /Conditions à confirmer, non notées \(1\)/);
   assert.match(text, /Nationalité française — à confirmer : ton profil n’en dit rien/);
   page.close();
+});
+
+// 4.1: the profile choice exists only where the owner has several profiles;
+// the public status never lists them (server test), so the page hides it there.
+test('the page offers a profile choice only when the status lists several, and sends the one chosen', async () => {
+  const posted = [];
+  const page = loadPage(async (path, init) => {
+    if (path === '/api/status') return { body: { ...STATUS, profiles: ['default', 'bob'] } };
+    if (path === '/api/jobs' && init?.method === 'POST') {
+      posted.push(JSON.parse(init.body));
+      return { status: 202, body: [] };
+    }
+    if (path === '/api/jobs') return { body: [] };
+    return { status: 404, body: { error: 'not found' } };
+  });
+  await page.settle();
+  assert.equal(page.$('profile-row').hidden, false);
+  assert.deepEqual(page.$('profile').childNodes.map((option) => option.textContent), ['default', 'bob']);
+  page.$('paste').value = 'Architecte\nContexte\nModernisation.\nMissions principales\nÉtudes.';
+  page.$('add').click();
+  page.$('profile').value = 'bob';
+  page.$('generate').click();
+  await page.settle();
+  assert.equal(posted[0]?.profile, 'bob');
+  page.close();
+  const single = pageWith([]);
+  await single.settle();
+  assert.equal(single.$('profile-row').hidden, true, 'one profile: no choice');
+  single.close();
 });

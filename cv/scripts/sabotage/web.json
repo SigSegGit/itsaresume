@@ -359,8 +359,8 @@
     },
     "Web: public status hides the assessment": {
       "file": "src/server.js",
-      "live": "publicMode ? publicStatus(await deps.status()) : await deps.status()",
-      "dead": "await deps.status()",
+      "live": "publicMode ? publicStatus(status) :",
+      "dead": "publicMode ? status :",
       "expect": [
         "in public mode the status carries no verdicts, truth document or raw error"
       ]

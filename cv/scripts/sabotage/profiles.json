@@ -1,0 +1,115 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Profile: an unknown profile is refused": {
+      "file": "src/server.js",
+      "live": "if (typeof profile !== 'string' || !known.includes(profile)) throw new HttpError(400,",
+      "dead": "if (typeof profile !== 'string') throw new HttpError(400,",
+      "expect": [
+        "a job may name a profile from the closed list; none is the default, an unknown one is 400",
+        "in public mode the profiles are neither listed nor chosen: another than the default is 400"
+      ]
+    },
+    "Profile: public mode knows the default alone": {
+      "file": "src/server.js",
+      "live": "const known = publicMode ? [DEFAULT_PROFILE] : deps.profiles?.() ?? [DEFAULT_PROFILE];",
+      "dead": "const known = deps.profiles?.() ?? [DEFAULT_PROFILE];",
+      "expect": [
+        "in public mode the profiles are neither listed nor chosen: another than the default is 400"
+      ]
+    },
+    "Profile: public status lists no profiles": {
+      "file": "src/server.js",
+      "live": "const { profile = {}, profiles: _others, ...rest } = status;",
+      "dead": "const { profile = {}, ...rest } = status;",
+      "expect": [
+        "in public mode the profiles are neither listed nor chosen: another than the default is 400"
+      ]
+    },
+    "Profile: the job's profile reaches the generation": {
+      "file": "src/server.js",
+      "live": "onStep, onAnswer, profile: job.profile });",
+      "dead": "onStep, onAnswer });",
+      "expect": [
+        "a job may name a profile from the closed list; none is the default, an unknown one is 400"
+      ]
+    },
+    "Profile: the log line names the profile": {
+      "file": "src/server.js",
+      "live": "        profile: job.profile ?? DEFAULT_PROFILE,",
+      "dead": "        profile: DEFAULT_PROFILE,",
+      "expect": [
+        "a job may name a profile from the closed list; none is the default, an unknown one is 400",
+        "serve() tailors a job to the profile it names, from --profiles, and the run records it"
+      ]
+    },
+    "Profile: serve() loads the named profile's file": {
+      "file": "src/serve.js",
+      "live": "const path = profiles().get(profile);",
+      "dead": "const path = profiles().get(DEFAULT_PROFILE) ?? profiles().get(profile);",
+      "expect": [
+        "serve() tailors a job to the profile it names, from --profiles, and the run records it"
+      ]
+    },
+    "Profile: the run records its profile": {
+      "file": "src/run.js",
+      "live": "JSON.stringify({ profile: profileId, attempts,",
+      "dead": "JSON.stringify({ profile: DEFAULT_PROFILE, attempts,",
+      "expect": [
+        "serve() tailors a job to the profile it names, from --profiles, and the run records it"
+      ]
+    },
+    "Profile: a reuse never crosses profiles": {
+      "file": "src/intake.js",
+      "live": ".filter((run) => (run.profile ?? DEFAULT_PROFILE) === profile)",
+      "dead": ".filter((run) => (run.profile ?? DEFAULT_PROFILE) === profile || true)",
+      "expect": [
+        "a reused run is one of the same profile; a run without one is the owner's"
+      ]
+    },
+    "Profile: a run without run.json is the owner's": {
+      "file": "src/intake.js",
+      "live": "  } catch {\n    return DEFAULT_PROFILE;\n  }",
+      "dead": "  } catch {\n    return 'nobody';\n  }",
+      "expect": [
+        "a reused run is one of the same profile; a run without one is the owner's"
+      ]
+    },
+    "Profile: a profile id is a closed name": {
+      "file": "src/profiles.js",
+      "live": "if (!ID.test(id) || profiles.has(id) || !statSync(join(profilesDir, name)).isFile()) continue;",
+      "dead": "if (!id || profiles.has(id) || !statSync(join(profilesDir, name)).isFile()) continue;",
+      "expect": [
+        "the profiles are the default and each <id>.json of the directory; other names are not profiles"
+      ]
+    },
+    "Profile: a directory named .json is no profile": {
+      "file": "src/profiles.js",
+      "live": "if (!ID.test(id) || profiles.has(id) || !statSync(join(profilesDir, name)).isFile()) continue;",
+      "dead": "if (!ID.test(id) || profiles.has(id)) continue;",
+      "expect": [
+        "the profiles are the default and each <id>.json of the directory; other names are not profiles"
+      ]
+    },
+    "Profile: a missing directory is the default alone": {
+      "file": "src/profiles.js",
+      "live": "if (!profilesDir || !existsSync(profilesDir)) return profiles;",
+      "dead": "if (!profilesDir) return profiles;",
+      "expect": [
+        "no directory, or a missing one, is the default alone"
+      ]
+    },
+    "Profile: serve --profiles reaches the server": {
+      "file": "bin/itsacv.js",
+      "live": "{ ...options, profilesDir: options.profiles, port:",
+      "dead": "{ ...options, profilesDir: null, port:",
+      "expect": [
+        "itsacv serve --profiles DIR offers the directory's profiles on the page"
+      ]
+    }
+  }
+}

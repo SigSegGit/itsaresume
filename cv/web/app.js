@@ -46,7 +46,17 @@ function setPill(id, state, text) {
 
 async function refreshStatus() {
   try {
-    const { profile, router, layout, public: open } = await api('/api/status');
+    const { profile, profiles, router, layout, public: open } = await api('/api/status');
+    // 4.1: several profiles (the owner's --profiles): choose the one to tailor to.
+    if (!open && profiles?.length > 1 && $('profile-row').hidden) {
+      $('profile').replaceChildren(...profiles.map((id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = id;
+        return option;
+      }));
+      $('profile-row').hidden = false;
+    }
     // Public mode: a recruiter pastes one offer; splitting an email is the owner's.
     if (open) {
       $('split').hidden = true;
@@ -184,7 +194,7 @@ function setupOffers() {
     const batch = offers.splice(0, offers.length);
     renderOffers();
     try {
-      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value });
+      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value, profile: $('profile-row').hidden ? undefined : $('profile').value });
       poll();
     } catch (error) {
       offers.push(...batch);

@@ -99,6 +99,14 @@ The profile is read from `~/.itsaresume/profile.json` (or `--profile`); runs
 are written to `./out` (or `--out`). Nothing personal lives in this
 repository: tests use a fictitious profile.
 
+## Other profiles
+
+`itsacv serve --profiles DIR` lets a job be tailored to another profile
+than yours: each `DIR/<id>.json` (same schema as yours, its sources beside
+it) is offered on the local page; the run records which one in `run.json`,
+and an answered offer is reused only for the same profile. The public page
+never lists nor accepts another profile.
+
 ## Public page
 
 `itsacv serve --public-host cv.example.org` serves anyone behind a reverse

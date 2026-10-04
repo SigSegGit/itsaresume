@@ -15,7 +15,7 @@ import { QA_LOG } from '../src/qa.js';
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
-  itsacv serve [--port PORT] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
+  itsacv serve [--port PORT] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
                [--ban-after N] [--ban-hours N] [--invite-only]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
@@ -31,6 +31,8 @@ const USAGE = `usage:
              --revoke ends one (by label or code), at once, no restart
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
+  --profiles serve: other profiles a job may be tailored to, each DIR/<id>.json (id: lower
+             case letters, digits, dashes); the page offers the choice; never in public mode
   --out      where to write the run directories (default: ./out)
   --url      itsaresume's HTTP endpoint (default: $ITSARESUME_URL, else http://127.0.0.1:8787)
   --timeout  how long one model answer may take, in seconds (default: $ITSACV_TIMEOUT,
@@ -55,7 +57,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke'];
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true] };
 
 function fail(code, message) {
@@ -77,6 +79,7 @@ function parse(argv) {
     layout: true,
     split: false,
     publicHost: null,
+    profiles: null,
     perDay: '20',
     perHour: '3',
     maxQueued: '3',
@@ -152,7 +155,7 @@ async function main() {
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
     const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, now: Date.now };
-    const server = await serve({ ...options, port: Number(options.port), useWord: options.layout, llm, publicMode });
+    const server = await serve({ ...options, profilesDir: options.profiles, port: Number(options.port), useWord: options.layout, llm, publicMode });
     const open = publicMode ? `, public as https://${publicMode.host} (at most ${publicMode.perDay} CVs a day)` : '';
     process.stderr.write(`itsacv: serving on http://127.0.0.1:${server.address().port}${open} (Ctrl+C to stop)\n`);
     return;
