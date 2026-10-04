@@ -467,3 +467,36 @@ test('serve() writes each job\'s tokens per backend to the QA log, through the r
     server.close();
   }
 });
+
+// 4.1, through serve() itself: the job's profile is the file loaded, and the
+// run records it, so a reuse never crosses profiles.
+test('serve() tailors a job to the profile it names, from --profiles, and the run records it', async () => {
+  const { serve } = await import('../src/serve.js');
+  const out = mkdtempSync(join(tmpdir(), 'itsacv-serve-'));
+  const profilesDir = mkdtempSync(join(tmpdir(), 'itsacv-profiles-'));
+  writeFileSync(join(profilesDir, 'bob.json'), readFileSync(PROFILE_PATH));
+  writeFileSync(join(profilesDir, 'broken.json'), '{}');
+  const llm = async ({ system }) => (system === LISTING_SYSTEM ? { text: EMPTY_LISTING, backend: 'lm-studio', usage: null } : { text: JSON.stringify(valid()), backend: 'claude-code', usage: null });
+  const server = await serve({ profile: '/nowhere/profile.json', profilesDir, out, url: 'http://127.0.0.1:9', port: 0, useWord: false, llm });
+  try {
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const token = (await (await fetch(base)).text()).match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+    const post = (profile) => fetch(`${base}/api/jobs`, { method: 'POST', headers: { Origin: base, 'X-CSRF-Token': token, 'Content-Type': 'application/json' }, body: JSON.stringify({ offers: [{ title: 'SRE', text: OFFER }], profile }) });
+    assert.equal((await post('bob')).status, 202);
+    assert.equal((await post('broken')).status, 202);
+    let lines = [];
+    for (let i = 0; i < 300 && lines.length < 2; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (existsSync(join(out, 'qa-log.jsonl'))) lines = readFileSync(join(out, 'qa-log.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+    }
+    const [bob, broken] = lines;
+    assert.equal(bob.status, 'done', bob.error);
+    assert.equal(bob.profile, 'bob');
+    assert.equal(JSON.parse(readFileSync(join(bob.dir, 'run.json'), 'utf8')).profile, 'bob');
+    assert.equal(broken.status, 'failed');
+    assert.match(broken.error, /profile is invalid/, 'broken.json was the file loaded');
+  } finally {
+    server.closeAllConnections();
+    server.close();
+  }
+});

@@ -748,3 +748,40 @@ test('with --invite-only a job needs a live invitation: none, or a revoked one, 
   invites.a1b2c3d4e5f6a1b2c3d4e5f6.revoked = true;
   assert.equal((await invited.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('DBA Postgres') }] })).status, 403, 'revoked after the visit');
 });
+
+// 4.1: a job may be tailored to another profile than the owner's, chosen
+// from a closed list the owner fills (--profiles DIR); none is the owner's.
+test('a job may name a profile from the closed list; none is the default, an unknown one is 400', async () => {
+  const seen = [];
+  const entries = [];
+  const app = await start({
+    profiles: () => ['default', 'bob'],
+    log: (entry) => entries.push(entry),
+    tailor: async ({ offer, profile }) => {
+      seen.push(profile);
+      return fakeResult(offer);
+    },
+  });
+  try {
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'an offer' }], profile: 'bob' })).status, 202);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'another' }] })).status, 202);
+    const refused = await post(app, '/api/jobs', { offers: [{ text: 'a third' }], profile: '../etc/passwd' });
+    assert.equal(refused.status, 400);
+    assert.match(JSON.parse(refused.text).error, /profile/);
+    await until(app, (all) => all.length === 2 && all.every((job) => job.status === 'done'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.deepEqual(seen, ['bob', 'default']);
+    assert.deepEqual(entries.map((entry) => entry.profile), ['bob', 'default']);
+    assert.deepEqual(JSON.parse((await call(app.port, { path: '/api/status' })).text).profiles, ['default', 'bob']);
+  } finally {
+    app.server.close();
+  }
+});
+
+test('in public mode the profiles are neither listed nor chosen: another than the default is 400', async (t) => {
+  const app = await startPublic(t, { status: async () => ({ profile: { name: 'Alex' }, profiles: ['default', 'bob'], router: { up: true }, layout: { word: false } }) });
+  const visitor = await app.visit();
+  assert.ok(!('profiles' in JSON.parse((await visitor.get('/api/status')).text)), 'other people\'s names stay the owner\'s');
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }], profile: 'bob' })).status, 400);
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }], profile: 'default' })).status, 202);
+});
