@@ -554,6 +554,22 @@
       "expect": [
         "in public mode a job and its files are served only to the visitor whose page created it"
       ]
+    },
+    "Brand: the link preview's image is an absolute public URL": {
+      "file": "src/server.js",
+      "live": ".replace('__ORIGIN__', publicMode ? `https://${publicMode.host}` : '');",
+      "dead": ".replace('__ORIGIN__', '');",
+      "expect": [
+        "the page has an icon and a link preview: icons served, Open Graph names the public banner"
+      ]
+    },
+    "Brand: the browser's own /favicon.ico is served": {
+      "file": "src/server.js",
+      "live": "  '/favicon.ico': ['icon-180.png', 'image/png'],",
+      "dead": "  '/favicon.ico-': ['icon-180.png', 'image/png'],",
+      "expect": [
+        "the page has an icon and a link preview: icons served, Open Graph names the public banner"
+      ]
     }
   }
 }

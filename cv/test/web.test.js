@@ -24,7 +24,7 @@ test('the page holds no inline script, style or handler, and loads nothing from 
   assert.ok(!/\sstyle=/.test(html), 'inline style');
   assert.ok(!/\son[a-z]+=/.test(html), 'inline handler');
   const urls = [...html.matchAll(/\b(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(urls.sort(), ['/app.js', '/style.css']);
+  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/style.css']);
   assert.ok(!/@import|url\(\s*['"]?https?:/.test(web('style.css')), 'no remote stylesheet or font');
 });
 

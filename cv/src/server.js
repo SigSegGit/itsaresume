@@ -28,6 +28,12 @@ const WEB = fileURLToPath(new URL('../web/', import.meta.url));
 const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  // The tab's icon and the link preview (Open Graph); a browser asks for
+  // /favicon.ico on its own, and takes a PNG there.
+  '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
+  '/favicon.ico': ['icon-180.png', 'image/png'],
+  '/icon-180.png': ['icon-180.png', 'image/png'],
+  '/banner.png': ['banner.png', 'image/png'],
 };
 const DOWNLOADS = {
   'cv.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -304,7 +310,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (request.method === 'GET') {
         if (path === '/') {
           const issued = pageToken(request);
-          const html = readFileSync(join(WEB, 'index.html'), 'utf8').replace('__CSRF_TOKEN__', issued.value);
+          // A link preview's image must be an absolute URL: the public name, or none locally.
+          const html = readFileSync(join(WEB, 'index.html'), 'utf8')
+            .replace('__CSRF_TOKEN__', issued.value)
+            .replace('__ORIGIN__', publicMode ? `https://${publicMode.host}` : '');
           return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
