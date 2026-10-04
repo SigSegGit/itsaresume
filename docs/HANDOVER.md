@@ -4,7 +4,7 @@
 NEXT: 8.37
 TITLE: Freeze the generator/router contract: a version and contract tests on both sides
 WRITTEN-AT: 2026-10-04
-BASE: 4328d8d
+BASE: 7ee1e41
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -65,7 +65,9 @@ Same day, asked by the owner (branch `router/token-usage`): tokens traced,
 Claude and local apart, in the journal and `stats` (8.38, by day 8.40), in the HTTP
 answer (8.39), per job in the generator's QA log (cv 2.13); a public job
 readable by its own visitor only (cv 2.14); favicon and link preview (cv
-2.15); another profile and matchmaking written as cv 4.x and 5.x. Done in
+2.15); another profile and matchmaking written as cv 4.x and 5.x
+(merged, #69). Then invitation links per ESN with `invite --usage` (cv
+2.16, branch `cv/invitations`). Done in
 a cloud session (Linux, no Claude, no Bionic): nothing measured on a real
 call; the token counts are read from the observed fixtures. Next: M3's
 frozen contract (8.37), after cv 2.3 (needs the laptop's models).
