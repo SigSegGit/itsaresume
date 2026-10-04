@@ -14,19 +14,10 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
-**2026-09-27.** M0 and M1 are merged on `main` (PR #1, PR #2). `main` was
-**red** after the two M1 merges (sabotage job, `tests/cli.rs` at baseline):
-`a_bad_configuration_or_usage_exits_2` was flaky, because the CLI exits 2
-before reading stdin and the test's write of the prompt raised `BrokenPipe`
-depending on scheduling (reproduced 70/200 under WSL, 0/200 after the fix).
-The earlier "stale artefact" guess (issue #3) was wrong. `scripts/sabotage.py`
-hid the cause: it printed the stderr tail, never the failed test's own output;
-it now does (`why_red`).
-
-Also fixed on 2026-09-27, each red then green, sabotage-verified: a 2xx answer
-cut at the token limit (`finish_reason: length`) or empty was taken as a
-success; `ureq` sent the prompts (a whole CV) through any proxy set in
-`HTTP_PROXY`/`ALL_PROXY` (now `.proxy(None)`).
+**2026-09-27.** M0 and M1 merged (PR #1, #2). Fixed then, each red then
+green: a flaky usage test (`BrokenPipe`, not a stale artefact: issue #3),
+`sabotage.py` now prints the failed test's own output (`why_red`), a cut or
+empty 2xx answer is no success, and `ureq` ignores proxy variables.
 
 **Claude Code answers** since 2026-09-27 (`claude auth status`: logged in,
 `pro`): `sonnet-qwen.local.toml` served both real offers through
