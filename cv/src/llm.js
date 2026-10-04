@@ -89,3 +89,11 @@ export function extractJson(text) {
   }
   throw new Error(`the model's answer holds no JSON object: ${text.slice(0, 200)}`);
 }
+
+/** Adds one answer's tokens into `tokens`, per backend. */
+export function addTokens(tokens, answer) {}
+
+/** `llm`, calling `onAnswer` with each answer. */
+export function counted(llm, onAnswer) {
+  return llm;
+}

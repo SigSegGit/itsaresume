@@ -617,6 +617,37 @@ test('every finished job is logged: offer, model, entry point, backend, steps wi
   }
 });
 
+// Every model answer of a job is counted, per backend, into its log line;
+// a failed job spent them too. Never shown to a visitor.
+test('a job\'s log line sums the tokens of its model answers per backend, failed or not', async () => {
+  const logged = [];
+  const app = await start({
+    log: (entry) => logged.push(entry),
+    tailor: async ({ offer, onStep, onAnswer }) => {
+      onStep('listing');
+      onAnswer({ backend: 'lm-studio', text: 'x', usage: { input: 24, output: 5 } });
+      onAnswer({ backend: 'claude-code', text: 'y', usage: { input: 3, output: 179, cache_read: 6914, cache_creation: 7109 } });
+      if (offer.includes('boom')) throw new Error('the model\'s analysis is still invalid');
+      return fakeResult(offer);
+    },
+  });
+  try {
+    await post(app, '/api/jobs', { offers: [{ title: 'SRE', text: 'an offer' }, { text: 'boom' }], model: 'claude' });
+    await until(app, (all) => all.length === 2 && all.every((job) => job.status === 'done' || job.status === 'failed'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const want = {
+      'lm-studio': { calls: 1, input: 24, output: 5, cache_read: 0, cache_creation: 0 },
+      'claude-code': { calls: 1, input: 3, output: 179, cache_read: 6914, cache_creation: 7109 },
+    };
+    assert.deepEqual(logged.map((entry) => [entry.status, entry.tokens]), [['done', want], ['failed', want]]);
+    const listed = JSON.parse((await call(app.port, { path: '/api/jobs' })).text);
+    const details = await Promise.all(listed.map(async (job) => (await call(app.port, { path: `/api/jobs/${job.id}` })).text));
+    assert.ok(![JSON.stringify(listed), ...details].some((text) => text.includes('cache_read')), 'tokens are the owner\'s, never in the page');
+  } finally {
+    app.server.close();
+  }
+});
+
 test('in public mode the entry point is the VM, and a chosen model is never answered from a reused run', async (t) => {
   const app = await startPublic(t);
   const visitor = await app.visit();

@@ -264,7 +264,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           job.steps.push({ step, ...detail });
           job.times.push({ step, at: clock() - job.startedAt });
         };
-        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep });
+        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer: () => {} });
         job.status = 'done';
         job.endedAt = clock();
       } catch (error) {

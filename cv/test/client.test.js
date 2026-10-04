@@ -10,7 +10,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { complete } from '../src/llm.js';
+import { addTokens, complete, counted } from '../src/llm.js';
 
 /** A stand-in for itsaresume whose every POST gets `answer(request, response)`. */
 async function router(answer) {
@@ -117,4 +117,40 @@ test("the usage says the client's timeout must exceed the router backend's", () 
   assert.match(stderr, /serve .*\[--timeout SECONDS\]/);
   assert.match(stderr, /ITSACV_TIMEOUT/);
   assert.match(stderr, /must exceed the router backend's timeout_secs/);
+});
+
+// Router 8.39: the answer reports the tokens its backend reported.
+test('the answer carries the tokens the router reported, null when it reports none', async () => {
+  const usage = { input: 3, output: 179, cache_read: 6914, cache_creation: 7109 };
+  const bodies = [{ backend: 'claude-code', text: 'a', attempts: [], usage }, { backend: 'lm-studio', text: 'b', attempts: [] }];
+  const { server, url } = await router((request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(bodies.shift()));
+  });
+  try {
+    assert.deepEqual(await complete({ url, system: 's', prompt: 'p' }), { text: 'a', backend: 'claude-code', usage });
+    assert.deepEqual(await complete({ url, system: 's', prompt: 'p' }), { text: 'b', backend: 'lm-studio', usage: null });
+  } finally {
+    stop(server);
+  }
+});
+
+// The owner reads, per run, what each backend took: Claude and the local model apart.
+test('tokens are summed per backend; an answer without usage counts as a call only', () => {
+  const tokens = {};
+  addTokens(tokens, { backend: 'claude-code', usage: { input: 3, output: 179, cache_read: 6914, cache_creation: 7109 } });
+  addTokens(tokens, { backend: 'claude-code', usage: { input: 7, output: 21, cache_read: 86, cache_creation: 0 } });
+  addTokens(tokens, { backend: 'lm-studio', usage: { input: 24, output: 5 } });
+  addTokens(tokens, { backend: 'lm-studio', usage: null });
+  assert.deepEqual(tokens, {
+    'claude-code': { calls: 2, input: 10, output: 200, cache_read: 7000, cache_creation: 7109 },
+    'lm-studio': { calls: 2, input: 24, output: 5, cache_read: 0, cache_creation: 0 },
+  });
+});
+
+test('a counted model call hands each answer on, unchanged, after the model gave it', async () => {
+  const seen = [];
+  const llm = counted(async (request) => ({ text: request.prompt, backend: 'b', usage: null }), (answer) => seen.push(answer));
+  assert.deepEqual(await llm({ prompt: 'x' }), { text: 'x', backend: 'b', usage: null });
+  assert.deepEqual(seen, [{ text: 'x', backend: 'b', usage: null }]);
 });
