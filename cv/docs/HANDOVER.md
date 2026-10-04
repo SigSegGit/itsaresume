@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.3
 TITLE: measure the analysis call with a JSON schema (closed skill ids) on the corpus, both models, before any use
-WRITTEN-AT: 2026-09-30
+WRITTEN-AT: 2026-10-04
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -44,7 +44,10 @@ the decisions waiting for him, how to reach his machines — are in
   exactly that list. The listing model (Bionic) finds 84-88 % of the labels
   and dropped whole "Nice to have" lists (2.1c); with the floor of 2.1e,
   92 % (69/75). Sonnet lists 75/75 (100 %), 5-16 s an offer.
-- 290 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- `complete({kind})` marks a call `classify` (router 8.36); none is marked:
+  `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
+  7/14.
+- 399 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 

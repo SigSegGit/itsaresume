@@ -56,8 +56,8 @@
     },
     "Client: a backend name is sent only when asked": {
       "file": "src/llm.js",
-      "live": "const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}) });",
-      "dead": "const body = JSON.stringify({ prompt, system, ...(schema ? { schema } : {}) });",
+      "live": "{ prompt, system, ...(backend ? { backend } : {}),",
+      "dead": "{ prompt, system,",
       "expect": [
         "the client names a backend only when asked (router 8.22)"
       ]
@@ -88,10 +88,26 @@
     },
     "Client: a schema is sent only when asked": {
       "file": "src/llm.js",
-      "live": "const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}) });",
-      "dead": "const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}) });",
+      "live": "...(schema ? { schema } : {}), ...(kind",
+      "dead": "...(kind",
       "expect": [
         "the client sends a schema only when asked (router 8.24)"
+      ]
+    },
+    "Client: a call's kind reaches the router": {
+      "file": "src/llm.js",
+      "live": ", ...(kind ? { kind } : {}) });",
+      "dead": " });",
+      "expect": [
+        "a call marked classify sends its kind; an unmarked call sends none"
+      ]
+    },
+    "Client: a call without a kind sends none": {
+      "file": "src/llm.js",
+      "live": ", ...(kind ? { kind } : {}) });",
+      "dead": ", kind: kind ?? 'generate' });",
+      "expect": [
+        "a call marked classify sends its kind; an unmarked call sends none"
       ]
     }
   }

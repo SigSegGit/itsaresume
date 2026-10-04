@@ -318,6 +318,7 @@ property it proves.
 | the client posts JSON to /v1/complete and surfaces a router refusal | Client: JSON content type; Client: a refusal is an error |
 | the client names a backend only when asked (router 8.22) | Client: a backend name is sent only when asked |
 | the client sends a schema only when asked (router 8.24) | Client: a schema is sent only when asked |
+| a call marked classify sends its kind; an unmarked call sends none | Client: a call's kind reaches the router; Client: a call without a kind sends none |
 | an unreachable router is a clear error | — |
 | itsacv tailor writes the CV, the report and the analysis | Run: the report gets the rendered CV |
 | itsacv tailor flags the instructions of an offer in the report and run.json, and applies none | Instructions: a run finds them in the offer; Instructions: run.json keeps them |
@@ -508,6 +509,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**339 tests, 280 of them covered by at least one sabotage defence.**
+**340 tests, 281 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

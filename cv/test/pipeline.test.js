@@ -156,6 +156,23 @@ test('the client sends a schema only when asked (router 8.24)', async () => {
   }
 });
 
+/** A call that only chooses says so (router M2, 8.34): a classify-only
+ * backend may take it. A call that does not say sends no kind at all. */
+test('a call marked classify sends its kind; an unmarked call sends none', async () => {
+  const { server, seen, url } = await fakeRouter([
+    [200, { backend: 'qwen', text: 'a', attempts: [] }],
+    [200, { backend: 'qwen', text: 'b', attempts: [] }],
+  ]);
+  try {
+    await complete({ url, system: 's', prompt: 'p', kind: 'classify' });
+    await complete({ url, system: 's', prompt: 'p' });
+    assert.deepEqual(seen[0].body, { prompt: 'p', system: 's', kind: 'classify' });
+    assert.deepEqual(seen[1].body, { prompt: 'p', system: 's' });
+  } finally {
+    server.close();
+  }
+});
+
 test('an unreachable router is a clear error', async () => {
   await assert.rejects(complete({ url: 'http://127.0.0.1:9', system: 's', prompt: 'p' }), /itsaresume/);
 });
