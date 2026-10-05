@@ -7,10 +7,11 @@
   "defences": {
     "Intake: an offer holds several offer words": {
       "file": "src/intake.js",
-      "live": "return OFFER_WORDS.filter((word) => words.has(word)).length >= MIN_OFFER_WORDS;",
-      "dead": "return true;",
+      "live": "return [...OFFER_STEMS].filter((word) => stems.has(word)).length >= MIN_OFFER_WORDS;",
+      "dead": "return [...OFFER_STEMS].filter((word) => stems.has(word)).length >= 0;",
       "expect": [
-        "a job offer is accepted; a question, a poem, code or an oversized text is not"
+        "a job offer is accepted; a question, a poem, code or an oversized text is not",
+        "a recruiter message is an offer: plurals, accents and a hiring verb count"
       ]
     },
     "Intake: an offer has an offer size": {
@@ -83,6 +84,14 @@
       "dead": "",
       "expect": [
         "a run keeps its offer and what it did, and reads back as the same result"
+      ]
+    },
+    "Intake: offer words compared by stem, without accents": {
+      "file": "src/intake.js",
+      "live": "const plain = (word) => stem(word).normalize('NFD').replace(/\\p{M}/gu, '');",
+      "dead": "const plain = (word) => word;",
+      "expect": [
+        "a recruiter message is an offer: plurals, accents and a hiring verb count"
       ]
     }
   }

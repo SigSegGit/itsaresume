@@ -33,6 +33,16 @@ test('the page is responsive', () => {
   assert.match(web('style.css'), /@media \(max-width: \d+px\)/);
 });
 
+// 2026-10-05: `.model { display: block }` showed the hidden, empty profile
+// choice on the public page. A class's display must never beat `hidden`.
+test('an element hidden by its attribute stays hidden, whatever its class displays', () => {
+  const css = web('style.css');
+  const hiddenWithClass = [...web('index.html').matchAll(/<\w+[^>]*\sclass="([^"]+)"[^>]*\shidden[\s>]/g)].map((found) => found[1]);
+  assert.ok(hiddenWithClass.includes('model'), 'the profile row is a hidden .model');
+  assert.match(css, /\.model\s*\{[^}]*display:\s*block/, 'and .model sets a display');
+  assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}/);
+});
+
 test('the footer never claims the analysis stays local: it names Claude and the local fallback', () => {
   const foot = web('index.html').match(/<footer[\s\S]*?<\/footer>/)[0];
   assert.ok(!/100\s*%\s*local/i.test(foot), 'claims 100 % local');

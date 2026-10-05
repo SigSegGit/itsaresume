@@ -53,7 +53,7 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 432 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 434 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
@@ -414,6 +414,18 @@ Traps met, each cost time once:
   answers to (a)-(c): an upload, a public choice, retention. `itsacv
   tailor` has no `--profiles` (use `--profile FILE`). Next: 5.1, the
   code-only matrix, now unblocked.
+- [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
+  Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused
+  as "not an offer": `looksLikeOffer` matched words exactly, so "rôle",
+  "techniques", "postes" missed "role", "technique", "poste"; one hit, not
+  four. Offer words are now compared stem to stem, accents removed, and
+  the list holds the hiring verbs (recruter, rejoindre, opportunité,
+  hiring, join). (2) The public page showed an empty "Profil" select:
+  `.model { display: block }` beat the `hidden` attribute; a global
+  `[hidden] { display: none !important; }` now wins. Two tests, two new
+  defences, one rewritten (`intake.json`, `web.json`). Not done on
+  purpose: a visitor's own profile upload on the public page is 4.1's
+  question (a), still the owner's.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).

@@ -11,15 +11,25 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DEFAULT_PROFILE } from './profiles.js';
-import { STOP, wordsOf } from './text.js';
+import { STOP, stem, wordsOf } from './text.js';
 
 /** An offer's size: shorter is a question, longer is not one offer. */
 export const OFFER_CHARS = { min: 200, max: 12_000 };
 
-/** Words nearly every offer uses, French and English; an offer holds several. */
-const OFFER_WORDS = `mission missions poste profil compétences compétence expérience expériences requis recherché recherchée
-  responsabilités contrat cdi cdd freelance télétravail candidat candidate équipe environnement technique
-  role responsibilities requirements required skills experience position team contract remote hybrid`.split(/\s+/);
+/**
+ * Words nearly every offer uses, French and English; an offer holds several.
+ * A recruiter's message (LinkedIn) is an offer too: it hires, it invites to
+ * join. Compared stem to stem without accents, so "postes", "techniques" and
+ * "rôle" count as "poste", "technique" and "role" (2026-10-05).
+ */
+const OFFER_WORDS = `mission poste profil compétence expérience requis recherché responsabilité contrat cdi cdd freelance
+  télétravail candidat équipe environnement technique recruter rejoindre opportunité
+  role responsibility requirement required skill experience position team contract remote hybrid
+  hiring recruiting join opportunity`.split(/\s+/);
+
+/** A word's stem, accents removed: the form offer words are compared in. */
+const plain = (word) => stem(word).normalize('NFD').replace(/\p{M}/gu, '');
+const OFFER_STEMS = new Set(OFFER_WORDS.map(plain));
 
 /** At least this many distinct offer words, and this share of letters in the text. */
 const MIN_OFFER_WORDS = 4;
@@ -31,8 +41,8 @@ export function looksLikeOffer(text) {
   if (clean.length < OFFER_CHARS.min || clean.length > OFFER_CHARS.max) return false;
   const letters = (clean.match(/\p{L}/gu) ?? []).length;
   if (letters / clean.replace(/\s/g, '').length < MIN_LETTERS) return false;
-  const words = new Set(wordsOf(clean));
-  return OFFER_WORDS.filter((word) => words.has(word)).length >= MIN_OFFER_WORDS;
+  const stems = new Set(wordsOf(clean).map(plain));
+  return [...OFFER_STEMS].filter((word) => stems.has(word)).length >= MIN_OFFER_WORDS;
 }
 
 /** The content words of a text, as a set. */
