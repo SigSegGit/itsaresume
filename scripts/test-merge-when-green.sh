@@ -69,4 +69,19 @@ grep -q -- "--match-head-commit bbb222" "$work/merged" 2>/dev/null \
     || fail "the merge did not name the head read before the checks: $(cat "$work/merged" 2>/dev/null)"
 report the_head_is_read_before_the_checks
 
-[ "$failures" -eq 0 ] && echo "merge-when-green: 4 cases pass" || exit 1
+# 5. One workflow, filtered by path (2026-10-06): a job the `changes` job
+#    skipped is not a failure, once `changes` itself passed.
+green; printf 'changes\tpass\t5s\thttps://x\n' >> "$work/checks"
+printf 'cv-sabotage\tskipping\t0\thttps://x\n' >> "$work/checks"; echo ddd444 > "$work/head"; rm -f "$work/merged" "$work/head-after"
+bash "$here/merge-when-green.sh" 7 >/dev/null
+grep -q -- "--match-head-commit ddd444" "$work/merged" 2>/dev/null \
+    || fail "jobs skipped by a passing changes job stopped the merge"
+report a_job_skipped_by_the_changes_job_is_no_failure
+
+# 6. A skip nobody decided (no passing `changes`) is still not green.
+green; printf 'cv-sabotage\tskipping\t0\thttps://x\n' >> "$work/checks"; rm -f "$work/merged"
+bash "$here/merge-when-green.sh" 7 >/dev/null && fail "a skip without a passing changes job was merged"
+[ -f "$work/merged" ] && fail "merged a skip nobody decided"
+report a_skip_without_the_changes_job_stops_the_merge
+
+[ "$failures" -eq 0 ] && echo "merge-when-green: 6 cases pass" || exit 1
