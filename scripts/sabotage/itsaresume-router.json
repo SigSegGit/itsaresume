@@ -1152,6 +1152,22 @@
         "the_contract_answer_has_exactly_the_frozen_keys"
       ]
     },
+    "Contract: an exhausted refusal carries no unfrozen key": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "\"message\": \"every backend failed with a quota or an outage\",",
+      "dead": "\"message\": \"every backend failed with a quota or an outage\", \"retry\": null,",
+      "expect": [
+        "the_contract_freezes_the_keys_of_every_refusal"
+      ]
+    },
+    "Contract: a bad request carries no unfrozen key": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "(status, json!({\"error\": {\"kind\": kind, \"message\": message}}))",
+      "dead": "(status, json!({\"error\": {\"kind\": kind, \"message\": message, \"field\": null}}))",
+      "expect": [
+        "the_contract_freezes_the_keys_of_every_refusal"
+      ]
+    },
     "Journal: a 2xx without content is counted, not quoted": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "\"LM Studio answered {status} without choices[0].message.content ({} characters)\",",

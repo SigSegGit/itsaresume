@@ -7,7 +7,7 @@ import { appendQaLog, withModel } from './qa.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
-import { counted } from './llm.js';
+import { contractProblem, counted } from './llm.js';
 import { loadInvites } from './invites.js';
 import { DEFAULT_PROFILE, listProfiles } from './profiles.js';
 
@@ -20,6 +20,29 @@ function routerUp(url) {
     });
     call.on('timeout', () => call.destroy());
     call.on('error', () => resolve(false));
+    call.end();
+  });
+}
+
+/**
+ * Why the router's /healthz contract is not this client's, or null. A router
+ * that is down, or whose body is not JSON, is not a contract problem: it may
+ * start later, and each answer is checked again (llm.js).
+ */
+function routerContract(url) {
+  return new Promise((resolve) => {
+    const call = request(new URL('/healthz', url), { method: 'GET', timeout: 2000 }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => {
+        let parsed;
+        try { parsed = JSON.parse(body); } catch { parsed = null; }
+        resolve(parsed && typeof parsed === 'object' ? contractProblem(parsed) : null);
+      });
+    });
+    call.on('timeout', () => call.destroy());
+    call.on('error', () => resolve(null));
     call.end();
   });
 }
@@ -49,6 +72,9 @@ async function status({ profilePath, url, useWord }) {
 }
 
 export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null }) {
+  // Router 8.42: another contract major stops the start, before any job.
+  const problem = await routerContract(url);
+  if (problem) throw new Error(problem);
   // 4.1: the owner's profile, and the files of --profiles DIR (read at each use).
   const profiles = () => listProfiles({ profile: profilePath, profilesDir });
   const deps = {

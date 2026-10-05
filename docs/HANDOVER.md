@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.42
-TITLE: The generator checks the router's contract at start, on its /healthz probe
+NEXT: 8.12
+TITLE: Real run in Docker with Claude (waits on Nicolas's token in .env, §10)
 WRITTEN-AT: 2026-10-05
-BASE: 5b2a46b
+BASE: c424dba
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -44,13 +44,9 @@ private notes are in `~/.itsaresume/HANDOVER-prive.md`, never here.
 Trap: `sabotage.py` needs its plan on the repository's drive (`relpath`);
 put a partial plan in `target/`.
 
-**2026-09-30.** 8.16 done on `m1/test-doc-honesty`:
-`scripts/check-testing.py` (CI job with `check-handover.py`) holds every
-TESTING.md row to the sabotage plan's `expect` lists, both ways (it found 25
-gaps, all closed: wrong citations removed, 11 missing rows added). The
-timeout test now proves the child dead: the fake creates a file if it
-outlives its sleep, and the defence that drops `child.kill()` turns it red.
-`check-handover.py`'s BASE check is no longer vacuous (`main` has merges).
+**2026-09-30.** 8.16: `scripts/check-testing.py` holds every TESTING.md row
+to the sabotage plan's `expect` lists, both ways; the timeout test proves
+the child dead.
 
 **2026-09-30.** 8.17: one completion at a time per local backend
 (`max_concurrent`; the wait counts against `timeout_secs`). 8.18: a `base_url` with
@@ -71,7 +67,11 @@ purpose: 2.3 only decides whether the analysis call sends `schema`, a field
 already frozen (#75). Then 8.41: three error texts that could hold model
 text are lengths now; `claude`'s stderr keeps its excerpt (decided, §8).
 Trap: removing an import breaks old `dead` lines that call it; rerun the
-file's old defences. 8.12 stays for the laptop (§10); 8.42 is cloud-doable.
+file's old defences. Then 8.42: `itsacv serve` reads `/healthz` at start
+and stops (exit 4, both versions named) on another major; a router down
+at start is not refused. The 503/400 refusals' key sets are frozen in
+`tests/server.rs`. Only 8.12 is left in §8, and it waits on Nicolas (§10);
+the generator's own next step is cv 2.3 (`cv/docs/HANDOVER.md`).
 
 ## 1. Decisions never to reverse silently
 
@@ -534,7 +534,7 @@ branch with the local gates of §3 green.
   stdout is empty): it is the CLI's own diagnostic (a missing prompt file,
   a broken config), the only clue to why it failed, and nothing seen puts
   model text there; `a_cli_that_prints_nothing_reports_its_stderr` holds it.
-- [ ] **8.42** (Rodin on 8.37) The generator checks the contract at start:
+- [x] **8.42** (2026-10-05, Rodin on 8.37) The generator checks the contract at start:
   `cv/src/serve.js` probes `GET /healthz` (near line 17) and ignores the
   body; read its `contract` with the rule of `cv/src/llm.js`
   (`contractProblem`, export it) and refuse to start, naming both
@@ -594,9 +594,9 @@ branch with the local gates of §3 green.
   router refuses (the billing tripwire, LM Studio's `finish_reason:
   length`) took tokens no journal line reports. Small next to the rest;
   count them if the plan runs out unexplained.
-- **The contract (8.37, Rodin)**: the start-up probe and the other
-  refusals' key sets are 8.42; any server that omits `contract` passes as
-  1.0 (the ADR's stated cost).
+- **The contract (8.37, Rodin)**: any server that omits `contract` passes
+  as 1.0 (the ADR's stated cost), at start (8.42) as on each answer; a
+  router down at start is not refused, its first answer is checked.
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 
 ## 10. Waiting on Nicolas

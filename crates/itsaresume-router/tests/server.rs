@@ -1,7 +1,7 @@
 //! The HTTP endpoint, over real sockets, in front of scripted backends.
 
 use itsaresume_router::server::{DEFAULT_LISTEN, MAX_BODY_BYTES, Server};
-use itsaresume_router::{Backend, BackendError, Completion, Journal, Request, Router, Usage};
+use itsaresume_router::{Backend, BackendError, Completion, Journal, Kind, Request, Router, Usage};
 use serde_json::{Value, json};
 use std::net::SocketAddr;
 use std::thread;
@@ -620,4 +620,57 @@ fn the_contract_stamps_every_answer() {
     assert_eq!(body["contract"], "1.0", "{body}");
 
     assert_eq!(get_body(address, "/healthz")["contract"], "1.0");
+}
+
+/// A backend that serves classifications only, so a generation is unserved.
+struct ClassifyOnly;
+
+impl Backend for ClassifyOnly {
+    fn name(&self) -> &str {
+        "micro"
+    }
+
+    fn serves(&self, kind: Kind) -> bool {
+        kind == Kind::Classify
+    }
+
+    fn complete(&self, _request: &Request) -> Result<Completion, BackendError> {
+        Err(BackendError::Other("never asked".into()))
+    }
+}
+
+/// 8.42 (Rodin on 8.37): the three other refusals are frozen too, key by
+/// key, so a key added to one of them is a contract change, not a detail.
+#[test]
+fn the_contract_freezes_the_keys_of_every_refusal() {
+    let (address, _dir) = start(vec![fails(
+        "lm-studio",
+        BackendError::Unreachable("refused".into()),
+    )]);
+    let (status, body) = post(address, r#"{"prompt": "p"}"#);
+    assert_eq!(status, 503, "{body}");
+    assert_eq!(keys(&body), ["contract", "error"], "{body}");
+    assert_eq!(
+        keys(&body["error"]),
+        ["attempts", "kind", "message"],
+        "{body}"
+    );
+    assert_eq!(body["error"]["kind"], "exhausted", "{body}");
+
+    let (status, body) = post(address, r#"{"prompt": ""}"#);
+    assert_eq!(status, 400, "{body}");
+    assert_eq!(keys(&body), ["contract", "error"], "{body}");
+    assert_eq!(keys(&body["error"]), ["kind", "message"], "{body}");
+    assert_eq!(body["error"]["kind"], "bad_request", "{body}");
+
+    let (address, _dir) = start(vec![Box::new(ClassifyOnly)]);
+    let (status, body) = post(address, r#"{"prompt": "p"}"#);
+    assert_eq!(status, 400, "{body}");
+    assert_eq!(keys(&body), ["contract", "error"], "{body}");
+    assert_eq!(
+        keys(&body["error"]),
+        ["attempts", "kind", "message"],
+        "{body}"
+    );
+    assert_eq!(body["error"]["kind"], "unserved", "{body}");
 }
