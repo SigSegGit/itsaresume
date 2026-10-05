@@ -21,7 +21,25 @@ env:
   RUSTDOCFLAGS: -D warnings
 
 jobs:
+  # One workflow for the router and the generator (2026-10-06, was two):
+  # this job says which group a change needs (scripts/ci-changes.sh); the
+  # other group's jobs are skipped, which the required checks and
+  # scripts/merge-when-green.sh accept once this job passed.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      rust: ${{ steps.diff.outputs.rust }}
+      cv: ${{ steps.diff.outputs.cv }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: diff
+        run: bash scripts/ci-changes.sh "${{ github.event.pull_request.base.sha || github.event.before }}" >> "$GITHUB_OUTPUT"
+
   fmt:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -31,6 +49,8 @@ jobs:
       - run: cargo fmt --all --check
 
   clippy:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -43,6 +63,8 @@ jobs:
   # Windows as well as Linux: the Claude Code backend spawns a process, and
   # the machine it runs on in real life is Windows.
   test:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     name: test (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -57,6 +79,8 @@ jobs:
       - run: cargo test --workspace --doc
 
   doc:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -68,6 +92,8 @@ jobs:
   # removed. Doing this in CI turns "sabotage-verified" from a claim made once
   # into a property checked on every change (docs/TESTING.md).
   sabotage:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -78,6 +104,8 @@ jobs:
   # The image, with the real claude CLI inside: see scripts/docker-smoke.sh
   # for what each check proves.
   docker:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -93,4 +121,69 @@ jobs:
       - run: python3 scripts/check-handover.py
       - run: python3 scripts/check-testing.py
       - run: bash scripts/test-merge-when-green.sh
+      - run: bash scripts/test-ci-changes.sh
       - run: bash cv/deploy/vm-generator/test-auto-deploy.sh
+
+  # The generator (cv/), from the former cv.yml.
+  cv-test:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
+    defaults:
+      run:
+        working-directory: cv
+    name: cv-test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cv/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  cv-catalogue:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
+    defaults:
+      run:
+        working-directory: cv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python scripts/catalogue.py --check
+      # The micro-AI gateway's own logic; no model, no network.
+      - run: python -m unittest -q
+        working-directory: cv/deploy/micro-ai/gateway
+      # tools/esco.py's reading of the ESCO API; no network.
+      - run: python -m unittest discover -q -s tools -p "test_*.py"
+
+  # Break each defence in scripts/sabotage/*.json, check its tests go red,
+  # restore it byte for byte. A test that stays green is decoration.
+  cv-sabotage:
+    needs: changes
+    if: needs.changes.outputs.cv == 'true'
+    defaults:
+      run:
+        working-directory: cv
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cv/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python scripts/sabotage.py

@@ -21,10 +21,10 @@
 set -uo pipefail
 
 PR=${1:-}
-# The jobs in .github/workflows/ci.yml: fmt, clippy, test (ubuntu), test
-# (windows), doc, sabotage, docker, handover; and in cv.yml: cv-test (ubuntu),
-# cv-test (windows), cv-catalogue, cv-sabotage. Change this with the workflows.
-MINIMUM=${2:-12}
+# The jobs in .github/workflows/ci.yml: changes, fmt, clippy, test (ubuntu),
+# test (windows), doc, sabotage, docker, handover, cv-test (ubuntu), cv-test
+# (windows), cv-catalogue, cv-sabotage. Change this with the workflow.
+MINIMUM=${2:-13}
 
 [ -n "$PR" ] || { echo "usage: merge-when-green.sh <pr-number> [minimum-checks]"; exit 2; }
 
@@ -43,6 +43,11 @@ fi
 
 total=$(printf '%s\n' "$checks" | grep -c .)
 passing=$(printf '%s\n' "$checks" | grep -c $'\tpass\t')
+# One workflow, filtered by path (2026-10-06): a job the `changes` job
+# skipped did not need to run. A skip counts only when `changes` passed.
+if printf '%s\n' "$checks" | grep -q $'^changes\tpass\t'; then
+    passing=$((passing + $(printf '%s\n' "$checks" | grep -c $'\tskipping\t')))
+fi
 
 if [ "$total" -lt "$MINIMUM" ]; then
     echo "PR $PR: only $total checks are reporting, and the suite has $MINIMUM."

@@ -1,0 +1,57 @@
+{
+  "command": [
+    "bash",
+    "scripts/test-ci-changes.sh"
+  ],
+  "defences": {
+    "CI changes: the generator is cv/": {
+      "file": "scripts/ci-changes.sh",
+      "live": "        cv/*) cv=true ;;",
+      "dead": "        cv/*) rust=true ;;",
+      "expect": [
+        "a_cv_change_runs_only_cv"
+      ]
+    },
+    "CI changes: docs run neither group": {
+      "file": "scripts/ci-changes.sh",
+      "live": "        docs/*|*.md) ;;",
+      "dead": "        docs/*|*.md) rust=true ;;",
+      "expect": [
+        "a_docs_change_runs_neither"
+      ]
+    },
+    "CI changes: a workflow change runs both": {
+      "file": "scripts/ci-changes.sh",
+      "live": "        .github/workflows/*) both ;;",
+      "dead": "        .github/workflows/*) ;;",
+      "expect": [
+        "a_workflow_change_runs_both"
+      ]
+    },
+    "CI changes: a base git cannot diff runs both": {
+      "file": "scripts/ci-changes.sh",
+      "live": "files=$(git diff --name-only \"$base\"...HEAD 2>/dev/null) || both",
+      "dead": "files=$(git diff --name-only \"$base\"...HEAD 2>/dev/null) || true",
+      "expect": [
+        "a_new_branch_runs_both",
+        "a_base_git_cannot_diff_runs_both"
+      ]
+    },
+    "CI changes: an empty base runs both": {
+      "file": "scripts/ci-changes.sh",
+      "live": "[ -n \"$base\" ] || both",
+      "dead": "true",
+      "expect": [
+        "an_unknown_base_runs_both"
+      ]
+    },
+    "CI changes: the rest is the router": {
+      "file": "scripts/ci-changes.sh",
+      "live": "        *) rust=true ;;",
+      "dead": "        *) ;;",
+      "expect": [
+        "a_crate_change_runs_only_rust"
+      ]
+    }
+  }
+}
