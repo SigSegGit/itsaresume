@@ -1,5 +1,8 @@
 /* itsaresume — local page. System fonts only (the CSP allows nothing else). */
 
+/* `hidden` wins over any class's display (the public page showed an empty profile row). */
+[hidden] { display: none !important; }
+
 :root {
   --bg: #f5f7fb;
   --surface: #ffffff;
