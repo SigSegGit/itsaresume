@@ -457,6 +457,17 @@ Traps met, each cost time once:
   seen: "portable éteint ou hors ligne". 8 tests, 10 defences
   (`models.json`, `runtime.json`; watcher ones verified under WSL and in
   CI, POSIX fakes).
+- [x] **2.20** (2026-10-06, seen live) **One tunnel at a time.** Four
+  `bionic-tunnel.sh` ran at once (session tasks whose shells were stopped,
+  not their scripts; an orphan `ssh` kept the forward): each round freed
+  the VM's ports (`fuser -k`, which works since `psmisc` was installed on
+  the VM), cutting the others and restarting Bionic, and the owner's local
+  jobs failed "Peer disconnected". The tunnel now writes
+  `~/.itsaresume/bionic-tunnel.pid` (the watcher's file) and a second one
+  leaves at once while the first is alive. The laptop runs the scripts
+  from `~/.itsaresume/bin/` (a copy), never from the checkout: a branch
+  switch once removed the running watcher's file. 1 test, 1 defence
+  (`runtime.json`, verified under WSL).
 - [x] **2.21** (2026-10-06, the owner: "two visitors on my local model?")
   Two lanes in `src/server.js`, Claude (and auto) and the local model,
   each one job at a time: a Claude job never waits behind a slow local one
