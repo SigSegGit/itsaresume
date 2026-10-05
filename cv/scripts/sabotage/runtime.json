@@ -304,6 +304,14 @@
       "expect": [
         "a wake request with a tunnel already open starts Bionic, not a second tunnel"
       ]
+    },
+    "Tunnel: a second tunnel leaves while the first is alive": {
+      "file": "deploy/laptop/bionic-tunnel.sh",
+      "live": "if [ -f \"$pidfile\" ] && [ \"$(cat \"$pidfile\")\" != \"$$\" ] && kill -0 \"$(cat \"$pidfile\")\" 2>/dev/null; then",
+      "dead": "if false; then",
+      "expect": [
+        "a second tunnel leaves at once while the first is alive"
+      ]
     }
   }
 }

@@ -15,6 +15,16 @@ settings=${ITSACV_PUBLIC_ENV:-$HOME/.itsaresume/public.env}
 # shellcheck disable=SC1090
 . "$settings"
 : "${VM_SSH:?}" "${VM_KEY:?}"
+# One tunnel at a time (8.45): each round frees the VM's ports, so a second
+# tunnel would cut the first at every round. The watcher writes this file
+# when it starts a tunnel; a tunnel started by hand writes it here.
+pidfile=${ITSACV_TUNNEL_PIDFILE:-$HOME/.itsaresume/bionic-tunnel.pid}
+if [ -f "$pidfile" ] && [ "$(cat "$pidfile")" != "$$" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; then
+  echo "bionic-tunnel: already running (pid $(cat "$pidfile")); leaving" >&2
+  exit 0
+fi
+mkdir -p "$(dirname "$pidfile")"
+echo "$$" > "$pidfile"
 rounds=${ITSACV_TUNNEL_ROUNDS:-0}   # 0: forever (tests set a count)
 pause=${ITSACV_TUNNEL_PAUSE:-15}
 round=0
