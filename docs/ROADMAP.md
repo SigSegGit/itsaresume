@@ -15,7 +15,7 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
 | **M0** | Scaffold | Workspace, docs, CI and guard scripts exist before any feature | CI green on the scaffold PR; `check-handover.py` passes | ✅ merged (PR #1) |
 | **M1** | MVP router in Docker | A prompt sent over HTTP to a container goes to Claude Code (subscription), falls back to LM Studio on quota or outage, and every request leaves one journal line | Every M1 step of HANDOVER §8 ticked, merged, CI green (image build included); all fallback/error tests sabotage-verified in CI; one real answer from LM Studio through the container | ✅ merged (PR #1, #2); hardened through 8.30 (2026-09-30): one completion at a time per local backend, no userinfo in a `base_url`, a private Claude working directory, an overage tripwire; 91 defences verified on Linux (CI and WSL). Only 8.12's Claude half waits (⏸ the owner's `claude setup-token`) |
 | **M2** | Micro-model | A small model on the Pi or the Freebox VM takes **classification** requests only | The router refuses to send a generation request to it, proved by a sabotage-verified test | 🟨 the criterion is proved in the router (8.34: request `kind`, backend `serves`, sabotage-verified); the generator sends `kind` (8.36) but marks no call yet: measured, the local model already loses on the split (7/14 against 14/14) and the listing (69/75 against 75/75); the runtime and model on the Pi or VM are not chosen yet |
-| **M3** | CV integration | The Node.js CV generator calls the M1 HTTP endpoint; the contract is versioned and frozen | The Node project runs one end-to-end CV through it on Nicolas's machines | 🟨 end-to-end CVs run through it (Claude, and the local model alone: 239 s); a request may name its backend (8.22) and carry a JSON schema (8.24); the contract is not frozen yet |
+| **M3** | CV integration | The Node.js CV generator calls the M1 HTTP endpoint; the contract is versioned and frozen | The Node project runs one end-to-end CV through it on Nicolas's machines | 🟨 end-to-end CVs run through it (Claude, and the local model alone: 239 s); a request may name its backend (8.22) and carry a JSON schema (8.24); the contract is frozen at 1.0 with tests on both sides (8.37) |
 | **M4** | Plan observability | Nicolas can see whether his Pro/Max plan carries the load | A report answers "what share of today's requests did Claude answer, and when did it run out" from the journal alone | ✅ `itsaresume stats` (8.30) and `stats --by-day` (8.33): per day, who answered and the time of the first quota hit, from the journal alone (the `rate_limit` Claude reports rides in it since 8.32) |
 
 ### M1 — what it contains
@@ -54,8 +54,9 @@ Markers: ✅ done and proved by a named test · 🟨 in progress · ⬜ not star
   (the router never builds a document), already calls `POST /v1/complete`.
 - Next: the analysis call's schema (a closed list of skill ids), sent only
   if measured not to cost recall or verdicts (the listing's schema cost the
-  local model recall: 61-66/75 against 68-70/75, so it stays opt-in); then
-  the contract frozen with a version and contract tests on both sides.
+  local model recall: 61-66/75 against 68-70/75, so it stays opt-in). It
+  needs no new field: the contract, frozen at 1.0 (8.37), already carries
+  `schema`.
 
 ### M4 — what it will need
 

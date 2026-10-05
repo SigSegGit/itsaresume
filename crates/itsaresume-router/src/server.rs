@@ -3,6 +3,7 @@
 //! `POST /v1/complete` `{"prompt": "…", "system": "…"}` → 200 with the text,
 //! 502 when a backend stopped the request, 503 when every backend failed with
 //! a fallback kind; `GET /healthz` → 200 (docs/ARCHITECTURE.md, HTTP endpoint).
+//! Every answer carries `"contract"`: [`CONTRACT`].
 
 use crate::backend::{Kind, Request as Inference};
 use crate::router::{Attempt, RouteError, Router};
@@ -16,6 +17,12 @@ use tiny_http::{Header, Method, Response};
 /// Where `serve` listens unless told otherwise: loopback only, because the
 /// endpoint has no authentication and spends Nicolas's plan.
 pub const DEFAULT_LISTEN: &str = "127.0.0.1:8787";
+
+/// The version of the contract with the generator, in every answer as
+/// `"contract"` (docs/ARCHITECTURE.md, Contract with the generator). The
+/// major changes when a field is removed, renamed or changes meaning; the
+/// minor when an optional field is added.
+pub const CONTRACT: &str = "1.0";
 
 /// The largest request body accepted, in bytes.
 pub const MAX_BODY_BYTES: usize = 1024 * 1024;
@@ -81,13 +88,19 @@ fn respond(router: &Router, running: &AtomicUsize, mut request: tiny_http::Reque
         return refuse_unread(request);
     }
     let (status, body) = route(router, running, &mut request);
-    let header = Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..])
-        .expect("a constant, valid header");
-    let response = Response::from_string(body.to_string())
-        .with_status_code(status)
-        .with_header(header);
+    let response = answer(status, body);
     // The client may have gone away; there is nobody left to tell.
     let _ = request.respond(response);
+}
+
+/// Every answer, stamped with the contract it speaks (8.37).
+fn answer(status: u16, mut body: Value) -> Response<std::io::Cursor<Vec<u8>>> {
+    body["contract"] = json!(CONTRACT);
+    let header = Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..])
+        .expect("a constant, valid header");
+    Response::from_string(body.to_string())
+        .with_status_code(status)
+        .with_header(header)
 }
 
 /// Answer 413 without ever dropping the unread body: tiny_http drains it on
@@ -96,11 +109,7 @@ fn respond(router: &Router, running: &AtomicUsize, mut request: tiny_http::Reque
 /// leaked on purpose (one socket per such request, on a loopback endpoint).
 fn refuse_unread(request: tiny_http::Request) {
     let (status, body) = too_large();
-    let header = Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..])
-        .expect("a constant, valid header");
-    let response = Response::from_string(body.to_string())
-        .with_status_code(status)
-        .with_header(header);
+    let response = answer(status, body);
     std::mem::forget(request.upgrade("close", response));
 }
 

@@ -21,6 +21,21 @@ function attemptsOf(error) {
   return said.length ? ` (${said.join('; ')})` : '';
 }
 
+/** The major of the router contract this client speaks (router 8.37). */
+export const CONTRACT_MAJOR = 1;
+
+/**
+ * Why an answer's contract is not this client's, or null. No `contract` key
+ * is a router older than the field: its answer is contract 1.0 by
+ * construction (ADR in the router's docs/ARCHITECTURE.md, Contract).
+ */
+function contractProblem(parsed) {
+  if (!('contract' in parsed)) return null;
+  const major = typeof parsed.contract === 'string' ? /^(\d+)\.\d+$/.exec(parsed.contract)?.[1] : undefined;
+  if (major !== undefined && Number(major) === CONTRACT_MAJOR) return null;
+  return `itsaresume speaks contract ${String(parsed.contract).slice(0, 20)}; this client speaks contract ${CONTRACT_MAJOR}.x`;
+}
+
 export function complete({ url, system, prompt, backend, schema, kind, timeoutMs = TIMEOUT_MS }) {
   const target = new URL(`${url.replace(/\/$/, '')}/v1/complete`);
   // A named backend is tried alone by the router (8.22): a measure per model.
@@ -53,7 +68,10 @@ export function complete({ url, system, prompt, backend, schema, kind, timeoutMs
           } catch {
             // an unreadable body is reported below with the status
           }
-          if (response.statusCode < 200 || response.statusCode >= 300) {
+          // Before anything else is read: another major may mean other fields.
+          const problem = parsed && typeof parsed === 'object' ? contractProblem(parsed) : null;
+          if (problem) reject(new Error(problem));
+          else if (response.statusCode < 200 || response.statusCode >= 300) {
             const reason = parsed.error?.message ?? raw.slice(0, 200);
             reject(new Error(`itsaresume answered ${response.statusCode}: ${reason}${attemptsOf(parsed.error)}`));
           } else {

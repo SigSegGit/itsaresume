@@ -199,11 +199,55 @@ usage error, 3 stopped (`Other`), 4 exhausted.
 | same, a backend returned `Other` | 502 `{"error": {"kind": "stopped", "backend", "message"}}` |
 | same, every backend failed with a fallback kind | 503 `{"error": {"kind": "exhausted", "attempts"}}` |
 | malformed body | 400 |
-| `GET /healthz` | 200 |
+| `GET /healthz` | 200 `{"status": "ok"}` |
+
+Every answer, refusals and `/healthz` included, also carries
+`"contract": "1.0"` (next section).
 
 There is no authentication: whoever reaches the port spends Nicolas's plan.
 It binds to `127.0.0.1` unless told otherwise, and the compose file publishes
 it on the host's loopback only.
+
+## Contract with the generator ✅
+
+Frozen at **1.0** (8.37, 2026-10-05); `server::CONTRACT` holds the version.
+These fields, and only these, make the contract:
+
+| Where | Field | Type | Meaning |
+|---|---|---|---|
+| request | `prompt` | string, not blank | the user turn (required) |
+| request | `system` | string | the system prompt |
+| request | `backend` | string | try this configured backend alone (8.22) |
+| request | `schema` | JSON Schema object | ask for structured output (8.24) |
+| request | `kind` | `"generate"` (default) or `"classify"` | which backends may take it (8.34) |
+| every answer | `contract` | `"MAJOR.MINOR"` | the contract the router speaks |
+| 200 | `text` | string | the answer |
+| 200 | `backend` | string | the backend that answered |
+| 200 | `attempts` | array of `{backend, kind, message}` | the backends that failed first |
+| 200 | `usage` | `{input, output, cache_read, cache_creation}`, optional | tokens, when the backend reported them (8.39) |
+| refusal | `error.kind` | string | `stopped`, `exhausted`, `unserved`, `bad_request`, `too_large`, `busy`, … |
+| refusal | `error.message` | string | why, for a human |
+| refusal | `error.backend` | string, `stopped` only | the backend that stopped it |
+| refusal | `error.attempts` | array, `stopped`/`exhausted`/`unserved` | as on 200 |
+| any | `journal_error` | string, optional | the answer stands, its journal line was not written |
+
+A new optional field bumps the minor; removing, renaming or changing the
+meaning of a field bumps the major. `tests/server.rs` holds the answer to
+exactly this key set; `cv/test/client.test.js` holds the client to the
+major.
+
+**ADR — an answer without `contract`** (2026-10-05). *Context.* The
+generator on the VM and the router on the laptop are deployed apart, so a
+1.x client can meet a router built before the field. *Decision.* The client
+(`cv/src/llm.js`, `CONTRACT_MAJOR`) reads an answer without `contract` as
+contract 1.0, refuses any other major or a malformed version before reading
+the answer (the error names both), and accepts any 1.x minor.
+*Consequences.* A router older than the field keeps working: its answers
+are 1.0 by construction (this freeze wrote down the fields it already sent).
+A future major is never misread, because every router that has the field
+sends it. The cost: a server that is not itsaresume at all and omits the
+field is read as 1.0; it is caught by the existing checks (no `text` →
+error).
 
 ## Docker ✅
 
