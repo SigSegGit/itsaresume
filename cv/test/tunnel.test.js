@@ -21,7 +21,7 @@ test('the tunnel starts Bionic\'s server before each round', { skip: process.pla
   }
   writeFileSync(join(dir, 'public.env'), `VM_SSH=vm\nVM_KEY=key\nBIONIC_LMS=${join(dir, 'lms')}\n`);
   const run = spawnSync('bash', [script], {
-    env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, ITSACV_PUBLIC_ENV: join(dir, 'public.env'), ITSACV_TUNNEL_ROUNDS: '2', ITSACV_TUNNEL_PAUSE: '0' },
+    env: { ...process.env, PATH: `${dir}:${process.env.PATH}`, ITSACV_PUBLIC_ENV: join(dir, 'public.env'), ITSACV_TUNNEL_ROUNDS: '2', ITSACV_TUNNEL_PAUSE: '0', ITSACV_TUNNEL_PIDFILE: join(dir, 'tunnel.pid') },
     encoding: 'utf8',
     timeout: 10000,
   });
