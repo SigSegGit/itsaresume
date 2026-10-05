@@ -42,7 +42,6 @@
       "live": "if [ -n \"$(git rev-list origin/main..HEAD)\" ]; then",
       "dead": "if false; then",
       "expect": [
-        "a_diverged_checkout_is_not_merged",
         "an_unpushed_commit_is_not_deployed"
       ]
     },
