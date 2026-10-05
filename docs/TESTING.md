@@ -153,6 +153,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_request_may_name_its_backend` | `tests/server.rs` | `"backend"` picks the one backend; unknown is 400 listing the names; a non-string is 400 | Named backend: only that one is tried; Named backend: found by its name; Server: the request's backend is read |
 | `a_schema_must_be_an_object` | `tests/server.rs` | `"schema"` that is not an object is 400; an object is served | Schema: the endpoint refuses a non-object |
 | `the_schema_reaches_the_backend` | `tests/server.rs` | The endpoint passes the schema to the backend, and none when absent | Schema: the endpoint passes it on |
+| `the_contract_answer_has_exactly_the_frozen_keys` | `tests/server.rs` | 8.37: a request with every contract field is served, and the 200 answer has exactly the frozen keys, `contract` "1.0" | Contract: every answer is stamped; Contract: a completion carries no unfrozen key |
+| `the_contract_stamps_every_answer` | `tests/server.rs` | 8.37: a 502, a 400 and `/healthz` carry `contract` "1.0"; a stop has exactly `contract` and `error` | Contract: every answer is stamped |
 | `a_request_kind_is_generate_or_classify` | `tests/server.rs` | `"kind"` is `generate` or `classify`; anything else is 400 | M2: the endpoint reads the kind |
 | `an_oversized_request_is_413` | `tests/server.rs` | A body over 1 MiB is 413 | Server: oversized is 413 |
 | `health_and_unknown_paths` | `tests/server.rs` | `/healthz` 200, unknown path 404, wrong method 405 | — |

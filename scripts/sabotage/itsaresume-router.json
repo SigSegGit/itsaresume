@@ -1134,6 +1134,23 @@
       "expect": [
         "the_journal_by_day_sums_the_tokens_per_backend"
       ]
+    },
+    "Contract: every answer is stamped": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "    body[\"contract\"] = json!(CONTRACT);",
+      "dead": "    let _ = (&mut body, CONTRACT);",
+      "expect": [
+        "the_contract_answer_has_exactly_the_frozen_keys",
+        "the_contract_stamps_every_answer"
+      ]
+    },
+    "Contract: a completion carries no unfrozen key": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "json!({\"backend\": answer.backend, \"text\": answer.text, \"attempts\": attempts});",
+      "dead": "json!({\"backend\": answer.backend, \"text\": answer.text, \"attempts\": attempts, \"model\": null});",
+      "expect": [
+        "the_contract_answer_has_exactly_the_frozen_keys"
+      ]
     }
   }
 }

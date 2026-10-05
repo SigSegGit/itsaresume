@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.37
-TITLE: Freeze the generator/router contract: a version and contract tests on both sides
-WRITTEN-AT: 2026-10-04
-BASE: 7ee1e41
+NEXT: 8.41
+TITLE: The journal keeps lengths, not excerpts, of the four error texts still quoted
+WRITTEN-AT: 2026-10-05
+BASE: 458882d
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -59,19 +59,17 @@ the head it counted (`--match-head-commit`), tested with a fake `gh`.
 8.20: the Claude workdir is a private directory of ours, not a link (Unix
 tests, verified under WSL: `cargo` is installed there).
 
-**2026-10-04.** 8.34-8.36 (`kind`, `serves`; no call marked `classify`:
-the local model already loses quality on both calls that only choose).
-Same day, asked by the owner (branch `router/token-usage`): tokens traced,
-Claude and local apart, in the journal and `stats` (8.38, by day 8.40), in the HTTP
-answer (8.39), per job in the generator's QA log (cv 2.13); a public job
-readable by its own visitor only (cv 2.14); favicon and link preview (cv
-2.15); another profile and matchmaking written as cv 4.x and 5.x
-(merged, #69). Then invitation links per ESN with `invite --usage` (cv
-2.16, PR #70) and a profile per job (cv 4.1, `cv/profile-per-job`, on top
-of #70). Done in
-a cloud session (Linux, no Claude, no Bionic): nothing measured on a real
-call; the token counts are read from the observed fixtures. Next: M3's
-frozen contract (8.37), after cv 2.3 (needs the laptop's models).
+**2026-10-04.** 8.34-8.36 (`kind`; no call marked `classify`), tokens in
+the journal, `stats` and the HTTP answer (8.38-8.40, #69); cv 2.13-2.16,
+4.1, 3.5 and a red-team round in `cv/` (#70-#74). Cloud sessions: nothing
+measured on a real call.
+
+**2026-10-05.** 8.37: the contract is frozen at 1.0 (`server::CONTRACT`,
+in every answer; fields and ADR in ARCHITECTURE.md); the client refuses
+another major and reads no `contract` as 1.0. Done before cv 2.3 on
+purpose: 2.3 only decides whether the analysis call sends `schema`, a field
+already frozen. 8.12 is left for the laptop (the Docker token, §10); the
+next cloud-doable step is 8.41.
 
 ## 1. Decisions never to reverse silently
 
@@ -479,7 +477,7 @@ branch with the local gates of §3 green.
   marked `classify` yet**: a small model, weaker than the local one, would
   lose more. Mark a call only when a candidate small model measures equal
   to Sonnet on its `measure-*` script (`--backend <name>` alone).
-- [ ] **8.37** M3's exit: freeze the contract between `cv/` and the
+- [x] **8.37** (2026-10-05) M3's exit: freeze the contract between `cv/` and the
   router. After cv 2.3 (the analysis schema measured, whatever it
   decides). A `contract` version the router returns in every answer of
   `POST /v1/complete` (and `GET /health`); the request fields
@@ -491,6 +489,11 @@ branch with the local gates of §3 green.
   (clear error naming both), and accepts one without `contract` only from
   a router older than the field (decide and write which, in ADR form).
   The answer's optional `usage` (8.39) is part of the frozen set.
+  **Done:** `"contract": "1.0"` on every answer (refusals, `/healthz`,
+  the unread 413); two router tests, two client tests, six defences.
+  Decided (ADR, ARCHITECTURE.md): no `contract` is read as 1.0, any 1.x
+  minor is accepted. Not done: the client does not send its own version
+  (the router would have nothing to do with it today).
 - [x] **8.38** (2026-10-04, asked by the owner: tokens traced on the
   server, Claude and the local model apart) `Completion` and `Answer` gain
   `usage: Option<Usage>` (`input`, `output`, `cache_read`,
@@ -508,6 +511,19 @@ branch with the local gates of §3 green.
   tokens read and written (`; tokens claude-code 14119 read 200 written,
   …`), so the day the plan ran out says what it went on. One test, three
   defences.
+- [ ] **8.41** (from §9, red team 2026-10-01) The journal writes a length,
+  never an excerpt, for the four error texts still quoted: LM Studio's
+  "without choices[0].message.content" (`src/lm_studio.rs`, the
+  `excerpt(body, 160)` near line 210) and the HTTP body with no
+  `error.message` (`excerpt(body, 160)` near line 218); Claude's "result
+  message is not understood" (`src/claude_code.rs` near 147) and the
+  stderr excerpt (near 412). Decide first whether the HTTP answer keeps the
+  excerpt (the caller sees it, the journal does not) or both take the
+  length: grep `excerpt(` and `Journal` to see where the message is
+  written. Red tests in `tests/journal.rs` / `tests/lm_studio.rs`: a body
+  holding a marker sentence never reaches the journal line, its length
+  does. One defence per site (re-insert the excerpt). Then remove the item
+  from §9.
 
 ## 9. Deliberately open
 
@@ -558,8 +574,12 @@ branch with the local gates of §3 green.
   router refuses (the billing tripwire, LM Studio's `finish_reason:
   length`) took tokens no journal line reports. Small next to the rest;
   count them if the plan runs out unexplained.
+- **The contract (8.37, Rodin)**: the generator's start-up `/healthz`
+  probe (`cv/src/serve.js`) does not read `contract`, so a mismatch shows
+  on the first job, not at start; the exact key set is held for 200 and
+  502 only (503 `exhausted`, `unserved`, 400 are not); any server that
+  omits `contract` passes as 1.0 (the ADR's stated cost).
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
-- **Contract with the Node.js generator** — M3.
 
 ## 10. Waiting on Nicolas
 

@@ -48,10 +48,12 @@ the decisions waiting for him, how to reach his machines — are in
   (2.13); a public job readable by its own visitor only (2.14); favicon
   and link preview (2.15). Later, written as steps: another profile (4.x),
   matchmaking (5.x).
+- The router contract is frozen at 1.0 (router 8.37): `src/llm.js`
+  refuses another major, reads no `contract` as 1.0.
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 430 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 432 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 

@@ -164,3 +164,45 @@ test('a backend name that is no plain id is counted as "?", and never touches a 
   assert.deepEqual(Object.keys(tokens), ['?']);
   assert.equal(tokens['?'].input, 3);
 });
+
+// Router 8.37: the contract is frozen at 1.x; a router speaking another major
+// is refused before its answer is read (docs/ARCHITECTURE.md, Contract).
+test("an answer whose contract major is not the client's is refused, naming both", async () => {
+  const answers = [
+    [200, { contract: '2.0', backend: 'claude-code', text: 'a', attempts: [] }],
+    [502, { contract: '2.0', error: { kind: 'stopped', message: 'm' } }],
+    [200, { contract: 1, backend: 'claude-code', text: 'a', attempts: [] }],
+  ];
+  const { server, url } = await router((request, response) => {
+    const [status, body] = answers.shift();
+    response.writeHead(status, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(body));
+  });
+  try {
+    for (const spoken of ['2.0', '2.0', '1']) {
+      await assert.rejects(complete({ url, system: 's', prompt: 'p' }), (error) => {
+        assert.match(error.message, new RegExp(`contract ${spoken.replace('.', '\\.')}\\b`));
+        assert.match(error.message, /speaks contract 1\.x/);
+        return true;
+      });
+    }
+  } finally {
+    stop(server);
+  }
+});
+
+// ADR in docs/ARCHITECTURE.md (router, Contract): no `contract` key means a
+// router older than the field, whose answer is contract 1.0 by construction.
+test('an answer without contract, or with a newer minor, is read as contract 1', async () => {
+  const bodies = [{ backend: 'lm-studio', text: 'a', attempts: [] }, { contract: '1.3', backend: 'lm-studio', text: 'b', attempts: [] }];
+  const { server, url } = await router((request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(bodies.shift()));
+  });
+  try {
+    assert.equal((await complete({ url, system: 's', prompt: 'p' })).text, 'a');
+    assert.equal((await complete({ url, system: 's', prompt: 'p' })).text, 'b');
+  } finally {
+    stop(server);
+  }
+});

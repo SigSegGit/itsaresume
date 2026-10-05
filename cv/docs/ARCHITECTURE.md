@@ -267,7 +267,9 @@ with its terms (ADR-7's residual, unchanged).
 ### ADR-8 — The model is behind one HTTP contract
 
 `src/llm.js` is the generator's only model client: `POST {system, prompt}`
-to the router, `{text, backend}` back. Which model answers is the router's
+to the router, `{text, backend}` back. The contract is frozen at 1.0 (router
+8.37, its `docs/ARCHITECTURE.md`): the client refuses an answer of another
+major, and reads one without `contract` as a router older than the field. Which model answers is the router's
 configuration (`*.local.toml`): Claude Code on the subscription, or any
 OpenAI-compatible server by `base_url` — the laptop's Bionic, or a model on
 another machine of the network that the VM could reach if the router ran
