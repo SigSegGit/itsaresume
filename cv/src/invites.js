@@ -3,7 +3,7 @@
 // codes live in <out>/invites.json, readable by the owner alone; the server
 // reads the file at each use, so a revocation needs no restart.
 
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -17,11 +17,15 @@ export function loadInvites(out) {
   return JSON.parse(readFileSync(file, 'utf8'));
 }
 
-// Written whole then renamed, 0600: a reader never sees half a file.
+// Written whole then renamed, 0600: a reader never sees half a file. The
+// temporary name is fresh, and its mode set explicitly: a stale file of the
+// same name would keep its own mode through the rename (redteam).
 function save(out, invites) {
   const file = join(out, INVITES_FILE);
-  writeFileSync(`${file}.tmp`, `${JSON.stringify(invites, null, 2)}\n`, { mode: 0o600 });
-  renameSync(`${file}.tmp`, file);
+  const temporary = `${file}.${randomBytes(6).toString('hex')}.tmp`;
+  writeFileSync(temporary, `${JSON.stringify(invites, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
+  chmodSync(temporary, 0o600);
+  renameSync(temporary, file);
 }
 
 /** A new invitation for `label`; returns its code. */
@@ -32,6 +36,10 @@ export function createInvite(out, label) {
     throw new Error(`an invitation label is 1 to ${LABEL_MAX} characters on one line`);
   }
   const invites = loadInvites(out);
+  // One live invitation per label, so --usage and --revoke name one ESN.
+  if (Object.values(invites).some((invite) => invite.label === clean && !invite.revoked)) {
+    throw new Error(`an invitation "${clean}" is already live: revoke it first, or choose another label`);
+  }
   const code = randomBytes(12).toString('hex');
   invites[code] = { label: clean };
   save(out, invites);

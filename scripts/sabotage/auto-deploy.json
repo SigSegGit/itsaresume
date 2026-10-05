@@ -20,14 +20,6 @@
         "local_changes_stop_the_deploy"
       ]
     },
-    "Auto-deploy: fast-forward only": {
-      "file": "cv/deploy/vm-generator/auto-deploy.sh",
-      "live": "if ! git merge --ff-only --quiet origin/main 2>/dev/null; then",
-      "dead": "if ! git merge --quiet --no-edit origin/main 2>/dev/null; then",
-      "expect": [
-        "a_diverged_checkout_is_not_merged"
-      ]
-    },
     "Auto-deploy: a new commit is deployed": {
       "file": "cv/deploy/vm-generator/auto-deploy.sh",
       "live": "if [ \"$(cat \"$state\" 2>/dev/null)\" = \"$head\" ]; then",
@@ -43,6 +35,22 @@
       "dead": "docker compose -f \"$compose\" up -d --build || true\n",
       "expect": [
         "a_failed_build_is_retried"
+      ]
+    },
+    "Auto-deploy: a commit origin lacks is never built": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if [ -n \"$(git rev-list origin/main..HEAD)\" ]; then",
+      "dead": "if false; then",
+      "expect": [
+        "an_unpushed_commit_is_not_deployed"
+      ]
+    },
+    "Auto-deploy: a busy generator defers it": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if printf '%s' \"$status\" | grep -Eq '\"busy\":[1-9]'; then",
+      "dead": "if false; then",
+      "expect": [
+        "a_busy_generator_defers_the_deploy"
       ]
     }
   }

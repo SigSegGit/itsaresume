@@ -176,5 +176,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `nothing_new_deploys_nothing` | `cv/deploy/vm-generator/test-auto-deploy.sh` | Nothing new since the last deploy: docker is not called | — |
 | `a_failed_build_is_retried` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A failed compose is an error and is not recorded: the next run builds again | Auto-deploy: a new commit is deployed; Auto-deploy: a failed build is not recorded as deployed |
 | `local_changes_stop_the_deploy` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A local edit on the VM, even in a file origin did not touch: refused, kept, no docker | Auto-deploy: local changes stop it |
-| `a_diverged_checkout_is_not_merged` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A local commit origin does not have: never merged, no docker | Auto-deploy: fast-forward only |
+| `a_diverged_checkout_is_not_merged` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A local commit origin does not have: never merged, no docker (held twice: the ahead check and `--ff-only`, so no single sabotage turns it red) | — |
+| `an_unpushed_commit_is_not_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | Redteam: a local commit and nothing new upstream (a fast-forward that succeeds as a no-op): never built | Auto-deploy: a commit origin lacks is never built |
+| `a_busy_generator_defers_the_deploy` | `cv/deploy/vm-generator/test-auto-deploy.sh` | Redteam: the generator's status says `busy` > 0: the deploy waits (exit 0, no docker); idle, it deploys | Auto-deploy: a busy generator defers it |
 | `another_branch_is_not_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A checkout on another branch than main: refused | Auto-deploy: main only |

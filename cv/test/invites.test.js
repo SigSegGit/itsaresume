@@ -87,3 +87,21 @@ test('itsacv invite --usage reads the QA log of --out', () => {
   assert.equal(shown.status, 0, shown.stderr);
   assert.equal(shown.stdout, 'Alten\t1 job\tno tokens\n');
 });
+
+// redteam: two ESNs with one label merged in --usage, and --revoke of the
+// label ended both. A live label is unique; a revoked one may be reused.
+test('a live label is unique: a second invitation with it is refused until the first is revoked', () => {
+  const out = fresh();
+  createInvite(out, 'Alten');
+  assert.throws(() => createInvite(out, 'Alten'), /already/);
+  revokeInvite(out, 'Alten');
+  assert.match(createInvite(out, 'Alten'), /^[0-9a-f]{24}$/);
+});
+
+// redteam: a fixed .tmp name kept a stale file's mode through the rename.
+test('invites.json is 0600 even over a stale world-readable temporary file', { skip: process.platform === 'win32' }, () => {
+  const out = fresh();
+  writeFileSync(join(out, 'invites.json.tmp'), 'stale', { mode: 0o644 });
+  createInvite(out, 'Alten');
+  assert.equal(statSync(join(out, 'invites.json')).mode & 0o777, 0o600);
+});

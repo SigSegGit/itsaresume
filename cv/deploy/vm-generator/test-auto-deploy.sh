@@ -18,6 +18,13 @@ echo "$*" >> "$FAKE_DIR/docker-calls"
 exit 0
 FAKE
 chmod +x "$work/bin/docker"
+# The generator's status: $FAKE_DIR/status if it exists, else unreachable.
+cat > "$work/bin/curl" <<'FAKE'
+#!/usr/bin/env bash
+[ -f "$FAKE_DIR/status" ] || exit 7
+cat "$FAKE_DIR/status"
+FAKE
+chmod +x "$work/bin/curl"
 export FAKE_DIR=$work PATH="$work/bin:$PATH"
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_AUTHOR_NAME=t GIT_AUTHOR_EMAIL=t@example.org GIT_COMMITTER_NAME=t GIT_COMMITTER_EMAIL=t@example.org
 
@@ -33,7 +40,7 @@ report() {
 # A fresh origin with one commit, cloned as the VM's checkout; the script
 # under test runs from the clone, as the timer would run it.
 fresh() {
-    rm -rf "$work/origin.git" "$work/seed" "$work/vm" "$work/docker-calls" "$work/docker-fails"
+    rm -rf "$work/origin.git" "$work/seed" "$work/vm" "$work/docker-calls" "$work/docker-fails" "$work/status"
     git init -q --bare -b main "$work/origin.git"
     git clone -q "$work/origin.git" "$work/seed" 2>/dev/null
     mkdir -p "$work/seed/cv/deploy/vm-generator"
@@ -86,6 +93,26 @@ echo local > "$work/vm/other" && git -C "$work/vm" add other && git -C "$work/vm
 deploy && fail "a diverged checkout was deployed"
 [ "$(calls)" -eq 0 ] || fail "docker ran on a diverged checkout"
 report a_diverged_checkout_is_not_merged
+
+# 5b. A local commit and nothing new upstream (redteam, 2026-10-05): a
+# fast-forward to origin/main is then a no-op that succeeds; the unpushed
+# commit must still not be built.
+fresh; deploy; rm -f "$work/docker-calls"
+echo local > "$work/vm/other" && git -C "$work/vm" add other && git -C "$work/vm" commit -qm local
+deploy && fail "an unpushed local commit was deployed"
+[ "$(calls)" -eq 0 ] || fail "docker ran on an unpushed commit"
+report an_unpushed_commit_is_not_deployed
+
+# 7. A CV being generated (redteam): a rebuild would kill it, so the deploy
+# waits for an idle generator; an unreachable one is deployed anyway.
+fresh; deploy; rm -f "$work/docker-calls"; upstream two
+echo '{"profile":{},"busy":1}' > "$work/status"
+deploy || fail "a busy generator is an error: $(cat "$work/out")"
+[ "$(calls)" -eq 0 ] || fail "docker ran while a CV was being generated"
+echo '{"profile":{},"busy":0}' > "$work/status"
+deploy || fail "an idle generator did not deploy: $(cat "$work/out")"
+[ "$(calls)" -eq 1 ] || fail "the deploy did not happen once idle"
+report a_busy_generator_defers_the_deploy
 
 # 6. A checkout on another branch: refused.
 fresh; deploy; rm -f "$work/docker-calls"; upstream two; git -C "$work/vm" checkout -qb elsewhere

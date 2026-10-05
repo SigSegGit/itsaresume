@@ -262,14 +262,14 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
     deps: {
       status: status ?? (async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } })),
       split: async () => { throw new Error('split must not run publicly'); },
-      ...(invites ? { invites: () => invites } : {}),
+      ...(invites ? { invites: typeof invites === 'function' ? invites : () => invites } : {}),
       ...(log ? { log } : {}),
       ...(profiles ? { profiles } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
@@ -291,7 +291,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
         return result;
       },
     },
-    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), now: () => clock.now },
+    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), now: () => clock.now },
   });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   t.after(() => { app.server.closeAllConnections(); app.server.close(); });
@@ -785,4 +785,45 @@ test('in public mode the profiles are neither listed nor chosen: another than th
   assert.ok(!('profiles' in JSON.parse((await visitor.get('/api/status')).text)), 'other people\'s names stay the owner\'s');
   assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }], profile: 'bob' })).status, 400);
   assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }], profile: 'default' })).status, 202);
+});
+
+// redteam, 2026-10-05: the VM's auto-deploy must not rebuild while a CV is
+// being generated; the status says how many jobs are running or queued.
+test('the status says how many jobs are running or waiting, in local and public mode', async (t) => {
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+  const app = await start({ tailor: async ({ offer }) => { await held; return fakeResult(offer); } });
+  try {
+    assert.equal(JSON.parse((await call(app.port, { path: '/api/status' })).text).busy, 0);
+    await post(app, '/api/jobs', { offers: [{ text: 'one' }, { text: 'two' }] });
+    assert.equal(JSON.parse((await call(app.port, { path: '/api/status' })).text).busy, 2);
+    release();
+    await until(app, (all) => all.every((job) => job.status === 'done'));
+    assert.equal(JSON.parse((await call(app.port, { path: '/api/status' })).text).busy, 0);
+  } finally {
+    app.server.close();
+  }
+  const visitor = await (await startPublic(t)).visit();
+  assert.equal(JSON.parse((await visitor.get('/api/status')).text).busy, 0);
+});
+
+// redteam: page loads are free, so a flood of them evicted every visitor
+// (oldest first) and with it their access to CVs already paid for. A visitor
+// with jobs is evicted only when no empty one is left.
+test('a flood of page loads evicts empty visitors first, never one with jobs while an empty one remains', async (t) => {
+  const app = await startPublic(t, { maxVisitors: 5 });
+  const alice = await app.visit('203.0.113.7');
+  const [job] = JSON.parse((await alice.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] })).text);
+  for (let i = 0; i < 12; i += 1) await call(app.port, { headers: { ...app.host, 'X-Forwarded-For': '198.51.100.9' } });
+  assert.equal(JSON.parse((await alice.get('/api/jobs')).text).length, 1, 'alice still sees her job');
+  assert.equal((await alice.get(`/api/jobs/${job.id}`)).status, 200);
+});
+
+// redteam: an unreadable or corrupt invites.json made every invited page and
+// job a 500. It now names no invitation (fails closed) and the page lives.
+test('an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500', async (t) => {
+  const app = await startPublic(t, { invites: () => { throw new SyntaxError('Unexpected end of JSON input'); }, inviteOnly: true });
+  const visitor = await app.visit('203.0.113.7', '/?i=a1b2c3d4e5f6a1b2c3d4e5f6');
+  assert.match(visitor.token, /^[0-9a-f]{48}$/, 'the page loaded');
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }] })).status, 403);
 });
