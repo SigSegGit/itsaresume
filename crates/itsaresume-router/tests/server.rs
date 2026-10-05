@@ -534,3 +534,90 @@ fn an_answer_reports_its_tokens() {
     assert_eq!(status, 200, "{body}");
     assert!(body.get("usage").is_none(), "{body}");
 }
+
+fn get_body(address: SocketAddr, path: &str) -> Value {
+    let mut response = agent()
+        .get(&format!("http://{address}{path}"))
+        .call()
+        .expect("the server answers");
+    let text = response.body_mut().read_to_string().expect("a body");
+    serde_json::from_str(&text).unwrap_or(Value::Null)
+}
+
+fn keys(value: &Value) -> Vec<&str> {
+    let mut keys: Vec<&str> = value
+        .as_object()
+        .map(|object| object.keys().map(String::as_str).collect())
+        .unwrap_or_default();
+    keys.sort_unstable();
+    keys
+}
+
+/// 8.37: the contract with the generator is frozen. A request with every
+/// field is understood, and the answer's key set is exactly the frozen one,
+/// stamped with the contract version (docs/ARCHITECTURE.md, Contract).
+#[test]
+fn the_contract_answer_has_exactly_the_frozen_keys() {
+    let counted = Box::new(Scripted {
+        name: "claude-code",
+        reply: Ok(Completion {
+            text: "hi".into(),
+            rate_limit: None,
+            usage: Some(Usage {
+                input: 1,
+                output: 2,
+                cache_read: 3,
+                cache_creation: 4,
+            }),
+        }),
+        delay: Duration::ZERO,
+    });
+    let (address, _dir) = start(vec![counted]);
+    let every_field = json!({
+        "prompt": "p",
+        "system": "s",
+        "backend": "claude-code",
+        "schema": {"type": "object"},
+        "kind": "generate",
+    });
+
+    let (status, body) = post(address, &every_field.to_string());
+
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(
+        keys(&body),
+        ["attempts", "backend", "contract", "text", "usage"],
+        "{body}"
+    );
+    assert_eq!(body["contract"], "1.0", "{body}");
+    assert_eq!(
+        keys(&body["usage"]),
+        ["cache_creation", "cache_read", "input", "output"]
+    );
+}
+
+/// 8.37: a refusal is stamped too, so the client can tell a router that
+/// speaks another contract before reading its error.
+#[test]
+fn the_contract_stamps_every_answer() {
+    let (address, _dir) = start(vec![fails(
+        "claude-code",
+        BackendError::Other("not logged in".into()),
+    )]);
+
+    let (status, body) = post(address, r#"{"prompt": "p"}"#);
+    assert_eq!(status, 502, "{body}");
+    assert_eq!(keys(&body), ["contract", "error"], "{body}");
+    assert_eq!(
+        keys(&body["error"]),
+        ["attempts", "backend", "kind", "message"],
+        "{body}"
+    );
+    assert_eq!(body["contract"], "1.0", "{body}");
+
+    let (status, body) = post(address, r#"{"prompt": ""}"#);
+    assert_eq!(status, 400, "{body}");
+    assert_eq!(body["contract"], "1.0", "{body}");
+
+    assert_eq!(get_body(address, "/healthz")["contract"], "1.0");
+}
