@@ -63,8 +63,10 @@ jobs:
   # Windows as well as Linux: the Claude Code backend spawns a process, and
   # the machine it runs on in real life is Windows.
   test:
+    # A skipped matrix job reports one unexpanded name, never the two the
+    # required checks wait for (seen on #85): this job always runs, and its
+    # steps are what the changes job skips.
     needs: changes
-    if: needs.changes.outputs.rust == 'true'
     name: test (${{ matrix.os }})
     strategy:
       fail-fast: false
@@ -73,10 +75,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+        if: needs.changes.outputs.rust == 'true'
       - uses: dtolnay/rust-toolchain@stable
+        if: needs.changes.outputs.rust == 'true'
       - uses: Swatinem/rust-cache@v2
+        if: needs.changes.outputs.rust == 'true'
       - run: cargo test --workspace --all-targets
+        if: needs.changes.outputs.rust == 'true'
       - run: cargo test --workspace --doc
+        if: needs.changes.outputs.rust == 'true'
 
   doc:
     needs: changes
@@ -122,12 +129,16 @@ jobs:
       - run: python3 scripts/check-testing.py
       - run: bash scripts/test-merge-when-green.sh
       - run: bash scripts/test-ci-changes.sh
+      - run: python3 scripts/check-workflow.py
+      - run: bash scripts/test-check-workflow.sh
       - run: bash cv/deploy/vm-generator/test-auto-deploy.sh
 
   # The generator (cv/), from the former cv.yml.
   cv-test:
+    # A skipped matrix job reports one unexpanded name, never the two the
+    # required checks wait for (seen on #85): this job always runs, and its
+    # steps are what the changes job skips.
     needs: changes
-    if: needs.changes.outputs.cv == 'true'
     defaults:
       run:
         working-directory: cv
@@ -139,13 +150,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+        if: needs.changes.outputs.cv == 'true'
       - uses: actions/setup-node@v7
+        if: needs.changes.outputs.cv == 'true'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: cv/package-lock.json
       - run: npm ci
+        if: needs.changes.outputs.cv == 'true'
       - run: npm test
+        if: needs.changes.outputs.cv == 'true'
 
   cv-catalogue:
     needs: changes

@@ -191,6 +191,8 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `an_unknown_base_runs_both` | `scripts/test-ci-changes.sh` | No base sha: both groups (an empty base would diff HEAD with itself) | CI changes: an empty base runs both |
 | `a_new_branch_runs_both` | `scripts/test-ci-changes.sh` | A new branch (base all zeros): both groups | CI changes: a base git cannot diff runs both |
 | `a_base_git_cannot_diff_runs_both` | `scripts/test-ci-changes.sh` | A base git does not know: both groups | CI changes: a base git cannot diff runs both |
+| `a_matrix_job_skipped_at_job_level_is_refused` | `scripts/test-check-workflow.sh` | A matrix job with a job-level `if` is refused: skipped, it reports one unexpanded name and the required per-OS checks never come (#85) | Workflow: a matrix job is never skipped at job level |
+| `step_conditions_and_plain_job_skips_pass` | `scripts/test-check-workflow.sh` | The same job with the condition on its steps, and a plain job skipped at job level, pass | Workflow: only a job-level if counts |
 | `a_new_commit_is_pulled_and_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | cv 3.5: a new commit on origin/main is fast-forwarded on the VM's checkout, then `docker compose ... up -d --build` runs | Auto-deploy: a new commit is deployed |
 | `nothing_new_deploys_nothing` | `cv/deploy/vm-generator/test-auto-deploy.sh` | Nothing new since the last deploy: docker is not called | — |
 | `a_failed_build_is_retried` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A failed compose is an error and is not recorded: the next run builds again | Auto-deploy: a new commit is deployed; Auto-deploy: a failed build is not recorded as deployed |
