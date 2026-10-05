@@ -1210,8 +1210,8 @@
     },
     "Status: a success is remembered": {
       "file": "crates/itsaresume-router/src/router.rs",
-      "live": "self.remember(backend.name(), None);",
-      "dead": "let _ = backend.name();",
+      "live": "self.remember(backend.name(), None, usage);",
+      "dead": "let _ = (backend.name(), usage);",
       "expect": [
         "the_status_says_each_backend_state_without_spending_a_request"
       ]
