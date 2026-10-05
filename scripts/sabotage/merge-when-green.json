@@ -28,6 +28,22 @@
       "expect": [
         "too_few_checks_stop_the_merge"
       ]
+    },
+    "Merge: a skip counts only once changes passed": {
+      "file": "scripts/merge-when-green.sh",
+      "live": "if printf '%s\\n' \"$checks\" | grep -q $'^changes\\tpass\\t'; then",
+      "dead": "if true; then",
+      "expect": [
+        "a_skip_without_the_changes_job_stops_the_merge"
+      ]
+    },
+    "Merge: a decided skip is no failure": {
+      "file": "scripts/merge-when-green.sh",
+      "live": "passing=$((passing + $(printf '%s\\n' \"$checks\" | grep -c $'\\tskipping\\t')))",
+      "dead": "passing=$passing",
+      "expect": [
+        "a_job_skipped_by_the_changes_job_is_no_failure"
+      ]
     }
   }
 }

@@ -17,14 +17,17 @@ check() {  # name, files to change, expected output
     for f in $2; do echo x >> "$f"; done
     git commit -qam change
     got=$(bash "$here/ci-changes.sh" "$base" | tr '\n' ' ')
-    if [ "$got" = "$3" ]; then echo "test $1 ... ok"; else echo "test $1 ... FAILED (got: $got)"; failures=$((failures + 1)); fi
+    if [ "$got" = "$3" ]; then echo "test $1 ... ok"; else echo "  got: $got"; echo "test $1 ... FAILED"; failures=$((failures + 1)); fi
 }
 check a_cv_change_runs_only_cv "cv/src/a.js" "rust=false cv=true "
 check a_crate_change_runs_only_rust "crates/r/src/lib.rs" "rust=true cv=false "
 check a_docs_change_runs_neither "docs/HANDOVER.md" "rust=false cv=false "
 check a_workflow_change_runs_both "cv/src/a.js .github/workflows/ci.yml" "rust=true cv=true "
 got=$(bash "$here/ci-changes.sh" "" | tr '\n' ' ')
-[ "$got" = "rust=true cv=true " ] && echo "test an_unknown_base_runs_both ... ok" || { echo "test an_unknown_base_runs_both ... FAILED (got: $got)"; failures=$((failures + 1)); }
+[ "$got" = "rust=true cv=true " ] && echo "test an_unknown_base_runs_both ... ok" || { echo "  got: $got"; echo "test an_unknown_base_runs_both ... FAILED"; failures=$((failures + 1)); }
 got=$(bash "$here/ci-changes.sh" 0000000000000000000000000000000000000000 | tr '\n' ' ')
-[ "$got" = "rust=true cv=true " ] && echo "test a_new_branch_runs_both ... ok" || { echo "test a_new_branch_runs_both ... FAILED (got: $got)"; failures=$((failures + 1)); }
-[ "$failures" -eq 0 ] && echo "ci-changes: 6 cases pass" || exit 1
+[ "$got" = "rust=true cv=true " ] && echo "test a_new_branch_runs_both ... ok" || { echo "  got: $got"; echo "test a_new_branch_runs_both ... FAILED"; failures=$((failures + 1)); }
+got=$(bash "$here/ci-changes.sh" 1234567890123456789012345678901234567890 | tr '
+' ' ')
+[ "$got" = "rust=true cv=true " ] && echo "test a_base_git_cannot_diff_runs_both ... ok" || { echo "  got: $got"; echo "test a_base_git_cannot_diff_runs_both ... FAILED"; failures=$((failures + 1)); }
+[ "$failures" -eq 0 ] && echo "ci-changes: 7 cases pass" || exit 1

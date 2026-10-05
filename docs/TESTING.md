@@ -182,6 +182,15 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |
 | `too_few_checks_stop_the_merge` | `scripts/test-merge-when-green.sh` | One passing check out of a suite of twelve: no merge | Merge: the suite's minimum of checks |
 | `the_head_is_read_before_the_checks` | `scripts/test-merge-when-green.sh` | A push while the checks are counted: the merge names the head read before, so GitHub refuses it | Merge: pinned to the counted head |
+| `a_job_skipped_by_the_changes_job_is_no_failure` | `scripts/test-merge-when-green.sh` | One workflow filtered by path (2026-10-06): jobs skipped once `changes` passed do not stop the merge | Merge: a decided skip is no failure |
+| `a_skip_without_the_changes_job_stops_the_merge` | `scripts/test-merge-when-green.sh` | A skip with no passing `changes` job is still not green: no merge | Merge: a skip counts only once changes passed |
+| `a_cv_change_runs_only_cv` | `scripts/test-ci-changes.sh` | A change under `cv/` runs the generator group only | CI changes: the generator is cv/ |
+| `a_crate_change_runs_only_rust` | `scripts/test-ci-changes.sh` | A change to the router runs the router group only | CI changes: the rest is the router |
+| `a_docs_change_runs_neither` | `scripts/test-ci-changes.sh` | A change to `docs/` or a top-level `.md` runs neither group (the handover job always runs) | CI changes: docs run neither group |
+| `a_workflow_change_runs_both` | `scripts/test-ci-changes.sh` | A change to a workflow runs both groups | CI changes: a workflow change runs both |
+| `an_unknown_base_runs_both` | `scripts/test-ci-changes.sh` | No base sha: both groups (an empty base would diff HEAD with itself) | CI changes: an empty base runs both |
+| `a_new_branch_runs_both` | `scripts/test-ci-changes.sh` | A new branch (base all zeros): both groups | CI changes: a base git cannot diff runs both |
+| `a_base_git_cannot_diff_runs_both` | `scripts/test-ci-changes.sh` | A base git does not know: both groups | CI changes: a base git cannot diff runs both |
 | `a_new_commit_is_pulled_and_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | cv 3.5: a new commit on origin/main is fast-forwarded on the VM's checkout, then `docker compose ... up -d --build` runs | Auto-deploy: a new commit is deployed |
 | `nothing_new_deploys_nothing` | `cv/deploy/vm-generator/test-auto-deploy.sh` | Nothing new since the last deploy: docker is not called | — |
 | `a_failed_build_is_retried` | `cv/deploy/vm-generator/test-auto-deploy.sh` | A failed compose is an error and is not recorded: the next run builds again | Auto-deploy: a new commit is deployed; Auto-deploy: a failed build is not recorded as deployed |

@@ -39,7 +39,7 @@ report() {
 
 green() {
     : > "$work/checks"
-    for i in $(seq 1 12); do printf 'job%s\tpass\t1m\thttps://x\n' "$i" >> "$work/checks"; done
+    for i in $(seq 1 13); do printf 'job%s\tpass\t1m\thttps://x\n' "$i" >> "$work/checks"; done
 }
 
 # 1. All green: merges, pinned to the head it saw.
