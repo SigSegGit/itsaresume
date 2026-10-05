@@ -47,7 +47,7 @@ Talent Acquisition chez Acme AI`;
 
 test('a recruiter message is an offer: plurals, accents and a hiring verb count', () => {
   assert.equal(looksLikeOffer(APPROACH), true);
-  assert.equal(looksLikeOffer('Bonjour, je cherche une recette de gâteau au chocolat pour l’anniversaire de mon fils, quelque chose de simple, sans four si possible, que je puisse préparer la veille au soir avec lui.'), false);
+  assert.equal(looksLikeOffer('Bonjour, je cherche une recette de gâteau au chocolat pour l’anniversaire de mon fils, quelque chose de simple, sans four si possible, que je puisse préparer la veille au soir avec lui, puis décorer le lendemain matin avant que ses amis arrivent.'), false);
 });
 
 test('the same offer, reformatted or with a changed date, is recognised; another offer is not', () => {

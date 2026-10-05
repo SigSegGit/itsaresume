@@ -594,6 +594,14 @@
       "expect": [
         "an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500"
       ]
+    },
+    "Web: hidden beats a class display": {
+      "file": "web/style.css",
+      "live": "[hidden] { display: none !important; }",
+      "dead": "[hidden] { display: none; }",
+      "expect": [
+        "an element hidden by its attribute stays hidden, whatever its class displays"
+      ]
     }
   }
 }
