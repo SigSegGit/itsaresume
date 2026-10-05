@@ -37,6 +37,12 @@ services:
       - ${DATA:-~/itsacv-data}/router.toml:/etc/itsaresume/config.toml:ro
       - ${DATA:-~/itsacv-data}/journal:/home/node/journal
     command: ["serve", "--config", "/etc/itsaresume/config.toml", "--listen", "127.0.0.1:8789"]
+    # The image's HEALTHCHECK asks 8787, its default; here the router is on 8789.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8789/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
     init: true
     restart: unless-stopped
 

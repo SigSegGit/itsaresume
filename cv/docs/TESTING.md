@@ -97,6 +97,12 @@ property it proves.
 | recall does not take a stem for a name | Recall: whole words, not stems |
 | a label the code contradicts is measured wrong, one it agrees with right | Corpus: the wrong list is the code's disagreement |
 
+## `test/deploy.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the VM router is health-checked on the port it listens on | Deploy: the VM router is health-checked on its own port |
+
 ## `test/equivalent.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -294,6 +300,20 @@ property it proves.
 | a conversion that hangs is stopped at the timeout | — |
 | the engine cleans its working directory on close | — |
 
+## `test/models.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| Claude in light use is the default; the local model up says whether it must load first | Models: Claude in light use is the default |
+| Claude near its limit gives the default to the local model | Models: near its limit, the local model is the default |
+| a laptop that is on but whose local model sleeps is offered, to be woken at sending | Models: an awake laptop's sleeping model is offered |
+| the local model down is unavailable, said plainly, and auto takes the default | Models: the local model down is unavailable |
+| Claude at its limit is unavailable for an hour, then offered again with the time it was seen | Models: Claude at its limit pauses for an hour |
+| Claude stopped (logged out, a tripwire) is unavailable | Models: Claude stopped is unavailable |
+| a router older than /status leaves the menu as it was: everything offered, auto first | — |
+| no router at all offers nothing, and says so | Models: no router offers nothing |
+| serve() hands the page the menu from the router, without any router reason | Models: serve() hands the menu to the page |
+
 ## `test/must-stay-no.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -453,6 +473,13 @@ property it proves.
 | working in pairs is a personal quality, never a failed requirement | Quality: working in pairs is a quality |
 | an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart | Condition: an unstated administrative condition is to confirm; Condition: not scored; Condition: the report lists conditions apart |
 
+## `test/serve-contract.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| serve() refuses to start on a router speaking another contract major, naming both | Contract: serve() stops at start on another major |
+| serve() starts on a router speaking contract 1, a newer minor, or none | — |
+
 ## `test/server.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -516,6 +543,31 @@ property it proves.
 | stem: a short root is never cut below four letters | Stem: a root keeps four letters |
 | a requirement "Product ownership" is not stated by an offer that says production | Stem: endings, not a prefix |
 
+## `test/tunnel.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the tunnel starts Bionic's server before each round | Tunnel: Bionic's server is started before each round |
+
+## `test/wake.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the laptop is awake when its watcher marked it within three minutes | Wake: the laptop is awake within three minutes |
+| a request to wake is a file the watcher takes | — |
+| a local model already up is used at once, with no step | — |
+| a sleeping local model on an awake laptop is woken, and the job waits for it | Wake: the request is left for the watcher |
+| a laptop off, or a model that never wakes, fails the job plainly | Wake: a laptop off fails at once |
+| serve() runs a local job through the wake check | Wake: a local job goes through the wake check |
+
+## `test/watcher.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a quiet round marks the laptop seen and starts nothing | Watcher: a quiet round starts nothing |
+| a wake request starts the server of Bionic and the tunnel | Watcher: a wake request starts Bionic's server; Watcher: a wake request starts the tunnel |
+| a wake request with a tunnel already open starts Bionic, not a second tunnel | Watcher: an open tunnel is left alone |
+
 ## `test/web.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -538,6 +590,7 @@ property it proves.
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 | an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
 | the page offers a profile choice only when the status lists several, and sends the one chosen | — |
+| the page greys the models the server says cannot answer, and refreshes the menu | Models: the page greys what cannot answer |
 
 ## `test/word.test.js`
 
@@ -554,6 +607,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**375 tests, 314 of them covered by at least one sabotage defence.**
+**398 tests, 333 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

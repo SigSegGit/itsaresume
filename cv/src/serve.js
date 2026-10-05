@@ -7,9 +7,11 @@ import { appendQaLog, withModel } from './qa.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
-import { counted } from './llm.js';
+import { contractProblem, counted } from './llm.js';
 import { loadInvites } from './invites.js';
 import { DEFAULT_PROFILE, listProfiles } from './profiles.js';
+import { modelMenu } from './models.js';
+import { ensureLocal, laptopAwake } from './wake.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -24,8 +26,53 @@ function routerUp(url) {
   });
 }
 
+/**
+ * Why the router's /healthz contract is not this client's, or null. A router
+ * that is down, or whose body is not JSON, is not a contract problem: it may
+ * start later, and each answer is checked again (llm.js).
+ */
+function routerContract(url) {
+  return new Promise((resolve) => {
+    const call = request(new URL('/healthz', url), { method: 'GET', timeout: 2000 }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => {
+        let parsed;
+        try { parsed = JSON.parse(body); } catch { parsed = null; }
+        resolve(parsed && typeof parsed === 'object' ? contractProblem(parsed) : null);
+      });
+    });
+    call.on('timeout', () => call.destroy());
+    call.on('error', () => resolve(null));
+    call.end();
+  });
+}
+
+/** The router's backends (GET /status, 8.43), or undefined: down, or older than the route. */
+function routerBackends(url) {
+  return new Promise((resolve) => {
+    const call = request(new URL('/status', url), { method: 'GET', timeout: 5000 }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          resolve(response.statusCode === 200 && Array.isArray(parsed.backends) ? parsed.backends : undefined);
+        } catch {
+          resolve(undefined);
+        }
+      });
+    });
+    call.on('timeout', () => call.destroy());
+    call.on('error', () => resolve(undefined));
+    call.end();
+  });
+}
+
 /** The page's header: whose profile, how checked, and what can run. */
-async function status({ profilePath, url, useWord }) {
+async function status({ profilePath, url, useWord, out }) {
   let profile;
   try {
     const loaded = loadProfile(profilePath);
@@ -45,20 +92,26 @@ async function status({ profilePath, url, useWord }) {
   const word = useWord && process.platform === 'win32';
   // ADR-11: on Linux, LibreOffice makes the PDF; $ITSACV_SOFFICE says it is there.
   const libre = useWord && !word && Boolean(process.env.ITSACV_SOFFICE);
-  return { profile, router: { up: await routerUp(url) }, layout: { word, libre } };
+  const [up, backends] = await Promise.all([routerUp(url), routerBackends(url)]);
+  return { profile, router: { up }, models: modelMenu(up ? backends : null, undefined, { awake: laptopAwake(out) }), layout: { word, libre } };
 }
 
 export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null }) {
+  // Router 8.42: another contract major stops the start, before any job.
+  const problem = await routerContract(url);
+  if (problem) throw new Error(problem);
   // 4.1: the owner's profile, and the files of --profiles DIR (read at each use).
   const profiles = () => listProfiles({ profile: profilePath, profilesDir });
   const deps = {
-    status: () => status({ profilePath, url, useWord }),
+    status: () => status({ profilePath, url, useWord, out }),
     profiles: () => [...profiles().keys()],
     split: (text) => splitOffers({ text, llm }),
     tailor: async ({ offer, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE }) => {
       const path = profiles().get(profile);
       if (!path) throw new Error(`no profile "${profile}"`);
       const loaded = loadProfile(path);
+      // 8.44: the local model asked for while it sleeps is woken; the job waits.
+      if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep });
       const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep, profileId: profile });
       return { ...result, view: jobView(result, loaded) };
     },

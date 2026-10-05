@@ -1,9 +1,11 @@
 //! Tries backends in order; falls back on quota or outage, stops on anything else.
 
-use crate::backend::{Backend, BackendError, Request};
+use crate::backend::{Backend, BackendError, Probe, Request};
 use crate::journal::Journal;
+use std::collections::HashMap;
 use std::fmt;
-use std::time::Instant;
+use std::sync::Mutex;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 /// One backend that failed, in the order it was tried.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -109,6 +111,40 @@ impl std::error::Error for UnknownBackend {}
 pub struct Router {
     backends: Vec<Box<dyn Backend>>,
     journal: Journal,
+    /// Each backend's last answer, by name: what `status` says of a backend
+    /// that has no probe (8.43). In memory: a restart forgets it.
+    seen: Mutex<HashMap<String, Seen>>,
+}
+
+/// A backend's last answer: when (Unix seconds), and its error if it failed.
+#[derive(Debug, Clone)]
+struct Seen {
+    at: u64,
+    error: Option<BackendError>,
+    /// The rate limit's `status` of a successful answer (`allowed`,
+    /// `allowed_warning`), when the backend reported one (8.44).
+    usage: Option<String>,
+}
+
+/// One backend's state for `GET /status` (8.43).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackendStatus {
+    /// Its configured name.
+    pub name: String,
+    /// What it is (`claude-code`, `lm-studio`).
+    pub kind: String,
+    /// `up`, `down`, `limited` (a quota), `stopped` (an error that is not an
+    /// outage: logged out, a tripwire), or `unknown` (no probe, never asked).
+    pub state: &'static str,
+    /// Why it is not up, when known.
+    pub reason: Option<String>,
+    /// Whether its model is in memory, when its probe tells.
+    pub loaded: Option<bool>,
+    /// When the state was last seen (Unix seconds); none for a probe.
+    pub since: Option<u64>,
+    /// How spent its allowance was at its last answer (`allowed`,
+    /// `allowed_warning`), when it said (8.44).
+    pub usage: Option<String>,
 }
 
 impl Router {
@@ -118,7 +154,66 @@ impl Router {
         if backends.is_empty() {
             return Err(NoBackends);
         }
-        Ok(Self { backends, journal })
+        Ok(Self {
+            backends,
+            journal,
+            seen: Mutex::new(HashMap::new()),
+        })
+    }
+
+    /// Each backend's state, from its probe when it has one, else from its
+    /// last answer; no request is spent (8.43).
+    pub fn status(&self) -> Vec<BackendStatus> {
+        let seen = self
+            .seen
+            .lock()
+            .map(|seen| seen.clone())
+            .unwrap_or_default();
+        self.backends
+            .iter()
+            .map(|backend| {
+                let (state, reason, loaded, since) = match backend.probe() {
+                    Some(Probe::Up { loaded }) => ("up", None, loaded, None),
+                    Some(Probe::Down(why)) => ("down", Some(why), None, None),
+                    None => match seen.get(backend.name()) {
+                        None => ("unknown", None, None, None),
+                        Some(Seen {
+                            at, error: None, ..
+                        }) => ("up", None, None, Some(*at)),
+                        Some(Seen {
+                            at,
+                            error: Some(error),
+                            ..
+                        }) => {
+                            let state = match error {
+                                BackendError::QuotaExceeded(_) => "limited",
+                                BackendError::Unreachable(_) => "down",
+                                BackendError::Other(_) => "stopped",
+                            };
+                            (state, Some(error.to_string()), None, Some(*at))
+                        }
+                    },
+                };
+                BackendStatus {
+                    name: backend.name().to_owned(),
+                    kind: backend.kind().to_owned(),
+                    state,
+                    reason,
+                    loaded,
+                    since,
+                    usage: seen.get(backend.name()).and_then(|seen| seen.usage.clone()),
+                }
+            })
+            .collect()
+    }
+
+    fn remember(&self, backend: &str, error: Option<BackendError>, usage: Option<String>) {
+        let at = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |elapsed| elapsed.as_secs());
+        if let Ok(mut seen) = self.seen.lock() {
+            seen.insert(backend.to_owned(), Seen { at, error, usage });
+        }
     }
 
     /// Answer `request` from the first backend that can, and journal it.
@@ -194,6 +289,12 @@ impl Router {
         for backend in serving {
             let error = match backend.complete(request) {
                 Ok(completion) => {
+                    let usage = completion
+                        .rate_limit
+                        .as_ref()
+                        .and_then(|limit| limit["status"].as_str())
+                        .map(str::to_owned);
+                    self.remember(backend.name(), None, usage);
                     let answer = Answer {
                         backend: backend.name().to_owned(),
                         text: completion.text,
@@ -208,6 +309,7 @@ impl Router {
                 }
                 Err(error) => error,
             };
+            self.remember(backend.name(), Some(error.clone()), None);
             let stop = !error.allows_fallback();
             attempts.push(Attempt {
                 backend: backend.name().to_owned(),

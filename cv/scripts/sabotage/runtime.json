@@ -256,6 +256,54 @@
       "expect": [
         "a run keeps the offer instructions in its result, its job view and the run read back"
       ]
+    },
+    "Deploy: the VM router is health-checked on its own port": {
+      "file": "deploy/vm-generator/compose.yaml",
+      "live": "fetch('http://127.0.0.1:8789/healthz')",
+      "dead": "fetch('http://127.0.0.1:8787/healthz')",
+      "expect": [
+        "the VM router is health-checked on the port it listens on"
+      ]
+    },
+    "Tunnel: Bionic's server is started before each round": {
+      "file": "deploy/laptop/bionic-tunnel.sh",
+      "live": "\"$BIONIC_LMS\" server start >/dev/null 2>&1 \\",
+      "dead": "true \"$BIONIC_LMS\" >/dev/null 2>&1 \\",
+      "expect": [
+        "the tunnel starts Bionic's server before each round"
+      ]
+    },
+    "Watcher: a wake request starts Bionic's server": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "\"$BIONIC_LMS\" server start >/dev/null 2>&1 \\",
+      "dead": "true \"$BIONIC_LMS\" >/dev/null 2>&1 \\",
+      "expect": [
+        "a wake request starts the server of Bionic and the tunnel"
+      ]
+    },
+    "Watcher: a wake request starts the tunnel": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "nohup \"$tunnel\" >/dev/null 2>&1 &",
+      "dead": "true \"$tunnel\" >/dev/null 2>&1 &",
+      "expect": [
+        "a wake request starts the server of Bionic and the tunnel"
+      ]
+    },
+    "Watcher: a quiet round starts nothing": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "if grep -qx wake <<< \"$said\"; then",
+      "dead": "if true; then",
+      "expect": [
+        "a quiet round marks the laptop seen and starts nothing"
+      ]
+    },
+    "Watcher: an open tunnel is left alone": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "if ! grep -qx tunnel-up <<< \"$said\" \\",
+      "dead": "if ! false \\",
+      "expect": [
+        "a wake request with a tunnel already open starts Bionic, not a second tunnel"
+      ]
     }
   }
 }

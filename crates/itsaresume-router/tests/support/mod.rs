@@ -123,3 +123,43 @@ pub fn serve_slow(
     });
     (base_url, overlap)
 }
+
+/// Serve `connections` requests, each answered by the route whose path is
+/// the request's (`(path, status, body)`), else 404; return the base URL.
+pub fn serve_routes(routes: &[(&str, u16, &str)], connections: usize) -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind a free port");
+    let base_url = format!("http://{}/v1", listener.local_addr().expect("address"));
+    let routes: Vec<(String, u16, String)> = routes
+        .iter()
+        .map(|(path, status, body)| ((*path).to_owned(), *status, (*body).to_owned()))
+        .collect();
+    thread::spawn(move || {
+        for _ in 0..connections {
+            let Ok((stream, _)) = listener.accept() else {
+                return;
+            };
+            let mut reader = BufReader::new(stream.try_clone().expect("clone stream"));
+            let mut request_line = String::new();
+            reader.read_line(&mut request_line).expect("request line");
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).expect("header line");
+                if line.trim_end().is_empty() {
+                    break;
+                }
+            }
+            let path = request_line.split(' ').nth(1).unwrap_or_default();
+            let (status, body) = routes
+                .iter()
+                .find(|(route, _, _)| route == path)
+                .map_or((404, "{}"), |(_, status, body)| (*status, body.as_str()));
+            let mut stream = stream;
+            let response = format!(
+                "HTTP/1.1 {status} Status\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = stream.write_all(response.as_bytes());
+        }
+    });
+    base_url
+}

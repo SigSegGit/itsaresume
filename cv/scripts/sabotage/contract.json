@@ -21,6 +21,14 @@
         "an answer whose contract major is not the client's is refused, naming both"
       ]
     },
+    "Contract: serve() stops at start on another major": {
+      "file": "src/serve.js",
+      "live": "  if (problem) throw new Error(problem);",
+      "dead": "  if (problem && false) throw new Error(problem);",
+      "expect": [
+        "serve() refuses to start on a router speaking another contract major, naming both"
+      ]
+    },
     "Contract: no contract key is a router older than the field": {
       "file": "src/llm.js",
       "live": "if (!('contract' in parsed)) return null;",

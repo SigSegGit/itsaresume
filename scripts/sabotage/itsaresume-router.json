@@ -1152,6 +1152,22 @@
         "the_contract_answer_has_exactly_the_frozen_keys"
       ]
     },
+    "Contract: an exhausted refusal carries no unfrozen key": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "\"message\": \"every backend failed with a quota or an outage\",",
+      "dead": "\"message\": \"every backend failed with a quota or an outage\", \"retry\": null,",
+      "expect": [
+        "the_contract_freezes_the_keys_of_every_refusal"
+      ]
+    },
+    "Contract: a bad request carries no unfrozen key": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "(status, json!({\"error\": {\"kind\": kind, \"message\": message}}))",
+      "dead": "(status, json!({\"error\": {\"kind\": kind, \"message\": message, \"field\": null}}))",
+      "expect": [
+        "the_contract_freezes_the_keys_of_every_refusal"
+      ]
+    },
     "Journal: a 2xx without content is counted, not quoted": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "\"LM Studio answered {status} without choices[0].message.content ({} characters)\",",
@@ -1174,6 +1190,54 @@
       "dead": "\"claude result message is not understood ({} characters): {result}\",",
       "expect": [
         "a_result_message_not_understood_is_counted_not_quoted"
+      ]
+    },
+    "Status: a probe's down is down": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "Some(Probe::Down(why)) => (\"down\", Some(why), None, None),",
+      "dead": "Some(Probe::Down(why)) => (\"up\", Some(why), None, None),",
+      "expect": [
+        "the_status_says_each_backend_state_without_spending_a_request"
+      ]
+    },
+    "Status: a quota is limited": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "BackendError::QuotaExceeded(_) => \"limited\",",
+      "dead": "BackendError::QuotaExceeded(_) => \"down\",",
+      "expect": [
+        "the_status_says_each_backend_state_without_spending_a_request"
+      ]
+    },
+    "Status: a success is remembered": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "self.remember(backend.name(), None, usage);",
+      "dead": "let _ = (backend.name(), usage);",
+      "expect": [
+        "the_status_says_each_backend_state_without_spending_a_request"
+      ]
+    },
+    "Probe: an unlisted model is down": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "if has(&listed).is_none() {",
+      "dead": "if has(&listed).is_none() && false {",
+      "expect": [
+        "the_probe_says_down_and_why"
+      ]
+    },
+    "Probe: loaded is the server's loaded state": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": ".and_then(|model| model[\"state\"].as_str().map(|state| state == \"loaded\"));",
+      "dead": ".and_then(|model| model[\"state\"].as_str().map(|state| state != \"loaded\"));",
+      "expect": [
+        "the_probe_says_up_and_whether_the_model_is_in_memory"
+      ]
+    },
+    "Status: the usage level is the rate limit's status": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".and_then(|limit| limit[\"status\"].as_str())",
+      "dead": ".and_then(|limit| limit[\"rateLimitType\"].as_str())",
+      "expect": [
+        "the_status_carries_the_usage_level_of_the_last_answer"
       ]
     }
   }

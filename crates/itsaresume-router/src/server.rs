@@ -22,7 +22,7 @@ pub const DEFAULT_LISTEN: &str = "127.0.0.1:8787";
 /// `"contract"` (docs/ARCHITECTURE.md, Contract with the generator). The
 /// major changes when a field is removed, renamed or changes meaning; the
 /// minor when an optional field is added.
-pub const CONTRACT: &str = "1.0";
+pub const CONTRACT: &str = "1.1";
 
 /// The largest request body accepted, in bytes.
 pub const MAX_BODY_BYTES: usize = 1024 * 1024;
@@ -150,10 +150,39 @@ fn route(router: &Router, running: &AtomicUsize, request: &mut tiny_http::Reques
         .to_owned();
     match (request.method(), path.as_str()) {
         (Method::Get, "/healthz") => (200, json!({"status": "ok"})),
+        (Method::Get, "/status") => (200, status(router)),
         (Method::Post, "/v1/complete") => guarded(router, running, request),
-        (_, "/healthz" | "/v1/complete") => error(405, "method_not_allowed", "wrong method"),
+        (_, "/healthz" | "/status" | "/v1/complete") => {
+            error(405, "method_not_allowed", "wrong method")
+        }
         _ => error(404, "not_found", "no such path"),
     }
+}
+
+/// Each backend's state, without spending a request (8.43).
+fn status(router: &Router) -> Value {
+    let backends: Vec<Value> = router
+        .status()
+        .into_iter()
+        .map(|backend| {
+            let mut entry =
+                json!({"name": backend.name, "kind": backend.kind, "state": backend.state});
+            if let Some(reason) = backend.reason {
+                entry["reason"] = json!(reason);
+            }
+            if let Some(loaded) = backend.loaded {
+                entry["loaded"] = json!(loaded);
+            }
+            if let Some(since) = backend.since {
+                entry["since"] = json!(since);
+            }
+            if let Some(usage) = backend.usage {
+                entry["usage"] = json!(usage);
+            }
+            entry
+        })
+        .collect();
+    json!({ "backends": backends })
 }
 
 /// No browser, JSON only, and at most `MAX_CONCURRENT_COMPLETIONS` at once.

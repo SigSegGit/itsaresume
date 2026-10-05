@@ -155,7 +155,7 @@ async function main() {
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
     const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, now: Date.now };
-    const server = await serve({ ...options, profilesDir: options.profiles, port: Number(options.port), useWord: options.layout, llm, publicMode });
+    const server = await serve({ ...options, profilesDir: options.profiles, port: Number(options.port), useWord: options.layout, llm, publicMode }).catch((error) => fail(4, error.message));
     const open = publicMode ? `, public as https://${publicMode.host} (at most ${publicMode.perDay} CVs a day)` : '';
     process.stderr.write(`itsacv: serving on http://127.0.0.1:${server.address().port}${open} (Ctrl+C to stop)\n`);
     return;

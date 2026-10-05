@@ -29,7 +29,7 @@ export const CONTRACT_MAJOR = 1;
  * is a router older than the field: its answer is contract 1.0 by
  * construction (ADR in the router's docs/ARCHITECTURE.md, Contract).
  */
-function contractProblem(parsed) {
+export function contractProblem(parsed) {
   if (!('contract' in parsed)) return null;
   const major = typeof parsed.contract === 'string' ? /^(\d+)\.\d+$/.exec(parsed.contract)?.[1] : undefined;
   if (major !== undefined && Number(major) === CONTRACT_MAJOR) return null;

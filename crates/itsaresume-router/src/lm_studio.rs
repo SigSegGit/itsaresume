@@ -4,7 +4,7 @@
 //! it, and on the same machine it is loopback. The response shapes were
 //! observed first (`tests/fixtures/lm-studio/`).
 
-use crate::backend::{Backend, BackendError, Completion, Request, Usage};
+use crate::backend::{Backend, BackendError, Completion, Probe, Request, Usage};
 use serde_json::{Value, json};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
@@ -120,6 +120,35 @@ impl Backend for LmStudioBackend {
         "lm-studio"
     }
 
+    /// Two GETs, a few seconds at most: is the server there, does it list
+    /// the model, and is the model in memory (LM Studio's `/api/v0`, which
+    /// an OpenAI-compatible server without it simply lacks).
+    fn probe(&self) -> Option<Probe> {
+        let base = self.base_url.trim_end_matches('/');
+        let listed = match get_json(&format!("{base}/models")) {
+            Ok(body) => body,
+            Err(why) => return Some(Probe::Down(why)),
+        };
+        let has = |body: &Value| {
+            body["data"]
+                .as_array()
+                .and_then(|models| models.iter().find(|m| m["id"] == self.model.as_str()))
+                .cloned()
+        };
+        if has(&listed).is_none() {
+            return Some(Probe::Down(format!(
+                "the server does not list {}",
+                self.model
+            )));
+        }
+        let root = base.strip_suffix("/v1").unwrap_or(base);
+        let loaded = get_json(&format!("{root}/api/v0/models"))
+            .ok()
+            .and_then(|body| has(&body))
+            .and_then(|model| model["state"].as_str().map(|state| state == "loaded"));
+        Some(Probe::Up { loaded })
+    }
+
     fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
         let url = format!("{}/chat/completions", self.base_url.trim_end_matches('/'));
         // Waiting for the slot counts against the timeout: past it, this is
@@ -162,6 +191,33 @@ impl Backend for LmStudioBackend {
         Ok(completion)
     }
 }
+
+/// A short GET for [`LmStudioBackend::probe`]: the JSON of a 2xx, else why not.
+fn get_json(url: &str) -> Result<Value, String> {
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .timeout_global(Some(PROBE_TIMEOUT))
+        // A probe sends nothing private; no proxy all the same.
+        .proxy(None::<ureq::Proxy>)
+        .http_status_as_error(false)
+        .build()
+        .into();
+    let mut response = agent
+        .get(url)
+        .call()
+        .map_err(|error| format!("unreachable: {error}"))?;
+    let status = response.status().as_u16();
+    if !(200..300).contains(&status) {
+        return Err(format!("answered {status}"));
+    }
+    let body = response
+        .body_mut()
+        .read_to_string()
+        .map_err(|error| format!("unreachable: {error}"))?;
+    serde_json::from_str(&body).map_err(|_| format!("answered {status} without JSON"))
+}
+
+/// How long a probe waits: the status page must not hang on a dead tunnel.
+const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// A request that got no HTTP answer at all.
 fn transport(url: &str, error: ureq::Error) -> BackendError {

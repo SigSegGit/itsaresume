@@ -236,3 +236,13 @@ test('the page offers a profile choice only when the status lists several, and s
   assert.equal(single.$('profile-row').hidden, true, 'one profile: no choice');
   single.close();
 });
+
+// 8.43: the page applies the server's model menu and keeps it current; the
+// menu's logic is src/models.js (test/models.test.js).
+test('the page greys the models the server says cannot answer, and refreshes the menu', () => {
+  const app = web('app.js');
+  assert.match(app, /option\.disabled = !state\.available;/);
+  assert.match(app, /button\.disabled = offers\.length === 0 \|\| !modelsReady;/);
+  assert.match(app, /setInterval\?\.\(refreshStatus, \d+\)/);
+  assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
+});
