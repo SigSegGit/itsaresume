@@ -189,7 +189,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const fresh = randomBytes(24).toString('hex');
     visitors.set(fresh, new Set());
     if (live) invited.set(fresh, live);
-    if (visitors.size > MAX_VISITORS) {
+    if (visitors.size > (publicMode.maxVisitors ?? MAX_VISITORS)) {
       const oldest = visitors.keys().next().value;
       visitors.delete(oldest);
       invited.delete(oldest);

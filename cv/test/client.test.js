@@ -154,3 +154,13 @@ test('a counted model call hands each answer on, unchanged, after the model gave
   assert.deepEqual(await llm({ prompt: 'x' }), { text: 'x', backend: 'b', usage: null });
   assert.deepEqual(seen, [{ text: 'x', backend: 'b', usage: null }]);
 });
+
+// redteam: the backend name comes from the router's answer; "__proto__" as a
+// key would reach Object.prototype. A name that is not a plain id counts as "?".
+test('a backend name that is no plain id is counted as "?", and never touches a prototype', () => {
+  const tokens = addTokens({}, { backend: '__proto__', usage: { input: 1 } });
+  addTokens(tokens, { backend: 'constructor', usage: { input: 2 } });
+  assert.equal(({}).calls, undefined);
+  assert.deepEqual(Object.keys(tokens), ['?']);
+  assert.equal(tokens['?'].input, 3);
+});
