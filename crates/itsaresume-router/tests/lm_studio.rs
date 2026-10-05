@@ -5,7 +5,7 @@
 mod support;
 
 use itsaresume_router::lm_studio::LmStudioBackend;
-use itsaresume_router::{Backend, BackendError, Completion, Request, Usage};
+use itsaresume_router::{Backend, BackendError, Completion, Probe, Request, Usage};
 use std::net::TcpListener;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -372,4 +372,42 @@ fn an_error_body_without_a_message_is_counted_not_quoted() {
             .contains(&format!("{} characters", body.chars().count())),
         "{error}"
     );
+}
+
+const LISTED: &str = r#"{"data": [{"id": "other-model"}, {"id": "example-model"}]}"#;
+
+/// 8.43: the probe asks the server, never spends a completion. Listed and
+/// in memory is up and loaded; listed only, the server loads it on demand
+/// (Bionic and LM Studio load a listed model at its first request).
+#[test]
+fn the_probe_says_up_and_whether_the_model_is_in_memory() {
+    for (state, loaded) in [("loaded", Some(true)), ("not-loaded", Some(false))] {
+        let v0 = format!(r#"{{"data": [{{"id": "example-model", "state": "{state}"}}]}}"#);
+        let base = support::serve_routes(
+            &[("/v1/models", 200, LISTED), ("/api/v0/models", 200, &v0)],
+            2,
+        );
+        assert_eq!(backend(&base).probe(), Some(Probe::Up { loaded }), "{state}");
+    }
+    let base = support::serve_routes(&[("/v1/models", 200, LISTED)], 2);
+    assert_eq!(
+        backend(&base).probe(),
+        Some(Probe::Up { loaded: None }),
+        "no /api/v0: up, memory unknown"
+    );
+}
+
+/// 8.43: a server without the model, or no server at all, is down, and
+/// says which.
+#[test]
+fn the_probe_says_down_and_why() {
+    let base = support::serve_routes(&[("/v1/models", 200, r#"{"data": [{"id": "other-model"}]}"#)], 2);
+    match backend(&base).probe() {
+        Some(Probe::Down(why)) => assert!(why.contains("example-model"), "{why}"),
+        other => panic!("{other:?}"),
+    }
+    let free = TcpListener::bind("127.0.0.1:0").expect("bind");
+    let base = format!("http://{}/v1", free.local_addr().expect("address"));
+    drop(free);
+    assert!(matches!(backend(&base).probe(), Some(Probe::Down(_))));
 }

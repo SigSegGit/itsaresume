@@ -589,7 +589,7 @@ fn the_contract_answer_has_exactly_the_frozen_keys() {
         ["attempts", "backend", "contract", "text", "usage"],
         "{body}"
     );
-    assert_eq!(body["contract"], "1.0", "{body}");
+    assert_eq!(body["contract"], "1.1", "{body}");
     assert_eq!(
         keys(&body["usage"]),
         ["cache_creation", "cache_read", "input", "output"]
@@ -613,13 +613,13 @@ fn the_contract_stamps_every_answer() {
         ["attempts", "backend", "kind", "message"],
         "{body}"
     );
-    assert_eq!(body["contract"], "1.0", "{body}");
+    assert_eq!(body["contract"], "1.1", "{body}");
 
     let (status, body) = post(address, r#"{"prompt": ""}"#);
     assert_eq!(status, 400, "{body}");
-    assert_eq!(body["contract"], "1.0", "{body}");
+    assert_eq!(body["contract"], "1.1", "{body}");
 
-    assert_eq!(get_body(address, "/healthz")["contract"], "1.0");
+    assert_eq!(get_body(address, "/healthz")["contract"], "1.1");
 }
 
 /// A backend that serves classifications only, so a generation is unserved.
@@ -673,4 +673,62 @@ fn the_contract_freezes_the_keys_of_every_refusal() {
         "{body}"
     );
     assert_eq!(body["error"]["kind"], "unserved", "{body}");
+}
+
+/// A backend that says it is down without being asked for anything.
+struct ProbedDown;
+
+impl Backend for ProbedDown {
+    fn name(&self) -> &str {
+        "lm-studio"
+    }
+
+    fn probe(&self) -> Option<Probe> {
+        Some(Probe::Down("the laptop is off".into()))
+    }
+
+    fn complete(&self, _request: &Request) -> Result<Completion, BackendError> {
+        Err(BackendError::Unreachable("never asked".into()))
+    }
+}
+
+fn state_of<'a>(status: &'a Value, name: &str) -> &'a Value {
+    status["backends"]
+        .as_array()
+        .and_then(|backends| backends.iter().find(|b| b["name"] == name))
+        .unwrap_or(&Value::Null)
+}
+
+/// 8.43: `GET /status` names each backend with its kind and state, from
+/// its probe when it has one, else from its last answer; nothing is spent.
+#[test]
+fn the_status_says_each_backend_state_without_spending_a_request() {
+    let (address, _dir) = start(vec![
+        fails("claude-code", BackendError::QuotaExceeded("usage limit".into())),
+        answers("lm-studio", "x"),
+    ]);
+    let status = get_body(address, "/status");
+    assert_eq!(status["contract"], "1.1", "{status}");
+    assert_eq!(state_of(&status, "claude-code")["kind"], "claude-code", "{status}");
+    assert_eq!(state_of(&status, "claude-code")["state"], "unknown", "{status}");
+
+    assert_eq!(post(address, r#"{"prompt": "p"}"#).0, 200);
+    let status = get_body(address, "/status");
+    let claude = state_of(&status, "claude-code");
+    assert_eq!(claude["state"], "limited", "{status}");
+    assert!(claude["since"].as_u64().is_some(), "{status}");
+    assert_eq!(state_of(&status, "lm-studio")["state"], "up", "{status}");
+
+    let (address, _dir) = start(vec![fails(
+        "claude-code",
+        BackendError::Other("not logged in".into()),
+    )]);
+    let _ = post(address, r#"{"prompt": "p"}"#);
+    assert_eq!(state_of(&get_body(address, "/status"), "claude-code")["state"], "stopped");
+
+    let (address, _dir) = start(vec![Box::new(ProbedDown)]);
+    let status = get_body(address, "/status");
+    let local = state_of(&status, "lm-studio");
+    assert_eq!(local["state"], "down", "{status}");
+    assert_eq!(local["reason"], "the laptop is off", "{status}");
 }
