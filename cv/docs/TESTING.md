@@ -97,6 +97,12 @@ property it proves.
 | recall does not take a stem for a name | Recall: whole words, not stems |
 | a label the code contradicts is measured wrong, one it agrees with right | Corpus: the wrong list is the code's disagreement |
 
+## `test/deploy.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the VM router is health-checked on the port it listens on | Deploy: the VM router is health-checked on its own port |
+
 ## `test/equivalent.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -535,6 +541,12 @@ property it proves.
 | stem: a short root is never cut below four letters | Stem: a root keeps four letters |
 | a requirement "Product ownership" is not stated by an offer that says production | Stem: endings, not a prefix |
 
+## `test/tunnel.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the tunnel starts Bionic's server before each round | Tunnel: Bionic's server is started before each round |
+
 ## `test/web.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -574,6 +586,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**385 tests, 322 of them covered by at least one sabotage defence.**
+**387 tests, 324 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
