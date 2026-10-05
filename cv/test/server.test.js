@@ -827,3 +827,44 @@ test('an unreadable invitation file names nobody: the page loads, invite-only re
   assert.match(visitor.token, /^[0-9a-f]{48}$/, 'the page loaded');
   assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('Senior SRE') }] })).status, 403);
 });
+
+// The owner, 2026-10-06: a Claude job never waits behind a slow local one.
+// Two lanes, each one job at a time (the local model has one slot); a
+// queued job says its place in its lane, so the page can show it.
+test('Claude and the local model run in two lanes, one job each, and a queued job says its place', async () => {
+  const gates = new Map();
+  const running = new Set();
+  let most = { claude: 0, local: 0 };
+  const app = await start({
+    tailor: async ({ offer, model }) => {
+      const lane = model === 'local' ? 'local' : 'claude';
+      running.add(offer);
+      most[lane] = Math.max(most[lane], [...running].filter((o) => o.startsWith(lane)).length);
+      await new Promise((resolve) => gates.set(offer, resolve));
+      running.delete(offer);
+      return fakeResult(offer);
+    },
+  });
+  try {
+    await post(app, '/api/jobs', { offers: [{ text: 'local 1' }, { text: 'local 2' }, { text: 'local 3' }], model: 'local' });
+    await post(app, '/api/jobs', { offers: [{ text: 'claude 1' }], model: 'claude' });
+    for (let i = 0; i < 100 && running.size < 2; i += 1) await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.deepEqual([...running].sort(), ['claude 1', 'local 1'], 'one job per lane, at once');
+    const jobs = JSON.parse((await call(app.port, { path: '/api/jobs' })).text);
+    const place = Object.fromEntries(jobs.map((job) => [job.title === 'Offre' ? job.status : job.title, job.position]));
+    const byText = (n) => jobs.find((job) => job.status === 'queued' && job.position === n);
+    assert.ok(byText(1), JSON.stringify(jobs.map((j) => [j.status, j.position])));
+    assert.ok(byText(2), 'the third local job is second in its lane');
+    assert.equal(jobs.filter((job) => job.status === 'running').every((job) => job.position === undefined), true, JSON.stringify(place));
+    gates.get('claude 1')();
+    gates.get('local 1')();
+    for (let i = 0; i < 100 && !gates.has('local 2'); i += 1) await new Promise((resolve) => setTimeout(resolve, 5));
+    gates.get('local 2')();
+    for (let i = 0; i < 100 && !gates.has('local 3'); i += 1) await new Promise((resolve) => setTimeout(resolve, 5));
+    gates.get('local 3')();
+    assert.deepEqual(most, { claude: 1, local: 1 });
+  } finally {
+    for (const open of gates.values()) open();
+    app.server.close();
+  }
+});

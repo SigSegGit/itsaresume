@@ -356,7 +356,7 @@ function renderJob(job) {
     $('jobs').prepend(card);
   }
   const status = {
-    queued: ['', 'en attente'],
+    queued: ['', Number.isInteger(job.position) ? `en attente : ${job.position === 1 ? 'prochain' : `${job.position}e`} dans la file` : 'en attente'],
     running: ['info', 'en cours'],
     done: ['ok', 'prêt'],
     failed: ['bad', 'échec'],

@@ -457,6 +457,28 @@ Traps met, each cost time once:
   seen: "portable éteint ou hors ligne". 8 tests, 10 defences
   (`models.json`, `runtime.json`; watcher ones verified under WSL and in
   CI, POSIX fakes).
+- [x] **2.20** (2026-10-06, seen live) **One tunnel at a time.** Four
+  `bionic-tunnel.sh` ran at once (session tasks whose shells were stopped,
+  not their scripts; an orphan `ssh` kept the forward): each round freed
+  the VM's ports (`fuser -k`, which works since `psmisc` was installed on
+  the VM), cutting the others and restarting Bionic, and the owner's local
+  jobs failed "Peer disconnected". The tunnel now writes
+  `~/.itsaresume/bionic-tunnel.pid` (the watcher's file) and a second one
+  leaves at once while the first is alive. The laptop runs the scripts
+  from `~/.itsaresume/bin/` (a copy), never from the checkout: a branch
+  switch once removed the running watcher's file. 1 test, 1 defence
+  (`runtime.json`, verified under WSL).
+- [x] **2.21** (2026-10-06, the owner: "two visitors on my local model?")
+  Two lanes in `src/server.js`, Claude (and auto) and the local model,
+  each one job at a time: a Claude job never waits behind a slow local one
+  (a real local run took 434 s), and the local model keeps its one slot
+  (the router's `max_concurrent` 1 holds it too). A queued job carries
+  `position` in its lane; the page shows "en attente : prochain / Ne dans
+  la file", refreshed by the poll. The public cap counts both lanes; so
+  does `busy`, which the auto-deploy waits on. Each job starts its own
+  LibreOffice with its own profile, so two layouts never share one.
+  Measured live the same night: a sleeping local model woken from the
+  public page (watcher, Bionic, tunnel) and a CV in 434 s.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).
@@ -486,6 +508,10 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
 
+- **The owner's own Bionic use** (2026-10-06, not tested): a visitor's
+  local job loads qwen3-coder-next (48 GB) at its first request; if the
+  owner is using another model in Bionic then, Bionic's JIT eviction may
+  unload his, or memory may run short. Measure before calling it safe.
 - **From the 2026-10-05 redteam, fixed then** (`cv/redteam-fixes`): the
   auto-deploy built unpushed local commits (a fast-forward to an older
   origin/main succeeds as a no-op); it rebuilt while a CV was being made
