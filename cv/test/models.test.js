@@ -15,14 +15,33 @@ const NOW = Date.UTC(2026, 9, 5, 14, 0) / 1000;
 const claude = (state, extra = {}) => ({ name: 'claude', kind: 'claude-code', state, ...extra });
 const local = (state, extra = {}) => ({ name: 'bionic', kind: 'lm-studio', state, ...extra });
 
-test('the local model up is the default, and says whether it must load first', () => {
-  const ready = modelMenu([claude('up'), local('up', { loaded: true })], NOW);
-  assert.equal(ready.default, 'local');
+test('Claude in light use is the default; the local model up says whether it must load first', () => {
+  const ready = modelMenu([claude('up', { usage: 'allowed' }), local('up', { loaded: true })], NOW);
+  assert.equal(ready.default, 'claude');
   assert.equal(ready.options.local.available, true);
   assert.doesNotMatch(ready.options.local.note, /charg/);
   const cold = modelMenu([claude('up'), local('up', { loaded: false })], NOW);
-  assert.equal(cold.default, 'local');
+  assert.equal(cold.default, 'claude', 'never asked: light');
   assert.match(cold.options.local.note, /chargé à la demande/);
+});
+
+// The owner, 2026-10-05: Claude by default while its use is light; near
+// its limit (allowed_warning) the local model takes the default.
+test('Claude near its limit gives the default to the local model', () => {
+  const menu = modelMenu([claude('up', { usage: 'allowed_warning' }), local('up', { loaded: true })], NOW);
+  assert.equal(menu.default, 'local');
+  assert.equal(menu.options.claude.available, true);
+  assert.equal(modelMenu([claude('up', { usage: 'allowed_warning' }), local('down')], NOW).default, 'auto');
+});
+
+test('a laptop that is on but whose local model sleeps is offered, to be woken at sending', () => {
+  const awake = modelMenu([claude('up', { usage: 'allowed_warning' }), local('down')], NOW, { awake: true });
+  assert.equal(awake.options.local.available, true);
+  assert.equal(awake.options.local.wake, true);
+  assert.match(awake.options.local.note, /réveil/);
+  assert.equal(awake.default, 'local');
+  const off = modelMenu([claude('up'), local('down')], NOW, { awake: false });
+  assert.equal(off.options.local.available, false);
 });
 
 test('the local model down is unavailable, said plainly, and auto takes the default', () => {
@@ -30,7 +49,7 @@ test('the local model down is unavailable, said plainly, and auto takes the defa
   assert.equal(menu.options.local.available, false);
   assert.match(menu.options.local.note, /portable éteint ou hors ligne/);
   assert.doesNotMatch(JSON.stringify(menu), /127\.0\.0\.1/, 'no router reason reaches the page');
-  assert.equal(menu.default, 'auto');
+  assert.equal(menu.default, 'claude');
   assert.equal(menu.options.claude.available, true);
 });
 
@@ -81,7 +100,7 @@ test('serve() hands the page the menu from the router, without any router reason
   const server = await serve({ profile: '/nowhere/profile.json', out, url: `http://127.0.0.1:${stand.address().port}`, port: 0, useWord: false, llm: async () => ({}) });
   try {
     const body = await (await fetch(`http://127.0.0.1:${server.address().port}/api/status`)).json();
-    assert.equal(body.models.default, 'auto', JSON.stringify(body));
+    assert.equal(body.models.default, 'claude', JSON.stringify(body));
     assert.equal(body.models.options.local.available, false);
     assert.doesNotMatch(JSON.stringify(body), /127\.0\.0\.1|unreachable/);
   } finally {

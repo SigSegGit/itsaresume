@@ -748,3 +748,23 @@ fn the_status_says_each_backend_state_without_spending_a_request() {
     assert_eq!(local["state"], "down", "{status}");
     assert_eq!(local["reason"], "the laptop is off", "{status}");
 }
+
+/// 8.44: Claude's usage level, from its last answer's rate limit, so the
+/// generator can default to it while its use is light.
+#[test]
+fn the_status_carries_the_usage_level_of_the_last_answer() {
+    let warned = Box::new(Scripted {
+        name: "claude-code",
+        reply: Ok(Completion {
+            text: "x".into(),
+            rate_limit: Some(json!({"status": "allowed_warning", "rateLimitType": "seven_day"})),
+            usage: None,
+        }),
+        delay: Duration::ZERO,
+    });
+    let (address, _dir) = start(vec![warned, answers("lm-studio", "y")]);
+    assert_eq!(post(address, r#"{"prompt": "p"}"#).0, 200);
+    let status = get_body(address, "/status");
+    assert_eq!(state_of(&status, "claude-code")["usage"], "allowed_warning", "{status}");
+    assert!(state_of(&status, "lm-studio").get("usage").is_none(), "{status}");
+}
