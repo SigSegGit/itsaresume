@@ -144,8 +144,8 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
             text.unwrap_or(""),
         )),
         _ => Err(BackendError::Other(format!(
-            "claude result message is not understood: {}",
-            excerpt(&result.to_string(), 160)
+            "claude result message is not understood ({} characters)",
+            result.to_string().chars().count()
         ))),
     }
 }

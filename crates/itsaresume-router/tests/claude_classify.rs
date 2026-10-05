@@ -340,3 +340,28 @@ fn stdout_that_is_not_json_is_not_quoted_in_the_error() {
     assert!(!error.message().contains("Jane Doe"), "{error}");
     assert!(error.message().contains("20 characters"), "{error}");
 }
+
+/// 8.41: a result message the router does not understand carries the
+/// model's text in `result`; the error counts the message, never quotes it.
+#[test]
+fn a_result_message_not_understood_is_counted_not_quoted() {
+    let mut messages: Vec<Value> = serde_json::from_str(OBSERVED_SUCCESS).expect("fixture");
+    let result = messages
+        .iter_mut()
+        .find(|message| message["type"] == "result")
+        .expect("a result message");
+    result["is_error"] = json!("maybe");
+    result["result"] = json!("Jane Doe, 12 rue X");
+    let length = result.to_string().chars().count();
+    let output = serde_json::to_string(&messages).expect("json");
+
+    let Err(error) = classify(&output) else {
+        panic!("not understood is no answer")
+    };
+    assert_eq!(error.kind(), "other");
+    assert!(!error.message().contains("Jane Doe"), "{error}");
+    assert!(
+        error.message().contains(&format!("{length} characters")),
+        "{error}"
+    );
+}

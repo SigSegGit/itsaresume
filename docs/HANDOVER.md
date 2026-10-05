@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.41
-TITLE: The journal keeps lengths, not excerpts, of the four error texts still quoted
+NEXT: 8.42
+TITLE: The generator checks the router's contract at start, on its /healthz probe
 WRITTEN-AT: 2026-10-05
-BASE: 458882d
+BASE: 5b2a46b
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -68,8 +68,10 @@ measured on a real call.
 in every answer; fields and ADR in ARCHITECTURE.md); the client refuses
 another major and reads no `contract` as 1.0. Done before cv 2.3 on
 purpose: 2.3 only decides whether the analysis call sends `schema`, a field
-already frozen. 8.12 is left for the laptop (the Docker token, §10); the
-next cloud-doable step is 8.41.
+already frozen (#75). Then 8.41: three error texts that could hold model
+text are lengths now; `claude`'s stderr keeps its excerpt (decided, §8).
+Trap: removing an import breaks old `dead` lines that call it; rerun the
+file's old defences. 8.12 stays for the laptop (§10); 8.42 is cloud-doable.
 
 ## 1. Decisions never to reverse silently
 
@@ -511,7 +513,7 @@ branch with the local gates of §3 green.
   tokens read and written (`; tokens claude-code 14119 read 200 written,
   …`), so the day the plan ran out says what it went on. One test, three
   defences.
-- [ ] **8.41** (from §9, red team 2026-10-01) The journal writes a length,
+- [x] **8.41** (2026-10-05, from §9, red team 2026-10-01) The journal writes a length,
   never an excerpt, for the four error texts still quoted: LM Studio's
   "without choices[0].message.content" (`src/lm_studio.rs`, the
   `excerpt(body, 160)` near line 210) and the HTTP body with no
@@ -524,6 +526,24 @@ branch with the local gates of §3 green.
   holding a marker sentence never reaches the journal line, its length
   does. One defence per site (re-insert the excerpt). Then remove the item
   from §9.
+  **Done** for three sites: LM Studio's 2xx without content, its error
+  body without `error.message`, Claude's result message not understood
+  (whose `result` is the model's text): `(N characters)` in the error, so
+  in the journal and the HTTP answer alike. Three tests, three defences.
+  **Decided: `claude`'s stderr keeps its excerpt** (160 characters, when
+  stdout is empty): it is the CLI's own diagnostic (a missing prompt file,
+  a broken config), the only clue to why it failed, and nothing seen puts
+  model text there; `a_cli_that_prints_nothing_reports_its_stderr` holds it.
+- [ ] **8.42** (Rodin on 8.37) The generator checks the contract at start:
+  `cv/src/serve.js` probes `GET /healthz` (near line 17) and ignores the
+  body; read its `contract` with the rule of `cv/src/llm.js`
+  (`contractProblem`, export it) and refuse to start, naming both
+  versions, on another major; no `contract` stays 1.0 (the ADR). Red test
+  in `cv/test/` against a stand-in router answering `/healthz` with
+  `{"status":"ok","contract":"2.0"}`; one defence (the check skipped).
+  Same PR, router side: `tests/server.rs` holds the exact key sets of the
+  503 `exhausted`, 400 `unserved` and 400 `bad_request` refusals too
+  (asserted keys; a defence that adds a key to one of them).
 
 ## 9. Deliberately open
 
@@ -564,21 +584,19 @@ branch with the local gates of §3 green.
   body" stays green there (seen 2026-09-29, 60 of 61 verified); the Linux CI
   verifies it (PR #10). Not investigated: tiny_http's drain probably does not
   abort on Windows. Trust the CI's sabotage job for that defence.
-- **Error texts still quoted into the journal** (red team, 2026-10-01): the
-  non-JSON cases now give a length, not the text; four excerpts remain
-  (LM Studio "without choices[0].message.content" and HTTP bodies with no
-  `error.message`; Claude "result message is not understood"; the Claude
-  stderr excerpt). They are server or CLI texts, but can carry model-shaped
-  text: give lengths there too.
+- **`claude`'s stderr is still quoted** into the error and the journal
+  (160 characters, only when stdout is empty), on purpose (8.41): the
+  other error texts that could hold model text are lengths since 8.41.
+  Also since 8.41: a server answering `{"error": "text"}` (a string, not
+  `error.message`) is reported as a length; read that string too if one
+  is met (it is the server's text, not the model's).
 - **Tokens of a refused answer are not counted** (8.38): an answer the
   router refuses (the billing tripwire, LM Studio's `finish_reason:
   length`) took tokens no journal line reports. Small next to the rest;
   count them if the plan runs out unexplained.
-- **The contract (8.37, Rodin)**: the generator's start-up `/healthz`
-  probe (`cv/src/serve.js`) does not read `contract`, so a mismatch shows
-  on the first job, not at start; the exact key set is held for 200 and
-  502 only (503 `exhausted`, `unserved`, 400 are not); any server that
-  omits `contract` passes as 1.0 (the ADR's stated cost).
+- **The contract (8.37, Rodin)**: the start-up probe and the other
+  refusals' key sets are 8.42; any server that omits `contract` passes as
+  1.0 (the ADR's stated cost).
 - **Micro-model runtime** (llama.cpp or Ollama, which model) — M2.
 
 ## 10. Waiting on Nicolas

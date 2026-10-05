@@ -984,7 +984,7 @@
     "LM Studio: a non-JSON schema answer is counted, not quoted": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "completion.text.chars().count()",
-      "dead": "excerpt(&completion.text, 160)",
+      "dead": "completion.text",
       "expect": [
         "a_non_json_answer_to_a_schema_request_is_not_quoted_in_the_error"
       ]
@@ -1150,6 +1150,30 @@
       "dead": "json!({\"backend\": answer.backend, \"text\": answer.text, \"attempts\": attempts, \"model\": null});",
       "expect": [
         "the_contract_answer_has_exactly_the_frozen_keys"
+      ]
+    },
+    "Journal: a 2xx without content is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "\"LM Studio answered {status} without choices[0].message.content ({} characters)\",",
+      "dead": "\"LM Studio answered {status} without choices[0].message.content ({0} characters: {body})\",",
+      "expect": [
+        "a_success_without_an_answer_is_counted_not_quoted"
+      ]
+    },
+    "Journal: an error body without a message is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "|| format!(\"{} characters\", body.chars().count()),",
+      "dead": "|| format!(\"{} characters: {body}\", body.chars().count()),",
+      "expect": [
+        "an_error_body_without_a_message_is_counted_not_quoted"
+      ]
+    },
+    "Journal: a result not understood is counted, not quoted": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "\"claude result message is not understood ({} characters)\",",
+      "dead": "\"claude result message is not understood ({} characters): {result}\",",
+      "expect": [
+        "a_result_message_not_understood_is_counted_not_quoted"
       ]
     }
   }
