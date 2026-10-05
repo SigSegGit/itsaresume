@@ -359,8 +359,8 @@
     },
     "Web: public status hides the assessment": {
       "file": "src/server.js",
-      "live": "publicMode ? publicStatus(status) :",
-      "dead": "publicMode ? status :",
+      "live": "publicMode ? { ...publicStatus(status), busy } :",
+      "dead": "publicMode ? { ...status, busy } :",
       "expect": [
         "in public mode the status carries no verdicts, truth document or raw error"
       ]
@@ -569,6 +569,30 @@
       "dead": "  '/favicon.ico-': ['icon-180.png', 'image/png'],",
       "expect": [
         "the page has an icon and a link preview: icons served, Open Graph names the public banner"
+      ]
+    },
+    "Web: the status says how busy the generator is": {
+      "file": "src/server.js",
+      "live": "const busy = queue.length + (running ? 1 : 0);",
+      "dead": "const busy = 0;",
+      "expect": [
+        "the status says how many jobs are running or waiting, in local and public mode"
+      ]
+    },
+    "Public: a visitor with jobs is evicted last": {
+      "file": "src/server.js",
+      "live": "if (owned.size === 0) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a flood of page loads evicts empty visitors first, never one with jobs while an empty one remains"
+      ]
+    },
+    "Invite: an unreadable file names nobody": {
+      "file": "src/server.js",
+      "live": "      return {};\n    }\n  };\n  const inviteOf",
+      "dead": "      throw error;\n    }\n  };\n  const inviteOf",
+      "expect": [
+        "an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500"
       ]
     }
   }

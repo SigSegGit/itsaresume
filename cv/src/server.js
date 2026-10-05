@@ -166,9 +166,18 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // 2.16: the invitation code a visitor's page was opened with, so each of
   // its jobs names the ESN; read again at each job, so a revocation holds.
   const invited = new Map();
+  // An unreadable or corrupt invites.json names nobody (fails closed), never a 500.
+  const invites = () => {
+    try {
+      return deps.invites?.() ?? {};
+    } catch (error) {
+      process.stderr.write(`itsacv serve: the invitations cannot be read: ${error.message ?? error}\n`);
+      return {};
+    }
+  };
   const inviteOf = (visitor) => {
     const code = invited.get(visitor);
-    return code && deps.invites ? invitationOf(deps.invites(), code) : null;
+    return code ? invitationOf(invites(), code) : null;
   };
   const accepted = [];
   // A reload is the same visitor (seen 2026-10-01: reopening the page during
@@ -180,7 +189,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   };
   const pageToken = (request, code) => {
     if (!publicMode) return { value: token };
-    const live = code && deps.invites && invitationOf(deps.invites(), code) ? code : null;
+    const live = code && invitationOf(invites(), code) ? code : null;
     const kept = cookieOf(request);
     if (kept) {
       if (live) invited.set(kept, live);
@@ -189,10 +198,19 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const fresh = randomBytes(24).toString('hex');
     visitors.set(fresh, new Set());
     if (live) invited.set(fresh, live);
+    // Page loads are free, so a flood of them must not evict the visitors
+    // who own CVs: the oldest without a job goes first (redteam, 2026-10-05).
     if (visitors.size > (publicMode.maxVisitors ?? MAX_VISITORS)) {
-      const oldest = visitors.keys().next().value;
-      visitors.delete(oldest);
-      invited.delete(oldest);
+      let gone = null;
+      for (const [visitor, owned] of visitors) {
+        if (owned.size === 0) {
+          gone = visitor;
+          break;
+        }
+      }
+      gone ??= visitors.keys().next().value;
+      visitors.delete(gone);
+      invited.delete(gone);
     }
     return { value: fresh, cookie: `itsacv_visitor=${fresh}; Path=/; Max-Age=${VISITOR_DAYS * 24 * 3600}; HttpOnly; Secure; SameSite=Strict` };
   };
@@ -340,7 +358,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
         if (path === '/api/status') {
           const status = await deps.status();
-          return send(response, 200, publicMode ? publicStatus(status) : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}) });
+          // busy: jobs running or queued, so the VM's auto-deploy waits for none.
+          const busy = queue.length + (running ? 1 : 0);
+          return send(response, 200, publicMode ? { ...publicStatus(status), busy } : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}), busy });
         }
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;

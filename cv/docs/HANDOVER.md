@@ -51,7 +51,7 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 424 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 430 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   run by the CI job `cv / sabotage`).
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
@@ -440,6 +440,21 @@ the status chip). The audit list is closed. One rare flake seen once in
 three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
+
+- **From the 2026-10-05 redteam, fixed then** (`cv/redteam-fixes`): the
+  auto-deploy built unpushed local commits (a fast-forward to an older
+  origin/main succeeds as a no-op); it rebuilt while a CV was being made
+  (now waits for `busy: 0` in `/api/status`); a flood of free page loads
+  evicted the visitors who owned CVs (empty ones go first now); an
+  unreadable `invites.json` was a 500 (fails closed now); two live
+  invitations could share a label; a backend named `constructor` reached
+  a prototype in the token sums. **Left open:** a failed build is retried
+  every 5 minutes with no backoff and no image prune (disk); finished
+  jobs are never dropped from memory (`jobs` grows with reused offers);
+  the visitors, caps and bans live in memory, so every deploy resets the
+  daily cap and loses visitors' lists; `createInvite`/`revokeInvite` run
+  at the same time can lose one update (no lock: the owner runs one at a
+  time); calls that fail before an answer count no tokens.
 
 - The VM deploys whatever `main` holds (3.5): the gate is the CI that a
   merge needs, nothing after it. No rollback but a revert on `main`; a

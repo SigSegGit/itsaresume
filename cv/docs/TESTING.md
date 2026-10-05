@@ -30,6 +30,7 @@ property it proves.
 | the answer carries the tokens the router reported, null when it reports none | Tokens: the client keeps the router's usage |
 | tokens are summed per backend; an answer without usage counts as a call only | Tokens: each count is added, not replaced; Tokens: every answer is a call, usage or not |
 | a counted model call hands each answer on, unchanged, after the model gave it | Tokens: a counted call reports its answer |
+| a backend name that is no plain id is counted as "?", and never touches a prototype | Tokens: a backend name is a plain id |
 
 ## `test/closed.test.js`
 
@@ -247,6 +248,8 @@ property it proves.
 | itsacv invite prints the link, --list shows each one, --revoke ends it | Invite: revoked by label too |
 | usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart | Invite usage: read tokens include the cache writes; Invite usage: reused jobs are said apart; Invite usage: anonymous jobs are listed too |
 | itsacv invite --usage reads the QA log of --out | Invite usage: the CLI reads the QA log |
+| a live label is unique: a second invitation with it is refused until the first is revoked | Invite: a live label is unique |
+| invites.json is 0600 even over a stale world-readable temporary file | Invite: the file is the owner's alone |
 
 ## `test/layout.test.js`
 
@@ -488,6 +491,9 @@ property it proves.
 | with --invite-only a job needs a live invitation: none, or a revoked one, is 403 | Invite: a page opened with a live code binds its visitor; Invite: --invite-only refuses a job without a live invitation; Invite: a revoked code names nobody |
 | a job may name a profile from the closed list; none is the default, an unknown one is 400 | Profile: an unknown profile is refused; Profile: the job's profile reaches the generation; Profile: the log line names the profile |
 | in public mode the profiles are neither listed nor chosen: another than the default is 400 | Profile: an unknown profile is refused; Profile: public mode knows the default alone; Profile: public status lists no profiles |
+| the status says how many jobs are running or waiting, in local and public mode | Web: the status says how busy the generator is |
+| a flood of page loads evicts empty visitors first, never one with jobs while an empty one remains | Public: a visitor with jobs is evicted last |
+| an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500 | Invite: an unreadable file names nobody |
 
 ## `test/split.test.js`
 
@@ -544,6 +550,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**365 tests, 304 of them covered by at least one sabotage defence.**
+**371 tests, 310 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

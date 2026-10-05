@@ -50,10 +50,11 @@
     },
     "Invite: the file is the owner's alone": {
       "file": "src/invites.js",
-      "live": "{ mode: 0o600 });",
-      "dead": "{ mode: 0o644 });",
+      "live": "  chmodSync(temporary, 0o600);",
+      "dead": "  chmodSync(temporary, 0o644);",
       "expect": [
-        "an invitation is a fresh 24-hex code naming its label, kept in invites.json for the owner alone"
+        "an invitation is a fresh 24-hex code naming its label, kept in invites.json for the owner alone",
+        "invites.json is 0600 even over a stale world-readable temporary file"
       ]
     },
     "Invite: revoked by label too": {
@@ -95,6 +96,14 @@
       "dead": "process.stdout.write(usageByInvite(''));",
       "expect": [
         "itsacv invite --usage reads the QA log of --out"
+      ]
+    },
+    "Invite: a live label is unique": {
+      "file": "src/invites.js",
+      "live": "if (Object.values(invites).some((invite) => invite.label === clean && !invite.revoked)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a live label is unique: a second invitation with it is refused until the first is revoked"
       ]
     }
   }

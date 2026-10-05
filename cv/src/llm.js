@@ -98,7 +98,9 @@ const TOKEN_KEYS = ['input', 'output', 'cache_read', 'cache_creation'];
  * apart. An answer whose backend reported none counts as a call only.
  */
 export function addTokens(tokens, answer) {
-  const backend = answer.backend ?? '?';
+  // The name comes from the router's answer: a plain id, else "?" (never
+  // "__proto__", which as a key would reach Object.prototype).
+  const backend = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(answer.backend ?? '') && !['constructor', 'prototype'].includes(answer.backend) ? answer.backend : '?';
   const sum = (tokens[backend] ??= { calls: 0, ...Object.fromEntries(TOKEN_KEYS.map((key) => [key, 0])) });
   sum.calls += 1;
   for (const key of TOKEN_KEYS) {
