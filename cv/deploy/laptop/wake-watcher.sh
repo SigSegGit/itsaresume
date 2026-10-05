@@ -26,7 +26,7 @@ while [ "$rounds" -eq 0 ] || [ "$round" -lt "$rounds" ]; do
   round=$((round + 1))
   # shellcheck disable=SC2086
   said=$(ssh -i "$VM_KEY" -o BatchMode=yes -o ConnectTimeout=10 $VM_SSH \
-    "mkdir -p $wake && touch $wake/laptop-seen && if [ -f $wake/local ]; then rm -f $wake/local; echo wake; fi; if fuser -s -n tcp 54321 2>/dev/null; then echo tunnel-up; fi" \
+    "mkdir -p $wake && touch $wake/laptop-seen && if [ -f $wake/local ]; then rm -f $wake/local; echo wake; fi; if ss -Hltn 'sport = :54321' | grep -q .; then echo tunnel-up; fi" \
     2>/dev/null || true)
   if grep -qx wake <<< "$said"; then
     if [ -n "${BIONIC_LMS:-}" ]; then
