@@ -443,6 +443,20 @@ Traps met, each cost time once:
   never when Claude alone is chosen; Bionic unloads it after an idle
   hour. 10 tests, 9 defences (`models.json`, `runtime.json`); the tunnel
   test runs on Linux only (POSIX fakes; verified under WSL and in CI).
+- [x] **2.19** (2026-10-05, the owner after Rodin: "Claude by default
+  while my use is light; no Bionic at boot, wake it on demand; tell the
+  visitor what was done, never make them retype the offer") The default
+  is Claude while its last answer said `allowed` (router 8.44), else the
+  local model when it can answer, else auto. The laptop runs only
+  `deploy/laptop/wake-watcher.sh` at logon (`wake-watcher.vbs`, no
+  window): one SSH call a minute marks it seen in `<out>/wake/` and takes
+  a wake request. A laptop seen within 3 min whose model sleeps is offered
+  ("en veille : réveil à l'envoi"); a job for it leaves the request,
+  shows the step "Réveil de l'IA locale" with what was done, waits up to
+  6 min (`src/wake.js`), then runs: the offer is never typed again. Not
+  seen: "portable éteint ou hors ligne". 8 tests, 10 defences
+  (`models.json`, `runtime.json`; watcher ones verified under WSL and in
+  CI, POSIX fakes).
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).

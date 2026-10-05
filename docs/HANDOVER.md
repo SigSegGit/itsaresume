@@ -556,6 +556,12 @@ branch with the local gates of §3 green.
   request (34 s warm, 118 s cold) and unloads after an idle hour. The
   cv side (menu, tunnel, healthcheck) is cv 2.18.
 
+- [x] **8.44** (2026-10-05, the owner: Claude by default while its use is
+  light) `/status` gives each backend `usage`: its last answer's
+  rate-limit `status` (`allowed`, `allowed_warning`), so the generator
+  (cv 2.19) defaults to Claude until it warns. Same contract 1.1 (8.43 and
+  8.44 ship together).
+
 ## 9. Deliberately open
 
 - **Usage-limit output format unknown.** Classified by `api_error_status`

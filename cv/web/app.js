@@ -228,6 +228,7 @@ function setupOffers() {
 /* ---------- Jobs ---------- */
 
 const STEPS = [
+  ['wake', 'Réveil de l’IA locale'],
   ['listing', 'Lecture de l’offre'],
   ['analysis', 'Analyse'],
   ['layout', 'Mise en page'],

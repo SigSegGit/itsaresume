@@ -20,8 +20,10 @@ function claudeOption(backend, now) {
   return { available: true, note: '' };
 }
 
-function localOption(backend) {
+function localOption(backend, awake) {
   if (!backend) return { available: false, note: 'non configurée' };
+  // 8.44: the laptop is on (its watcher says so) but the model sleeps: woken at sending.
+  if (backend.state === 'down' && awake) return { available: true, wake: true, note: 'en veille : réveil à l’envoi, 2 à 6 min' };
   if (backend.state === 'down') return { available: false, note: 'portable éteint ou hors ligne' };
   if (backend.state === 'up' && backend.loaded === false) return { available: true, note: 'chargé à la demande, 1 à 2 min de plus' };
   return { available: true, note: '' };
@@ -29,12 +31,14 @@ function localOption(backend) {
 
 /**
  * The menu: each model available or not, with a note, and the default.
- * The local model, when it can answer, is the default (the owner's
- * decision, 2026-10-05); else auto; none when nothing can answer. A router
+ * Claude while its use is light (never asked, or its last answer
+ * `allowed`); else the local model when it can answer; else auto; none
+ * when nothing can answer (the owner, 2026-10-05). `awake`: the laptop's
+ * watcher was seen, so a sleeping local model can be woken (8.44). A router
  * without /status (`backends` undefined) leaves everything offered; no
  * router at all (`null`) offers nothing.
  */
-export function modelMenu(backends, now = Date.now() / 1000) {
+export function modelMenu(backends, now = Date.now() / 1000, { awake = false } = {}) {
   if (backends === null) {
     const off = { available: false, note: 'routeur injoignable' };
     return { default: null, options: { auto: off, claude: off, local: off } };
@@ -43,9 +47,12 @@ export function modelMenu(backends, now = Date.now() / 1000) {
     const open = { available: true, note: '' };
     return { default: 'auto', options: { auto: open, claude: open, local: open } };
   }
-  const claude = claudeOption(backends.find((backend) => backend.kind === 'claude-code'), now);
-  const local = localOption(backends.find((backend) => backend.kind === 'lm-studio'));
+  const claudeBackend = backends.find((backend) => backend.kind === 'claude-code');
+  const claude = claudeOption(claudeBackend, now);
+  const local = localOption(backends.find((backend) => backend.kind === 'lm-studio'), awake);
+  const light = claudeBackend?.state !== 'limited' && [undefined, 'allowed'].includes(claudeBackend?.usage);
   const auto = { available: claude.available || local.available, note: '' };
   const fallback = auto.available ? 'auto' : null;
-  return { default: local.available ? 'local' : fallback, options: { auto, claude, local } };
+  const chosen = (claude.available && light && 'claude') || (local.available && 'local') || fallback;
+  return { default: chosen, options: { auto, claude, local } };
 }

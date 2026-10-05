@@ -765,6 +765,13 @@ fn the_status_carries_the_usage_level_of_the_last_answer() {
     let (address, _dir) = start(vec![warned, answers("lm-studio", "y")]);
     assert_eq!(post(address, r#"{"prompt": "p"}"#).0, 200);
     let status = get_body(address, "/status");
-    assert_eq!(state_of(&status, "claude-code")["usage"], "allowed_warning", "{status}");
-    assert!(state_of(&status, "lm-studio").get("usage").is_none(), "{status}");
+    assert_eq!(
+        state_of(&status, "claude-code")["usage"],
+        "allowed_warning",
+        "{status}"
+    );
+    assert!(
+        state_of(&status, "lm-studio").get("usage").is_none(),
+        "{status}"
+    );
 }

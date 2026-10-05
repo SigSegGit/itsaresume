@@ -1231,6 +1231,14 @@
       "expect": [
         "the_probe_says_up_and_whether_the_model_is_in_memory"
       ]
+    },
+    "Status: the usage level is the rate limit's status": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".and_then(|limit| limit[\"status\"].as_str())",
+      "dead": ".and_then(|limit| limit[\"rateLimitType\"].as_str())",
+      "expect": [
+        "the_status_carries_the_usage_level_of_the_last_answer"
+      ]
     }
   }
 }

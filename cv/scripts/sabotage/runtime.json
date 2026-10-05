@@ -272,6 +272,30 @@
       "expect": [
         "the tunnel starts Bionic's server before each round"
       ]
+    },
+    "Watcher: a wake request starts Bionic's server": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "\"$BIONIC_LMS\" server start >/dev/null 2>&1 \\",
+      "dead": "true \"$BIONIC_LMS\" >/dev/null 2>&1 \\",
+      "expect": [
+        "a wake request starts the server of Bionic and the tunnel"
+      ]
+    },
+    "Watcher: a wake request starts the tunnel": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "nohup \"$tunnel\" >/dev/null 2>&1 &",
+      "dead": "true \"$tunnel\" >/dev/null 2>&1 &",
+      "expect": [
+        "a wake request starts the server of Bionic and the tunnel"
+      ]
+    },
+    "Watcher: a quiet round starts nothing": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "if [ \"$said\" = wake ]; then",
+      "dead": "if true; then",
+      "expect": [
+        "a quiet round marks the laptop seen and starts nothing"
+      ]
     }
   }
 }

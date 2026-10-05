@@ -5,14 +5,6 @@
     "--test-reporter=tap"
   ],
   "defences": {
-    "Models: the local model up is the default": {
-      "file": "src/models.js",
-      "live": "return { default: local.available ? 'local' : fallback, options: { auto, claude, local } };",
-      "dead": "return { default: fallback, options: { auto, claude, local } };",
-      "expect": [
-        "the local model up is the default, and says whether it must load first"
-      ]
-    },
     "Models: the local model down is unavailable": {
       "file": "src/models.js",
       "live": "if (backend.state === 'down') return { available: false, note: 'portable éteint ou hors ligne' };",
@@ -55,10 +47,66 @@
     },
     "Models: serve() hands the menu to the page": {
       "file": "src/serve.js",
-      "live": "models: modelMenu(up ? backends : null)",
-      "dead": "models: modelMenu(undefined)",
+      "live": "models: modelMenu(up ? backends : null,",
+      "dead": "models: modelMenu(undefined,",
       "expect": [
         "serve() hands the page the menu from the router, without any router reason"
+      ]
+    },
+    "Models: Claude in light use is the default": {
+      "file": "src/models.js",
+      "live": "const chosen = (claude.available && light && 'claude') || (local.available && 'local') || fallback;",
+      "dead": "const chosen = (local.available && 'local') || fallback;",
+      "expect": [
+        "Claude in light use is the default; the local model up says whether it must load first"
+      ]
+    },
+    "Models: near its limit, the local model is the default": {
+      "file": "src/models.js",
+      "live": "[undefined, 'allowed'].includes(claudeBackend?.usage)",
+      "dead": "[undefined, 'allowed', 'allowed_warning'].includes(claudeBackend?.usage)",
+      "expect": [
+        "Claude near its limit gives the default to the local model"
+      ]
+    },
+    "Models: an awake laptop's sleeping model is offered": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'down' && awake)",
+      "dead": "if (backend.state === 'down' && false)",
+      "expect": [
+        "a laptop that is on but whose local model sleeps is offered, to be woken at sending"
+      ]
+    },
+    "Wake: the laptop is awake within three minutes": {
+      "file": "src/wake.js",
+      "live": "< SEEN_WITHIN_S * 1000;",
+      "dead": "< SEEN_WITHIN_S * 1000000;",
+      "expect": [
+        "the laptop is awake when its watcher marked it within three minutes"
+      ]
+    },
+    "Wake: the request is left for the watcher": {
+      "file": "src/wake.js",
+      "live": "  requestWake(out);",
+      "dead": "  void out;",
+      "expect": [
+        "a sleeping local model on an awake laptop is woken, and the job waits for it"
+      ]
+    },
+    "Wake: a laptop off fails at once": {
+      "file": "src/wake.js",
+      "live": "if (!laptopAwake(out)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a laptop off, or a model that never wakes, fails the job plainly"
+      ]
+    },
+    "Wake: a local job goes through the wake check": {
+      "file": "src/serve.js",
+      "live": "if (model === 'local') await ensureLocal(",
+      "dead": "if (false) await ensureLocal(",
+      "expect": [
+        "serve() runs a local job through the wake check"
       ]
     }
   }

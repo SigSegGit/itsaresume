@@ -121,6 +121,9 @@ pub struct Router {
 struct Seen {
     at: u64,
     error: Option<BackendError>,
+    /// The rate limit's `status` of a successful answer (`allowed`,
+    /// `allowed_warning`), when the backend reported one (8.44).
+    usage: Option<String>,
 }
 
 /// One backend's state for `GET /status` (8.43).
@@ -139,6 +142,9 @@ pub struct BackendStatus {
     pub loaded: Option<bool>,
     /// When the state was last seen (Unix seconds); none for a probe.
     pub since: Option<u64>,
+    /// How spent its allowance was at its last answer (`allowed`,
+    /// `allowed_warning`), when it said (8.44).
+    pub usage: Option<String>,
 }
 
 impl Router {
@@ -171,10 +177,13 @@ impl Router {
                     Some(Probe::Down(why)) => ("down", Some(why), None, None),
                     None => match seen.get(backend.name()) {
                         None => ("unknown", None, None, None),
-                        Some(Seen { at, error: None }) => ("up", None, None, Some(*at)),
+                        Some(Seen {
+                            at, error: None, ..
+                        }) => ("up", None, None, Some(*at)),
                         Some(Seen {
                             at,
                             error: Some(error),
+                            ..
                         }) => {
                             let state = match error {
                                 BackendError::QuotaExceeded(_) => "limited",
@@ -192,17 +201,18 @@ impl Router {
                     reason,
                     loaded,
                     since,
+                    usage: seen.get(backend.name()).and_then(|seen| seen.usage.clone()),
                 }
             })
             .collect()
     }
 
-    fn remember(&self, backend: &str, error: Option<BackendError>) {
+    fn remember(&self, backend: &str, error: Option<BackendError>, usage: Option<String>) {
         let at = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_or(0, |elapsed| elapsed.as_secs());
         if let Ok(mut seen) = self.seen.lock() {
-            seen.insert(backend.to_owned(), Seen { at, error });
+            seen.insert(backend.to_owned(), Seen { at, error, usage });
         }
     }
 
@@ -279,7 +289,12 @@ impl Router {
         for backend in serving {
             let error = match backend.complete(request) {
                 Ok(completion) => {
-                    self.remember(backend.name(), None);
+                    let usage = completion
+                        .rate_limit
+                        .as_ref()
+                        .and_then(|limit| limit["status"].as_str())
+                        .map(str::to_owned);
+                    self.remember(backend.name(), None, usage);
                     let answer = Answer {
                         backend: backend.name().to_owned(),
                         text: completion.text,
@@ -294,7 +309,7 @@ impl Router {
                 }
                 Err(error) => error,
             };
-            self.remember(backend.name(), Some(error.clone()));
+            self.remember(backend.name(), Some(error.clone()), None);
             let stop = !error.allows_fallback();
             attempts.push(Attempt {
                 backend: backend.name().to_owned(),

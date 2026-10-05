@@ -304,7 +304,9 @@ property it proves.
 
 | Property (the test name) | Sabotage defences |
 |---|---|
-| the local model up is the default, and says whether it must load first | Models: the local model up is the default |
+| Claude in light use is the default; the local model up says whether it must load first | Models: Claude in light use is the default |
+| Claude near its limit gives the default to the local model | Models: near its limit, the local model is the default |
+| a laptop that is on but whose local model sleeps is offered, to be woken at sending | Models: an awake laptop's sleeping model is offered |
 | the local model down is unavailable, said plainly, and auto takes the default | Models: the local model down is unavailable |
 | Claude at its limit is unavailable for an hour, then offered again with the time it was seen | Models: Claude at its limit pauses for an hour |
 | Claude stopped (logged out, a tripwire) is unavailable | Models: Claude stopped is unavailable |
@@ -547,6 +549,24 @@ property it proves.
 |---|---|
 | the tunnel starts Bionic's server before each round | Tunnel: Bionic's server is started before each round |
 
+## `test/wake.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the laptop is awake when its watcher marked it within three minutes | Wake: the laptop is awake within three minutes |
+| a request to wake is a file the watcher takes | — |
+| a local model already up is used at once, with no step | — |
+| a sleeping local model on an awake laptop is woken, and the job waits for it | Wake: the request is left for the watcher |
+| a laptop off, or a model that never wakes, fails the job plainly | Wake: a laptop off fails at once |
+| serve() runs a local job through the wake check | Wake: a local job goes through the wake check |
+
+## `test/watcher.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a quiet round marks the laptop seen and starts nothing | Watcher: a quiet round starts nothing |
+| a wake request starts the server of Bionic and the tunnel | Watcher: a wake request starts Bionic's server; Watcher: a wake request starts the tunnel |
+
 ## `test/web.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -586,6 +606,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**387 tests, 324 of them covered by at least one sabotage defence.**
+**397 tests, 332 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

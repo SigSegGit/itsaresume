@@ -64,3 +64,36 @@ test('a laptop off, or a model that never wakes, fails the job plainly', async (
     /ne s’est pas réveillée/,
   );
 });
+
+// Through serve() itself: a job for the local model on a laptop that is
+// off fails plainly, without calling any model.
+test('serve() runs a local job through the wake check', async () => {
+  const { createServer } = await import('node:http');
+  const { serve } = await import('../src/serve.js');
+  const stand = createServer((request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(request.url === '/status' ? { contract: '1.1', backends: local('down') } : { contract: '1.1', status: 'ok' }));
+  });
+  await new Promise((resolve) => stand.listen(0, '127.0.0.1', resolve));
+  const out = outDir();
+  let called = false;
+  const server = await serve({ profile: new URL('./fixtures/profile.synthetic.json', import.meta.url).pathname.replace(/^\/(\w:)/, '$1'), out, url: `http://127.0.0.1:${stand.address().port}`, port: 0, useWord: false, llm: async () => { called = true; return {}; } });
+  try {
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const token = (await (await fetch(base)).text()).match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+    const posted = await fetch(`${base}/api/jobs`, { method: 'POST', headers: { Origin: base, 'X-CSRF-Token': token, 'Content-Type': 'application/json' }, body: JSON.stringify({ offers: [{ title: 'SRE', text: 'Senior SRE. Kubernetes, Terraform, on-call.' }], model: 'local' }) });
+    assert.equal(posted.status, 202);
+    let job;
+    for (let i = 0; i < 200 && job?.status !== 'failed'; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      [job] = await (await fetch(`${base}/api/jobs`)).json();
+    }
+    assert.equal(job?.status, 'failed', JSON.stringify(job));
+    assert.match(job.error, /portable éteint ou hors ligne/);
+    assert.equal(called, false, 'no model was asked');
+  } finally {
+    server.closeAllConnections();
+    server.close();
+    stand.close();
+  }
+});

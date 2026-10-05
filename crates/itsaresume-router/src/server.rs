@@ -176,6 +176,9 @@ fn status(router: &Router) -> Value {
             if let Some(since) = backend.since {
                 entry["since"] = json!(since);
             }
+            if let Some(usage) = backend.usage {
+                entry["usage"] = json!(usage);
+            }
             entry
         })
         .collect();

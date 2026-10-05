@@ -234,7 +234,7 @@ These fields, and only these, make the contract:
 | refusal | `error.backend` | string, `stopped` only | the backend that stopped it |
 | refusal | `error.attempts` | array, `stopped`/`exhausted`/`unserved` | as on 200 |
 | any | `journal_error` | string, optional | the answer stands, its journal line was not written |
-| `GET /status` (1.1) | `backends` | array of `{name, kind, state, reason?, loaded?, since?}` | each backend in the router's order, nothing spent (8.43): `state` is `up`, `down`, `limited` (a quota), `stopped` (another error) or `unknown`; from the backend's probe (LM Studio: `/v1/models` and `/api/v0/models`, 3 s) when it has one, else from its last answer, `since` in Unix seconds; `loaded` says whether the local model is in memory (false: it loads at the first request) |
+| `GET /status` (1.1) | `backends` | array of `{name, kind, state, reason?, loaded?, since?, usage?}` | each backend in the router's order, nothing spent (8.43): `state` is `up`, `down`, `limited` (a quota), `stopped` (another error) or `unknown`; from the backend's probe (LM Studio: `/v1/models` and `/api/v0/models`, 3 s) when it has one, else from its last answer, `since` in Unix seconds; `loaded` says whether the local model is in memory (false: it loads at the first request); `usage` is the last answer's rate-limit `status` (`allowed`, `allowed_warning`), 8.44 |
 
 A new optional field bumps the minor; removing, renaming or changing the
 meaning of a field bumps the major. `tests/server.rs` holds the answer to
