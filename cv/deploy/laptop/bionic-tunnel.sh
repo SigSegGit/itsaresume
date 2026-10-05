@@ -21,7 +21,8 @@ round=0
 while [ "$rounds" -eq 0 ] || [ "$round" -lt "$rounds" ]; do
   round=$((round + 1))
   if [ -n "${BIONIC_LMS:-}" ]; then
-    "$BIONIC_LMS" server start >/dev/null 2>&1       || echo "Bionic's server did not start ($(date +%H:%M:%S))" >&2
+    "$BIONIC_LMS" server start >/dev/null 2>&1 \
+      || echo "Bionic's server did not start ($(date +%H:%M:%S))" >&2
   fi
   # shellcheck disable=SC2086
   ssh -i "$VM_KEY" -o BatchMode=yes -o ConnectTimeout=10 $VM_SSH 'fuser -k -n tcp 54321 18789 >/dev/null 2>&1 || true' || true
