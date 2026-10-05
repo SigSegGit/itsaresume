@@ -42,3 +42,11 @@ test('a wake request starts the server of Bionic and the tunnel', posix, () => {
   assert.ok(calls.includes('lms server start'), calls.join('|'));
   assert.ok(calls.includes('tunnel'), calls.join('|'));
 });
+
+// A tunnel already open (started by hand, or by a session) is left alone:
+// a second one would free the VM's ports at each round and cut the first.
+test('a wake request with a tunnel already open starts Bionic, not a second tunnel', posix, () => {
+  const calls = run('wake\ntunnel-up');
+  assert.ok(calls.includes('lms server start'), calls.join('|'));
+  assert.ok(!calls.includes('tunnel'), calls.join('|'));
+});
