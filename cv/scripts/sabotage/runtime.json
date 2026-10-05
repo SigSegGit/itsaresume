@@ -291,10 +291,18 @@
     },
     "Watcher: a quiet round starts nothing": {
       "file": "deploy/laptop/wake-watcher.sh",
-      "live": "if [ \"$said\" = wake ]; then",
+      "live": "if grep -qx wake <<< \"$said\"; then",
       "dead": "if true; then",
       "expect": [
         "a quiet round marks the laptop seen and starts nothing"
+      ]
+    },
+    "Watcher: an open tunnel is left alone": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "if ! grep -qx tunnel-up <<< \"$said\" \\",
+      "dead": "if ! false \\",
+      "expect": [
+        "a wake request with a tunnel already open starts Bionic, not a second tunnel"
       ]
     }
   }

@@ -26,14 +26,17 @@ while [ "$rounds" -eq 0 ] || [ "$round" -lt "$rounds" ]; do
   round=$((round + 1))
   # shellcheck disable=SC2086
   said=$(ssh -i "$VM_KEY" -o BatchMode=yes -o ConnectTimeout=10 $VM_SSH \
-    "mkdir -p $wake && touch $wake/laptop-seen && if [ -f $wake/local ]; then rm -f $wake/local; echo wake; fi" \
+    "mkdir -p $wake && touch $wake/laptop-seen && if [ -f $wake/local ]; then rm -f $wake/local; echo wake; fi; if fuser -s -n tcp 54321 2>/dev/null; then echo tunnel-up; fi" \
     2>/dev/null || true)
-  if [ "$said" = wake ]; then
+  if grep -qx wake <<< "$said"; then
     if [ -n "${BIONIC_LMS:-}" ]; then
       "$BIONIC_LMS" server start >/dev/null 2>&1 \
         || echo "Bionic's server did not start ($(date +%H:%M:%S))" >&2
     fi
-    if ! { [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; }; then
+    # A tunnel already open (by hand, by a session) is left alone: a second
+    # one would free the VM's ports at each round and cut the first.
+    if ! grep -qx tunnel-up <<< "$said" \
+      && ! { [ -f "$pidfile" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; }; then
       nohup "$tunnel" >/dev/null 2>&1 &
       echo $! > "$pidfile"
     fi
