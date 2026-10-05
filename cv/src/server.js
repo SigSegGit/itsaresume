@@ -118,10 +118,10 @@ function publicStatus(status) {
 }
 
 /** A job as the page sees it. */
-function view(job, { detail = false, publicMode = null } = {}) {
+function view(job, { detail = false, publicMode = null, position } = {}) {
   // Router text and paths are the owner's: a visitor only learns that it failed.
   const error = publicMode && job.status === 'failed' ? 'échec' : job.error ?? null;
-  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via };
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via, ...(position ? { position } : {}) };
   if (!job.result) return base;
   const { fit } = job.result.view;
   base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
@@ -155,8 +155,18 @@ const VISITOR_DAYS = 7;
  */
 export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null, clock = Date.now }) {
   const jobs = new Map();
-  const queue = [];
-  let running = false;
+  // Two lanes, each one job at a time (2026-10-06): a Claude job never
+  // waits behind a slow local one, and the local model keeps its one slot.
+  const laneOf = (job) => (job.model === 'local' ? 'local' : 'claude');
+  const queues = { claude: [], local: [] };
+  const running = { claude: false, local: false };
+  const inFlight = () => queues.claude.length + queues.local.length + Number(running.claude) + Number(running.local);
+  /** A queued job's place in its lane: 1 is next. */
+  const positionOf = (job) => {
+    if (job.status !== 'queued') return undefined;
+    const index = queues[laneOf(job)].indexOf(job);
+    return index < 0 ? undefined : index + 1;
+  };
 
   // Public mode (behind a reverse proxy, open to anyone): each page load is a
   // visitor with its own token and sees only its own jobs; generations are
@@ -227,7 +237,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const now = publicMode.now();
     while (accepted.length && accepted[0].at <= now - DAY) accepted.shift();
     const client = clientOf(request);
-    if (queue.length + (running ? 1 : 0) + count > publicMode.maxQueued) {
+    if (inFlight() + count > publicMode.maxQueued) {
       throw new HttpError(429, 'Trop de CV en cours de génération : réessaie dans quelques minutes.');
     }
     if (accepted.filter((entry) => entry.client === client && entry.at > now - HOUR).length + count > publicMode.perVisitorPerHour) {
@@ -304,11 +314,11 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     }
   }
 
-  async function work() {
-    if (running) return;
-    running = true;
-    while (queue.length) {
-      const job = queue.shift();
+  async function work(lane) {
+    if (running[lane]) return;
+    running[lane] = true;
+    while (queues[lane].length) {
+      const job = queues[lane].shift();
       job.status = 'running';
       job.startedAt = clock();
       // Read by the view: running, it grows; done or failed, it stays.
@@ -330,7 +340,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       }
       log(job);
     }
-    running = false;
+    running[lane] = false;
   }
 
   const server = createServer(async (request, response) => {
@@ -359,12 +369,12 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (path === '/api/status') {
           const status = await deps.status();
           // busy: jobs running or queued, so the VM's auto-deploy waits for none.
-          const busy = queue.length + (running ? 1 : 0);
+          const busy = inFlight();
           return send(response, 200, publicMode ? { ...publicStatus(status), busy } : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}), busy });
         }
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
-          return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode })));
+          return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode, position: positionOf(job) })));
         }
         const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+))?$/);
         // Public: a job is its visitor's alone; to anyone else it does not exist.
@@ -440,10 +450,11 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
             job.reused = true;
             log(job);
           } else {
-            queue.push(job);
+            queues[laneOf(job)].push(job);
           }
         });
-        work();
+        work('claude');
+        work('local');
         return send(response, 202, created.map((job) => view(job)));
       }
       throw new HttpError(404, 'not found');
