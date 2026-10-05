@@ -34,11 +34,12 @@ test('the local model down is unavailable, said plainly, and auto takes the defa
   assert.equal(menu.options.claude.available, true);
 });
 
+// The time is the owner's, Paris: 13:50 UTC is 15:50 in October.
 test('Claude at its limit is unavailable for an hour, then offered again with the time it was seen', () => {
   const since = NOW - 10 * 60;
   const fresh = modelMenu([claude('limited', { since }), local('down')], NOW);
   assert.equal(fresh.options.claude.available, false);
-  assert.match(fresh.options.claude.note, /limite.*13:50|13:50.*limite/i);
+  assert.match(fresh.options.claude.note, /limite.*15:50|15:50.*limite/i);
   assert.equal(fresh.default, null, 'nothing can answer: no default');
   assert.equal(fresh.options.auto.available, false);
   const later = modelMenu([claude('limited', { since: NOW - 2 * 3600 }), local('down')], NOW);
@@ -57,6 +58,15 @@ test('a router older than /status leaves the menu as it was: everything offered,
   const menu = modelMenu(undefined, NOW);
   assert.equal(menu.default, 'auto');
   for (const model of ['auto', 'claude', 'local']) assert.equal(menu.options[model].available, true, model);
+});
+
+test('no router at all offers nothing, and says so', () => {
+  const menu = modelMenu(null, NOW);
+  assert.equal(menu.default, null);
+  for (const model of ['auto', 'claude', 'local']) {
+    assert.equal(menu.options[model].available, false, model);
+    assert.match(menu.options[model].note, /routeur injoignable/);
+  }
 });
 
 test('serve() hands the page the menu from the router, without any router reason', async () => {

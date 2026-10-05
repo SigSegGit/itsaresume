@@ -10,6 +10,7 @@ import { findReusable, loadRuns } from './intake.js';
 import { contractProblem, counted } from './llm.js';
 import { loadInvites } from './invites.js';
 import { DEFAULT_PROFILE, listProfiles } from './profiles.js';
+import { modelMenu } from './models.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -47,6 +48,28 @@ function routerContract(url) {
   });
 }
 
+/** The router's backends (GET /status, 8.43), or undefined: down, or older than the route. */
+function routerBackends(url) {
+  return new Promise((resolve) => {
+    const call = request(new URL('/status', url), { method: 'GET', timeout: 5000 }, (response) => {
+      let body = '';
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => { body += chunk; });
+      response.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          resolve(response.statusCode === 200 && Array.isArray(parsed.backends) ? parsed.backends : undefined);
+        } catch {
+          resolve(undefined);
+        }
+      });
+    });
+    call.on('timeout', () => call.destroy());
+    call.on('error', () => resolve(undefined));
+    call.end();
+  });
+}
+
 /** The page's header: whose profile, how checked, and what can run. */
 async function status({ profilePath, url, useWord }) {
   let profile;
@@ -68,7 +91,8 @@ async function status({ profilePath, url, useWord }) {
   const word = useWord && process.platform === 'win32';
   // ADR-11: on Linux, LibreOffice makes the PDF; $ITSACV_SOFFICE says it is there.
   const libre = useWord && !word && Boolean(process.env.ITSACV_SOFFICE);
-  return { profile, router: { up: await routerUp(url) }, layout: { word, libre } };
+  const [up, backends] = await Promise.all([routerUp(url), routerBackends(url)]);
+  return { profile, router: { up }, models: modelMenu(up ? backends : null), layout: { word, libre } };
 }
 
 export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null }) {

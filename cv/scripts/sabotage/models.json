@@ -1,0 +1,65 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "defences": {
+    "Models: the local model up is the default": {
+      "file": "src/models.js",
+      "live": "return { default: local.available ? 'local' : fallback, options: { auto, claude, local } };",
+      "dead": "return { default: fallback, options: { auto, claude, local } };",
+      "expect": [
+        "the local model up is the default, and says whether it must load first"
+      ]
+    },
+    "Models: the local model down is unavailable": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'down') return { available: false, note: 'portable éteint ou hors ligne' };",
+      "dead": "if (backend.state === 'down') return { available: true, note: 'portable éteint ou hors ligne' };",
+      "expect": [
+        "the local model down is unavailable, said plainly, and auto takes the default"
+      ]
+    },
+    "Models: Claude at its limit pauses for an hour": {
+      "file": "src/models.js",
+      "live": "if (now - since < LIMIT_PAUSE_S)",
+      "dead": "if (now - since < 0)",
+      "expect": [
+        "Claude at its limit is unavailable for an hour, then offered again with the time it was seen"
+      ]
+    },
+    "Models: Claude stopped is unavailable": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'stopped') return { available: false,",
+      "dead": "if (backend.state === 'stopped') return { available: true,",
+      "expect": [
+        "Claude stopped (logged out, a tripwire) is unavailable"
+      ]
+    },
+    "Models: no router offers nothing": {
+      "file": "src/models.js",
+      "live": "if (backends === null) {",
+      "dead": "if (backends === 0) {",
+      "expect": [
+        "no router at all offers nothing, and says so"
+      ]
+    },
+    "Models: the page greys what cannot answer": {
+      "file": "web/app.js",
+      "live": "option.disabled = !state.available;",
+      "dead": "option.disabled = false;",
+      "expect": [
+        "the page greys the models the server says cannot answer, and refreshes the menu"
+      ]
+    },
+    "Models: serve() hands the menu to the page": {
+      "file": "src/serve.js",
+      "live": "models: modelMenu(up ? backends : null)",
+      "dead": "models: modelMenu(undefined)",
+      "expect": [
+        "serve() hands the page the menu from the router, without any router reason"
+      ]
+    }
+  }
+}

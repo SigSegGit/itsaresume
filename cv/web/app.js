@@ -44,9 +44,30 @@ function setPill(id, state, text) {
   pill.textContent = text;
 }
 
+/* 8.43: the menu follows the router: a model that cannot answer is greyed
+   with the server's note; the default is set once, and again when the chosen
+   model goes away. Nothing can answer: no generation. */
+let modelChosen = false;
+let modelsReady = true;
+function applyModels(models) {
+  if (!models) return;
+  const select = $('model');
+  for (const option of select.options) {
+    const state = models.options[option.value];
+    if (!state) continue;
+    option.dataset.label ??= option.textContent;
+    option.disabled = !state.available;
+    option.textContent = state.note ? `${option.dataset.label} (${state.note})` : option.dataset.label;
+  }
+  if ((!modelChosen || !models.options[select.value]?.available) && models.default) select.value = models.default;
+  modelsReady = models.default !== null;
+  renderOffers();
+}
+
 async function refreshStatus() {
   try {
-    const { profile, profiles, router, layout, public: open } = await api('/api/status');
+    const { profile, profiles, router, models, layout, public: open } = await api('/api/status');
+    applyModels(models);
     // 4.1: several profiles (the owner's --profiles): choose the one to tailor to.
     if (!open && profiles?.length > 1 && $('profile-row').hidden) {
       $('profile').replaceChildren(...profiles.map((id) => {
@@ -129,7 +150,7 @@ function renderOffers() {
     return h('li', { class: 'offer' }, title, remove, h('span', { class: 'meta', text: `${offer.text.split('\n').length} lignes · ${offer.text.length} caractères` }));
   }));
   const button = $('generate');
-  button.disabled = offers.length === 0;
+  button.disabled = offers.length === 0 || !modelsReady;
   button.textContent = offers.length > 1 ? `Générer les ${offers.length} CV` : 'Générer le CV';
 }
 
@@ -373,5 +394,9 @@ async function poll() {
 
 setupOffers();
 renderOffers();
+$('model').addEventListener('change', () => { modelChosen = true; });
 refreshStatus();
+// Every 30 s, and when the menu is opened (a test sandbox has no interval).
+globalThis.setInterval?.(refreshStatus, 30000);
+$('model').addEventListener('focus', refreshStatus);
 poll();
