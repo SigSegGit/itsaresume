@@ -28,6 +28,28 @@ test('a job offer is accepted; a question, a poem, code or an oversized text is 
   assert.equal(looksLikeOffer(`${OFFER}\n${'Mission profil compétences expérience. '.repeat(400)}`), false, 'too long');
 });
 
+// A recruiter's approach on LinkedIn, shaped like the one refused on 2026-10-05
+// (names and company replaced): plurals, accents and a hiring verb, few of the
+// words a posted offer uses.
+const APPROACH = `Hello Nicolas,
+
+Je recrute notre futur SRE senior dans le cadre du scale de notre équipe Platform.
+Au sein de l'équipe SRE, ton rôle sera :
+D'accompagner la scalabilité et le déploiement des applications
+Participer à la conception de l'architecture dès le début des projets
+La mise en place de stacks techniques (monitoring, sécurité, stockage)
+
+En rejoignant cette équipe, tu travailleras sur des produits à fort impact, avec une équipe en pleine croissance.
+Est-ce que ce type d'opportunité peut t'intéresser ? Nous avons plusieurs postes ouverts !
+
+Camille Martin
+Talent Acquisition chez Acme AI`;
+
+test('a recruiter message is an offer: plurals, accents and a hiring verb count', () => {
+  assert.equal(looksLikeOffer(APPROACH), true);
+  assert.equal(looksLikeOffer('Bonjour, je cherche une recette de gâteau au chocolat pour l’anniversaire de mon fils, quelque chose de simple, sans four si possible, que je puisse préparer la veille au soir avec lui.'), false);
+});
+
 test('the same offer, reformatted or with a changed date, is recognised; another offer is not', () => {
   const again = `${OFFER.replace(/\n/g, '\n\n')}\nDate de démarrage : ASAP`;
   assert.ok(similarity(OFFER, again) >= 0.9, String(similarity(OFFER, again)));
