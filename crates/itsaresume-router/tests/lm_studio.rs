@@ -336,3 +336,40 @@ fn a_non_json_answer_to_a_schema_request_is_not_quoted_in_the_error() {
     assert!(!error.message().contains("Jane Doe"), "{error}");
     assert!(error.message().contains("18 characters"), "{error}");
 }
+
+/// 8.41: a 2xx body without `choices[0].message.content` may hold the
+/// model's text elsewhere; the error (and so the journal) counts it, never
+/// quotes it.
+#[test]
+fn a_success_without_an_answer_is_counted_not_quoted() {
+    let body = r#"{"choices":[{"message":{"refusal":"Jane Doe, 12 rue X"}}]}"#;
+    let (base_url, _) = serve(200, body);
+    let Err(error) = backend(&base_url).complete(&Request::new("p")) else {
+        panic!("no content is no answer")
+    };
+    assert!(!error.message().contains("Jane Doe"), "{error}");
+    assert!(
+        error
+            .message()
+            .contains(&format!("{} characters", body.chars().count())),
+        "{error}"
+    );
+}
+
+/// 8.41: an error body without `error.message` (a proxy's page, a server's
+/// dump) is counted, never quoted.
+#[test]
+fn an_error_body_without_a_message_is_counted_not_quoted() {
+    let body = "<html>Jane Doe, 12 rue X</html>";
+    let (base_url, _) = serve(500, body);
+    let Err(error) = backend(&base_url).complete(&Request::new("p")) else {
+        panic!("a 500 is no answer")
+    };
+    assert!(!error.message().contains("Jane Doe"), "{error}");
+    assert!(
+        error
+            .message()
+            .contains(&format!("{} characters", body.chars().count())),
+        "{error}"
+    );
+}
