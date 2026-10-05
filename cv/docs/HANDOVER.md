@@ -302,6 +302,17 @@ Traps met, each cost time once:
     VM's router lists it after Claude (`timeout_secs` below the
     generator's); laptop off and Claude spent: the page says "réessaie plus
     tard" (an `Exhausted` mapped to a clear message), never a crash.
+  - [x] **3.5** (2026-10-04, the owner: a merged change must reach the VM
+    without him typing) The VM follows `main` by itself:
+    `deploy/vm-generator/auto-deploy.sh` (fast-forward only, then `docker
+    compose up -d --build`; refuses local edits, local commits, another
+    branch; a failed build is retried at the next run) under a systemd
+    user timer (`deploy/vm-generator/systemd/`, every 5 min). Pull, not
+    push: no key or address of the VM leaves it, nothing in CI or a
+    cloud session. Six cases in `test-auto-deploy.sh` (real git, fake
+    docker; CI job `handover`), five defences
+    (`scripts/sabotage/auto-deploy.json`). Waits on the owner: the
+    one-time install (`compose.yaml`'s header).
   - [x] **3.4** Real check from outside, laptop OFF: one new offer on
     cv.<domain>, a CV served by Claude from the VM; then the Bionic path
     with the laptop on.
@@ -429,6 +440,10 @@ the status chip). The audit list is closed. One rare flake seen once in
 three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
+
+- The VM deploys whatever `main` holds (3.5): the gate is the CI that a
+  merge needs, nothing after it. No rollback but a revert on `main`; a
+  failed build leaves the running containers as they were.
 
 - An invitation code rides in the URL (`?i=`): it stays in the visitor's
   history and address bar and in the VM's Caddy access log. 96 random

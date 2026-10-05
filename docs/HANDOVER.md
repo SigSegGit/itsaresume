@@ -164,8 +164,11 @@ what was redacted). Findings, each one a trap for a naive parser:
 - Before freezing a step: audit with the `rodin` skill if available.
 - Docs change in the same commit as the code they describe.
 - **A merge that changes what runs on the VM is redeployed by the session**
-  (Nicolas, 2026-10-04): `git pull`, then `docker compose -f
-  cv/deploy/vm-generator/compose.yaml up -d --build` with `DATA` set. A
+  (Nicolas, 2026-10-04): once cv 3.5's timer is installed on the VM, a
+  merge on `main` reaches it within five minutes by itself (check
+  `journalctl --user -u itsacv-deploy` there); before that, `git pull`,
+  then `docker compose -f cv/deploy/vm-generator/compose.yaml up -d
+  --build` with `DATA` set. A
   session that cannot reach the VM (a cloud container has neither its
   address nor a key) says so and hands Nicolas the exact permission or
   settings change it needs, built from **his current file read first**
@@ -574,6 +577,9 @@ it is an interactive login to his account:
   sentence is measured by no test; what he finds becomes corpus cases.
 - After the first week of real use: a look at the account's billing page
   (the overage tripwire detects extra usage after the call it billed).
+- **Once, on the VM** (cv 3.5): install the deploy timer, the four lines
+  at the top of `cv/deploy/vm-generator/compose.yaml` (adjust the two
+  paths in the `.service`). After that, merges deploy themselves.
 - **Two closed questions from 2026-10-04** (cv 2.14, 2.16): (1) the same
   offer pasted by a second ESN is answered from the first one's run (no
   model call), which tells the second ESN this offer was tested before:
