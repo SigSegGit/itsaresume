@@ -246,3 +246,9 @@ test('the page greys the models the server says cannot answer, and refreshes the
   assert.match(app, /setInterval\?\.\(refreshStatus, \d+\)/);
   assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
 });
+
+// 2026-10-06: a queued job shows its place in its lane, refreshed by the poll.
+test('the page shows a queued job its place in the queue', () => {
+  const app = web('app.js');
+  assert.match(app, /queued: \['', Number\.isInteger\(job\.position\) \? `en attente : \$\{job\.position === 1 \? 'prochain'/);
+});

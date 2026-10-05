@@ -79,8 +79,8 @@
     },
     "Web: one run at a time": {
       "file": "src/server.js",
-      "live": "if (running) return;",
-      "dead": "void running;",
+      "live": "if (running[lane]) return;",
+      "dead": "void lane;",
       "expect": [
         "offers are split, then tailored one after the other, with their progress"
       ]
@@ -287,7 +287,7 @@
     },
     "Public: the bounded queue": {
       "file": "src/server.js",
-      "live": "if (queue.length + (running ? 1 : 0) + count > publicMode.maxQueued) {",
+      "live": "if (inFlight() + count > publicMode.maxQueued) {",
       "dead": "if (false) {",
       "expect": [
         "in public mode generations are capped per visitor per hour and per day, and the queue is bounded"
@@ -399,8 +399,8 @@
     },
     "Web: the public job list has a generic error": {
       "file": "src/server.js",
-      "live": ".map((job) => view(job, { publicMode })));",
-      "dead": ".map((job) => view(job)));",
+      "live": ".map((job) => view(job, { publicMode, position: positionOf(job) })));",
+      "dead": ".map((job) => view(job, { position: positionOf(job) })));",
       "expect": [
         "in public mode a done job keeps no repair lines, a failed job has a generic error"
       ]
@@ -573,7 +573,7 @@
     },
     "Web: the status says how busy the generator is": {
       "file": "src/server.js",
-      "live": "const busy = queue.length + (running ? 1 : 0);",
+      "live": "const busy = inFlight();",
       "dead": "const busy = 0;",
       "expect": [
         "the status says how many jobs are running or waiting, in local and public mode"
@@ -601,6 +601,30 @@
       "dead": "[hidden] { display: none; }",
       "expect": [
         "an element hidden by its attribute stays hidden, whatever its class displays"
+      ]
+    },
+    "Web: Claude and the local model have their own lanes": {
+      "file": "src/server.js",
+      "live": "const laneOf = (job) => (job.model === 'local' ? 'local' : 'claude');",
+      "dead": "const laneOf = (job) => (job.model === 'local' ? 'claude' : 'claude');",
+      "expect": [
+        "Claude and the local model run in two lanes, one job each, and a queued job says its place"
+      ]
+    },
+    "Web: a queued job says its place": {
+      "file": "src/server.js",
+      "live": "return index < 0 ? undefined : index + 1;",
+      "dead": "return undefined;",
+      "expect": [
+        "Claude and the local model run in two lanes, one job each, and a queued job says its place"
+      ]
+    },
+    "Web: the page shows the place in the queue": {
+      "file": "web/app.js",
+      "live": "queued: ['', Number.isInteger(job.position) ?",
+      "dead": "queued: ['', false ?",
+      "expect": [
+        "the page shows a queued job its place in the queue"
       ]
     }
   }
