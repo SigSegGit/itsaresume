@@ -168,7 +168,10 @@ request whatever its outcome:
 `outcome` is `answered`, `stopped` (an `Other` error) or `exhausted` (every
 backend failed with a fallback kind). **The prompt text and the answer text
 are never written**, only their lengths: prompts will carry CV data. Error
-messages are truncated to 200 characters. A journal that cannot be written
+messages are truncated to 200 characters, and a body, a stdout or a result
+message the router does not understand is given as a length, never quoted
+(8.41): it can hold model text. The one excerpt left is `claude`'s stderr
+when it printed nothing on stdout (the CLI's own diagnostics). A journal that cannot be written
 does not cost the caller the answer; the failure is reported alongside it.
 
 An answer also carries, when its backend reports them, `rate_limit` (Claude's

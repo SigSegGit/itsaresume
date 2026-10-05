@@ -4,7 +4,7 @@
 //! it, and on the same machine it is loopback. The response shapes were
 //! observed first (`tests/fixtures/lm-studio/`).
 
-use crate::backend::{Backend, BackendError, Completion, Request, Usage, excerpt};
+use crate::backend::{Backend, BackendError, Completion, Request, Usage};
 use serde_json::{Value, json};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
@@ -207,15 +207,16 @@ fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
                 usage: usage_of(&parsed),
             }),
             None => Err(BackendError::Other(format!(
-                "LM Studio answered {status} without choices[0].message.content: {}",
-                excerpt(body, 160)
+                "LM Studio answered {status} without choices[0].message.content ({} characters)",
+                body.chars().count()
             ))),
         };
     }
 
-    let message = parsed["error"]["message"]
-        .as_str()
-        .map_or_else(|| excerpt(body, 160), str::to_owned);
+    let message = parsed["error"]["message"].as_str().map_or_else(
+        || format!("{} characters", body.chars().count()),
+        str::to_owned,
+    );
     let detail = format!("LM Studio HTTP {status}: {message}");
     // Observed: nothing loaded is a 400. It is the server's state, not the
     // request's, so the next backend may answer.
