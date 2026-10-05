@@ -97,6 +97,55 @@ def run(command, root):
     return completed.returncode, completed.stdout + completed.stderr
 
 
+def narrowed(command, expect, root):
+    """The command limited to the test files that hold the named tests.
+
+    A sabotage is judged only by its named tests (``matches``), so running
+    the other files proves nothing and cost most of the CI's time (2026-10-05:
+    the cv plans ran the whole suite 570 times, about 50 minutes). A name
+    found in no file keeps the whole command: never narrower than sure.
+    """
+    if not expect:
+        return command
+    if command[:2] == ['node', '--test']:
+        sources = {}
+        for path in sorted(glob.glob(os.path.join(root, 'test', '**', '*.test.js'), recursive=True)):
+            with io.open(path, encoding='utf-8') as handle:
+                sources[os.path.relpath(path, root).replace(os.sep, '/')] = handle.read()
+        files = set()
+        for name in expect:
+            spellings = {name, name.replace("'", "\\'")}
+            found = [path for path, text in sources.items()
+                     if any(("'%s'" % s) in text or ('"%s"' % s) in text or ('`%s`' % s) in text
+                            for s in spellings)]
+            if not found:
+                return command
+            files.update(found)
+        return command + sorted(files)
+    if command[:2] == ['cargo', 'test']:
+        targets = set()
+        for name in expect:
+            short = name.split('::')[-1]
+            needle = 'fn %s(' % short
+            hits = set()
+            for path in glob.glob(os.path.join(root, 'crates', '*', 'tests', '*.rs')):
+                with io.open(path, encoding='utf-8') as handle:
+                    if needle in handle.read():
+                        hits.add(('--test', os.path.splitext(os.path.basename(path))[0]))
+            for path in glob.glob(os.path.join(root, 'crates', '*', 'src', '**', '*.rs'), recursive=True):
+                with io.open(path, encoding='utf-8') as handle:
+                    if needle in handle.read():
+                        hits.add(('--lib',))
+            if not hits:
+                return command
+            targets.update(hits)
+        extra = []
+        for target in sorted(targets):
+            extra.extend(target)
+        return command + extra
+    return command
+
+
 def verify(defence, command, root):
     """Return (verdict, detail). verdict is 'ok' or 'fail'."""
     path = os.path.join(root, defence['file'])
@@ -122,7 +171,7 @@ def verify(defence, command, root):
         with io.open(path, 'w', encoding='utf-8', newline='') as out:
             out.write(pristine.replace(live, dead))
         touch(path)
-        code, output = run(command, root)
+        code, output = run(narrowed(command, expect, root), root)
     finally:
         # Whatever happened -- a failed build, a crash, Ctrl-C -- the file goes
         # back byte for byte, then is touched so cargo rebuilds it.
@@ -162,6 +211,7 @@ def main():
         return 0
 
     failures = 0
+    checked = set()
     for plan_path, plan in plans:
         command = plan['command']
         print('== %s' % os.path.relpath(plan_path, root))
@@ -175,7 +225,11 @@ def main():
             print('test binary after the first red one.')
             return 1
 
-        code, output = run(command, root)
+        if tuple(command) in checked:
+            code, output = 0, ''
+        else:
+            checked.add(tuple(command))
+            code, output = run(command, root)
         if code != 0:
             print('BASELINE RED -- the tree fails before any sabotage, so no')
             print('sabotage can prove anything. Fix the tree first.')
@@ -190,7 +244,10 @@ def main():
             if verdict != 'ok':
                 failures += 1
 
-        code, output = run(command, root)
+    # The tree after every restore, once per command (each plan restores its
+    # files byte for byte; a restore gone wrong shows here).
+    for command in sorted(checked):
+        code, output = run(list(command), root)
         if code != 0:
             print('AFTER RESTORE THE TREE IS RED -- a restore went wrong.')
             print('\n'.join(output.strip().splitlines()[-15:]))
