@@ -264,11 +264,18 @@ laptop"; Caddy and the caps stay. Steps: HANDOVER 3.1-3.4.
 made: the page says so. A Pro subscription serving strangers may conflict
 with its terms (ADR-7's residual, unchanged).
 
+*The menu (2.18, 2026-10-05).* The page offers only what can answer, from
+the router's `GET /status`: the laptop's model is the default when its
+tunnel and Bionic are up (it loads at the first request, unloads after
+an idle hour); off, it is greyed "portable éteint ou hors ligne" and the
+VM's Claude carries the site. `src/models.js` decides; no router reason
+reaches the page.
+
 ### ADR-8 — The model is behind one HTTP contract
 
 `src/llm.js` is the generator's only model client: `POST {system, prompt}`
-to the router, `{text, backend}` back. The contract is frozen at 1.0 (router
-8.37, its `docs/ARCHITECTURE.md`): the client refuses an answer of another
+to the router, `{text, backend}` back. The contract is frozen at 1.x (router
+8.37; 1.1 adds `GET /status`, 8.43): the client refuses an answer of another
 major, and reads one without `contract` as a router older than the field. Which model answers is the router's
 configuration (`*.local.toml`): Claude Code on the subscription, or any
 OpenAI-compatible server by `base_url` — the laptop's Bionic, or a model on

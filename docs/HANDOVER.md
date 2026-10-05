@@ -44,9 +44,7 @@ private notes are in `~/.itsaresume/HANDOVER-prive.md`, never here.
 Trap: `sabotage.py` needs its plan on the repository's drive (`relpath`);
 put a partial plan in `target/`.
 
-**2026-09-30.** 8.16: `scripts/check-testing.py` holds every TESTING.md row
-to the sabotage plan's `expect` lists, both ways; the timeout test proves
-the child dead.
+**2026-09-30.** 8.16: `check-testing.py` holds TESTING.md to the plan.
 
 **2026-09-30.** 8.17: one completion at a time per local backend
 (`max_concurrent`; the wait counts against `timeout_secs`). 8.18: a `base_url` with
@@ -70,8 +68,9 @@ Trap: removing an import breaks old `dead` lines that call it; rerun the
 file's old defences. Then 8.42: `itsacv serve` reads `/healthz` at start
 and stops (exit 4, both versions named) on another major; a router down
 at start is not refused. The 503/400 refusals' key sets are frozen in
-`tests/server.rs`. Only 8.12 is left in §8, and it waits on Nicolas (§10);
-the generator's own next step is cv 2.3 (`cv/docs/HANDOVER.md`).
+`tests/server.rs`. Then 8.43 (contract 1.1): `GET /status`, each
+backend's state without spending a request; the cv menu follows it. Only
+8.12 is left in §8 (waits on Nicolas, §10); the generator's is cv 2.3.
 
 ## 1. Decisions never to reverse silently
 
@@ -544,6 +543,18 @@ branch with the local gates of §3 green.
   Same PR, router side: `tests/server.rs` holds the exact key sets of the
   503 `exhausted`, 400 `unserved` and 400 `bad_request` refusals too
   (asserted keys; a defence that adds a key to one of them).
+
+- [x] **8.43** (2026-10-05, the owner: the model menu follows what can
+  answer) `GET /status` (contract 1.1): `{backends: [{name, kind, state,
+  reason?, loaded?, since?}]}`. A backend with a probe answers for itself
+  (LM Studio: `/v1/models` lists the model, `/api/v0/models` says
+  `loaded`; 3 s, never a completion); Claude has none, so its state is its
+  last answer (`limited` after a quota, `stopped` after another error,
+  `down` after an outage, `up`, or `unknown`), in memory. Measured that
+  day: Bionic's own `lms` (`resources/app/.webpack-bionic/lms.exe`)
+  starts its server headless in 8 s; a listed model loads at its first
+  request (34 s warm, 118 s cold) and unloads after an idle hour. The
+  cv side (menu, tunnel, healthcheck) is cv 2.18.
 
 ## 9. Deliberately open
 

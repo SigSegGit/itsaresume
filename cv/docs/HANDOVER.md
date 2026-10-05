@@ -426,6 +426,23 @@ Traps met, each cost time once:
   defences, one rewritten (`intake.json`, `web.json`). Not done on
   purpose: a visitor's own profile upload on the public page is 4.1's
   question (a), still the owner's.
+- [x] **2.18** (2026-10-05, the owner: "the menu must follow what is
+  available") The model menu follows the router's `GET /status` (router
+  8.43): `src/models.js` (`modelMenu`) greys a model that cannot answer
+  with its own French note, never a router reason; the local model, when
+  it can answer, is the default (loaded, or "chargé à la demande, 1 à 2
+  min de plus"), else auto, else nothing and no generation; Claude after
+  a limit is off for an hour, then offered again with the time it was
+  seen; router down: "routeur injoignable"; a router without `/status`
+  leaves the menu as it was. The page refreshes it every 30 s and when
+  the menu is opened. Also: the VM compose health-checks the router on
+  8789 (the image asks 8787: Docker called it unhealthy), and
+  `deploy/laptop/bionic-tunnel.sh` starts Bionic's server before each
+  round (`BIONIC_LMS` in `~/.itsaresume/public.env`). Owner's decision
+  (A): a public generation may wake the local model; never at page load,
+  never when Claude alone is chosen; Bionic unloads it after an idle
+  hour. 10 tests, 9 defences (`models.json`, `runtime.json`); the tunnel
+  test runs on Linux only (POSIX fakes; verified under WSL and in CI).
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).
