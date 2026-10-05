@@ -3,8 +3,8 @@
 <!-- ITSARESUME-STATE
 NEXT: 8.12
 TITLE: Real run in Docker with Claude (waits on Nicolas's token in .env, §10)
-WRITTEN-AT: 2026-10-05
-BASE: c424dba
+WRITTEN-AT: 2026-10-06
+BASE: d95df84
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -46,12 +46,9 @@ put a partial plan in `target/`.
 
 **2026-09-30.** 8.16: `check-testing.py` holds TESTING.md to the plan.
 
-**2026-09-30.** 8.17: one completion at a time per local backend
-(`max_concurrent`; the wait counts against `timeout_secs`). 8.18: a `base_url` with
-userinfo is refused (never echoed). 8.19: `merge-when-green.sh` merges only
-the head it counted (`--match-head-commit`), tested with a fake `gh`.
-8.20: the Claude workdir is a private directory of ours, not a link (Unix
-tests, verified under WSL: `cargo` is installed there).
+**2026-09-30.** 8.17-8.20: one completion at a time per local backend,
+no userinfo in `base_url`, merges pinned to the counted head, a private
+Claude workdir.
 
 **2026-10-04.** 8.34-8.36 (`kind`; no call marked `classify`), tokens in
 the journal, `stats` and the HTTP answer (8.38-8.40, #69); cv 2.13-2.16,
@@ -71,6 +68,9 @@ at start is not refused. The 503/400 refusals' key sets are frozen in
 `tests/server.rs`. Then 8.43 (contract 1.1): `GET /status`, each
 backend's state without spending a request; the cv menu follows it. Only
 8.12 is left in §8 (waits on Nicolas, §10); the generator's is cv 2.3.
+8.44: `/status` gives Claude's `usage` (its last rate-limit status). CI is
+one workflow (`changes` job, `scripts/ci-changes.sh`); sabotage runs only
+the files of each defence's tests (36 → 10 min).
 
 ## 1. Decisions never to reverse silently
 

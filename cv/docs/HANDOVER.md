@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.3
 TITLE: measure the analysis call with a JSON schema (closed skill ids) on the corpus, both models, before any use
-WRITTEN-AT: 2026-10-04
+WRITTEN-AT: 2026-10-06
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,14 +11,15 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-10-04)
+## 0. Where things stand (2026-10-06)
 
 - **MVP works end to end**: an offer pasted in the local page → the router
   (Claude on the owner's subscription, a local model as fallback; never
   billed per token, ADR-8) → a one-page CV (docx + PDF, ATS-checked) and a
-  qualification report, in about 2 minutes. A public instance runs behind a
-  reverse proxy on an always-on VM, reached through a tunnel from the laptop
-  (ADR-7).
+  qualification report, in about 2 minutes. The public instance
+  (cv.<domain>) generates on the always-on VM, Claude first, the laptop's
+  Bionic through a tunnel when the laptop is on (ADR-11); the VM follows
+  `main` by itself (3.5, timer installed 2026-10-05).
 - **Moved on 2026-09-30** from the private `itsaresume-cv` repository into
   `cv/` of the public `itsaresume` repository, as a fresh history (the
   private repository, archived, keeps the past; the owner's data never was
@@ -48,13 +49,23 @@ the decisions waiting for him, how to reach his machines — are in
   (2.13); a public job readable by its own visitor only (2.14); favicon
   and link preview (2.15). Later, written as steps: another profile (4.x),
   matchmaking (5.x).
-- The router contract is frozen at 1.0 (router 8.37): `src/llm.js`
-  refuses another major, reads no `contract` as 1.0.
+- 2026-10-05/06 (2.18-2.21, router 8.42-8.44): the model menu follows the
+  router's `/status` (Claude by default while its use is light; the local
+  model greyed when the laptop is off, offered "en veille" when it is on,
+  then woken by `deploy/laptop/wake-watcher.sh` and the job waits); one
+  tunnel at a time; two lanes (Claude, local) with the queue place shown.
+  Verified live: a sleeping local model woken from the public page, a CV in
+  434 s. The laptop runs its scripts from `~/.itsaresume/bin/` (a copy).
+- The router contract is 1.1 (router 8.37, 8.43): `src/llm.js` refuses
+  another major and reads no `contract` as 1.0; `serve()` checks it at
+  start.
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 434 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
-  run by the CI job `cv / sabotage`).
+- 454 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+  CI job `cv-sabotage`, now ~10-18 min: each defence runs only the files of
+  its named tests). One CI workflow; a `changes` job runs the generator's
+  jobs only when `cv/` changed.
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
 ## 1. Resume cheaply (the owner pays every token)
