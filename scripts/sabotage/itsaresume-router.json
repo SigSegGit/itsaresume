@@ -1191,6 +1191,46 @@
       "expect": [
         "a_result_message_not_understood_is_counted_not_quoted"
       ]
+    },
+    "Status: a probe's down is down": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "Some(Probe::Down(why)) => (\"down\", Some(why), None, None),",
+      "dead": "Some(Probe::Down(why)) => (\"up\", Some(why), None, None),",
+      "expect": [
+        "the_status_says_each_backend_state_without_spending_a_request"
+      ]
+    },
+    "Status: a quota is limited": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "BackendError::QuotaExceeded(_) => \"limited\",",
+      "dead": "BackendError::QuotaExceeded(_) => \"down\",",
+      "expect": [
+        "the_status_says_each_backend_state_without_spending_a_request"
+      ]
+    },
+    "Status: a success is remembered": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "self.remember(backend.name(), None);",
+      "dead": "let _ = backend.name();",
+      "expect": [
+        "the_status_says_each_backend_state_without_spending_a_request"
+      ]
+    },
+    "Probe: an unlisted model is down": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "if has(&listed).is_none() {",
+      "dead": "if has(&listed).is_none() && false {",
+      "expect": [
+        "the_probe_says_down_and_why"
+      ]
+    },
+    "Probe: loaded is the server's loaded state": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": ".and_then(|model| model[\"state\"].as_str().map(|state| state == \"loaded\"));",
+      "dead": ".and_then(|model| model[\"state\"].as_str().map(|state| state != \"loaded\"));",
+      "expect": [
+        "the_probe_says_up_and_whether_the_model_is_in_memory"
+      ]
     }
   }
 }

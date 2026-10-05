@@ -387,7 +387,11 @@ fn the_probe_says_up_and_whether_the_model_is_in_memory() {
             &[("/v1/models", 200, LISTED), ("/api/v0/models", 200, &v0)],
             2,
         );
-        assert_eq!(backend(&base).probe(), Some(Probe::Up { loaded }), "{state}");
+        assert_eq!(
+            backend(&base).probe(),
+            Some(Probe::Up { loaded }),
+            "{state}"
+        );
     }
     let base = support::serve_routes(&[("/v1/models", 200, LISTED)], 2);
     assert_eq!(
@@ -401,7 +405,10 @@ fn the_probe_says_up_and_whether_the_model_is_in_memory() {
 /// says which.
 #[test]
 fn the_probe_says_down_and_why() {
-    let base = support::serve_routes(&[("/v1/models", 200, r#"{"data": [{"id": "other-model"}]}"#)], 2);
+    let base = support::serve_routes(
+        &[("/v1/models", 200, r#"{"data": [{"id": "other-model"}]}"#)],
+        2,
+    );
     match backend(&base).probe() {
         Some(Probe::Down(why)) => assert!(why.contains("example-model"), "{why}"),
         other => panic!("{other:?}"),

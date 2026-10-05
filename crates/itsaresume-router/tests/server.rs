@@ -1,7 +1,9 @@
 //! The HTTP endpoint, over real sockets, in front of scripted backends.
 
 use itsaresume_router::server::{DEFAULT_LISTEN, MAX_BODY_BYTES, Server};
-use itsaresume_router::{Backend, BackendError, Completion, Journal, Kind, Request, Router, Usage};
+use itsaresume_router::{
+    Backend, BackendError, Completion, Journal, Kind, Probe, Request, Router, Usage,
+};
 use serde_json::{Value, json};
 use std::net::SocketAddr;
 use std::thread;
@@ -704,13 +706,24 @@ fn state_of<'a>(status: &'a Value, name: &str) -> &'a Value {
 #[test]
 fn the_status_says_each_backend_state_without_spending_a_request() {
     let (address, _dir) = start(vec![
-        fails("claude-code", BackendError::QuotaExceeded("usage limit".into())),
+        fails(
+            "claude-code",
+            BackendError::QuotaExceeded("usage limit".into()),
+        ),
         answers("lm-studio", "x"),
     ]);
     let status = get_body(address, "/status");
     assert_eq!(status["contract"], "1.1", "{status}");
-    assert_eq!(state_of(&status, "claude-code")["kind"], "claude-code", "{status}");
-    assert_eq!(state_of(&status, "claude-code")["state"], "unknown", "{status}");
+    assert_eq!(
+        state_of(&status, "claude-code")["kind"],
+        "claude-code",
+        "{status}"
+    );
+    assert_eq!(
+        state_of(&status, "claude-code")["state"],
+        "unknown",
+        "{status}"
+    );
 
     assert_eq!(post(address, r#"{"prompt": "p"}"#).0, 200);
     let status = get_body(address, "/status");
@@ -724,7 +737,10 @@ fn the_status_says_each_backend_state_without_spending_a_request() {
         BackendError::Other("not logged in".into()),
     )]);
     let _ = post(address, r#"{"prompt": "p"}"#);
-    assert_eq!(state_of(&get_body(address, "/status"), "claude-code")["state"], "stopped");
+    assert_eq!(
+        state_of(&get_body(address, "/status"), "claude-code")["state"],
+        "stopped"
+    );
 
     let (address, _dir) = start(vec![Box::new(ProbedDown)]);
     let status = get_body(address, "/status");

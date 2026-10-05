@@ -245,6 +245,10 @@ impl Backend for Named {
         self.serves.contains(&kind)
     }
 
+    fn probe(&self) -> Option<crate::backend::Probe> {
+        self.inner.probe()
+    }
+
     fn complete(
         &self,
         request: &crate::backend::Request,

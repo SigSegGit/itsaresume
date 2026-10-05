@@ -213,7 +213,8 @@ it on the host's loopback only.
 
 ## Contract with the generator ✅
 
-Frozen at **1.0** (8.37, 2026-10-05); `server::CONTRACT` holds the version.
+Frozen at **1.0** (8.37, 2026-10-05), **1.1** since `GET /status` (8.43);
+`server::CONTRACT` holds the version.
 These fields, and only these, make the contract:
 
 | Where | Field | Type | Meaning |
@@ -233,6 +234,7 @@ These fields, and only these, make the contract:
 | refusal | `error.backend` | string, `stopped` only | the backend that stopped it |
 | refusal | `error.attempts` | array, `stopped`/`exhausted`/`unserved` | as on 200 |
 | any | `journal_error` | string, optional | the answer stands, its journal line was not written |
+| `GET /status` (1.1) | `backends` | array of `{name, kind, state, reason?, loaded?, since?}` | each backend in the router's order, nothing spent (8.43): `state` is `up`, `down`, `limited` (a quota), `stopped` (another error) or `unknown`; from the backend's probe (LM Studio: `/v1/models` and `/api/v0/models`, 3 s) when it has one, else from its last answer, `since` in Unix seconds; `loaded` says whether the local model is in memory (false: it loads at the first request) |
 
 A new optional field bumps the minor; removing, renaming or changing the
 meaning of a field bumps the major. `tests/server.rs` holds the answer to

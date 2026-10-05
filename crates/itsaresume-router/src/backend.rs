@@ -176,8 +176,27 @@ pub trait Backend: Send + Sync {
         true
     }
 
+    /// What it says of itself without spending a request (8.43), or `None`
+    /// when it cannot tell without one (Claude: only an answer tells).
+    fn probe(&self) -> Option<Probe> {
+        None
+    }
+
     /// Answer one request, or say which of the three ways it failed.
     fn complete(&self, request: &Request) -> Result<Completion, BackendError>;
+}
+
+/// A backend's own word on whether it can take a request now (8.43).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Probe {
+    /// It answers; its model is in memory (`Some(true)`), loads at the
+    /// first request (`Some(false)`), or it cannot tell (`None`).
+    Up {
+        /// In memory, loads on demand, or unknown.
+        loaded: Option<bool>,
+    },
+    /// It cannot take a request, and why.
+    Down(String),
 }
 
 #[cfg(test)]
