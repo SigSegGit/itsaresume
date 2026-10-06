@@ -1,0 +1,123 @@
+{
+  "surface": "ci",
+  "command": [
+    "bash",
+    "scripts/test-sabotage-select.sh"
+  ],
+  "files": [
+    "scripts/sabotage-select.py",
+    "scripts/test-sabotage-select.sh"
+  ],
+  "defences": {
+    "Select: a file no plan names runs its whole tree": {
+      "file": "scripts/sabotage-select.py",
+      "live": "        if not hits:\n            chosen[name] = set(every[name])",
+      "dead": "        if False:\n            chosen[name] = set(every[name])",
+      "expect": [
+        "a_file_no_plan_names_runs_its_whole_tree",
+        "a_cv_file_no_plan_names_runs_all_cv",
+        "the_sabotage_script_runs_its_whole_tree"
+      ]
+    },
+    "Select: a named file selects its plans": {
+      "file": "scripts/sabotage-select.py",
+      "live": "            chosen[name] |= hits",
+      "dead": "            chosen[name] |= set()",
+      "expect": [
+        "a_named_file_selects_only_its_plan",
+        "a_test_file_selects_every_plan_naming_it",
+        "a_cv_source_selects_its_cv_plan"
+      ]
+    },
+    "Select: a workflow runs every plan": {
+      "file": "scripts/sabotage-select.py",
+      "live": "        if path.startswith('.github/workflows/'):",
+      "dead": "        if path.startswith('.github/workflows/') and False:",
+      "expect": [
+        "a_workflow_change_runs_every_plan"
+      ]
+    },
+    "Select: docs run no plan": {
+      "file": "scripts/sabotage-select.py",
+      "live": "    return path.startswith('docs/') or path.startswith('cv/docs/') or path.endswith('.md')",
+      "dead": "    return False",
+      "expect": [
+        "docs_run_no_plan"
+      ]
+    },
+    "Select: Markdown under a test directory is not docs": {
+      "file": "scripts/sabotage-select.py",
+      "live": "    if re.search(r'(^|/)tests?/', path):",
+      "dead": "    if False:",
+      "expect": [
+        "a_test_fixture_in_markdown_is_not_docs"
+      ]
+    },
+    "Select: a changed plan runs itself": {
+      "file": "scripts/sabotage-select.py",
+      "live": "            chosen[name].add(rel)\n            continue",
+      "dead": "            continue",
+      "expect": [
+        "a_changed_plan_runs_itself"
+      ]
+    },
+    "Select: an empty base runs every plan": {
+      "file": "scripts/sabotage-select.py",
+      "live": "    if not base:\n        return None",
+      "dead": "    if False:\n        return None",
+      "expect": [
+        "an_unknown_base_runs_every_plan"
+      ]
+    },
+    "Select: a base git cannot diff runs every plan": {
+      "file": "scripts/sabotage-select.py",
+      "live": "    if out.returncode != 0:\n        return None",
+      "dead": "    if False:\n        return None",
+      "expect": [
+        "a_new_branch_runs_every_plan",
+        "a_base_git_cannot_diff_runs_every_plan"
+      ]
+    },
+    "Check: a file a plan forgets is reported": {
+      "file": "scripts/sabotage-select.py",
+      "live": "    for missing in sorted(files - set(plan.get('files', []))):",
+      "dead": "    for missing in []:",
+      "expect": [
+        "a_plan_missing_its_broken_file_fails_the_check",
+        "a_plan_missing_its_test_file_fails_the_check"
+      ]
+    },
+    "Check: the test files of a plan are its files": {
+      "file": "scripts/sabotage-select.py",
+      "live": "                files.update(hits)",
+      "dead": "                pass",
+      "expect": [
+        "a_plan_missing_its_test_file_fails_the_check"
+      ]
+    },
+    "Check: a test found nowhere is reported": {
+      "file": "scripts/sabotage-select.py",
+      "live": "                lost.append(name)",
+      "dead": "                pass",
+      "expect": [
+        "a_test_found_nowhere_fails_the_check"
+      ]
+    },
+    "Check: a plan needs a surface": {
+      "file": "scripts/sabotage-select.py",
+      "live": "            if not plan.get('surface'):",
+      "dead": "            if False:",
+      "expect": [
+        "a_plan_without_a_surface_fails_the_check"
+      ]
+    },
+    "Check: a templated test name is found": {
+      "file": "scripts/sabotage-select.py",
+      "live": "            return any(pattern.fullmatch(name) for pattern in templates[path])",
+      "dead": "            return False",
+      "expect": [
+        "complete_plans_pass_the_check"
+      ]
+    }
+  }
+}

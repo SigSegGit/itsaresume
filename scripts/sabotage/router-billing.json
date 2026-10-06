@@ -1,10 +1,26 @@
 {
+  "surface": "billing",
   "command": [
     "cargo",
     "test",
     "-p",
     "itsaresume-router",
     "--no-fail-fast"
+  ],
+  "files": [
+    "crates/itsaresume-router/src/backend.rs",
+    "crates/itsaresume-router/src/claude_code.rs",
+    "crates/itsaresume-router/src/config.rs",
+    "crates/itsaresume-router/src/lm_studio.rs",
+    "crates/itsaresume-router/src/router.rs",
+    "crates/itsaresume-router/tests/claude_classify.rs",
+    "crates/itsaresume-router/tests/claude_process.rs",
+    "crates/itsaresume-router/tests/cli.rs",
+    "crates/itsaresume-router/tests/config.rs",
+    "crates/itsaresume-router/tests/journal.rs",
+    "crates/itsaresume-router/tests/lm_studio.rs",
+    "crates/itsaresume-router/tests/router.rs",
+    "crates/itsaresume-router/tests/server.rs"
   ],
   "defences": {
     "Other never allows fallback": {
@@ -39,22 +55,6 @@
       "dead": "if false {",
       "expect": [
         "an_empty_router_is_refused"
-      ]
-    },
-    "Journal keeps the prompt out": {
-      "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "\"prompt_chars\": request.prompt.chars().count(),",
-      "dead": "\"prompt_chars\": request.prompt.chars().count(), \"prompt\": request.prompt,",
-      "expect": [
-        "the_prompt_and_answer_text_are_never_written_to_the_journal"
-      ]
-    },
-    "Journal truncates error messages": {
-      "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "excerpt(attempt.error.message(), MESSAGE_CHARS)",
-      "dead": "excerpt(attempt.error.message(), usize::MAX)",
-      "expect": [
-        "error_messages_are_truncated_in_the_journal"
       ]
     },
     "Router reports a journal it could not write": {
@@ -303,62 +303,6 @@
         "a_credential_field_is_refused"
       ]
     },
-    "CLI: stopped exits 3": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "ExitCode::from(EXIT_STOPPED)",
-      "dead": "ExitCode::from(EXIT_STOPPED + 1)",
-      "expect": [
-        "a_stopped_request_exits_3_and_never_reaches_lm_studio"
-      ]
-    },
-    "CLI: empty prompt refused": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "if prompt.trim().is_empty() {",
-      "dead": "if prompt.trim().is_empty() && false {",
-      "expect": [
-        "an_empty_prompt_is_a_usage_error"
-      ]
-    },
-    "Server: stopped is 502": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "            502,\n",
-      "dead": "            200,\n",
-      "expect": [
-        "a_stopped_request_is_502_with_the_reason"
-      ]
-    },
-    "Server: oversized is 413": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "        413,\n",
-      "dead": "        200,\n",
-      "expect": [
-        "an_oversized_request_is_413"
-      ]
-    },
-    "Server: blank prompt is 400": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "if prompt.trim().is_empty() {",
-      "dead": "if prompt.trim().is_empty() && false {",
-      "expect": [
-        "a_malformed_request_is_400"
-      ]
-    },
-    "Server: loopback by default": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "pub const DEFAULT_LISTEN: &str = \"127.0.0.1:8787\";",
-      "dead": "pub const DEFAULT_LISTEN: &str = \"0.0.0.0:8787\";",
-      "expect": [
-        "the_default_listen_address_is_loopback"
-      ]
-    },
-    "Server: one thread per request": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "std::thread::spawn(move || respond(&router, &running, request));",
-      "dead": "respond(&router, &running, request);",
-      "expect": [
-        "a_slow_completion_does_not_block_other_requests"
-      ]
-    },
     "A truncated answer is not a success": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "if parsed[\"choices\"][0][\"finish_reason\"] == \"length\" {",
@@ -431,54 +375,6 @@
       "dead": ";\n                let _ = journal;",
       "expect": [
         "a_fired_billing_tripwire_stops_the_next_process_too"
-      ]
-    },
-    "Endpoint serves loopback host names only": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "if !loopback_host(request) {",
-      "dead": "if false && !loopback_host(request) {",
-      "expect": [
-        "a_foreign_host_is_403_and_loopback_names_are_served"
-      ]
-    },
-    "Endpoint refuses browser origins": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "if header(request, \"Origin\").is_some() {",
-      "dead": "if false && header(request, \"Origin\").is_some() {",
-      "expect": [
-        "a_completion_from_a_browser_origin_is_403"
-      ]
-    },
-    "Endpoint takes JSON only": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": ".is_some_and(|kind| kind.trim().eq_ignore_ascii_case(\"application/json\"))",
-      "dead": ".is_some_and(|_| true)",
-      "expect": [
-        "a_completion_that_is_not_json_is_415"
-      ]
-    },
-    "Endpoint caps concurrent completions": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "if current >= MAX_CONCURRENT_COMPLETIONS {",
-      "dead": "if current >= usize::MAX {",
-      "expect": [
-        "completions_beyond_the_cap_are_503_busy"
-      ]
-    },
-    "Endpoint never drains a huge declared body": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": ".is_some_and(|length| length > MAX_DRAIN_BYTES)",
-      "dead": ".is_some_and(|length| length == 0 && length > MAX_DRAIN_BYTES)",
-      "expect": [
-        "a_huge_declared_body_is_413_and_the_server_lives"
-      ]
-    },
-    "Serve loop returns the error that ends it": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "Err(error) => return error,",
-      "dead": "Err(error) => drop(error),",
-      "expect": [
-        "the_serve_loop_returns_the_error_that_ended_it"
       ]
     },
     "Claude process: system prompt whole in its file": {
@@ -654,22 +550,6 @@
         "a_backend_may_be_named_and_names_are_unique"
       ]
     },
-    "Server: the request's backend is read": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "Value::String(name) => Some(name.clone()),",
-      "dead": "Value::String(_) => None,",
-      "expect": [
-        "a_request_may_name_its_backend"
-      ]
-    },
-    "CLI: --backend is read": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "\"--backend\" if command == \"complete\" => options.backend = Some(value()?),",
-      "dead": "\"--backend\" if command == \"complete\" => drop(value()?),",
-      "expect": [
-        "the_backend_option_picks_one_backend"
-      ]
-    },
     "Schema: lm-studio sends response_format": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "if let Some(schema) = &request.schema {",
@@ -721,68 +601,12 @@
         "the_observed_structured_output_is_its_json"
       ]
     },
-    "Schema: the endpoint passes it on": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "Value::Object(_) => Some(value[\"schema\"].clone()),",
-      "dead": "Value::Object(_) => None,",
-      "expect": [
-        "the_schema_reaches_the_backend"
-      ]
-    },
-    "Schema: the endpoint refuses a non-object": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "_ => return Err(\"\\\"schema\\\" must be a JSON Schema object\".into()),",
-      "dead": "_ => None,",
-      "expect": [
-        "a_schema_must_be_an_object"
-      ]
-    },
-    "Journal: the backend asked for": {
-      "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "entry[\"backend_asked\"] = json!(asked);",
-      "dead": "let _ = asked;",
-      "expect": [
-        "a_named_structured_request_is_journaled_as_such"
-      ]
-    },
-    "Journal: a schema request is marked": {
-      "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "if request.schema.is_some() {",
-      "dead": "if false {",
-      "expect": [
-        "a_named_structured_request_is_journaled_as_such"
-      ]
-    },
     "Router: the journal hears the name asked": {
       "file": "crates/itsaresume-router/src/router.rs",
       "live": ".record_asked(request, asked, &outcome, started.elapsed())",
       "dead": ".record_asked(request, asked.filter(|_| false), &outcome, started.elapsed())",
       "expect": [
         "a_named_structured_request_is_journaled_as_such"
-      ]
-    },
-    "CLI: --schema is read": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "\"--schema\" if command == \"complete\" => options.schema = Some(PathBuf::from(value()?)),",
-      "dead": "\"--schema\" if command == \"complete\" => drop(value()?),",
-      "expect": [
-        "the_schema_option_reaches_the_cli_as_json_schema"
-      ]
-    },
-    "CLI: a schema file must hold an object": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "Ok(schema) if schema.is_object() => Ok(schema),",
-      "dead": "Ok(schema) if schema.is_object() || schema.is_array() => Ok(schema),",
-      "expect": [
-        "a_schema_file_that_is_not_an_object_is_a_usage_error"
-      ]
-    },
-    "CLI: the schema reaches the request": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n            kind,\n        },\n        only,",
-      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind,\n        },\n        only,",
-      "expect": [
-        "the_schema_option_reaches_the_cli_as_json_schema"
       ]
     },
     "Claude: a success is its result text": {
@@ -812,46 +636,6 @@
         "an_overage_answer_latches_the_next_process_too"
       ]
     },
-    "Stats: a fallback is an answer after a failed attempt": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "if key.0 == 0 && attempts > 0 {",
-      "dead": "if attempts > 0 {",
-      "expect": [
-        "the_journal_is_summed_up_per_backend_and_outcome"
-      ]
-    },
-    "Stats: structured requests counted": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "if entry[\"schema\"] == true {",
-      "dead": "if entry[\"schema\"] == \"never\" {",
-      "expect": [
-        "the_journal_is_summed_up_per_backend_and_outcome"
-      ]
-    },
-    "Stats: an unreadable line is skipped, not counted": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "let Ok(entry) = serde_json::from_str::<Value>(line) else {\n            unreadable += 1;",
-      "dead": "let Ok(entry) = serde_json::from_str::<Value>(line).or_else(|_| serde_json::from_str::<Value>(\"{}\")) else {\n            unreadable += 1;",
-      "expect": [
-        "the_journal_is_summed_up_per_backend_and_outcome"
-      ]
-    },
-    "Stats: the median is the middle": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "(values[middle - 1] + values[middle]) / 2",
-      "dead": "values[middle]",
-      "expect": [
-        "the_journal_is_summed_up_per_backend_and_outcome"
-      ]
-    },
-    "CLI: stats reads the journal": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "if command == \"stats\" {\n        return stats(&config, options.by_day);",
-      "dead": "if command == \"stats\" && false {\n        return stats(&config, options.by_day);",
-      "expect": [
-        "the_stats_command_sums_up_the_journal"
-      ]
-    },
     "Claude: the rate-limit event is kept": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": ".find(|message| message[\"type\"] == \"rate_limit_event\")\n        .map(|message| {",
@@ -867,46 +651,6 @@
       "dead": "rate_limit: completion.rate_limit.filter(|_| false),",
       "expect": [
         "the_rate_limit_of_an_answer_is_journaled"
-      ]
-    },
-    "Journal: the rate limit is written": {
-      "file": "crates/itsaresume-router/src/journal.rs",
-      "live": "entry[\"rate_limit\"] = limit.clone();",
-      "dead": "let _ = limit;",
-      "expect": [
-        "the_rate_limit_of_an_answer_is_journaled"
-      ]
-    },
-    "Stats by day: a limit not allowed is a hit": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": ".is_some_and(|status| status != \"allowed\");",
-      "dead": ".is_some_and(|status| status == \"never\");",
-      "expect": [
-        "the_journal_by_day_says_when_the_plan_ran_out"
-      ]
-    },
-    "Stats by day: the first hit stays": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "day.first_hit.get_or_insert_with(|| time.to_owned());",
-      "dead": "day.first_hit = Some(time.to_owned());",
-      "expect": [
-        "the_journal_by_day_says_when_the_plan_ran_out"
-      ]
-    },
-    "Stats by day: a quota attempt is a hit": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": ".filter(|a| a[\"kind\"] == \"quota_exceeded\")",
-      "dead": ".filter(|a| a[\"kind\"] == \"never\")",
-      "expect": [
-        "the_journal_by_day_says_when_the_plan_ran_out"
-      ]
-    },
-    "CLI: --by-day is read": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "options.by_day = true;",
-      "dead": "options.by_day = false;",
-      "expect": [
-        "the_stats_by_day_option_prints_one_line_per_day"
       ]
     },
     "M2: a backend is tried only for the kinds it serves": {
@@ -940,38 +684,6 @@
       "dead": "self.serves.contains(&kind) || true",
       "expect": [
         "serves_declares_the_kinds_and_none_is_refused"
-      ]
-    },
-    "M2: the endpoint reads the kind": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "Value::String(kind) if kind == \"classify\" => Kind::Classify,",
-      "dead": "Value::String(kind) if kind == \"classify!\" => Kind::Classify,",
-      "expect": [
-        "a_request_kind_is_generate_or_classify"
-      ]
-    },
-    "CLI: --kind classify is read": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "\"classify\" => Kind::Classify,",
-      "dead": "\"classify!\" => Kind::Classify,",
-      "expect": [
-        "the_kind_option_reaches_a_classify_only_backend"
-      ]
-    },
-    "CLI: the kind reaches the request": {
-      "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n            kind,\n        },",
-      "dead": "system,\n            schema,\n            kind: if kind == Kind::Classify { Kind::Generate } else { kind },\n        },",
-      "expect": [
-        "the_kind_option_reaches_a_classify_only_backend"
-      ]
-    },
-    "Stats by day: a multi-byte ts is skipped": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "let (Some(date), Some(time)) = (ts.get(..10), ts.get(11..16)) else {",
-      "dead": "let (Some(date), Some(time)) = (Some(&ts[..10]), Some(&ts[11..16])) else {",
-      "expect": [
-        "a_timestamp_of_multibyte_characters_is_skipped_not_fatal"
       ]
     },
     "Config: a timeout above a day is refused": {
@@ -1085,88 +797,6 @@
       "expect": [
         "the_token_usage_of_an_answer_is_journaled",
         "an_answer_reports_its_tokens"
-      ]
-    },
-    "Tokens: stats counts cache writes as read": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "        count(\"input\") + count(\"cache_read\") + count(\"cache_creation\"),",
-      "dead": "        count(\"input\") + count(\"cache_read\"),",
-      "expect": [
-        "tokens_are_summed_per_backend",
-        "the_journal_by_day_sums_the_tokens_per_backend"
-      ]
-    },
-    "Tokens: stats says no cache when there was none": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "        let cached = match cached {",
-      "dead": "        let cached = match cached + 1 {",
-      "expect": [
-        "tokens_are_summed_per_backend"
-      ]
-    },
-    "Tokens: stats says one answer, not one answers": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "        let plural = if *answers == 1 { \"\" } else { \"s\" };",
-      "dead": "        let plural = if *answers == 0 { \"\" } else { \"s\" };",
-      "expect": [
-        "tokens_are_summed_per_backend"
-      ]
-    },
-    "Tokens: the HTTP answer reports them": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "                body[\"usage\"] = usage.to_json();",
-      "dead": "                body[\"usage\"] = Some(usage).filter(|_| false).map(|usage| usage.to_json()).into();",
-      "expect": [
-        "an_answer_reports_its_tokens"
-      ]
-    },
-    "Tokens: by day, each answer's tokens are added": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "                sum[0] += read;",
-      "dead": "                sum[0] = read;",
-      "expect": [
-        "the_journal_by_day_sums_the_tokens_per_backend"
-      ]
-    },
-    "Tokens: by day, a day without usage says nothing": {
-      "file": "crates/itsaresume-router/src/stats.rs",
-      "live": "        let tokens = if day.tokens.is_empty() {",
-      "dead": "        let tokens = if day.tokens.is_empty() && false {",
-      "expect": [
-        "the_journal_by_day_sums_the_tokens_per_backend"
-      ]
-    },
-    "Contract: every answer is stamped": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "    body[\"contract\"] = json!(CONTRACT);",
-      "dead": "    let _ = (&mut body, CONTRACT);",
-      "expect": [
-        "the_contract_answer_has_exactly_the_frozen_keys",
-        "the_contract_stamps_every_answer"
-      ]
-    },
-    "Contract: a completion carries no unfrozen key": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "json!({\"backend\": answer.backend, \"text\": answer.text, \"attempts\": attempts});",
-      "dead": "json!({\"backend\": answer.backend, \"text\": answer.text, \"attempts\": attempts, \"model\": null});",
-      "expect": [
-        "the_contract_answer_has_exactly_the_frozen_keys"
-      ]
-    },
-    "Contract: an exhausted refusal carries no unfrozen key": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "\"message\": \"every backend failed with a quota or an outage\",",
-      "dead": "\"message\": \"every backend failed with a quota or an outage\", \"retry\": null,",
-      "expect": [
-        "the_contract_freezes_the_keys_of_every_refusal"
-      ]
-    },
-    "Contract: a bad request carries no unfrozen key": {
-      "file": "crates/itsaresume-router/src/server.rs",
-      "live": "(status, json!({\"error\": {\"kind\": kind, \"message\": message}}))",
-      "dead": "(status, json!({\"error\": {\"kind\": kind, \"message\": message, \"field\": null}}))",
-      "expect": [
-        "the_contract_freezes_the_keys_of_every_refusal"
       ]
     },
     "Journal: a 2xx without content is counted, not quoted": {

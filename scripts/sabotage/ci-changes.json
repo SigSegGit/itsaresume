@@ -1,6 +1,11 @@
 {
+  "surface": "ci",
   "command": [
     "bash",
+    "scripts/test-ci-changes.sh"
+  ],
+  "files": [
+    "scripts/ci-changes.sh",
     "scripts/test-ci-changes.sh"
   ],
   "defences": {

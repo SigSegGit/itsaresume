@@ -1,6 +1,11 @@
 {
+  "surface": "deploy",
   "command": [
     "bash",
+    "cv/deploy/vm-generator/test-auto-deploy.sh"
+  ],
+  "files": [
+    "cv/deploy/vm-generator/auto-deploy.sh",
     "cv/deploy/vm-generator/test-auto-deploy.sh"
   ],
   "defences": {

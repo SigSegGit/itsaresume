@@ -1,0 +1,1078 @@
+{
+  "surface": "content",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "files": [
+    "data/tech.json",
+    "src/ats.js",
+    "src/evidence.js",
+    "src/fit.js",
+    "src/importance.js",
+    "src/lexicon.js",
+    "src/measure.js",
+    "src/profile.js",
+    "src/profiles.js",
+    "src/render.js",
+    "src/report.js",
+    "src/score.js",
+    "src/tailor.js",
+    "test/closed.test.js",
+    "test/core.test.js",
+    "test/corpus.test.js",
+    "test/equivalent.test.js",
+    "test/evidence.test.js",
+    "test/guard.test.js",
+    "test/honesty.test.js",
+    "test/importance.test.js",
+    "test/instructions.test.js",
+    "test/layout.test.js",
+    "test/lexicon.test.js",
+    "test/must-stay-no.test.js",
+    "test/pipeline.test.js",
+    "test/profiles.test.js",
+    "test/redteam.test.js",
+    "test/render.test.js",
+    "test/rules.test.js",
+    "test/scoring.test.js",
+    "test/word.test.js"
+  ],
+  "defences": {
+    "Profile: bullet skills must exist": {
+      "file": "src/profile.js",
+      "live": "need(skills.has(skill), `bullet ${bullet.id}: unknown skill ${skill}`);",
+      "dead": "need(skills.has(skill) || true, `bullet ${bullet.id}: unknown skill ${skill}`);",
+      "expect": [
+        "a profile whose bullet cites an unknown skill is refused"
+      ]
+    },
+    "Profile: pending must be a list": {
+      "file": "src/profile.js",
+      "live": "(Array.isArray(profile.pending) && ",
+      "dead": "(true && ",
+      "expect": [
+        "a profile whose pending is not a list of non-empty names is refused, naming pending"
+      ]
+    },
+    "Profile: pending names are non-empty strings": {
+      "file": "src/profile.js",
+      "live": "typeof name === 'string' && name.trim() !== '')), 'pending must",
+      "dead": "true)), 'pending must",
+      "expect": [
+        "a profile whose pending is not a list of non-empty names is refused, naming pending"
+      ]
+    },
+    "Profile: duplicate ids refused": {
+      "file": "src/profile.js",
+      "live": "for (const id of duplicates(ids)) errors.push(`duplicate id ${id}`);",
+      "dead": "for (const id of duplicates(ids).slice(0, 0)) errors.push(`duplicate id ${id}`);",
+      "expect": [
+        "duplicate ids in a profile are refused"
+      ]
+    },
+    "Analysis: aliases count as the profile's own names": {
+      "file": "src/profile.js",
+      "live": "return [skill.name, ...(skill.aliases ?? [])].map((name) => name.toLowerCase());",
+      "dead": "return [skill.name, ...(skill.aliases ?? []).slice(0, 0)].map((name) => name.toLowerCase());",
+      "expect": [
+        "naming a technology the profile has, even through an alias, is allowed"
+      ]
+    },
+    "Model: unselected experiences keep one bullet": {
+      "file": "src/tailor.js",
+      "live": "export const UNSELECTED_BULLETS = 1;",
+      "dead": "export const UNSELECTED_BULLETS = 9;",
+      "expect": [
+        "the model takes every text from the profile, in the analysis language, except headline and summary"
+      ]
+    },
+    "Model: texts in the analysis language": {
+      "file": "src/tailor.js",
+      "live": "const t = (value) => value[lang];",
+      "dead": "const t = (value) => value.en;",
+      "expect": [
+        "a French analysis yields French texts and labels"
+      ]
+    },
+    "Corpus: a label must be named by its offer": {
+      "file": "src/measure.js",
+      "live": "if (!mentions(entry.offer, requirement.name)) problems.push",
+      "dead": "if (false) problems.push",
+      "expect": [
+        "a label the offer never names is a corpus problem"
+      ]
+    },
+    "Corpus: the wrong list is the code's disagreement": {
+      "file": "src/measure.js",
+      "live": "else if (decided === requirement.importance) result.right.push(where);",
+      "dead": "else if (decided !== null) result.right.push(where);",
+      "expect": [
+        "a label the code contradicts is measured wrong, one it agrees with right"
+      ]
+    },
+    "Recall: a listed name holding the label counts": {
+      "file": "src/measure.js",
+      "live": "const hit = names.some((name) => mentions(name, label.name) || mentions(label.name, name));",
+      "dead": "const hit = names.some((name) => mentions(label.name, name));",
+      "expect": [
+        "recall finds a label named by a listed item either way round"
+      ]
+    },
+    "Recall: whole words, not stems": {
+      "file": "src/measure.js",
+      "live": "const hit = names.some((name) => mentions(name, label.name) || mentions(label.name, name));",
+      "dead": "const hit = names.some((name) => name.toLowerCase().includes(label.name.toLowerCase()) || mentions(label.name, name));",
+      "expect": [
+        "recall does not take a stem for a name"
+      ]
+    },
+    "Equivalents: a sibling tool is not a member": {
+      "file": "src/lexicon.js",
+      "live": "concepts.has(mine) || [...ancestors(index, mine, 2)].some((a) => concepts.has(a))",
+      "dead": "concepts.has(mine) || [...ancestors(index, mine, 2)].some((a) => concepts.has(a)) || [...concepts].some((c) => ancestors(index, c, 1).size && [...ancestors(index, c, 1)].some((a) => ancestors(index, mine, 1).has(a)))",
+      "expect": [
+        "a sibling tool is not an equivalent: Puppet stays no beside Terraform"
+      ]
+    },
+    "Equivalents: a singular name finds the plural label": {
+      "file": "src/lexicon.js",
+      "live": ".map(singular)",
+      "dead": ".map((word) => word)",
+      "expect": [
+        "\"Cycle de delivery\" marked no by the model comes out adjacent through Jenkins"
+      ]
+    },
+    "Equivalents: a shared category is not another name": {
+      "file": "src/lexicon.js",
+      "live": "const common = new Set(picked.flatMap((id) => [...(skills.get(id) ?? [])].filter((concept) => concepts.has(concept))));",
+      "dead": "const common = concepts;",
+      "expect": [
+        "\"Python scripting\" met through Python does not add the profile's Bash"
+      ]
+    },
+    "Equivalents: a skill is placed on the labels it names whole": {
+      "file": "src/lexicon.js",
+      "live": "index.byKey.get(key(label)) ?? []",
+      "dead": "lookup(index, label)",
+      "expect": [
+        "a word inside a skill's label does not place it: \"Microsoft Access\" stays no beside Bastion"
+      ]
+    },
+    "Evidence: only CVs are scanned, never a self-assessment": {
+      "file": "src/evidence.js",
+      "live": "if (grades.get(id) !== 'C') continue;",
+      "dead": "if (false) continue;",
+      "expect": [
+        "a self-assessment or an artefact that names a skill is not evidence for it: only CVs are scanned"
+      ]
+    },
+    "Evidence: A or B against outweighs any CV claim": {
+      "file": "src/evidence.js",
+      "live": "if (bestAgainst >= GRADE_RANK.B && bestAgainst >= bestFor) verdict = 'contradicted';",
+      "dead": "if (false) verdict = 'contradicted';",
+      "expect": [
+        "a skill contradicted by grade A or B evidence is contradicted, whatever the CVs say",
+        "contradicted and unsupported skills are removed from the analysis and reported"
+      ]
+    },
+    "Evidence: a skill nothing supports is unsupported": {
+      "file": "src/evidence.js",
+      "live": "else if (supporting.length === 0) verdict",
+      "dead": "else if (false) verdict",
+      "expect": [
+        "each skill gets a verdict from its best evidence"
+      ]
+    },
+    "Evidence: A or B for makes a skill verified": {
+      "file": "src/evidence.js",
+      "live": "else if (bestFor >= GRADE_RANK.B) verdict = 'verified';",
+      "dead": "else if (bestFor >= 99) verdict = 'verified';",
+      "expect": [
+        "each skill gets a verdict from its best evidence",
+        "the report verifies every skill the CV shows or matches, with its sources"
+      ]
+    },
+    "Evidence: an expert level from one CV is flagged": {
+      "file": "src/evidence.js",
+      "live": "verdict === 'self-declared' && count < 2)",
+      "dead": "verdict === 'self-declared' && count < 1)",
+      "expect": [
+        "a level claimed from one CV only is flagged, unless it is mere notions"
+      ]
+    },
+    "Evidence: mere notions from one CV are not flagged": {
+      "file": "src/evidence.js",
+      "live": "if (skill.level !== 'notions' && verdict",
+      "dead": "if (true && verdict",
+      "expect": [
+        "a level claimed from one CV only is flagged, unless it is mere notions"
+      ]
+    },
+    "Evidence: a broader term is not another name": {
+      "file": "src/profile.js",
+      "live": "return [skill.name, ...(skill.aliases ?? [])].map((name) => name.toLowerCase());",
+      "dead": "return [skill.name, ...(skill.aliases ?? []), ...(skill.terms ?? [])].map((name) => name.toLowerCase());",
+      "expect": [
+        "a broader term a skill covers is not evidence for it, but still matches an offer",
+        "a ruled-out skill is known by its name and aliases, not by the broader terms it covers"
+      ]
+    },
+    "Matching: a broader term still matches an offer": {
+      "file": "src/profile.js",
+      "live": "return [...identityNames(skill), ...(skill.terms ?? []).map((term) => term.toLowerCase())];",
+      "dead": "return [...identityNames(skill)];",
+      "expect": [
+        "a broader term a skill covers is not evidence for it, but still matches an offer"
+      ]
+    },
+    "Evidence: sources disagreeing on a level are flagged": {
+      "file": "src/evidence.js",
+      "live": "if (new Set(stated.map((entry) => entry.level)).size > 1) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a level stated by the sources is compared with the profile and with each other"
+      ]
+    },
+    "Evidence: a profile level above its sources is flagged": {
+      "file": "src/evidence.js",
+      "live": "if (stated.length && LEVELS.indexOf(skill.level) < highest) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a level stated by the sources is compared with the profile and with each other"
+      ]
+    },
+    "Evidence: an evidence level must be a level": {
+      "file": "src/profile.js",
+      "live": "need(LEVELS.includes(entry.level), `skill ${skill.id}: evidence level",
+      "dead": "need(true, `skill ${skill.id}: evidence level",
+      "expect": [
+        "a level stated by the sources is compared with the profile and with each other"
+      ]
+    },
+    "Evidence: a quote must be in its source": {
+      "file": "src/evidence.js",
+      "live": "else if (!byId.get(entry.source).includes(flat(entry.quote))) {",
+      "dead": "else if (false) {",
+      "expect": [
+        "a quote from a source with a text must be found in it, word for word"
+      ]
+    },
+    "Evidence: a quote survives line wrapping and case": {
+      "file": "src/evidence.js",
+      "live": "    .toLowerCase()\n    .replace(/\\s+/g, ' ')\n",
+      "dead": "",
+      "expect": [
+        "a quote from a source with a text must be found in it, word for word"
+      ]
+    },
+    "Evidence: a source file stays next to the profile": {
+      "file": "src/evidence.js",
+      "live": "if (inside.startsWith('..') || isAbsolute(inside)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "source texts are read from the files the profile names, next to the profile"
+      ]
+    },
+    "Evidence: ruled-out skills leave the profile": {
+      "file": "src/evidence.js",
+      "live": "if (!out.has(skill.id)) return true;",
+      "dead": "if (true) return true;",
+      "expect": [
+        "the profile the CV draws from leaves out what the evidence rules out, and says what it left out"
+      ]
+    },
+    "Evidence: a bullet naming a ruled-out skill leaves the profile": {
+      "file": "src/evidence.js",
+      "live": "find((id) => out.has(id))) ?? named(bullet.fr, bullet.en);",
+      "dead": "find((id) => out.has(id)));",
+      "expect": [
+        "the profile the CV draws from leaves out what the evidence rules out, and says what it left out"
+      ]
+    },
+    "Evidence: an environment entry naming a ruled-out skill goes": {
+      "file": "src/evidence.js",
+      "live": "const entry = named(item);",
+      "dead": "const entry = null;",
+      "expect": [
+        "the profile the CV draws from leaves out what the evidence rules out, and says what it left out"
+      ]
+    },
+    "Evidence: an experience without a bullet left goes": {
+      "file": "src/evidence.js",
+      "live": "if (experience.bullets.length) return true;",
+      "dead": "if (true) return true;",
+      "expect": [
+        "an experience left without a bullet is left out as a whole"
+      ]
+    },
+    "Evidence: a fact naming a ruled-out skill goes": {
+      "file": "src/evidence.js",
+      "live": "const entry = named(item.fr, item.en);",
+      "dead": "const entry = null;",
+      "expect": [
+        "the profile the CV draws from leaves out what the evidence rules out, and says what it left out"
+      ]
+    },
+    "Evidence: evidence must name a declared source": {
+      "file": "src/profile.js",
+      "live": "need(sources.has(entry.source),",
+      "dead": "need(true || sources.has(entry.source),",
+      "expect": [
+        "sources and evidence are checked with the rest of the profile"
+      ]
+    },
+    "Evidence: the report has its Verification section": {
+      "file": "src/report.js",
+      "live": "if (assessment) lines.push(...describeVerification(",
+      "dead": "if (false) lines.push(...describeVerification(",
+      "expect": [
+        "the report verifies every skill the CV shows or matches, with its sources",
+        "itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why"
+      ]
+    },
+    "Injection: a report cell escapes its pipes": {
+      "file": "src/report.js",
+      "live": "const cell = (text) => line(text).replace(/\\|/g, '\\\\|');",
+      "dead": "const cell = (text) => line(text);",
+      "expect": [
+        "the report cannot be broken by what the model wrote"
+      ]
+    },
+    "Injection: the report puts the model's text on one line": {
+      "file": "src/report.js",
+      "live": "const line = (text) => String(text ?? '').replace(/\\s*[\\r\\n]+\\s*/g, ' ');",
+      "dead": "const line = (text) => String(text ?? '');",
+      "expect": [
+        "the report cannot be broken by what the model wrote"
+      ]
+    },
+    "Instructions: the report lists them": {
+      "file": "src/report.js",
+      "live": "if (instructions.length) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Instructions: the report section only appears when there are some": {
+      "file": "src/report.js",
+      "live": "if (instructions.length) {",
+      "dead": "if (true) {",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Instructions: the report says the CV is built from the profile only": {
+      "file": "src/report.js",
+      "live": "follow them yourself if you apply.",
+      "dead": "follow them if you apply.",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Instructions: the report section is titled": {
+      "file": "src/report.js",
+      "live": "'## Instructions in the offer \u2014 not applied'",
+      "dead": "'## Instructions'",
+      "expect": [
+        "the report lists the instructions of the offer as not applied, only when there are some"
+      ]
+    },
+    "Honesty: must-haves weigh more": {
+      "file": "src/score.js",
+      "live": "export const IMPORTANCE_WEIGHT = { must: 3, nice: 1 };",
+      "dead": "export const IMPORTANCE_WEIGHT = { must: 1, nice: 1 };",
+      "expect": [
+        "the score is computed from the requirements, not taken from the model"
+      ]
+    },
+    "Importance: \"un plus\" only as a verdict": {
+      "file": "src/importance.js",
+      "live": "'un\\\\s+(?:vrai\\\\s+|gros\\\\s+|r\u00e9el\\\\s+)?plus(?=\\\\s*(?:[).,;:!]|$))',",
+      "dead": "'un\\\\s+plus',",
+      "expect": [
+        "\"Un plus grand nombre de clusters PostgreSQL.\": PostgreSQL is left to the model"
+      ]
+    },
+    "Importance: \"a plus\" only after is / would be": {
+      "file": "src/importance.js",
+      "live": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+(?:big\\\\s+|real\\\\s+|huge\\\\s+)?plus',",
+      "dead": "'a\\\\s+plus',",
+      "expect": [
+        "\"Il y a plus de 10 serveurs Linux \u00e0 administrer.\": Linux is left to the model"
+      ]
+    },
+    "Importance: \"souhait\u00e9\" is no cue": {
+      "file": "src/importance.js",
+      "live": "'souhaitables?',",
+      "dead": "'souhaitables?', 'souhait\u00e9e?s?',",
+      "expect": [
+        "\"Profil souhait\u00e9 : | - PostgreSQL | \": PostgreSQL is left to the model"
+      ]
+    },
+    "Importance: a must anywhere wins": {
+      "file": "src/importance.js",
+      "live": "return votes.has('must') ? 'must' : votes.has('nice') ? 'nice' : null;",
+      "dead": "return votes.has('nice') ? 'nice' : votes.has('must') ? 'must' : null;",
+      "expect": [
+        "\"Kafka serait un plus. | Comp\u00e9tences requises : Kafka, Linux.\": Kafka is must"
+      ]
+    },
+    "Importance: the predicate closes the enumeration": {
+      "file": "src/importance.js",
+      "live": "[clause, ...clauses.slice(index + 1), ...clauses.slice(0, index).reverse()]",
+      "dead": "[clause, ...clauses.slice(0, index).reverse()]",
+      "expect": [
+        "\"Une connaissance de Kafka, Terraform et Ansible serait appr\u00e9ci\u00e9e.\": Kafka is nice"
+      ]
+    },
+    "Importance: an opening cue reaches the clause after it": {
+      "file": "src/importance.js",
+      "live": ", ...clauses.slice(0, index).reverse()]",
+      "dead": "]",
+      "expect": [
+        "\"Id\u00e9alement, une premi\u00e8re exp\u00e9rience GCP.\": GCP is nice"
+      ]
+    },
+    "Importance: a header above a list sets its section": {
+      "file": "src/importance.js",
+      "live": "section = own;",
+      "dead": "section = null;",
+      "expect": [
+        "\"Nice to have: | - Kafka | - Terraform | \": Terraform is nice"
+      ]
+    },
+    "Importance: a header's cue covers the items on its line": {
+      "file": "src/importance.js",
+      "live": "if (own) lineCue = own;",
+      "dead": "void own;",
+      "expect": [
+        "\"Comp\u00e9tences obligatoires : Ansible, DevOps.\": DevOps is must"
+      ]
+    },
+    "Importance: a negated must cue is no must": {
+      "file": "src/importance.js",
+      "live": "].map((alternative) => `${NEGATED}${alternative}`));",
+      "dead": "]);",
+      "expect": [
+        "\"La connaissance d'Ansible n'est pas obligatoire mais sera appr\u00e9ci\u00e9e.\": Ansible is nice",
+        "\"Kubernetes is not required for this role.\": Kubernetes is left to the model",
+        "importance on the corpus: the code is wrong exactly where a label says it is known to be",
+        "importance on the corpus: a name the offer excludes is never a must"
+      ]
+    },
+    "Importance: a cue on a certification is not the skill's": {
+      "file": "src/importance.js",
+      "live": "return all > 0 && (text.match(certified) ?? []).length >= all;",
+      "dead": "return false;",
+      "expect": [
+        "\"Une certification AWS est un atout.\": AWS is left to the model",
+        "importance on the corpus: the code is wrong exactly where a label says it is known to be"
+      ]
+    },
+    "Importance: \"a big plus\" is a plus": {
+      "file": "src/importance.js",
+      "live": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+(?:big\\\\s+|real\\\\s+|huge\\\\s+)?plus',",
+      "dead": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+plus',",
+      "expect": [
+        "\"It would be a big plus to know Sigstore.\": Sigstore is nice"
+      ]
+    },
+    "Importance: a blank line ends a header section": {
+      "file": "src/importance.js",
+      "live": "    if (!line) {\n      section = null;\n      continue;\n    }",
+      "dead": "    if (!line) {\n      continue;\n    }",
+      "expect": [
+        "a nice header does not reach past a blank line or a plain line"
+      ]
+    },
+    "Importance: a plain line ends a header section": {
+      "file": "src/importance.js",
+      "live": "    if (!header && !BULLET.test(line)) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "a nice header does not reach past a blank line or a plain line"
+      ]
+    },
+    "ATS: a blank PDF page is reported": {
+      "file": "src/ats.js",
+      "live": "if (page.trim() === '') problems.push(",
+      "dead": "if (page.trim() === '' && false) problems.push(",
+      "expect": [
+        "a blank page in the PDF is reported"
+      ]
+    },
+    "Lexicon: accents are folded": {
+      "file": "src/lexicon.js",
+      "live": "    .replace(/\\p{Mn}/gu, '')\n",
+      "dead": "",
+      "expect": [
+        "a phrase is keyed without case, accents or punctuation"
+      ]
+    },
+    "Lexicon: a label found inside a longer phrase": {
+      "file": "src/lexicon.js",
+      "live": "  for (let size = Math.min(MAX_WORDS, words.length); size >= 1; size -= 1) {",
+      "dead": "  for (let size = words.length; size >= words.length; size -= 1) {",
+      "expect": [
+        "a label or a synonym is found in French or English, alone or inside a longer phrase"
+      ]
+    },
+    "Lexicon: the longest label first, words used once": {
+      "file": "src/lexicon.js",
+      "live": "      if (used.slice(start, start + size).some(Boolean)) continue;\n",
+      "dead": "",
+      "expect": [
+        "a longer label wins over the shorter one it contains"
+      ]
+    },
+    "Lexicon: aliases and terms place a skill": {
+      "file": "src/lexicon.js",
+      "live": "[skill.name, ...(skill.aliases ?? []), ...(skill.terms ?? [])]",
+      "dead": "[skill.name]",
+      "expect": [
+        "the owner\u2019s skills are placed on concepts by their names, aliases and terms, in either language"
+      ]
+    },
+    "Lexicon: siblings are near": {
+      "file": "src/lexicon.js",
+      "live": " || pa.some((parent) => pb.includes(parent));",
+      "dead": ";",
+      "expect": [
+        "a requirement relates to a skill as the same concept, a near one (parent, child, sibling), a shared theme, or not at all"
+      ]
+    },
+    "Lexicon: a theme only when nothing nearer": {
+      "file": "src/lexicon.js",
+      "live": "  return relations.filter((relation) => RANK[relation.relation] === top);",
+      "dead": "  return relations;",
+      "expect": [
+        "a requirement relates to a skill as the same concept, a near one (parent, child, sibling), a shared theme, or not at all"
+      ]
+    },
+    "Lexicon: a shared ancestor is a theme": {
+      "file": "src/lexicon.js",
+      "live": ": [...ancestors(index, concept, 2)].some((a) => ancestors(index, mine, 2).has(a)) ? 'theme' : null;",
+      "dead": ": null;",
+      "expect": [
+        "a shared theme is a hint, never better than a nearer relation"
+      ]
+    },
+    "Fit: a safety margin under a full page": {
+      "file": "src/fit.js",
+      "live": "export const SAFETY = 0.015;",
+      "dead": "export const SAFETY = 0;",
+      "expect": [
+        "a layout that only just fills the page is not accepted"
+      ]
+    },
+    "ATS: hyphen line breaks joined": {
+      "file": "src/ats.js",
+      "live": ".replace(/-[ \\t]*\\r?\\n\\s*/g, '-')",
+      "dead": ".replace(/-[ \\t]*\\r?\\n\\s*/g, '- ')",
+      "expect": [
+        "a word split at its own hyphen across two lines still counts as found"
+      ]
+    },
+    "Must stay no: a NoSQL database is its own category": {
+      "file": "data/tech.json",
+      "live": "\"fr\": \"Bases de donn\u00e9es NoSQL\",",
+      "dead": "\"fr\": \"NoSQL (cat\u00e9gorie)\",",
+      "expect": [
+        "\"Base de donn\u00e9es NoSQL\" is not met through PostgreSQL and Oracle"
+      ]
+    },
+    "Must stay no: MongoDB sits under NoSQL": {
+      "file": "data/tech.json",
+      "live": "\"id\": \"tech:nosql\",",
+      "dead": "\"id\": \"tech:nosql-unlinked\",",
+      "expect": [
+        "\"Bases de donn\u00e9es NoSQL\" is met through MongoDB when the profile holds it"
+      ]
+    },
+    "Page: an unpicked short mission fills only what the main missions leave open": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) === 'short' && pick < 0 && !fills(bullet)) return;",
+      "dead": "void fills;",
+      "expect": [
+        "an unpicked short mission does not fill the page with a requirement the main missions already back"
+      ]
+    },
+    "Page: a short mission the model picked stands": {
+      "file": "src/tailor.js",
+      "live": "kindOf(experience) === 'short' && pick < 0 && !fills(bullet)",
+      "dead": "kindOf(experience) === 'short' && !fills(bullet)",
+      "expect": [
+        "a short mission the model picked stays, even beside a main mission backing the same requirement"
+      ]
+    },
+    "Page: a requirement no main mission backs is open": {
+      "file": "src/tailor.js",
+      "live": "&& !main.some((bullet) => backed(requirement, bullet)));",
+      "dead": "&& false);",
+      "expect": [
+        "an unpicked short mission still backs a requirement no main mission backs"
+      ]
+    },
+    "Profile: a profile id is a closed name": {
+      "file": "src/profiles.js",
+      "live": "if (!ID.test(id) || profiles.has(id) || !statSync(join(profilesDir, name)).isFile()) continue;",
+      "dead": "if (!id || profiles.has(id) || !statSync(join(profilesDir, name)).isFile()) continue;",
+      "expect": [
+        "the profiles are the default and each <id>.json of the directory; other names are not profiles"
+      ]
+    },
+    "Profile: a directory named .json is no profile": {
+      "file": "src/profiles.js",
+      "live": "if (!ID.test(id) || profiles.has(id) || !statSync(join(profilesDir, name)).isFile()) continue;",
+      "dead": "if (!ID.test(id) || profiles.has(id)) continue;",
+      "expect": [
+        "the profiles are the default and each <id>.json of the directory; other names are not profiles"
+      ]
+    },
+    "Profile: a missing directory is the default alone": {
+      "file": "src/profiles.js",
+      "live": "if (!profilesDir || !existsSync(profilesDir)) return profiles;",
+      "dead": "if (!profilesDir) return profiles;",
+      "expect": [
+        "no directory, or a missing one, is the default alone"
+      ]
+    },
+    "Red team: lab keywords are labelled": {
+      "file": "src/tailor.js",
+      "live": "(skill.level === 'lab' ? `${skill.name} (lab)` : skill.name)",
+      "dead": "(skill.name)",
+      "expect": [
+        "a lab skill is labelled in the document keywords too"
+      ]
+    },
+    "Red team: a composed line has quotes": {
+      "file": "src/evidence.js",
+      "live": "if (Array.isArray(item.quotes) && item.quotes.length === 0) errors.push(`${label}: no quote`);",
+      "dead": "void 0;",
+      "expect": [
+        "a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item"
+      ]
+    },
+    "Red team: a composed line is made of its quotes": {
+      "file": "src/evidence.js",
+      "live": "if (!/^\\d/.test(word) && !STOP.has(word) && !cited.has(stem(word))) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item"
+      ]
+    },
+    "Red team: the English names no skill the French lacks": {
+      "file": "src/evidence.js",
+      "live": "if (named(item.en) && !named(item.fr)) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item"
+      ]
+    },
+    "Red team: no profile line names a never-claimed item": {
+      "file": "src/profile.js",
+      "live": "if (texts.some((text) => mentions(text ?? '', name))) errors.push(`${label} names ${name}, which is never claimed`);",
+      "dead": "void texts;",
+      "expect": [
+        "a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item"
+      ]
+    },
+    "Layout: the skills column gives way when the page overflows": {
+      "file": "src/fit.js",
+      "live": "if ((await lengthOf(all, 0)) <= ONE_PAGE - SAFETY) break;",
+      "dead": "break;",
+      "expect": [
+        "when even the fixed part overflows the page, the skills column is shortened until it fits"
+      ]
+    },
+    "Closed: titles trace to the truth document": {
+      "file": "src/evidence.js",
+      "live": "for (const title of profile.titles ?? []) trace(`title ${title.id}`, title);",
+      "dead": "void 0;",
+      "expect": [
+        "a title traces to the truth document like any line of the CV"
+      ]
+    },
+    "Render: a missing field fails": {
+      "file": "src/render.js",
+      "live": "if (!part.module) {",
+      "dead": "if (!part.module && false) {",
+      "expect": [
+        "a model missing a field makes rendering fail instead of printing \"undefined\""
+      ]
+    },
+    "Render: loop markers removed": {
+      "file": "src/render.js",
+      "live": "paragraphLoop: true,",
+      "dead": "paragraphLoop: false,",
+      "expect": [
+        "loop markers leave no empty paragraph behind"
+      ]
+    },
+    "Render: dotted tags resolve": {
+      "file": "src/render.js",
+      "live": "return tag.split('.').reduce(",
+      "dead": "return [tag].reduce(",
+      "expect": [
+        "rendering replaces every tag, in order, with the model"
+      ]
+    },
+    "Rules: main missions, then short, then R&D": {
+      "file": "src/profile.js",
+      "live": "need(kinds.every((kind, i) => i === 0 || KINDS.indexOf(kinds[i - 1]) <= KINDS.indexOf(kind)), 'experiences: main",
+      "dead": "need(true, 'experiences: main",
+      "expect": [
+        "main missions come first, then short missions, then R&D, with one reference among the main ones"
+      ]
+    },
+    "Rules: one reference, a main mission": {
+      "file": "src/profile.js",
+      "live": "need(references.length <= 1 && references.every((experience) => kindOf(experience) === 'main'), ",
+      "dead": "need(true, ",
+      "expect": [
+        "main missions come first, then short missions, then R&D, with one reference among the main ones"
+      ]
+    },
+    "Rules: a lab skill is R&D only": {
+      "file": "src/profile.js",
+      "live": "need(skill.where.every((id) => kindById.get(id) === 'rnd'), `skill ${skill.id}: a lab skill",
+      "dead": "need(true, `skill ${skill.id}: a lab skill",
+      "expect": [
+        "a lab skill belongs to R&D only"
+      ]
+    },
+    "Rules: a bullet names only its experience's tools": {
+      "file": "src/profile.js",
+      "live": "need(attributed(byId.get(skill), experience.id), `bullet",
+      "dead": "need(true, `bullet",
+      "expect": [
+        "a bullet or an environment line may only name tools used in that experience"
+      ]
+    },
+    "Rules: an environment line names only its experience's tools": {
+      "file": "src/profile.js",
+      "live": "if (own.length && !own.some((skill) => attributed(skill, experience.id))) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a bullet or an environment line may only name tools used in that experience"
+      ]
+    },
+    "Rules: short and R&D bullets must back a requirement": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) !== 'main' && !backs(bullet)) return;",
+      "dead": "void 0;",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: a main mission always shows": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) === 'main' && ids.length < UNSELECTED_BULLETS) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the main missions are always on the CV, in order, before anything else"
+      ]
+    },
+    "Rules: short missions with nothing to show are left out": {
+      "file": "src/tailor.js",
+      "live": "if (kind === 'short' && ids.length === 0) return [];",
+      "dead": "void 0;",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: R&D with nothing to show is one sober line": {
+      "file": "src/tailor.js",
+      "live": "title: t(sober && experience.title_empty ? experience.title_empty : experience.title),",
+      "dead": "title: t(experience.title),",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: the reference is the most developed": {
+      "file": "src/tailor.js",
+      "live": ".slice(0, experience === reference ? Infinity : most);",
+      "dead": ".slice(0, Infinity);",
+      "expect": [
+        "the reference experience is the most developed"
+      ]
+    },
+    "Rules: a lab skill is labelled on the CV": {
+      "file": "src/tailor.js",
+      "live": "return skill.level === 'lab' ? `${name} (lab)` : name;",
+      "dead": "return name;",
+      "expect": [
+        "a lab skill says so on the CV"
+      ]
+    },
+    "Rules: a lab-only match counts half": {
+      "file": "src/score.js",
+      "live": "met += weight * (labOnly(requirement, lab) ? Math.min(value, LAB_VALUE) : value);",
+      "dead": "met += weight * value;",
+      "expect": [
+        "a requirement met by lab skills only counts half"
+      ]
+    },
+    "Rules: a never-claimed must is a core gap": {
+      "file": "src/score.js",
+      "live": "if (isNever(requirement, never)) gaps.push(",
+      "dead": "if (false) gaps.push(",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed"
+      ]
+    },
+    "Rules: a lab-only must is a core gap": {
+      "file": "src/score.js",
+      "live": "else if (labOnly(requirement, lab)) gaps.push(",
+      "dead": "else if (false) gaps.push(",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed"
+      ]
+    },
+    "Rules: half the musts missed is the core missed": {
+      "file": "src/score.js",
+      "live": "gaps.length / musts.length >= CORE_MISSED ? 'not-qualified' : 'partial'",
+      "dead": "false ? 'not-qualified' : 'partial'",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed",
+        "the normalised fit carries the qualification"
+      ]
+    },
+    "Rules: only must-haves are the core": {
+      "file": "src/score.js",
+      "live": "const musts = requirements.filter((requirement) => requirement.importance === 'must');",
+      "dead": "const musts = requirements;",
+      "expect": [
+        "qualification: every must met, some missed, or the core missed"
+      ]
+    },
+    "Provenance: a line is found in the truth document": {
+      "file": "src/evidence.js",
+      "live": "if (!truth.includes(flat(quote))) errors.push(`${label}:",
+      "dead": "if (false) errors.push(`${label}:",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: a composed line brings no number of its own": {
+      "file": "src/evidence.js",
+      "live": "if (!cited.has(number)) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: the English text brings no number of its own": {
+      "file": "src/evidence.js",
+      "live": "if (!french.has(number)) errors.push(",
+      "dead": "if (false) errors.push(",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: Markdown emphasis is not text": {
+      "file": "src/evidence.js",
+      "live": ".replace(/\\*\\*|`/g, '')",
+      "dead": ".replace(/(?!)/g, '')",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Provenance: confidence marks are not text": {
+      "file": "src/evidence.js",
+      "live": ".replace(/\\s*\\[(?:\u2714|~|\u2718|LAB)[^\\]]*\\]/g, '')",
+      "dead": ".replace(/(?!)/g, '')",
+      "expect": [
+        "each bullet traces to the truth document, and brings no number of its own"
+      ]
+    },
+    "Rules: never-claimed skills are not suggested back": {
+      "file": "src/evidence.js",
+      "live": "if (requirement.match !== 'no' || isNever(requirement, profile.never)) continue;",
+      "dead": "if (requirement.match !== 'no') continue;",
+      "expect": [
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: the report states the qualification": {
+      "file": "src/report.js",
+      "live": "...describeQualification(analysis.fit),",
+      "dead": "...[],",
+      "expect": [
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: the report lists what older CVs named": {
+      "file": "src/report.js",
+      "live": "if (older.length) {\n    lines.push('', '**Named in older CVs",
+      "dead": "if (false) {\n    lines.push('', '**Named in older CVs",
+      "expect": [
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: a picked project of a met group stays": {
+      "file": "src/tailor.js",
+      "live": "matched.has(skill) || (picks.has(bullet.id) && groups.has(groupOf.get(skill))));",
+      "dead": "matched.has(skill));",
+      "expect": [
+        "a picked R&D project stays when its skills share a group with a met requirement"
+      ]
+    },
+    "Rules: the group grace is for the model's picks only": {
+      "file": "src/tailor.js",
+      "live": "matched.has(skill) || (picks.has(bullet.id) && groups.has(groupOf.get(skill))));",
+      "dead": "matched.has(skill) || groups.has(groupOf.get(skill)));",
+      "expect": [
+        "a picked R&D project stays when its skills share a group with a met requirement"
+      ]
+    },
+    "Run: the report says what was not done": {
+      "file": "src/report.js",
+      "live": "if (skipped) lines.push('', `**Not done:** ${line(skipped.reason)}`);",
+      "dead": "void skipped;",
+      "expect": [
+        "Word failing while fitting the page still gives the CV, unfitted, and says why",
+        "without Word, or with the layout turned off, the report says which"
+      ]
+    },
+    "Profile: a fact is a hook, a fact or a note": {
+      "file": "src/profile.js",
+      "live": "need(FACT_KINDS.includes(fact.kind), `fact ${fact.id}: kind ${fact.kind} is not one of ${FACT_KINDS.join(', ')}`);",
+      "dead": "void fact;",
+      "expect": [
+        "a profile fact is a hook, a fact or a note, and a profile with titles has a hook"
+      ]
+    },
+    "Profile: titles need a hook": {
+      "file": "src/profile.js",
+      "live": "need((profile.profile_facts ?? []).some((fact) => fact.kind === 'hook'), 'the profile has titles but no hook",
+      "dead": "need(true, 'the profile has titles but no hook",
+      "expect": [
+        "a profile fact is a hook, a fact or a note, and a profile with titles has a hook"
+      ]
+    },
+    "Score: a quality is not scored": {
+      "file": "src/score.js",
+      "live": "for (const requirement of scored(requirements)) {",
+      "dead": "for (const requirement of requirements) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Score: a quality is not a must-have of the qualification": {
+      "file": "src/score.js",
+      "live": "const requirements = scored(all);",
+      "dead": "const requirements = all;",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Report: qualities have their own section": {
+      "file": "src/report.js",
+      "live": "if (qualities.length) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Report: a quality is not in the scored table": {
+      "file": "src/report.js",
+      "live": "for (const requirement of scored) {",
+      "dead": "for (const requirement of analysis.requirements) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Report: a quality is not a gap": {
+      "file": "src/report.js",
+      "live": "const gaps = scored.filter(",
+      "dead": "const gaps = analysis.requirements.filter(",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Judged: a gap of the qualification": {
+      "file": "src/score.js",
+      "live": "    else if (requirement.judged === true) gaps.push(",
+      "dead": "    else if (false) gaps.push(",
+      "expect": [
+        "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
+      ]
+    },
+    "Report: the bullets the CV shows": {
+      "file": "src/report.js",
+      "live": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** \u2014 ${line(shown.org)}: ${shown.bullets.length} bullet(s)`);",
+      "dead": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** \u2014 ${line(shown.org)}: 1 bullet(s)`);",
+      "expect": [
+        "the report counts the bullets the CV shows, not the model's picks"
+      ]
+    },
+    "Report: rendered, when there is a CV": {
+      "file": "src/report.js",
+      "live": "  if (rendered) {",
+      "dead": "  if (false) {",
+      "expect": [
+        "the report counts the bullets the CV shows, not the model's picks"
+      ]
+    },
+    "Report: a pending gap is said": {
+      "file": "src/report.js",
+      "live": "const pending = (gap) => (profile.pending ?? []).some((name) => mentions(gap.name, name) || mentions(name, gap.name));",
+      "dead": "const pending = (gap) => (profile.pending ?? []).some(() => false);",
+      "expect": [
+        "a gap the profile lists as pending is marked as waiting for the owner"
+      ]
+    },
+    "Report: a pending gap is counted": {
+      "file": "src/report.js",
+      "live": "if (waiting) lines.push(",
+      "dead": "if (false) lines.push(",
+      "expect": [
+        "a gap the profile lists as pending is marked as waiting for the owner"
+      ]
+    },
+    "Condition: not scored": {
+      "file": "src/score.js",
+      "live": " && requirement.kind !== 'condition');",
+      "dead": ");",
+      "expect": [
+        "an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart"
+      ]
+    },
+    "Condition: the report lists conditions apart": {
+      "file": "src/report.js",
+      "live": "  if (conditions.length) {",
+      "dead": "  if (false) {",
+      "expect": [
+        "an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart"
+      ]
+    },
+    "Model: requirement-backed bullets fill experiences": {
+      "file": "src/tailor.js",
+      "live": "if (entry.tier > 0 && (entry.tier === 2 || used < limit(entry.index))) {",
+      "dead": "if (entry.tier === 2) {",
+      "expect": [
+        "bullets backing a matched requirement are added after the model picks, up to the limit"
+      ]
+    },
+    "Model: every experience shows at least one bullet": {
+      "file": "src/tailor.js",
+      "live": "if (kindOf(experience) === 'main' && ids.length < UNSELECTED_BULLETS) {",
+      "dead": "if (kindOf(experience) === 'main' && ids.length < 0) {",
+      "expect": [
+        "an experience selected without any bullet shows its requirement-backed ones, or at least its first"
+      ]
+    },
+    "Model: hidden groups stay out of the sidebar": {
+      "file": "src/tailor.js",
+      "live": "&& !groups.get(choice.id).hidden)",
+      "dead": "&& (!groups.get(choice.id).hidden || true))",
+      "expect": [
+        "a hidden skill group backs requirements but never shows in the sidebar"
+      ]
+    }
+  }
+}

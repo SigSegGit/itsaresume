@@ -1,10 +1,283 @@
 {
+  "surface": "http",
   "command": [
     "node",
     "--test",
     "--test-reporter=tap"
   ],
+  "files": [
+    "src/server.js",
+    "src/view.js",
+    "test/importance.test.js",
+    "test/instructions.test.js",
+    "test/pipeline.test.js",
+    "test/server.test.js",
+    "test/web.test.js",
+    "test/word.test.js",
+    "web/app.js",
+    "web/index.html",
+    "web/style.css"
+  ],
   "defences": {
+    "Server: public admits offers only": {
+      "file": "src/server.js",
+      "live": "if (publicMode && !looksLikeOffer(offer.text)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "in public mode only a job offer of a reasonable size is admitted"
+      ]
+    },
+    "Server: a reused offer is outside the caps": {
+      "file": "src/server.js",
+      "live": "if (publicMode) admit(request, reused.filter((result) => !result).length);",
+      "dead": "if (publicMode) admit(request, reused.length);",
+      "expect": [
+        "in public mode an offer already answered is reused at once, with no model call and outside the caps"
+      ]
+    },
+    "Invite: the log line names the invitation": {
+      "file": "src/server.js",
+      "live": "        invite: job.invite ?? null,",
+      "dead": "        invite: null,",
+      "expect": [
+        "an invitation link names its visitor in every log line, and a reload keeps the name"
+      ]
+    },
+    "Invite: a page opened with a live code binds its visitor": {
+      "file": "src/server.js",
+      "live": "    if (live) invited.set(fresh, live);",
+      "dead": "    if (live && false) invited.set(fresh, live);",
+      "expect": [
+        "an invitation link names its visitor in every log line, and a reload keeps the name",
+        "with --invite-only a job needs a live invitation: none, or a revoked one, is 403"
+      ]
+    },
+    "Invite: --invite-only refuses a job without a live invitation": {
+      "file": "src/server.js",
+      "live": "if (publicMode?.inviteOnly && !invite) {",
+      "dead": "if (publicMode?.inviteOnly && false) {",
+      "expect": [
+        "with --invite-only a job needs a live invitation: none, or a revoked one, is 403"
+      ]
+    },
+    "Models: the page greys what cannot answer": {
+      "file": "web/app.js",
+      "live": "option.disabled = !state.available;",
+      "dead": "option.disabled = false;",
+      "expect": [
+        "the page greys the models the server says cannot answer, and refreshes the menu"
+      ]
+    },
+    "Profile: an unknown profile is refused": {
+      "file": "src/server.js",
+      "live": "if (typeof profile !== 'string' || !known.includes(profile)) throw new HttpError(400,",
+      "dead": "if (typeof profile !== 'string') throw new HttpError(400,",
+      "expect": [
+        "a job may name a profile from the closed list; none is the default, an unknown one is 400",
+        "in public mode the profiles are neither listed nor chosen: another than the default is 400"
+      ]
+    },
+    "Profile: public mode knows the default alone": {
+      "file": "src/server.js",
+      "live": "const known = publicMode ? [DEFAULT_PROFILE] : deps.profiles?.() ?? [DEFAULT_PROFILE];",
+      "dead": "const known = deps.profiles?.() ?? [DEFAULT_PROFILE];",
+      "expect": [
+        "in public mode the profiles are neither listed nor chosen: another than the default is 400"
+      ]
+    },
+    "Profile: public status lists no profiles": {
+      "file": "src/server.js",
+      "live": "const { profile = {}, profiles: _others, ...rest } = status;",
+      "dead": "const { profile = {}, ...rest } = status;",
+      "expect": [
+        "in public mode the profiles are neither listed nor chosen: another than the default is 400"
+      ]
+    },
+    "Profile: the job's profile reaches the generation": {
+      "file": "src/server.js",
+      "live": "onStep, onAnswer, profile: job.profile });",
+      "dead": "onStep, onAnswer });",
+      "expect": [
+        "a job may name a profile from the closed list; none is the default, an unknown one is 400"
+      ]
+    },
+    "Profile: the log line names the profile": {
+      "file": "src/server.js",
+      "live": "        profile: job.profile ?? DEFAULT_PROFILE,",
+      "dead": "        profile: DEFAULT_PROFILE,",
+      "expect": [
+        "a job may name a profile from the closed list; none is the default, an unknown one is 400",
+        "serve() tailors a job to the profile it names, from --profiles, and the run records it"
+      ]
+    },
+    "QA: an unknown model is refused": {
+      "file": "src/server.js",
+      "live": "if (!MODELS.includes(model)) throw new HttpError(400,",
+      "dead": "if (false) throw new HttpError(400,",
+      "expect": [
+        "a job carries the chosen model to the generation; none means auto; an unknown one is refused"
+      ]
+    },
+    "QA: the chosen model reaches the generation": {
+      "file": "src/server.js",
+      "live": "offer: job.text, model: job.model, onStep, onAnswer, profile: job.profile });",
+      "dead": "offer: job.text, onStep, onAnswer, profile: job.profile });",
+      "expect": [
+        "a job carries the chosen model to the generation; none means auto; an unknown one is refused"
+      ]
+    },
+    "QA: a chosen model is never answered from a reused run": {
+      "file": "src/server.js",
+      "live": "deps.reuse && job.model === 'auto' ?",
+      "dead": "deps.reuse ?",
+      "expect": [
+        "in public mode the entry point is the VM, and a chosen model is never answered from a reused run"
+      ]
+    },
+    "QA: the entry point is the VM on the public name": {
+      "file": "src/server.js",
+      "live": "=== publicMode.host ? 'vm' : 'laptop';",
+      "dead": "=== publicMode.host ? 'laptop' : 'laptop';",
+      "expect": [
+        "in public mode the entry point is the VM, and a chosen model is never answered from a reused run"
+      ]
+    },
+    "QA: every run is logged": {
+      "file": "src/server.js",
+      "live": "if (!deps.log) return;",
+      "dead": "return;",
+      "expect": [
+        "every finished job is logged: offer, model, entry point, backend, steps with times, outcome"
+      ]
+    },
+    "QA: the log keeps the step times": {
+      "file": "src/server.js",
+      "live": "job.times.push({ step, at: clock() - job.startedAt });",
+      "dead": "void step;",
+      "expect": [
+        "every finished job is logged: offer, model, entry point, backend, steps with times, outcome"
+      ]
+    },
+    "QA: the page sends the chosen model": {
+      "file": "web/app.js",
+      "live": ", model: $('model').value, profile:",
+      "dead": ", profile:",
+      "expect": [
+        "the page lets the owner pick the model, and sends the choice with the offers"
+      ]
+    },
+    "Web: the view carries what was skipped": {
+      "file": "src/view.js",
+      "live": "    skipped: skipped ?? null,",
+      "dead": "    skipped: null,",
+      "expect": [
+        "Word failing while fitting the page still gives the CV, unfitted, and says why"
+      ]
+    },
+    "Web: the card says what was not done": {
+      "file": "web/app.js",
+      "live": "detail.skipped ? h('p', { class: 'gaps', text: `Non fait",
+      "dead": "null ? h('p', { class: 'gaps', text: `Non fait",
+      "expect": [
+        "a card whose layout was skipped says what was not done, and why"
+      ]
+    },
+    "Page: no null part on a card": {
+      "file": "web/app.js",
+      "live": "children.push(...resultOf(job, detail).filter(Boolean));",
+      "dead": "children.push(...resultOf(job, detail));",
+      "expect": [
+        "a finished card never shows a literal null"
+      ]
+    },
+    "Page: the pill names the router": {
+      "file": "web/app.js",
+      "live": "router.up ? 'Routeur joignable' : 'Routeur injoignable'",
+      "dead": "router.up ? 'Mod\u00e8le joignable' : 'Routeur injoignable'",
+      "expect": [
+        "the status pill says the router answers, not that the model does"
+      ]
+    },
+    "Page: qualities are listed apart": {
+      "file": "web/app.js",
+      "live": "const qualities = detail.requirements.filter((r) => r.kind === 'quality');",
+      "dead": "const qualities = [];",
+      "expect": [
+        "a personal quality is never shown as a failed requirement"
+      ]
+    },
+    "View: the kind reaches the page": {
+      "file": "src/view.js",
+      "live": "kind: requirement.kind === 'quality' ? 'quality' : 'skill',",
+      "dead": "kind: 'skill',",
+      "expect": [
+        "the job view says which rows are personal qualities and which matches are the model reading"
+      ]
+    },
+    "Page: an unbacked quality is for the interview, not a no": {
+      "file": "web/app.js",
+      "live": ": `${r.name} \u2014 \u00e0 montrer en entretien : ton profil n\u2019en dit rien encore`,",
+      "dead": ": `${r.name} \u2014 non`,",
+      "expect": [
+        "a personal quality is never shown as a failed requirement"
+      ]
+    },
+    "Page: two offers in one text are refused": {
+      "file": "web/app.js",
+      "live": "  if (repeatedHeading(clean)) {",
+      "dead": "  if (false) {",
+      "expect": [
+        "a text holding two offers is not added as one"
+      ]
+    },
+    "Page: gap labels in French": {
+      "file": "web/app.js",
+      "live": "${gaps.map(gapLabel).join(",
+      "dead": "${gaps.join(",
+      "expect": [
+        "a match the profile does not name is shown as the model reading, to verify, in French"
+      ]
+    },
+    "Page: a judged match shows its note, to verify": {
+      "file": "web/app.js",
+      "live": "const judged = r.judged ? h('div'",
+      "dead": "const judged = false ? h('div'",
+      "expect": [
+        "a match the profile does not name is shown as the model reading, to verify, in French"
+      ]
+    },
+    "View: a judged match reaches the page": {
+      "file": "src/view.js",
+      "live": "      judged: requirement.judged === true,",
+      "dead": "      judged: false,",
+      "expect": [
+        "the job view says which rows are personal qualities and which matches are the model reading"
+      ]
+    },
+    "Condition: the page lists conditions apart": {
+      "file": "web/app.js",
+      "live": "conditions.length ? h('details'",
+      "dead": "false ? h('details'",
+      "expect": [
+        "an administrative condition is shown apart, to confirm, never as a failed requirement"
+      ]
+    },
+    "Tokens: a job keeps the sum of its answers": {
+      "file": "src/server.js",
+      "live": "const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);",
+      "dead": "const onAnswer = (answer) => addTokens({}, answer);",
+      "expect": [
+        "a job's log line sums the tokens of its model answers per backend, failed or not"
+      ]
+    },
+    "Tokens: the log line carries the job's tokens": {
+      "file": "src/server.js",
+      "live": "        tokens: job.tokens ?? null,",
+      "dead": "        tokens: null,",
+      "expect": [
+        "a job's log line sums the tokens of its model answers per backend, failed or not"
+      ]
+    },
     "Web: only this server's own host name": {
       "file": "src/server.js",
       "live": "if (!hosts.includes(request.headers.host)) throw new HttpError(421,",
@@ -157,94 +430,6 @@
         "the page holds no inline script, style or handler, and loads nothing from elsewhere"
       ]
     },
-    "Split: a range stays inside the text": {
-      "file": "src/split.js",
-      "live": "if (!isRange(range, lines.length)) return { reason:",
-      "dead": "if (false) return { reason:",
-      "expect": [
-        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
-      ]
-    },
-    "Split: an offer holds a few lines": {
-      "file": "src/split.js",
-      "live": "if (filled < MIN_LINES) return",
-      "dead": "if (false) return",
-      "expect": [
-        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
-      ]
-    },
-    "Split: the shared range stays inside the text": {
-      "file": "src/split.js",
-      "live": "if (shared !== null && !isRange(shared, lines.length)) return",
-      "dead": "if (false) return",
-      "expect": [
-        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
-      ]
-    },
-    "Split: ranges do not overlap": {
-      "file": "src/split.js",
-      "live": "if (all[i][0] <= all[i - 1][1]) return { reason:",
-      "dead": "if (false) return { reason:",
-      "expect": [
-        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
-      ]
-    },
-    "Split: the shared context comes first": {
-      "file": "src/split.js",
-      "live": "const context = checked.shared ? [...cut(checked.shared), ''] : [];",
-      "dead": "const context = [];",
-      "expect": [
-        "each offer is cut from the lines the model points at, with the shared context first"
-      ]
-    },
-    "Split: a title is a plain name": {
-      "file": "src/split.js",
-      "live": "title: cleanName(title ?? '') ?? firstLine(cut(range)),",
-      "dead": "title: title || firstLine(cut(range)),",
-      "expect": [
-        "a title is a plain, short name, or the first line of the offer"
-      ]
-    },
-    "Split: the text is fenced": {
-      "file": "src/split.js",
-      "live": "return fence(numbered).join('\\n');",
-      "dead": "return numbered;",
-      "expect": [
-        "the model is shown numbered lines inside a fence it cannot close"
-      ]
-    },
-    "CLI: --split tailors each offer found": {
-      "file": "bin/itsacv.js",
-      "live": "offers.push(...found.offers.map((offer) => offer.text));",
-      "dead": "offers.push(text);",
-      "expect": [
-        "itsacv tailor takes several offer files, and --split finds several offers in one"
-      ]
-    },
-    "CLI: the worst exit code wins": {
-      "file": "bin/itsacv.js",
-      "live": "if (worst) process.exit(worst);",
-      "dead": "void worst;",
-      "expect": [
-        "itsacv tailor writes no CV when the answer stays invalid"
-      ]
-    },
-    "Run: every CV line traces to the truth document": {
-      "file": "src/run.js",
-      "live": "const quotes = [...checkQuotes(full, texts), ...checkProvenance(full, texts)];",
-      "dead": "const quotes = [...checkQuotes(full, texts)];",
-      "expect": [
-        "itsacv tailor refuses a CV line its truth document does not hold"
-      ]
-    },
-    "Run: the report lists what older CVs named": {
-      "file": "src/run.js",
-      "live": "const older = olderMentions(analysis, full, texts);",
-      "dead": "const older = [];",
-      "expect": [
-        "itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why"
-      ]
-    },
     "Public: another host is refused": {
       "file": "src/server.js",
       "live": "        hosts.push(publicMode.host);\n",
@@ -311,8 +496,8 @@
     },
     "Public: no split": {
       "file": "src/server.js",
-      "live": "        if (publicMode) throw new HttpError(403, 'le découpage",
-      "dead": "        if (false) throw new HttpError(403, 'le découpage",
+      "live": "        if (publicMode) throw new HttpError(403, 'le d\u00e9coupage",
+      "dead": "        if (false) throw new HttpError(403, 'le d\u00e9coupage",
       "expect": [
         "in public mode the owner's internal notes and the report are not served, and splitting is off"
       ]
@@ -391,8 +576,8 @@
     },
     "Web: a public failed job has a generic error": {
       "file": "src/server.js",
-      "live": "publicMode && job.status === 'failed' ? 'échec'",
-      "dead": "false ? 'échec'",
+      "live": "publicMode && job.status === 'failed' ? '\u00e9chec'",
+      "dead": "false ? '\u00e9chec'",
       "expect": [
         "in public mode a done job keeps no repair lines, a failed job has a generic error"
       ]
@@ -407,8 +592,8 @@
     },
     "Page: the public status renders without verdicts": {
       "file": "web/app.js",
-      "live": "const verified = profile.verdicts ? ` · ${profile.verdicts.verified ?? 0} vérifiées` : '';",
-      "dead": "const verified = ` · ${profile.verdicts.verified ?? 0} vérifiées`;",
+      "live": "const verified = profile.verdicts ? ` \u00b7 ${profile.verdicts.verified ?? 0} v\u00e9rifi\u00e9es` : '';",
+      "dead": "const verified = ` \u00b7 ${profile.verdicts.verified ?? 0} v\u00e9rifi\u00e9es`;",
       "expect": [
         "the public status renders without the owner assessment"
       ]
@@ -533,7 +718,7 @@
     },
     "Web: the footer never claims the analysis stays local": {
       "file": "web/index.html",
-      "live": "L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours",
+      "live": "L'offre est analys\u00e9e par Claude (forfait Claude Code, donc envoy\u00e9e \u00e0 Anthropic), ou par une IA locale en secours",
       "dead": "100 % local",
       "expect": [
         "the footer never claims the analysis stays local: it names Claude and the local fallback"

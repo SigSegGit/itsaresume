@@ -21,11 +21,13 @@ plan scripts/sabotage/r1.json billing "$cargo" '["crates/r/src/a.rs", "crates/r/
 plan scripts/sabotage/r2.json http "$cargo" '["crates/r/src/b.rs", "crates/r/tests/a.rs"]' \
     '{"b": {"file": "crates/r/src/b.rs", "live": "x", "dead": "y", "expect": ["t_b"]}}'
 plan cv/scripts/sabotage/c1.json guard "$node" '["src/g.js", "test/g.test.js"]' \
-    '{"g": {"file": "src/g.js", "live": "x", "dead": "y", "expect": ["g holds"]}}'
+    '{"g": {"file": "src/g.js", "live": "x", "dead": "y", "expect": ["g holds", "g one holds"]}}'
 plan cv/scripts/sabotage/c2.json injection "$node" '["src/p.js", "test/g.test.js"]' \
     '{"p": {"file": "src/p.js", "live": "x", "dead": "y", "expect": ["p holds"]}}'
 echo 'fn t_a() {} fn t_b() {}' > crates/r/tests/a.rs
 printf "test('g holds', () => {});\ntest('p holds', () => {});\n" > cv/test/g.test.js
+# A name built from a template is found through it.
+echo "for (const n of ['one']) test(\`g \${n} holds\`, () => {});" >> cv/test/g.test.js
 for f in crates/r/src/a.rs crates/r/src/b.rs crates/r/src/other.rs scripts/sabotage.py \
          cv/scripts/sabotage.py cv/src/g.js cv/src/p.js cv/src/other.js \
          cv/test/fixtures/offer.md docs/X.md .github/workflows/ci.yml; do echo x > "$f"; done
@@ -38,7 +40,7 @@ report() {  # name, got, expected
 select_() { "$py" "$here/sabotage-select.py" "$@" 2>&1 | tr -d '\r' | tr '\n' ' '; }
 check() {  # name, files to change, expected output
     git checkout -q "$base" 2>/dev/null
-    for f in $2; do echo y >> "$f"; done
+    for f in $2; do case "$f" in *.json) echo ' ' >> "$f" ;; *) echo y >> "$f" ;; esac; done
     git commit -qam change
     report "$1" "$(select_ "$base")" "$3"
 }

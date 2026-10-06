@@ -32,7 +32,7 @@ Usage
 -----
 
     python scripts/sabotage.py                      # every scripts/sabotage/*.json
-    python scripts/sabotage.py scripts/sabotage/itsaresume-router.json
+    python scripts/sabotage.py scripts/sabotage/router-billing.json
 
 A plan file::
 

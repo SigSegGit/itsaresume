@@ -1,10 +1,115 @@
 {
+  "surface": "laptop",
   "command": [
     "node",
     "--test",
     "--test-reporter=tap"
   ],
+  "files": [
+    "bin/itsacv.js",
+    "deploy/laptop/bionic-tunnel.sh",
+    "deploy/laptop/wake-watcher.sh",
+    "src/run.js",
+    "src/wake.js",
+    "src/word.js",
+    "test/client.test.js",
+    "test/invites.test.js",
+    "test/pipeline.test.js",
+    "test/profiles.test.js",
+    "test/tunnel.test.js",
+    "test/wake.test.js",
+    "test/watcher.test.js",
+    "test/word.test.js"
+  ],
   "defences": {
+    "Evidence: the CLI refuses a quote its source lacks": {
+      "file": "src/run.js",
+      "live": "if (quotes.length) throw new RunError(2,",
+      "dead": "if (false) throw new RunError(2,",
+      "expect": [
+        "itsacv tailor refuses a quote its source does not contain"
+      ]
+    },
+    "Evidence: the CLI draws the CV from the restricted profile": {
+      "file": "src/run.js",
+      "live": "const { profile, removed } = restrict(full, assessment);",
+      "dead": "const { removed } = restrict(full, assessment); const profile = full;",
+      "expect": [
+        "itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why"
+      ]
+    },
+    "Evidence: an unreadable source stops the CLI": {
+      "file": "src/run.js",
+      "live": "    throw new RunError(2, error.message);\n  }\n  const quotes",
+      "dead": "    void error;\n  }\n  const quotes",
+      "expect": [
+        "itsacv tailor refuses a source it cannot read"
+      ]
+    },
+    "Run: the offer is kept": {
+      "file": "src/run.js",
+      "live": "  writeFileSync(join(dir, 'offer.txt'), offer);\n",
+      "dead": "",
+      "expect": [
+        "a run keeps its offer and what it did, and reads back as the same result"
+      ]
+    },
+    "Invite usage: the CLI reads the QA log": {
+      "file": "bin/itsacv.js",
+      "live": "process.stdout.write(usageByInvite(existsSync(log) ? readFileSync(log, 'utf8') : ''));",
+      "dead": "process.stdout.write(usageByInvite(''));",
+      "expect": [
+        "itsacv invite --usage reads the QA log of --out"
+      ]
+    },
+    "Wake: the laptop is awake within three minutes": {
+      "file": "src/wake.js",
+      "live": "< SEEN_WITHIN_S * 1000;",
+      "dead": "< SEEN_WITHIN_S * 1000000;",
+      "expect": [
+        "the laptop is awake when its watcher marked it within three minutes"
+      ]
+    },
+    "Wake: the request is left for the watcher": {
+      "file": "src/wake.js",
+      "live": "  requestWake(out);",
+      "dead": "  void out;",
+      "expect": [
+        "a sleeping local model on an awake laptop is woken, and the job waits for it"
+      ]
+    },
+    "Wake: a laptop off fails at once": {
+      "file": "src/wake.js",
+      "live": "if (!laptopAwake(out)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a laptop off, or a model that never wakes, fails the job plainly"
+      ]
+    },
+    "Raw: raw.json is written": {
+      "file": "src/run.js",
+      "live": "writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));",
+      "dead": "void calls;",
+      "expect": [
+        "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
+    },
+    "Profile: the run records its profile": {
+      "file": "src/run.js",
+      "live": "JSON.stringify({ profile: profileId, attempts,",
+      "dead": "JSON.stringify({ profile: DEFAULT_PROFILE, attempts,",
+      "expect": [
+        "serve() tailors a job to the profile it names, from --profiles, and the run records it"
+      ]
+    },
+    "Profile: serve --profiles reaches the server": {
+      "file": "bin/itsacv.js",
+      "live": "{ ...options, profilesDir: options.profiles, port:",
+      "dead": "{ ...options, profilesDir: null, port:",
+      "expect": [
+        "itsacv serve --profiles DIR offers the directory's profiles on the page"
+      ]
+    },
     "Client: the timeout is the owner's to set": {
       "file": "bin/itsacv.js",
       "live": "complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs })",
@@ -35,22 +140,6 @@
       "dead": "should be long enough",
       "expect": [
         "the usage says the client's timeout must exceed the router backend's"
-      ]
-    },
-    "Client: a cut answer fails at once": {
-      "file": "src/llm.js",
-      "live": "          if (!ended) {",
-      "dead": "          if (false) {",
-      "expect": [
-        "a connection cut mid-answer is an error at once, not a wait for the timer"
-      ]
-    },
-    "Client: a refusal carries each backend's reason": {
-      "file": "src/llm.js",
-      "live": "${reason}${attemptsOf(parsed.error)}",
-      "dead": "${reason}",
-      "expect": [
-        "a router refusal carries each backend's own reason"
       ]
     },
     "Word: a request has its own timeout": {
@@ -103,31 +192,6 @@
         "a PDF whose text cannot be read keeps the fitted CV and its PDF, and says the ATS check was skipped"
       ]
     },
-    "Run: the report says what was not done": {
-      "file": "src/report.js",
-      "live": "if (skipped) lines.push('', `**Not done:** ${line(skipped.reason)}`);",
-      "dead": "void skipped;",
-      "expect": [
-        "Word failing while fitting the page still gives the CV, unfitted, and says why",
-        "without Word, or with the layout turned off, the report says which"
-      ]
-    },
-    "Web: the view carries what was skipped": {
-      "file": "src/view.js",
-      "live": "    skipped: skipped ?? null,",
-      "dead": "    skipped: null,",
-      "expect": [
-        "Word failing while fitting the page still gives the CV, unfitted, and says why"
-      ]
-    },
-    "Web: the card says what was not done": {
-      "file": "web/app.js",
-      "live": "detail.skipped ? h('p', { class: 'gaps', text: `Non fait",
-      "dead": "null ? h('p', { class: 'gaps', text: `Non fait",
-      "expect": [
-        "a card whose layout was skipped says what was not done, and why"
-      ]
-    },
     "CLI: a Word failure is in the exit code": {
       "file": "bin/itsacv.js",
       "live": "        worst = Math.max(worst, 5);",
@@ -142,78 +206,6 @@
       "dead": "      if (!(error instanceof RunError)) throw error; worst = Math.max(worst, error.code);",
       "expect": [
         "itsacv tailor: an unexpected error in one offer does not stop the offers after it"
-      ]
-    },
-    "Page: no null part on a card": {
-      "file": "web/app.js",
-      "live": "children.push(...resultOf(job, detail).filter(Boolean));",
-      "dead": "children.push(...resultOf(job, detail));",
-      "expect": [
-        "a finished card never shows a literal null"
-      ]
-    },
-    "Page: the pill names the router": {
-      "file": "web/app.js",
-      "live": "router.up ? 'Routeur joignable' : 'Routeur injoignable'",
-      "dead": "router.up ? 'Modèle joignable' : 'Routeur injoignable'",
-      "expect": [
-        "the status pill says the router answers, not that the model does"
-      ]
-    },
-    "Page: qualities are listed apart": {
-      "file": "web/app.js",
-      "live": "const qualities = detail.requirements.filter((r) => r.kind === 'quality');",
-      "dead": "const qualities = [];",
-      "expect": [
-        "a personal quality is never shown as a failed requirement"
-      ]
-    },
-    "View: the kind reaches the page": {
-      "file": "src/view.js",
-      "live": "kind: requirement.kind === 'quality' ? 'quality' : 'skill',",
-      "dead": "kind: 'skill',",
-      "expect": [
-        "the job view says which rows are personal qualities and which matches are the model reading"
-      ]
-    },
-    "Page: an unbacked quality is for the interview, not a no": {
-      "file": "web/app.js",
-      "live": ": `${r.name} — à montrer en entretien : ton profil n’en dit rien encore`,",
-      "dead": ": `${r.name} — non`,",
-      "expect": [
-        "a personal quality is never shown as a failed requirement"
-      ]
-    },
-    "Page: two offers in one text are refused": {
-      "file": "web/app.js",
-      "live": "  if (repeatedHeading(clean)) {",
-      "dead": "  if (false) {",
-      "expect": [
-        "a text holding two offers is not added as one"
-      ]
-    },
-    "Page: gap labels in French": {
-      "file": "web/app.js",
-      "live": "${gaps.map(gapLabel).join(",
-      "dead": "${gaps.join(",
-      "expect": [
-        "a match the profile does not name is shown as the model reading, to verify, in French"
-      ]
-    },
-    "Page: a judged match shows its note, to verify": {
-      "file": "web/app.js",
-      "live": "const judged = r.judged ? h('div'",
-      "dead": "const judged = false ? h('div'",
-      "expect": [
-        "a match the profile does not name is shown as the model reading, to verify, in French"
-      ]
-    },
-    "View: a judged match reaches the page": {
-      "file": "src/view.js",
-      "live": "      judged: requirement.judged === true,",
-      "dead": "      judged: false,",
-      "expect": [
-        "the job view says which rows are personal qualities and which matches are the model reading"
       ]
     },
     "Run: the report gets the rendered CV": {
@@ -255,14 +247,6 @@
       "dead": "[] ?? (",
       "expect": [
         "a run keeps the offer instructions in its result, its job view and the run read back"
-      ]
-    },
-    "Deploy: the VM router is health-checked on its own port": {
-      "file": "deploy/vm-generator/compose.yaml",
-      "live": "fetch('http://127.0.0.1:8789/healthz')",
-      "dead": "fetch('http://127.0.0.1:8787/healthz')",
-      "expect": [
-        "the VM router is health-checked on the port it listens on"
       ]
     },
     "Tunnel: Bionic's server is started before each round": {
@@ -311,6 +295,38 @@
       "dead": "if false; then",
       "expect": [
         "a second tunnel leaves at once while the first is alive"
+      ]
+    },
+    "CLI: --split tailors each offer found": {
+      "file": "bin/itsacv.js",
+      "live": "offers.push(...found.offers.map((offer) => offer.text));",
+      "dead": "offers.push(text);",
+      "expect": [
+        "itsacv tailor takes several offer files, and --split finds several offers in one"
+      ]
+    },
+    "CLI: the worst exit code wins": {
+      "file": "bin/itsacv.js",
+      "live": "if (worst) process.exit(worst);",
+      "dead": "void worst;",
+      "expect": [
+        "itsacv tailor writes no CV when the answer stays invalid"
+      ]
+    },
+    "Run: every CV line traces to the truth document": {
+      "file": "src/run.js",
+      "live": "const quotes = [...checkQuotes(full, texts), ...checkProvenance(full, texts)];",
+      "dead": "const quotes = [...checkQuotes(full, texts)];",
+      "expect": [
+        "itsacv tailor refuses a CV line its truth document does not hold"
+      ]
+    },
+    "Run: the report lists what older CVs named": {
+      "file": "src/run.js",
+      "live": "const older = olderMentions(analysis, full, texts);",
+      "dead": "const older = [];",
+      "expect": [
+        "itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why"
       ]
     }
   }

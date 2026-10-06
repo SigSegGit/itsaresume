@@ -140,7 +140,7 @@ property it proves.
 | a level stated by the sources is compared with the profile and with each other | Evidence: sources disagreeing on a level are flagged; Evidence: a profile level above its sources is flagged; Evidence: an evidence level must be a level |
 | a broader term a skill covers is not evidence for it, but still matches an offer | Evidence: a broader term is not another name; Matching: a broader term still matches an offer |
 | a ruled-out skill is known by its name and aliases, not by the broader terms it covers | Evidence: a broader term is not another name |
-| contradicted and unsupported skills are removed from the analysis and reported | Equivalents: evidence-blocked skills are not equivalents; Evidence: A or B against outweighs any CV claim; Evidence: the answer may not select a ruled-out skill |
+| contradicted and unsupported skills are removed from the analysis and reported | Evidence: A or B against outweighs any CV claim; Equivalents: evidence-blocked skills are not equivalents; Evidence: the answer may not select a ruled-out skill |
 | the summary may not name a contradicted skill, even one the profile lists | Evidence: the free text may not name a ruled-out skill |
 | the report verifies every skill the CV shows or matches, with its sources | Evidence: A or B for makes a skill verified; Evidence: the report has its Verification section |
 | a self-assessment or an artefact that names a skill is not evidence for it: only CVs are scanned | Evidence: only CVs are scanned, never a self-assessment |
@@ -187,7 +187,7 @@ property it proves.
 | only a word the offer uses as a proper noun in its prose counts as one | Injection: the offer's proper nouns stay out of the summary; Injection: an offer heading is not prose; Injection: a word the offer writes in lower case is no name |
 | validation runs the free-text checks when it knows the offer | Injection: links are refused; Injection: validation runs the free-text checks |
 | an obedient model following an injected offer gets no CV | Injection: email addresses are refused; Injection: numbers come from the profile; Injection: validation runs the free-text checks; Injection: the pipeline gives validation the offer |
-| the offer is fenced by a marker it cannot guess | Injection: the fence marker is random; Injection: the analysis prompt fences the offer; Injection: the listing prompt fences the offer; Injection: the analysis system prompt says the offer is untrusted; Injection: the listing system prompt says the offer is untrusted |
+| the offer is fenced by a marker it cannot guess | Injection: the fence marker is random; Injection: the listing prompt fences the offer; Injection: the listing system prompt says the offer is untrusted; Injection: the analysis prompt fences the offer; Injection: the analysis system prompt says the offer is untrusted |
 | a listed requirement name is plain, one line and short: cut if long, dropped if unsafe | Injection: an unsafe name is dropped; Injection: a long name is cut; Injection: a name is put on one line; Injection: listed names are cleaned |
 | a long requirement name from the analysis is cut, and the cut is reported | Injection: a long name is cut; Injection: the analysis's names are cut |
 | a requirement name from the analysis is held to the same rule | Injection: an unsafe name is dropped; Injection: a requirement name must be plain |
@@ -202,7 +202,7 @@ property it proves.
 | the offer language is detected from its words | Honesty: the offer language is detected |
 | the prompt imposes the offer language | Honesty: the offer language is detected |
 | an answer in another language than the offer is refused | Honesty: the answer is in the offer's language |
-| the score is computed from the requirements, not taken from the model | Honesty: the score is computed, not the model's; Honesty: must-haves weigh more |
+| the score is computed from the requirements, not taken from the model | Honesty: must-haves weigh more; Honesty: the score is computed, not the model's |
 | an analysis without any requirement cannot be scored and is refused | Honesty: no requirement, no score |
 | the report labels the model's own comment as unchecked | — |
 
@@ -365,7 +365,7 @@ property it proves.
 | itsacv tailor writes the CV, the report and the analysis | Run: the report gets the rendered CV |
 | itsacv tailor flags the instructions of an offer in the report and run.json, and applies none | Instructions: a run finds them in the offer; Instructions: run.json keeps them |
 | itsacv tailor keeps every raw model answer, in call order, in raw.json | Raw: every call is recorded; Raw: the analysis calls are labelled; Raw: raw.json is written |
-| itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why | Evidence: the CLI draws the CV from the restricted profile; Evidence: the report has its Verification section; Run: the report lists what older CVs named |
+| itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why | Evidence: the report has its Verification section; Evidence: the CLI draws the CV from the restricted profile; Run: the report lists what older CVs named |
 | itsacv tailor takes several offer files, and --split finds several offers in one | CLI: --split tailors each offer found |
 | itsacv tailor refuses a CV line its truth document does not hold | Run: every CV line traces to the truth document |
 | itsacv tailor refuses a source it cannot read | Evidence: an unreadable source stops the CLI |
@@ -377,7 +377,7 @@ property it proves.
 | requirements the analysis left out are added from a focused listing | Listing: requirements left out are added |
 | a listing that cannot be read leaves the analysis as it was | — |
 | serve() writes each job's tokens per backend to the QA log, through the real pipeline | Tokens: serve() counts the real pipeline's answers |
-| serve() tailors a job to the profile it names, from --profiles, and the run records it | Profile: the log line names the profile; Profile: serve() loads the named profile's file; Profile: the run records its profile |
+| serve() tailors a job to the profile it names, from --profiles, and the run records it | Profile: serve() loads the named profile's file; Profile: the log line names the profile; Profile: the run records its profile |
 
 ## `test/profiles.test.js`
 
@@ -410,7 +410,7 @@ property it proves.
 | the skills column holds at most six groups of six skills, those meeting a requirement first | Layout: at most six shown groups; Layout: at most six skills per group; Layout: skills meeting a requirement come first |
 | a requirement the offer never states is dropped, and brings nothing onto the CV | Red team: a requirement must be stated in the offer; Red team: an inflected word of the offer states it |
 | a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item | Red team: a composed line has quotes; Red team: a composed line is made of its quotes; Red team: the English names no skill the French lacks; Red team: no profile line names a never-claimed item |
-| a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification | Real run: a requirement is met only through a skill named for it; Judged: the model's reading keeps half credit; Judged: a gap of the qualification |
+| a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification | Judged: a gap of the qualification; Real run: a requirement is met only through a skill named for it; Judged: the model's reading keeps half credit |
 | a summary sentence naming what only the lab covers says it comes from the lab or R&D | Real run: a lab-only claim in the summary says so |
 | an invisible combining mark does not hide a never-claimed skill | Red team: default-ignorable marks are folded away |
 | a number written in words must come from the profile too | Red team: numbers in words come from the profile |
@@ -447,7 +447,7 @@ property it proves.
 | the normalised fit carries the qualification | Rules: half the musts missed is the core missed; Rules: the fit carries the qualification |
 | each bullet traces to the truth document, and brings no number of its own | Provenance: a line is found in the truth document; Provenance: a composed line brings no number of its own; Provenance: the English text brings no number of its own; Provenance: Markdown emphasis is not text; Provenance: confidence marks are not text |
 | the model is told which skills are lab-only and which are never to be claimed | Rules: the prompt marks lab skills; Rules: the prompt lists what is never claimed |
-| the report states the qualification and what older CVs named that the profile lacks | Rules: the fit carries the qualification; Rules: never-claimed skills are not suggested back; Rules: the report states the qualification; Rules: the report lists what older CVs named |
+| the report states the qualification and what older CVs named that the profile lacks | Rules: never-claimed skills are not suggested back; Rules: the report states the qualification; Rules: the report lists what older CVs named; Rules: the fit carries the qualification |
 | a picked R&D project stays when its skills share a group with a met requirement | Rules: a picked project of a met group stays; Rules: the group grace is for the model's picks only |
 | an unpicked short mission does not fill the page with a requirement the main missions already back | Page: an unpicked short mission fills only what the main missions leave open |
 | an unpicked short mission still backs a requirement no main mission backs | Page: a requirement no main mission backs is open |
@@ -457,7 +457,7 @@ property it proves.
 
 | Property (the test name) | Sabotage defences |
 |---|---|
-| a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview | Quality: a requirement named with a quality word is set apart; Quality: a run of quality words names a quality; Score: a quality is not scored; Score: a quality is not a must-have of the qualification; Report: qualities have their own section; Report: a quality is not in the scored table; Report: a quality is not a gap |
+| a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview | Score: a quality is not scored; Score: a quality is not a must-have of the qualification; Report: qualities have their own section; Report: a quality is not in the scored table; Report: a quality is not a gap; Quality: a requirement named with a quality word is set apart; Quality: a run of quality words names a quality |
 | a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says | Quality: a product name keeps a requirement scored; Quality: a never-claimed item keeps a requirement scored; Quality: a profile skill keeps a requirement scored; Quality: the model's label is not trusted |
 | examples the offer lists in parentheses are one requirement, met by its best example | Examples: an enumeration's rows are united; Examples: the merged row is met as its best example |
 | a never-claimed example is reported as such, not counted as a must-have of its own when another example is met | Examples: an enumeration's rows are united |
@@ -471,7 +471,7 @@ property it proves.
 | without a pending list the gaps are unchanged | — |
 | a certification is not merged into an enumeration with a held skill | Certifications are never merged as examples |
 | working in pairs is a personal quality, never a failed requirement | Quality: working in pairs is a quality |
-| an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart | Condition: an unstated administrative condition is to confirm; Condition: not scored; Condition: the report lists conditions apart |
+| an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart | Condition: not scored; Condition: the report lists conditions apart; Condition: an unstated administrative condition is to confirm |
 
 ## `test/serve-contract.test.js`
 
@@ -601,8 +601,8 @@ property it proves.
 |---|---|
 | a Word request left unanswered fails after its timeout, and the helper is stopped with all it started | Word: a request has its own timeout; Word: a helper that times out is killed with all it started |
 | once the helper has exited, every request fails at once, saying so | Word: a stopped helper refuses at once |
-| Word failing while fitting the page still gives the CV, unfitted, and says why | Run: Word failing leaves the CV, unfitted; Run: the report says what was not done; Web: the view carries what was skipped |
-| a run keeps the offer instructions in its result, its job view and the run read back | Instructions: a run finds them in the offer; Instructions: the run's result carries them; Instructions: a run read back has them; Instructions: the job view flags them without their text |
+| Word failing while fitting the page still gives the CV, unfitted, and says why | Run: the report says what was not done; Web: the view carries what was skipped; Run: Word failing leaves the CV, unfitted |
+| a run keeps the offer instructions in its result, its job view and the run read back | Instructions: the job view flags them without their text; Instructions: a run finds them in the offer; Instructions: the run's result carries them; Instructions: a run read back has them |
 | Word failing half-way through the PDF export leaves no PDF behind | Run: Word failing leaves the CV, unfitted; Run: a half-written PDF is removed |
 | without Word, or with the layout turned off, the report says which | Run: the report says what was not done |
 | a PDF whose text cannot be read keeps the fitted CV and its PDF, and says the ATS check was skipped | Run: an unreadable PDF text skips the ATS check only |
