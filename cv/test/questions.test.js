@@ -70,6 +70,22 @@ test('a requirement the profile now meets, by a name or a concept, is not a ques
   assert.deepEqual(asked(questions), ['Rust']);
 });
 
+test('a run older than a rule is read with today\'s rules: a quality, a language, a certification it kept as a skill is not asked', () => {
+  const questions = gatherQuestions([run('a', 'offer one', [req('Curieux techniquement'), req('Anglais professionnel'), req('Certification CKA'), req('Rust')])], { profile: profile() });
+  assert.deepEqual(asked(questions), ['Rust']);
+});
+
+test('runs older than offer.txt are one offer per first line, joined to the text a later run of it kept', () => {
+  const lead = (name, offer) => ({ name, offer, analysis: { requirements: [req('Rust')] } });
+  const questions = gatherQuestions([
+    lead('20260924-010000-ai-tech-lead', null),
+    lead('20260925-020000-ai-tech-lead', null),
+    lead('20261001-030000-ai-tech-lead', 'AI Tech Lead\nthe offer'),
+    lead('20261002-040000-sre', null),
+  ], { profile: profile() });
+  assert.equal(questions[0].offers, 2);
+});
+
 test('readRuns reads each run with an analysis, skips the others, and names the unreadable', () => {
   const out = mkdtempSync(join(tmpdir(), 'itsacv-questions-'));
   try {
