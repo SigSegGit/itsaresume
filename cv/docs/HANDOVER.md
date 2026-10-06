@@ -617,16 +617,24 @@ Traps met, each cost time once:
     no longer sees the printed PDF).
 - [ ] **2.25** (the owner, 2026-10-06) **A shorter prompt, same
   quality.** Today the whole profile goes into every prompt (<= 14.5k
-  tokens at worst). Standard profiles: a few role families (e.g. SRE,
-  DevOps/platform, cloud architect, infra/system), each a subset of the
-  profile compiled by code (skills and experiences tagged by family in
-  the v4 compilation, never invented); the offer's family is chosen by
-  code from its requirements, the prompt carries that subset only. First
+  tokens at worst). Standard profiles built on **ESCO** (the EU's
+  skills/occupations taxonomy, free, in French, SKOS: stable URIs,
+  broader/narrower/related links, essential/optional skills per
+  occupation). The v4 compilation maps each skill to its ESCO URI (by
+  code and a reviewed table, never invented; unmapped skills stay, flagged);
+  the offer's requirements map to ESCO concepts, code picks the closest
+  occupation(s), and the prompt carries only the profile's skills and
+  experiences linked to them. ESCO's links may also replace or feed the
+  home lexicon (`src/lexicon.js`). The owner's reason (2026-10-06): the
+  site will later test an offer against other profiles, do matchmaking
+  (5.x) and help write a profile; ESCO is the common language for all
+  three, so the mapping is written profile-agnostic. First
   measure (prompt tokens per section on the 26 runs, from the QA log),
   then replay (`rules-replay.mjs`, `guard-replay.mjs`): the subset ships
   only if no run loses a matched requirement it had.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
-  offers × M profiles.** Needs 4.1. The cost is the model calls: the
+  offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
+  and profiles compared on ESCO concepts). The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).
   So: **5.1** code first, no model: for every pair, the share of the
   offer's listed requirements the profile's skills name (`relate()` in
