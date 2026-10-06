@@ -641,7 +641,7 @@
     },
     "Injection: validation runs the free-text checks": {
       "file": "src/analysis.js",
-      "live": "if (offer !== undefined) errors.push(...checkFreeText(analysis, profile, offer));",
+      "live": "if (offer !== undefined) errors.push(...checkFreeText(analysis, profile, offer, { instructions: [SYSTEM, LISTING_SYSTEM, UNTRUSTED] }));",
       "dead": "void checkFreeText;",
       "expect": [
         "validation runs the free-text checks when it knows the offer",
