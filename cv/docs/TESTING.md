@@ -19,6 +19,17 @@ property it proves.
 - **No personal data.** Tests use `test/fixtures/profile.synthetic.json`, a
   fictitious person. The real profile never enters the repository.
 
+## `test/answers.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a "yes" answer becomes a skill the pipeline can use, at the owner's level, quoting him | Answers: the level is the owner's |
+| a "no" answer adds nothing | Answers: a no adds nothing |
+| an answer the profile cannot take is refused, by name | Answers: only yes or no; Answers: the level is one of LEVELS; Answers: the owner's sentence is required; Answers: a known group; Answers: the profile wins over an answer |
+| two answers with one id are refused | Answers: one answer per id |
+| an answer cannot bring back a skill the evidence contradicts | Answers: a contradicted skill stays out |
+| loadProfile merges answers.json beside the profile, and refuses a bad one | Answers: loadProfile merges them; Answers: a refused answer stops the run |
+
 ## `test/client.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -631,6 +642,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**412 tests, 346 of them covered by at least one sabotage defence.**
+**418 tests, 352 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

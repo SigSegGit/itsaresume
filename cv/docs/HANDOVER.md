@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.3b-ii
-TITLE: the shortlist: relate() gives candidate skills, the model only picks among them
+NEXT: 2.22b
+TITLE: the questions: requirements no profile skill meets, across runs, minus those answered
 WRITTEN-AT: 2026-10-06
 -->
 
@@ -65,7 +65,12 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 465 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 2.22 (the owner, 2026-10-06): refining the profile from the app. A
+  requirement no profile skill meets becomes a question; his "yes" (level,
+  one sentence) joins the profile through `answers.json` (2.22a done);
+  the questions (2.22b), the local form (2.22c), the measure (2.22d)
+  follow. 2.3b-ii's shortlist then comes, as a hint, never a lock.
+- 471 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   one plan per attack surface since router 8.46: injection, guard, public,
   http, billing, laptop, deploy, content; CI job `cv-sabotage` runs the
   plans whose `files` a PR touches, all of them on `main`).
@@ -544,7 +549,9 @@ Traps met, each cost time once:
   question to the owner, not only a lower score. ADR-6 holds: the owner's
   own words are a source; a model never writes an answer, and the public
   host can neither read nor write them.
-  - [ ] **2.22a** Answers into the profile. `src/answers.js`: an
+  - [x] **2.22a** (2026-10-06, 6 tests, 11 defences; checked on the real
+    profile with a throwaway answer: merged, and a duplicate of a profile
+    skill refused by name) Answers into the profile. `src/answers.js`: an
     `answers.json` beside `profile.json` (private), a list of
     `{id, asked, answer: "yes"|"no", name, level, group, said, at}`;
     `said` is the owner's sentence, kept as the skill's quote.

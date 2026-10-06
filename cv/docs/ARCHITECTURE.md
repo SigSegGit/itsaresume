@@ -227,6 +227,13 @@ each line's source quote; itsacv checks those quotes before every run. When
 the document changes, the script is rerun; nothing is added to the profile
 that the document does not say.
 
+*Amended 2026-10-06 (2.22, the owner: his profile does not list every skill
+he has).* The owner's answers to "do you have this skill?" are a second
+document of his own: `answers.json` beside `profile.json`, each "yes" a skill
+at the level he gave, quoting his sentence (`src/answers.js`, merged by
+`loadProfile`). An answer never raises or duplicates what the profile says,
+never brings back a skill the evidence contradicts, and no model writes one.
+
 ### ADR-7 — Public on a sub-domain, through an always-on front
 
 *Context.* The owner wants recruiters to paste an offer on `cv.<domain>` and
