@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "bin/itsacv.js",
     "data/tech.json",
     "src/analysis.js",
     "src/answers.js",
@@ -30,6 +31,7 @@
     "src/profiles.js",
     "src/prompt.js",
     "src/qa.js",
+    "src/questions.js",
     "src/render.js",
     "src/report.js",
     "src/run.js",
@@ -59,6 +61,7 @@
     "test/must-stay-no.test.js",
     "test/pipeline.test.js",
     "test/profiles.test.js",
+    "test/questions.test.js",
     "test/redteam.test.js",
     "test/render.test.js",
     "test/rules.test.js",
@@ -1227,6 +1230,185 @@
       "dead": "  if (false) throw new RunError(2, `the answers cannot join",
       "expect": [
         "loadProfile merges answers.json beside the profile, and refuses a bad one"
+      ]
+    },
+    "Questions: only a requirement left at no is asked": {
+      "file": "src/questions.js",
+      "live": "      if (requirement.match !== 'no' || isNever(",
+      "dead": "      if (isNever(",
+      "expect": [
+        "a requirement no profile skill meets is a question; a met or adjacent one is not"
+      ]
+    },
+    "Questions: a never-claimed requirement is not asked": {
+      "file": "src/questions.js",
+      "live": "requirement.match !== 'no' || isNever(requirement, profile.never)) continue;",
+      "dead": "requirement.match !== 'no') continue;",
+      "expect": [
+        "only a skill is asked: a quality, a condition, a language, a certification, a never-claimed one are not"
+      ]
+    },
+    "Questions: a quality, condition, language or certification is not asked": {
+      "file": "src/questions.js",
+      "live": "      if (NOT_A_SKILL.has(settledKind(",
+      "dead": "      if (false && NOT_A_SKILL.has(settledKind(",
+      "expect": [
+        "only a skill is asked: a quality, a condition, a language, a certification, a never-claimed one are not",
+        "a run older than a rule is read with today's rules: a quality, a condition, a language, a certification it kept as a skill is not asked"
+      ]
+    },
+    "Questions: the kind a run kept stands": {
+      "file": "src/normalize.js",
+      "live": "  if (requirement.kind) return requirement.kind;",
+      "dead": "  if (false) return requirement.kind;",
+      "expect": [
+        "only a skill is asked: a quality, a condition, a language, a certification, a never-claimed one are not"
+      ]
+    },
+    "Questions: an older run's quality is read with today's rules": {
+      "file": "src/normalize.js",
+      "live": "  if (isQuality(requirement, profile)) return 'quality';",
+      "dead": "  if (false) return 'quality';",
+      "expect": [
+        "a run older than a rule is read with today's rules: a quality, a condition, a language, a certification it kept as a skill is not asked"
+      ]
+    },
+    "Questions: an older run's condition is read with today's rules": {
+      "file": "src/normalize.js",
+      "live": "  if (isCondition(requirement, profile)) return 'condition';",
+      "dead": "  if (false) return 'condition';",
+      "expect": [
+        "a run older than a rule is read with today's rules: a quality, a condition, a language, a certification it kept as a skill is not asked"
+      ]
+    },
+    "Questions: an older run's language is read with today's rules": {
+      "file": "src/normalize.js",
+      "live": "  if (languageOf(requirement, profile, lang)) return 'language';",
+      "dead": "  if (false) return 'language';",
+      "expect": [
+        "a run older than a rule is read with today's rules: a quality, a condition, a language, a certification it kept as a skill is not asked"
+      ]
+    },
+    "Questions: an older run's certification is read with today's rules": {
+      "file": "src/normalize.js",
+      "live": "  if (certificationOf(requirement, profile, lang)) return 'certification';",
+      "dead": "  if (false) return 'certification';",
+      "expect": [
+        "a run older than a rule is read with today's rules: a quality, a condition, a language, a certification it kept as a skill is not asked"
+      ]
+    },
+    "Questions: one concept, one question": {
+      "file": "src/questions.js",
+      "live": "  const concepts = lookup(index, phrase).sort();",
+      "dead": "  const concepts = [];",
+      "expect": [
+        "requirements naming one concept are one question, counted once per offer, ranked by offers then musts",
+        "what the owner answered is not asked again, yes or no, by the words asked or the name given"
+      ]
+    },
+    "Questions: an offer run twice counts once": {
+      "file": "src/questions.js",
+      "live": "      group.offers.add(offer);",
+      "dead": "      group.offers.add(run.name);",
+      "expect": [
+        "requirements naming one concept are one question, counted once per offer, ranked by offers then musts",
+        "runs older than offer.txt are one offer per first line, joined to the text a later run of it kept"
+      ]
+    },
+    "Questions: ranked by offers first": {
+      "file": "src/questions.js",
+      "live": ".sort((a, b) => b.offers - a.offers || ",
+      "dead": ".sort((a, b) => ",
+      "expect": [
+        "requirements naming one concept are one question, counted once per offer, ranked by offers then musts"
+      ]
+    },
+    "Questions: then by the offers that require it": {
+      "file": "src/questions.js",
+      "live": "b.offers - a.offers || b.must - a.must ||",
+      "dead": "b.offers - a.offers ||",
+      "expect": [
+        "requirements naming one concept are one question, counted once per offer, ranked by offers then musts"
+      ]
+    },
+    "Questions: what the owner answered is not asked again": {
+      "file": "src/questions.js",
+      "live": "      if (answered.has(id) || ",
+      "dead": "      if (",
+      "expect": [
+        "what the owner answered is not asked again, yes or no, by the words asked or the name given"
+      ]
+    },
+    "Questions: an answer's name answers too": {
+      "file": "src/questions.js",
+      "live": "flatMap((answer) => [answer.asked, answer.name])",
+      "dead": "flatMap((answer) => [answer.asked])",
+      "expect": [
+        "what the owner answered is not asked again, yes or no, by the words asked or the name given"
+      ]
+    },
+    "Questions: what a profile skill is named is not asked": {
+      "file": "src/questions.js",
+      "live": "owned.has(key(name)) || members(",
+      "dead": "members(",
+      "expect": [
+        "a requirement the profile now meets, by a name or a concept, is not a question (an older run)"
+      ]
+    },
+    "Questions: what a profile skill's concept holds is not asked": {
+      "file": "src/questions.js",
+      "live": " || members(index, name, placed).length) continue;",
+      "dead": ") continue;",
+      "expect": [
+        "a requirement the profile now meets, by a name or a concept, is not a question (an older run)"
+      ]
+    },
+    "Questions: a run older than offer.txt joins the text its first line kept": {
+      "file": "src/questions.js",
+      "live": "(texts?.size === 1 ? [...texts][0] : ",
+      "dead": "(false ? [...texts][0] : ",
+      "expect": [
+        "runs older than offer.txt are one offer per first line, joined to the text a later run of it kept"
+      ]
+    },
+    "Questions: runs older than offer.txt are one offer per first line": {
+      "file": "src/questions.js",
+      "live": "`slug:${slugOf(run.name)}`",
+      "dead": "`run:${run.name}`",
+      "expect": [
+        "runs older than offer.txt are one offer per first line, joined to the text a later run of it kept"
+      ]
+    },
+    "Questions: a run that wrote no analysis is not read": {
+      "file": "src/questions.js",
+      "live": "entry.isDirectory() && existsSync(join(out, entry.name, 'analysis.json'))",
+      "dead": "entry.isDirectory()",
+      "expect": [
+        "readRuns reads each run with an analysis, skips the others, and names the unreadable"
+      ]
+    },
+    "Questions: an unreadable run is named, not fatal": {
+      "file": "src/questions.js",
+      "live": "      unreadable.push({ name, error: error.message });",
+      "dead": "      throw error;",
+      "expect": [
+        "readRuns reads each run with an analysis, skips the others, and names the unreadable"
+      ]
+    },
+    "Questions: the command subtracts answers.json beside the profile": {
+      "file": "bin/itsacv.js",
+      "live": "      answers = readAnswers(join(dirname(options.profile), 'answers.json'));",
+      "dead": "      answers = [];",
+      "expect": [
+        "itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile"
+      ]
+    },
+    "Questions: the command reads the runs named": {
+      "file": "bin/itsacv.js",
+      "live": "found = options.files.length ? readRunDirs(options.files) : readRuns(options.out);",
+      "dead": "found = readRuns(options.out);",
+      "expect": [
+        "itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile"
       ]
     }
   }

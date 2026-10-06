@@ -9,6 +9,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { defaultIndex, key, lookup, members, skillConcepts } from './lexicon.js';
+import { settledKind } from './normalize.js';
 import { identityNames } from './profile.js';
 import { isNever } from './score.js';
 
@@ -19,6 +20,24 @@ const NOT_A_SKILL = new Set(['quality', 'condition', 'language', 'certification'
 function groupOf(index, phrase) {
   const concepts = lookup(index, phrase).sort();
   return { id: concepts.length ? concepts.join('+') : `words:${key(phrase)}`, concepts };
+}
+
+/** A run's name without its time: the offer's first line (runName() in src/run.js). */
+const slugOf = (name) => name.replace(/^\d{8}-\d{6}-/, '');
+
+/**
+ * Which offer each run answered: its text when the run kept it, else its
+ * name's slug, joined to the one text runs of that slug kept (runs older
+ * than offer.txt are the same offer run again, seen seven times).
+ */
+function offers(runs) {
+  const text = (run) => run.offer?.replace(/\s+/g, ' ').trim() || null;
+  const kept = new Map();
+  for (const run of runs.filter(text)) kept.set(slugOf(run.name), new Set([...(kept.get(slugOf(run.name)) ?? []), text(run)]));
+  return (run) => {
+    const texts = kept.get(slugOf(run.name));
+    return text(run) ?? (texts?.size === 1 ? [...texts][0] : `slug:${slugOf(run.name)}`);
+  };
 }
 
 /** Each run directory named: its name, its offer (null when not kept) and its analysis; an unreadable one is named, not fatal. */
@@ -59,11 +78,13 @@ export function gatherQuestions(runs, { profile, answers = [], index = defaultIn
   const answered = new Set(answers.flatMap((answer) => [answer.asked, answer.name])
     .filter((text) => String(text ?? '').trim())
     .map((text) => groupOf(index, text).id));
+  const offerOf = offers(runs);
   const groups = new Map();
   for (const run of runs) {
-    const offer = run.offer?.replace(/\s+/g, ' ').trim() || `run:${run.name}`;
+    const offer = offerOf(run);
     for (const requirement of run.analysis.requirements ?? []) {
-      if (requirement.match !== 'no' || NOT_A_SKILL.has(requirement.kind) || isNever(requirement, profile.never)) continue;
+      if (requirement.match !== 'no' || isNever(requirement, profile.never)) continue;
+      if (NOT_A_SKILL.has(settledKind(requirement, profile, run.analysis.language))) continue;
       const name = String(requirement.name ?? '').trim();
       if (!name) continue;
       const { id, concepts } = groupOf(index, name);

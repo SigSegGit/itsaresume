@@ -40,11 +40,11 @@ test('only a skill is asked: a quality, a condition, a language, a certification
 test('requirements naming one concept are one question, counted once per offer, ranked by offers then musts', () => {
   const questions = gatherQuestions([
     run('a', 'offer one', [req('Kubernetes'), req('Rust', 'no', { importance: 'nice' })]),
-    run('b', 'offer two', [req('K8s'), req('Zig')]),
+    run('b', 'offer two', [req('K8s'), req('Zig'), req('Rust', 'no', { importance: 'nice' }), req('Ada', 'no', { importance: 'nice' })]),
     run('c', '  offer   one ', [req('Kubernetes')]),
   ], { profile: profile() });
-  assert.deepEqual(asked(questions), ['Kubernetes', 'Zig', 'Rust']);
-  const [kubernetes, zig, rust] = questions;
+  assert.deepEqual(asked(questions), ['Kubernetes', 'Rust', 'Zig', 'Ada']);
+  const [kubernetes, rust, zig] = questions;
   assert.deepEqual(kubernetes.names, ['Kubernetes', 'K8s']);
   assert.deepEqual(kubernetes.concepts, ['tech:kubernetes']);
   assert.equal(kubernetes.offers, 2);
@@ -66,12 +66,15 @@ test('what the owner answered is not asked again, yes or no, by the words asked 
 });
 
 test('a requirement the profile now meets, by a name or a concept, is not a question (an older run)', () => {
-  const questions = gatherQuestions([run('a', 'offer one', [req('Postgres'), req('docker'), req('Amazon Web Services'), req('Rust')])], { profile: profile() });
+  // PostgreSQL 16: by its concept only; Hyperion Forge (no concept): by its name only.
+  const owner = profile();
+  owner.skills.push({ id: 'forge', name: 'Hyperion Forge', group: 'iac', level: 'working', aliases: [] });
+  const questions = gatherQuestions([run('a', 'offer one', [req('PostgreSQL 16'), req('hyperion forge'), req('Amazon Web Services'), req('Rust')])], { profile: owner });
   assert.deepEqual(asked(questions), ['Rust']);
 });
 
-test('a run older than a rule is read with today\'s rules: a quality, a language, a certification it kept as a skill is not asked', () => {
-  const questions = gatherQuestions([run('a', 'offer one', [req('Curieux techniquement'), req('Anglais professionnel'), req('Certification CKA'), req('Rust')])], { profile: profile() });
+test('a run older than a rule is read with today\'s rules: a quality, a condition, a language, a certification it kept as a skill is not asked', () => {
+  const questions = gatherQuestions([run('a', 'offer one', [req('Curieux techniquement'), req('Nationalité française'), req('Anglais professionnel'), req('Certification CKA'), req('Rust')])], { profile: profile() });
   assert.deepEqual(asked(questions), ['Rust']);
 });
 
@@ -82,6 +85,7 @@ test('runs older than offer.txt are one offer per first line, joined to the text
     lead('20260925-020000-ai-tech-lead', null),
     lead('20261001-030000-ai-tech-lead', 'AI Tech Lead\nthe offer'),
     lead('20261002-040000-sre', null),
+    lead('20261003-050000-sre', null),
   ], { profile: profile() });
   assert.equal(questions[0].offers, 2);
 });

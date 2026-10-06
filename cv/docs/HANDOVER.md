@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.22b
-TITLE: the questions: requirements no profile skill meets, across runs, minus those answered
+NEXT: 2.22c
+TITLE: the page: the questions as a local form writing answers.json
 WRITTEN-AT: 2026-10-06
 -->
 
@@ -68,7 +68,7 @@ the decisions waiting for him, how to reach his machines — are in
 - 2.22 (the owner, 2026-10-06): refining the profile from the app. A
   requirement no profile skill meets becomes a question; his "yes" (level,
   one sentence) joins the profile through `answers.json` (2.22a done);
-  the questions (2.22b), the local form (2.22c), the measure (2.22d)
+  `itsacv questions` lists them (2.22b done: 36 on the 26 real runs); the local form (2.22c), the measure (2.22d)
   follow. 2.3b-ii's shortlist then comes, as a hint, never a lock.
 - 471 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   one plan per attack surface since router 8.46: injection, guard, public,
@@ -563,7 +563,12 @@ Traps met, each cost time once:
     nothing; the v4 wins), a skill the evidence says is contradicted. A
     "no" adds nothing and is remembered (never asked again). Red tests on
     the synthetic profile; a defence per refusal.
-  - [ ] **2.22b** The questions. From one run (the report's requirement
+  - [x] **2.22b** (2026-10-06, 9 tests, 22 defences; real runs: 36
+    questions, counted per distinct offer) `src/questions.js`; older runs are
+    re-read with today's kinds (`settledKind()` in normalize.js), a run
+    without offer.txt is its slug's offer; what the profile now meets is not
+    asked. Left: listing errors (roles such as "Architectes", "QA") are
+    asked, the owner answers no. The questions. From one run (the report's requirement
     table) and from all runs in `out/`: each requirement met by no profile
     skill (verdict no, not adjacent), grouped by its concept (`lookup()`
     in `src/lexicon.js`, else its text), minus what `answers.json`
