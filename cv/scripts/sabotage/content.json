@@ -42,6 +42,7 @@
     "src/view.js",
     "src/wake.js",
     "src/word.js",
+    "test/answers.test.js",
     "test/closed.test.js",
     "test/core.test.js",
     "test/corpus.test.js",
