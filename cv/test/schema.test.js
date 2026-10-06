@@ -1,7 +1,10 @@
 // 2.3: the analysis call can ask for structured output whose ids are closed
 // to the catalogue (router 8.24), so an invented skill or bullet id cannot
-// even be written. Not sent by default: measured first on the corpus
-// (scripts/measure-analysis.mjs), as the listing's schema cost recall.
+// even be written. Not sent by default. Measured on the corpus (2026-10-06,
+// scripts/measure-analysis.mjs): Sonnet the same with or without (74/75
+// labels, no retry, verdicts as unchanged as between two plain runs); the
+// local model worse with it (every finished offer retried, one refused, two
+// lost to Bionic outages, where without it all eight passed, one retry).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

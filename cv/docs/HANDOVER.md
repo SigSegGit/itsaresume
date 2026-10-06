@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.3
-TITLE: measure the analysis call with a JSON schema (closed skill ids) on the corpus, both models, before any use
+NEXT: 2.3b
+TITLE: wrong-skill matches by name (§9), settled by code before the model with a shortlist
 WRITTEN-AT: 2026-10-06
 -->
 
@@ -35,7 +35,9 @@ the decisions waiting for him, how to reach his machines — are in
   (every met visible skill); the headline (a must the page would not show
   brings the profile title naming it); short missions (only what the main
   missions leave open). "Before any model" (a shortlist to the model for
-  what code cannot settle) is step 2.3.
+  what code cannot settle) is step 2.3b. The analysis call's schema
+  (closed ids) was measured (2.3a): no gain on Sonnet, a loss on the local
+  model, so it is not sent.
 - **Measured limit**: real offers are few (three distinct ones). Since
   2.1a, a labelled corpus (`corpus/*.json`: 8 synthetic offers, 75
   requirements labelled must/nice by a human reader, names the offer
@@ -62,7 +64,7 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 462 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 464 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   one plan per attack surface since router 8.46: injection, guard, public,
   http, billing, laptop, deploy, content; CI job `cv-sabotage` runs the
   plans whose `files` a PR touches, all of them on `main`).
@@ -201,12 +203,30 @@ Traps met, each cost time once:
   `measure-listing.mjs --schema`). **Measured, 2026-09-30, three runs
   each: with the listing schema the local model finds 61-66/75, without
   68-70/75; Sonnet 75/75 either way. So the listing does not send it by
-  default.** The analysis call's schema (closed skill ids) is the next
-  measure: send it only if it does not cost recall or verdicts. Carries 2.7's step (5): the code settles each requirement it can
-  *before* the model, and only the rest goes to a narrow question with a
-  shortlist ("which of these skills, or none"), maybe read as option
-  probabilities (ADR-10). `relate()` in `src/lexicon.js` is its building
-  block and has no production caller yet.
+  default.**
+  - [x] **2.3a** (2026-10-06) The analysis call's schema: `analysisSchema()`
+    (src/prompt.js) closes skill, bullet, experience, group, title and
+    fact ids to the catalogue; `analyse({structured})` sends it, off by
+    default (2 tests, 5 defences). Measured with
+    `scripts/measure-analysis.mjs` on the corpus, real profile: Sonnet
+    74/75 labels, 0 retry, 0 refusal with or without it; verdicts
+    unchanged on 80/83 with it against 82/85 between two plain runs (noise);
+    scores move as much between two plain runs. The local model: without,
+    65/75, 8/8 passed, 1 retry, 47 min; with, of the 6 offers run while the
+    router was up, 3 passed (each on its second attempt; labels 4/7, 7/9,
+    9/9 against 5/7, 7/9, 9/9 without), 1 refused invalid, 2 lost to Bionic
+    (peer disconnected, global timeout; whether the schema caused them is
+    not shown). **Verdict: not sent, for either model**: no gain on Sonnet,
+    a loss on the local model. The measure stays for a later model.
+  - [ ] **2.3b** Carries 2.7's step (5): the code settles each requirement
+    it can *before* the model, and only the rest goes to a narrow question
+    with a shortlist ("which of these skills, or none"), maybe read as
+    option probabilities (ADR-10). `relate()` in `src/lexicon.js` is its
+    building block and has no production caller yet. Start from §9's
+    wrong-skill matches (2026-10-06: "stockage" through `p2p`, "AI" through
+    `alerting`, "SRE" through `devops`): red tests on those names with the
+    synthetic profile, then the code rule; replay the real runs
+    (`~/.itsaresume/migrations/rules-replay.mjs`) before shipping.
 - [x] **2.4** Public go-live (2026-09-28). Not checked by an agent: one
   offer end to end from a phone on 4G (the owner).
 - [x] **2.4b** Manual QA (2026-10-02): the page picks the model per run
@@ -533,7 +553,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   88 where Sonnet scored 70, and a misspelt requirement ("scalarment")
   passed the stated-in-the-offer rule. Not caused by router 8.46: no
   refusal, no leak (links and the recruiter's name absent from both PDFs).
-  A candidate step before or with 2.3.
+  Step 2.3b starts there.
 - **The owner's own Bionic use** (2026-10-06, not tested): a visitor's
   local job loads qwen3-coder-next (48 GB) at its first request; if the
   owner is using another model in Bionic then, Bionic's JIT eviction may
