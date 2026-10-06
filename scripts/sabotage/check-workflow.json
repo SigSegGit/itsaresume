@@ -1,0 +1,24 @@
+{
+  "command": [
+    "bash",
+    "scripts/test-check-workflow.sh"
+  ],
+  "defences": {
+    "Workflow: a matrix job is never skipped at job level": {
+      "file": "scripts/check-workflow.py",
+      "live": "        if matrix and job_if:",
+      "dead": "        if False:",
+      "expect": [
+        "a_matrix_job_skipped_at_job_level_is_refused"
+      ]
+    },
+    "Workflow: only a job-level if counts": {
+      "file": "scripts/check-workflow.py",
+      "live": "        job_if = any(re.match(r'^    if:', line) for line in lines)",
+      "dead": "        job_if = any(re.match(r'^\\s+if:', line) for line in lines)",
+      "expect": [
+        "step_conditions_and_plain_job_skips_pass"
+      ]
+    }
+  }
+}
