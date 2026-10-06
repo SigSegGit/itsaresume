@@ -24,7 +24,7 @@
       "live": "            chosen[name] |= hits",
       "dead": "            chosen[name] |= set()",
       "expect": [
-        "a_named_file_selects_only_its_plan",
+        "a_crate_source_selects_every_plan_of_its_crate",
         "a_test_file_selects_every_plan_naming_it",
         "a_cv_source_selects_its_cv_plan"
       ]

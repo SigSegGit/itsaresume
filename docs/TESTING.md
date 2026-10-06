@@ -197,7 +197,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `an_unknown_base_runs_both` | `scripts/test-ci-changes.sh` | No base sha: both groups (an empty base would diff HEAD with itself) | CI changes: an empty base runs both |
 | `a_new_branch_runs_both` | `scripts/test-ci-changes.sh` | A new branch (base all zeros): both groups | CI changes: a base git cannot diff runs both |
 | `a_base_git_cannot_diff_runs_both` | `scripts/test-ci-changes.sh` | A base git does not know: both groups | CI changes: a base git cannot diff runs both |
-| `a_named_file_selects_only_its_plan` | `scripts/test-sabotage-select.sh` | A router source named by one plan runs that plan only (8.46) | Select: a named file selects its plans |
+| `a_crate_source_selects_every_plan_of_its_crate` | `scripts/test-sabotage-select.sh` | A router source runs every plan of its crate: their tests link the whole crate (8.46) | Select: a named file selects its plans |
 | `a_test_file_selects_every_plan_naming_it` | `scripts/test-sabotage-select.sh` | A test file two cv plans depend on runs both | Select: a named file selects its plans |
 | `a_cv_source_selects_its_cv_plan` | `scripts/test-sabotage-select.sh` | A cv source runs the cv plan naming it, from `cv/` | Select: a named file selects its plans |
 | `a_file_no_plan_names_runs_its_whole_tree` | `scripts/test-sabotage-select.sh` | A router file no plan names (helper, fixture, manifest): every root plan — never narrower than sure | Select: a file no plan names runs its whole tree |
