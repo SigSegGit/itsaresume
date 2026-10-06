@@ -18,6 +18,7 @@ classifier in `src/claude_code.rs`. Two kinds, and the name says which:
 | `observed-not-logged-in.json` | `claude -p test --output-format json` | CLI not logged in: exit 1, **`subtype: "success"` with `is_error: true`**, `api_error_status: null` |
 | `observed-not-logged-in.verbose.json` | the backend's real flag set, prompt on stdin | Same failure, as an array: `system/init` (with `apiKeySource: "none"`, `tools: []`, `mcp_servers: []`), a synthetic assistant message, then `result` |
 | `observed-api-key-invalid.verbose.json` | `ANTHROPIC_API_KEY=<bogus>`, verbose, **default tools** | `apiKeySource: "ANTHROPIC_API_KEY"`, 32 tools, ten `system/api_retry` (401) over 183 s, then `api_error_status: 401` |
+| `observed-docker-success.verbose.json` | the backend's real flag set, prompt on stdin, **inside the VM's router container** (2026-10-06, 2.1.162, Linux, subscription token from the environment) | A real answer `OK`: `system/init` with `apiKeySource: "none"` and `tools: []`, the assistant message, a `rate_limit_event` (`allowed`), then `result`. Redacted as above, plus `request_id` and the rate limit's `resetsAt`, `rateLimitType`, `overageDisabledReason` |
 | `synthetic-success.verbose.json` | — | From `observed-not-logged-in.verbose.json`: `is_error: false`, `result` text, assistant content, usage counts |
 | `synthetic-usage-limit.verbose.json` | — | Same base: `is_error: true`, `api_error_status: 429`, a limit message |
 | `synthetic-overloaded.verbose.json` | — | Same base: `is_error: true`, `api_error_status: 529` |

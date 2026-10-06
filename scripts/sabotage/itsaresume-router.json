@@ -857,7 +857,8 @@
       "live": ".find(|message| message[\"type\"] == \"rate_limit_event\")\n        .map(|message| {",
       "dead": ".find(|message| message[\"type\"] == \"no such event\")\n        .map(|message| {",
       "expect": [
-        "a_claude_answer_carries_its_rate_limit_event"
+        "a_claude_answer_carries_its_rate_limit_event",
+        "the_success_observed_in_docker_is_an_answer_on_the_subscription"
       ]
     },
     "Router: the answer keeps its rate limit": {
