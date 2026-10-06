@@ -129,10 +129,12 @@ function view(job, { detail = false, publicMode = null, position } = {}) {
   const full = { ...base, ...job.result.view, fit, report: job.result.report };
   if (!publicMode) return full;
   // Past applications, sources, what the owner must confirm, the model's
-  // comment and the report are the owner's working notes.
+  // comments (the rationale, each requirement's note: 8.46, an offer had it
+  // write the owner's notes there) and the report are the owner's working notes.
   return {
     ...full,
     fit: { ...fit, rationale: '' },
+    requirements: (full.requirements ?? []).map((requirement) => ({ ...requirement, note: '' })),
     older: [],
     flags: [],
     verification: [],

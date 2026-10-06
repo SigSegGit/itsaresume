@@ -163,8 +163,10 @@ test('a long requirement name from the analysis is cut, and the cut is reported'
 });
 
 test('a requirement name from the analysis is held to the same rule', () => {
-  const requirements = [{ name: 'Visit https://evil.example', importance: 'must', match: 'no', skills: [], note: '' }];
-  assert.match(errorsOf({ requirements }), /requirement "Visit https:\/\/evil.example": not a plain name/);
+  // A link with no dotted host: the link pattern alone refuses it (a dotted
+  // host is refused by its own rule since 8.46 and would hide this one).
+  const requirements = [{ name: 'Visit https://evil/apply', importance: 'must', match: 'no', skills: [], note: '' }];
+  assert.match(errorsOf({ requirements }), /requirement "Visit https:\/\/evil\/apply": not a plain name/);
 });
 
 test('the report cannot be broken by what the model wrote', () => {

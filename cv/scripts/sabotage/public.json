@@ -9,6 +9,7 @@
     "src/evidence.js",
     "src/guard.js",
     "src/importance.js",
+    "src/instructions.js",
     "src/intake.js",
     "src/invites.js",
     "src/lexicon.js",

@@ -8,7 +8,9 @@
 import { LANGUAGES, identityNames, skillNames } from './profile.js';
 import { blocked } from './evidence.js';
 import { mentions } from './text.js';
-import { checkFreeText } from './guard.js';
+import { checkFreeText, UNTRUSTED } from './guard.js';
+import { SYSTEM } from './prompt.js';
+import { LISTING_SYSTEM } from './listing.js';
 
 /** A skill's own names, three characters or more ("C" is not looked for in text). */
 const skillNamesOnly = (skill) => identityNames(skill).filter((name) => name.length >= 3);
@@ -160,7 +162,7 @@ export function validateAnalysis(analysis, profile, { language, assessment, offe
 
   // Prompt injection (src/guard.js): the free text is checked as if the offer
   // had taken control of the model.
-  if (offer !== undefined) errors.push(...checkFreeText(analysis, profile, offer));
+  if (offer !== undefined) errors.push(...checkFreeText(analysis, profile, offer, { instructions: [SYSTEM, LISTING_SYSTEM, UNTRUSTED] }));
 
   return { errors };
 }
