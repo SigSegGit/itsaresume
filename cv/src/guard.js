@@ -64,6 +64,14 @@ const INVISIBLE = new RegExp(`[${[[0x00, 0x09], [0x0b, 0x1f], [0x7f, 0x7f]]
 
 const DOT_NET = /(?<![\w-]\.)(\b[\w-]+)\.NET\b/g;
 
+/** The suffixes of technology names written with a dot (Node.js, ASP.NET, Vue.ts), never hosts. */
+const TECH_SUFFIX = /^[\p{L}\p{N}-]+\.(?:js|ts|NET|py)$/u;
+
+/** A word an offer's instruction singles out: after "mot"/"word", quoted, or in capitals. */
+const CANARY_AFTER = /(?<![\p{L}\p{N}])(?:mot|code|phrase|expression|formule|word|string)\s*[:«"“'‘]?\s*([\p{L}\p{N}-]+)/giu;
+const CANARY_QUOTED = /[«"“‘]([^»"”’]{1,40})[»"”’]/gu;
+const CANARY_CAPITALS = /(?<![\p{L}\p{N}])\p{Lu}{3,}(?![\p{L}\p{N}])/gu;
+
 /** A name with a dot inside (a host name, "Node.js"), its last part two letters or more. */
 const DOTTED = /(?<![\p{L}\p{N}.-])[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.\p{L}{2,}(?![\p{L}\p{N}])/gu;
 
@@ -101,6 +109,9 @@ export function cleanName(name) {
   if (typeof name !== 'string') return null;
   const flat = name.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!flat || unsafe(flat).length) return null;
+  // 8.46: a host name with a suffix the link pattern does not list
+  // ("jobs.evil.example") reached the public page; "Node.js" and "ASP.NET" stay.
+  if ([...canonical(flat).matchAll(DOTTED)].some(([dotted]) => !TECH_SUFFIX.test(dotted))) return null;
   if (flat.length <= LIMITS.name) return flat;
   const head = flat.slice(0, LIMITS.name - 1);
   return `${head.slice(0, head.lastIndexOf(' ') > 0 ? head.lastIndexOf(' ') : head.length)}…`;
@@ -201,7 +212,14 @@ export function checkFreeText(analysis, profile, offer, { cv = true, instruction
   const told = offerInstructions(offer);
   const untold = canonical(offer).split(/\n+|(?<=[.!?])\s+/).filter((sentence) => !told.some((said) => sentence.trim().startsWith(said)));
   const offerRest = new Set(untold.flatMap((sentence) => words(sentence)));
-  const canaries = new Set(told.flatMap((sentence) => words(sentence)).filter((word) => !known.has(word) && !offerRest.has(word)));
+  // Only a word the instruction singles out (after "mot"/"word", in quotes,
+  // or in capitals): every other word of it is ordinary ("et" was refused).
+  const singled = told.flatMap((sentence) => [
+    ...[...sentence.matchAll(CANARY_AFTER)].map((match) => match[1]),
+    ...[...sentence.matchAll(CANARY_QUOTED)].flatMap((match) => words(match[1])),
+    ...(sentence.match(CANARY_CAPITALS) ?? []),
+  ].map((word) => word.toLowerCase()));
+  const canaries = new Set(singled.filter((word) => !known.has(word) && !offerRest.has(word)));
   const profileRaw = JSON.stringify(profile ?? {}).toLowerCase();
 
   const plain = (label, text) => {
