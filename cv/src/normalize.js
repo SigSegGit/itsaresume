@@ -291,15 +291,11 @@ export function normalize(input, profile, { assessment, offer } = {}) {
   }
 
 
-  // A requirement named exactly like a profile skill (or one of its aliases)
-  // is met by that skill: the profile's own words settle it, not the model.
-  const byName = new Map();
-  for (const skill of profile.skills) {
-    if (out.has(skill.id)) continue;
-    for (const name of skillNames(skill)) if (!byName.has(name)) byName.set(name, skill.id);
-  }
-  // Names and aliases only: a term is too loose for a part ("Sécurité (IA)"
-  // is not SecOps; measured on the real runs, 2026-10-04).
+  // A requirement named exactly like a profile skill (or one of its aliases),
+  // or whose every part is, is met by that skill: the profile's own words
+  // settle it, not the model. Names and aliases only: a term is too loose
+  // ("Sécurité (IA)" is not SecOps, 2026-10-04; "stockage" is not P2P, "AI"
+  // is not alerting, 2026-10-06).
   const byIdentity = new Map();
   for (const skill of profile.skills) {
     if (out.has(skill.id)) continue;
@@ -335,7 +331,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
 
   const keys = [];
   for (const requirement of analysis.requirements ?? []) {
-    const named = byName.get(String(requirement.name ?? '').trim().toLowerCase());
+    const named = byIdentity.get(String(requirement.name ?? '').trim().toLowerCase());
     // The profile's own name settles it, and that skill alone meets it: an
     // extra skill the model adds may not lift a lab-only match to full credit.
     if (named && (requirement.match !== 'yes' || requirement.skills.length !== 1 || requirement.skills[0] !== named)) {

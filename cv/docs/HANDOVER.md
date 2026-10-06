@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.3b
-TITLE: wrong-skill matches by name (§9), settled by code before the model with a shortlist
+NEXT: 2.3b-ii
+TITLE: the shortlist: relate() gives candidate skills, the model only picks among them
 WRITTEN-AT: 2026-10-06
 -->
 
@@ -35,7 +35,8 @@ the decisions waiting for him, how to reach his machines — are in
   (every met visible skill); the headline (a must the page would not show
   brings the profile title naming it); short missions (only what the main
   missions leave open). "Before any model" (a shortlist to the model for
-  what code cannot settle) is step 2.3b. The analysis call's schema
+  what code cannot settle) is step 2.3b-ii; a skill's term no longer
+  settles a requirement (2.3b-i). The analysis call's schema
   (closed ids) was measured (2.3a): no gain on Sonnet, a loss on the local
   model, so it is not sent.
 - **Measured limit**: real offers are few (three distinct ones). Since
@@ -64,7 +65,7 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 464 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 465 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   one plan per attack surface since router 8.46: injection, guard, public,
   http, billing, laptop, deploy, content; CI job `cv-sabotage` runs the
   plans whose `files` a PR touches, all of them on `main`).
@@ -227,6 +228,20 @@ Traps met, each cost time once:
     `alerting`, "SRE" through `devops`): red tests on those names with the
     synthetic profile, then the code rule; replay the real runs
     (`~/.itsaresume/migrations/rules-replay.mjs`) before shipping.
+    - [x] **2.3b-i** (2026-10-06) Cause of "stockage"/"AI": the whole-name
+      rule in `normalize.js` read a skill's *terms* as names, settled the
+      requirement with that skill alone and dropped the model's. Now names
+      and aliases only (one map, `byIdentity`, for whole names and parts).
+      Replayed on the 26 real runs, old code vs new, on the raw answers
+      (`raw.json` + `offer.txt`): 3 rows change; both 2026-10-06 runs keep
+      Prometheus, Grafana, ELK… beside alerting; an old run's "Conteneurs"
+      goes yes → adjacent (a docker term; grounding decides). "SRE" →
+      `devops` is unchanged: SRE is an alias the v4 gives (a profile
+      question, §10, not code).
+    - [ ] **2.3b-ii** The shortlist: for a requirement no name settles,
+      `relate()` gives the candidate skills, the model only picks among
+      them ("which of these, or none"). Red tests first on the synthetic
+      profile; replay as in 2.3b-i before shipping.
 - [x] **2.4** Public go-live (2026-09-28). Not checked by an agent: one
   offer end to end from a phone on 4G (the owner).
 - [x] **2.4b** Manual QA (2026-10-02): the page picks the model per run
@@ -553,7 +568,8 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   88 where Sonnet scored 70, and a misspelt requirement ("scalarment")
   passed the stated-in-the-offer rule. Not caused by router 8.46: no
   refusal, no leak (links and the recruiter's name absent from both PDFs).
-  Step 2.3b starts there.
+  2.3b-i closed the terms ("stockage", "AI": a term no longer settles a
+  requirement); the shortlist is 2.3b-ii.
 - **The owner's own Bionic use** (2026-10-06, not tested): a visitor's
   local job loads qwen3-coder-next (48 GB) at its first request; if the
   owner is using another model in Bionic then, Bionic's JIT eviction may

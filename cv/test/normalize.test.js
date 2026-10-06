@@ -129,6 +129,26 @@ test('a requirement named exactly like a profile skill is met by that skill', ()
   assert.match(repairs.join('\n'), /Amazon Web Services.*aws/);
 });
 
+// Seen 2026-10-06 on a real offer (cv §9): "stockage" became yes through the
+// term of a P2P skill, "AI" through the term of an alerting skill, and each
+// dropped the right skills. A term is broader than a name: it settles nothing.
+test('a requirement named like a skill\'s term only is left to the model, its skills kept', () => {
+  const p = profile();
+  p.skills.push({ id: 'p2p', name: 'Stockage distribué P2P', group: 'infra', level: 'working', aliases: ['P2P'], terms: ['stockage', 'AI'] });
+  const a = answer();
+  a.requirements.push(
+    { name: 'Stockage', importance: 'must', match: 'yes', skills: ['postgresql', 'oracle'], note: '' },
+    { name: 'AI', importance: 'nice', match: 'no', skills: [], note: '' },
+    { name: 'P2P', importance: 'nice', match: 'no', skills: [], note: '' },
+  );
+  const { analysis, repairs } = normalize(a, p);
+  const row = (name) => analysis.requirements.find((r) => r.name === name);
+  assert.deepEqual(row('Stockage').skills, ['postgresql', 'oracle'], 'the term\'s skill does not replace the model\'s');
+  assert.deepEqual([row('AI').match, row('AI').skills], ['no', []]);
+  assert.deepEqual([row('P2P').match, row('P2P').skills], ['yes', ['p2p']], 'an alias still settles it');
+  assert.doesNotMatch(repairs.join('\n'), /requirement (Stockage|AI): named like/);
+});
+
 // Seen 2026-10-02: "Fortinet / FortiGate" stayed a gap beside the profile's
 // Fortinet skill, "HA (haute disponibilité réseau)" went to a lab skill.
 test('a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is', () => {
