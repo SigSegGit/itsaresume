@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: done
-TITLE: Every router step of section 8 is done; the generator's next is cv 2.22b (cv/docs/HANDOVER.md)
+TITLE: Every router step of section 8 is done; the generator's next is cv 2.22c (cv/docs/HANDOVER.md)
 WRITTEN-AT: 2026-10-06
 BASE: 73725c8
 -->

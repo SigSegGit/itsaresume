@@ -117,6 +117,21 @@ function certificationOf(requirement, profile, lang) {
 }
 
 /**
+ * The kind a requirement left at "no" has under today's rules, in
+ * normalize()'s order: quality, condition, language, certification, or null
+ * for a skill. A run older than a rule kept no kind (2.22b reads them all).
+ */
+export function settledKind(requirement, profile, lang = 'fr') {
+  if (requirement.kind) return requirement.kind;
+  if (isQuality(requirement, profile)) return 'quality';
+  if (isCondition(requirement, profile)) return 'condition';
+  if (requirement.never) return null;
+  if (languageOf(requirement, profile, lang)) return 'language';
+  if (certificationOf(requirement, profile, lang)) return 'certification';
+  return null;
+}
+
+/**
  * What a migration asks for is its target: "Migration de Puppet vers
  * Ansible" is met through Ansible, not the Puppet it leaves (Rodin, 2026-09-29).
  */

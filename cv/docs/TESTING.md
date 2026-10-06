@@ -420,6 +420,20 @@ property it proves.
 | each run appends one JSON line to the QA log, never rewriting it | QA: the log appends |
 | a chosen model goes with every call to the router; auto sends none | QA: every call of a run goes to the chosen backend |
 
+## `test/questions.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a requirement no profile skill meets is a question; a met or adjacent one is not | Questions: only a requirement left at no is asked |
+| only a skill is asked: a quality, a condition, a language, a certification, a never-claimed one are not | Questions: a never-claimed requirement is not asked; Questions: a quality, condition, language or certification is not asked; Questions: the kind a run kept stands |
+| requirements naming one concept are one question, counted once per offer, ranked by offers then musts | Questions: one concept, one question; Questions: an offer run twice counts once; Questions: ranked by offers first; Questions: then by the offers that require it |
+| what the owner answered is not asked again, yes or no, by the words asked or the name given | Questions: one concept, one question; Questions: what the owner answered is not asked again; Questions: an answer's name answers too |
+| a requirement the profile now meets, by a name or a concept, is not a question (an older run) | Questions: what a profile skill is named is not asked; Questions: what a profile skill's concept holds is not asked |
+| a run older than a rule is read with today's rules: a quality, a condition, a language, a certification it kept as a skill is not asked | Questions: a quality, condition, language or certification is not asked; Questions: an older run's quality is read with today's rules; Questions: an older run's condition is read with today's rules; Questions: an older run's language is read with today's rules; Questions: an older run's certification is read with today's rules |
+| runs older than offer.txt are one offer per first line, joined to the text a later run of it kept | Questions: an offer run twice counts once; Questions: a run older than offer.txt joins the text its first line kept; Questions: runs older than offer.txt are one offer per first line |
+| readRuns reads each run with an analysis, skips the others, and names the unreadable | Questions: a run that wrote no analysis is not read; Questions: an unreadable run is named, not fatal |
+| itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile | Questions: the command subtracts answers.json beside the profile; Questions: the command reads the runs named |
+
 ## `test/redteam.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -642,6 +656,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**418 tests, 352 of them covered by at least one sabotage defence.**
+**427 tests, 361 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

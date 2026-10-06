@@ -4,13 +4,15 @@
 
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { complete, TIMEOUT_MS } from '../src/llm.js';
 import { loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
 import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/invites.js';
 import { QA_LOG } from '../src/qa.js';
+import { readAnswers } from '../src/answers.js';
+import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -20,6 +22,7 @@ const USAGE = `usage:
                [--ban-after N] [--ban-hours N] [--invite-only]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
   itsacv invite --list | --usage | --revoke <label|code> [--out DIR]
+  itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -29,6 +32,9 @@ const USAGE = `usage:
              with it name the label in <out>/qa-log.jsonl; --list shows them,
              --usage the jobs and tokens per backend of each, read from that log,
              --revoke ends one (by label or code), at once, no restart
+  questions  what the offers ask that no profile skill meets, most asked first, minus
+             what answers.json (beside the profile) already answers: of every run in
+             --out, or of the run directories named
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
   --profiles serve: other profiles a job may be tailored to, each DIR/<id>.json (id: lower
@@ -67,7 +73,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite', 'questions'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -103,7 +109,7 @@ function parse(argv) {
     if (!options.list && !options.usage && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
-  if (command !== 'serve' && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
+  if (command !== 'serve' && command !== 'questions' && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
   if (!/^\d+(\.\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {
     fail(2, `--timeout (or ITSACV_TIMEOUT) needs a number of seconds above 0, not "${options.timeout}"\n\n${USAGE}`);
@@ -158,6 +164,26 @@ async function main() {
     const server = await serve({ ...options, profilesDir: options.profiles, port: Number(options.port), useWord: options.layout, llm, publicMode }).catch((error) => fail(4, error.message));
     const open = publicMode ? `, public as https://${publicMode.host} (at most ${publicMode.perDay} CVs a day)` : '';
     process.stderr.write(`itsacv: serving on http://127.0.0.1:${server.address().port}${open} (Ctrl+C to stop)\n`);
+    return;
+  }
+
+  if (options.command === 'questions') {
+    let loaded;
+    try {
+      loaded = loadProfile(options.profile);
+    } catch (error) {
+      fail(error.code ?? 2, error.message);
+    }
+    let found;
+    let answers;
+    try {
+      found = options.files.length ? readRunDirs(options.files) : readRuns(options.out);
+      answers = readAnswers(join(dirname(options.profile), 'answers.json'));
+    } catch (error) {
+      fail(2, error.message);
+    }
+    for (const entry of found.unreadable) process.stderr.write(`itsacv: ${entry.name} skipped: ${entry.error}\n`);
+    process.stdout.write(formatQuestions(gatherQuestions(found.runs, { profile: loaded.profile, answers }), found.runs.length));
     return;
   }
 
