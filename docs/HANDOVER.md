@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.12
-TITLE: Real run in Docker with Claude (waits on Nicolas's token in .env, §10)
+NEXT: 8.46
+TITLE: Defences by attack surface, run by what changed; an extraction and hijack red team
 WRITTEN-AT: 2026-10-06
-BASE: d95df84
+BASE: 15a9bc8
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -237,12 +237,17 @@ branch with the local gates of §3 green.
   `m1-router`, `m1-claude`, `m1-lmstudio`, `m1-cli` (7 jobs each),
   `m1-docker` (8 jobs, its `ci.yml` adds `docker`). Rewrite this pointer in
   the last PR.
-- [ ] **8.12** Real run in Docker with Claude. The LM Studio half is done
-  (2.0 s through the container, §0). Left, once Nicolas has put his token in
-  `.env` (⏸ §10): `docker compose up -d` with `docker/config.local.toml`
-  (Claude first), one request answered by `claude-code`; capture that real
-  success output and replace `synthetic-success.verbose.json`; later, a real
-  usage-limit output replaces `synthetic-usage-limit.verbose.json`.
+- [x] **8.12** Real run in Docker with Claude (2026-10-06). Done on the
+  VM rather than the laptop: since 2026-10-01 its router container serves
+  `claude-code` with the owner's subscription token from the data `.env`
+  (ADR-11 of cv/); real CVs through it, e.g. 2026-10-05 20:36, 133 s.
+  Captured inside that container with the backend's flag set:
+  `observed-docker-success.verbose.json` (`apiKeySource: "none"`, no
+  tools, rate limit `allowed`), held by
+  `the_success_observed_in_docker_is_an_answer_on_the_subscription`. The
+  synthetic success stays as the base the edited cases start from; a real
+  usage-limit output still replaces `synthetic-usage-limit` when one is
+  seen (§9).
 
 - [x] **8.13** Billing hardening (2026-09-28, branch `m1/billing-hardening`).
   (a) `--setting-sources ""` (observed on 2.1.162: accepted, OAuth answers;
@@ -562,6 +567,20 @@ branch with the local gates of §3 green.
   (cv 2.19) defaults to Claude until it warns. Same contract 1.1 (8.43 and
   8.44 ship together).
 
+- [ ] **8.46** (the owner, 2026-10-06) **Defences by attack surface, run
+  by what changed; an extraction and hijack red team.** (a) Split the
+  sabotage plans (router and `cv/`) by surface: offer → model (injection),
+  model → page (guard), public exposure, HTTP, billing, deploy, laptop;
+  each plan names the files of its surface; a PR runs only the plans whose
+  files changed (`scripts/ci-changes.sh` style, never narrower than sure);
+  the full pass runs on `main` after each merge and on demand
+  (`workflow_dispatch`) for a major step. (b) A corpus of hostile offers
+  (ask for the profile's private parts, the "never" list, the assessment,
+  the system prompt; links and contact data to exfiltrate; "ignore your
+  instructions") through the real pipeline with a fake model that obeys
+  them: nothing private, no instruction and no link reaches the CV, the
+  public report or the page. One defence per rule.
+
 ## 9. Deliberately open
 
 - **Usage-limit output format unknown.** Classified by `api_error_status`
@@ -618,23 +637,16 @@ branch with the local gates of §3 green.
 
 ## 10. Waiting on Nicolas
 
-Nothing blocks M1 code, and LM Studio runs on this laptop (the XPS), so the
-LM Studio half of 8.12 needs nobody. One action only Nicolas can do, because
-it is an interactive login to his account:
+Nothing blocks the code; 8.12 is done on the VM (its token is there since
+2026-10-01). What only Nicolas can do or decide:
 
 - **Merges**: settled. Since 2026-09-30 the session merges its own green
   PRs through `scripts/merge-when-green.sh` (26 merged that day).
-- `claude setup-token` in a terminal, then put the printed token in `.env` as
-  `CLAUDE_CODE_OAUTH_TOKEN=…` (git-ignored). That is the subscription path;
-  it is not an API key and is not billed per token.
 - A manual check of the generator on five new real offers, every bullet
   read against the profile (Rodin, 2026-10-01): the honesty of a plausible
   sentence is measured by no test; what he finds becomes corpus cases.
 - After the first week of real use: a look at the account's billing page
   (the overage tripwire detects extra usage after the call it billed).
-- **Once, on the VM** (cv 3.5): install the deploy timer, the four lines
-  at the top of `cv/deploy/vm-generator/compose.yaml` (adjust the two
-  paths in the `.service`). After that, merges deploy themselves.
 - **Two closed questions from 2026-10-04** (cv 2.14, 2.16): (1) the same
   offer pasted by a second ESN is answered from the first one's run (no
   model call), which tells the second ESN this offer was tested before:
