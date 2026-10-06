@@ -8,6 +8,7 @@
   "files": [
     "data/tech.json",
     "src/analysis.js",
+    "src/answers.js",
     "src/ats.js",
     "src/evidence.js",
     "src/fit.js",
@@ -41,6 +42,7 @@
     "src/view.js",
     "src/wake.js",
     "src/word.js",
+    "test/answers.test.js",
     "test/closed.test.js",
     "test/core.test.js",
     "test/corpus.test.js",
@@ -1137,6 +1139,94 @@
       "dead": "const schema = { schema: analysisSchema(profile) };",
       "expect": [
         "the analysis call sends its schema only when asked, never the listing"
+      ]
+    },
+    "Answers: a no adds nothing": {
+      "file": "src/answers.js",
+      "live": "    if (answer.answer === 'no') continue;",
+      "dead": "",
+      "expect": [
+        "a \"no\" answer adds nothing"
+      ]
+    },
+    "Answers: only yes or no": {
+      "file": "src/answers.js",
+      "live": "    if (answer.answer !== 'yes') {",
+      "dead": "    if (false) {",
+      "expect": [
+        "an answer the profile cannot take is refused, by name"
+      ]
+    },
+    "Answers: the level is one of LEVELS": {
+      "file": "src/answers.js",
+      "live": "    if (!LEVELS.includes(answer.level)) refusals",
+      "dead": "    if (false) refusals",
+      "expect": [
+        "an answer the profile cannot take is refused, by name"
+      ]
+    },
+    "Answers: the owner's sentence is required": {
+      "file": "src/answers.js",
+      "live": "    if (!String(answer.said ?? '').trim()) refusals",
+      "dead": "    if (false) refusals",
+      "expect": [
+        "an answer the profile cannot take is refused, by name"
+      ]
+    },
+    "Answers: a known group": {
+      "file": "src/answers.js",
+      "live": "    if (!groups.has(answer.group)) refusals",
+      "dead": "    if (false) refusals",
+      "expect": [
+        "an answer the profile cannot take is refused, by name"
+      ]
+    },
+    "Answers: the profile wins over an answer": {
+      "file": "src/answers.js",
+      "live": "    if (owned) refusals",
+      "dead": "    if (false) refusals",
+      "expect": [
+        "an answer the profile cannot take is refused, by name"
+      ]
+    },
+    "Answers: a contradicted skill stays out": {
+      "file": "src/answers.js",
+      "live": "    if (contradicted) refusals",
+      "dead": "    if (false) refusals",
+      "expect": [
+        "an answer cannot bring back a skill the evidence contradicts"
+      ]
+    },
+    "Answers: one answer per id": {
+      "file": "src/answers.js",
+      "live": "    if (seen.has(id)) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "two answers with one id are refused"
+      ]
+    },
+    "Answers: the level is the owner's": {
+      "file": "src/answers.js",
+      "live": "id: `answer-${id}`, name, group: answer.group, level: answer.level,",
+      "dead": "id: `answer-${id}`, name, group: answer.group, level: 'expert',",
+      "expect": [
+        "a \"yes\" answer becomes a skill the pipeline can use, at the owner's level, quoting him"
+      ]
+    },
+    "Answers: loadProfile merges them": {
+      "file": "src/run.js",
+      "live": "return { full, profile: answered(full, path), assessment",
+      "dead": "return { full, profile: full, assessment",
+      "expect": [
+        "loadProfile merges answers.json beside the profile, and refuses a bad one"
+      ]
+    },
+    "Answers: a refused answer stops the run": {
+      "file": "src/run.js",
+      "live": "  if (errors.length) throw new RunError(2, `the answers cannot join",
+      "dead": "  if (false) throw new RunError(2, `the answers cannot join",
+      "expect": [
+        "loadProfile merges answers.json beside the profile, and refuses a bad one"
       ]
     }
   }

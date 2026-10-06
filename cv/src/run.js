@@ -14,7 +14,8 @@ import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
 import { DEFAULT_PROFILE } from './profiles.js';
 import { validateProfile } from './profile.js';
-import { assess, checkProvenance, checkQuotes, olderMentions, readSources, restrict, scanSources } from './evidence.js';
+import { mergeAnswers, readAnswers } from './answers.js';
+import { assess, blocked, checkProvenance, checkQuotes, olderMentions, readSources, restrict, scanSources } from './evidence.js';
 import { analyse } from './pipeline.js';
 import { buildModel, rankBullets, defaultBullets } from './tailor.js';
 import { fitToPage } from './fit.js';
@@ -52,7 +53,7 @@ export function loadProfile(path) {
   }
   const { errors } = validateProfile(full);
   if (errors.length) throw new RunError(2, `the profile is invalid:\n- ${errors.join('\n- ')}`);
-  if (!full.sources?.length) return { full, profile: full, assessment: undefined, removed: [], texts: [] };
+  if (!full.sources?.length) return { full, profile: answered(full, path), assessment: undefined, removed: [], texts: [] };
   let texts;
   try {
     texts = readSources(full, dirname(path));
@@ -63,7 +64,20 @@ export function loadProfile(path) {
   if (quotes.length) throw new RunError(2, `the evidence does not match its sources:\n- ${quotes.join('\n- ')}`);
   const assessment = assess(full, scanSources(full, texts));
   const { profile, removed } = restrict(full, assessment);
-  return { full, profile, assessment, removed, texts };
+  return { full, profile: answered(profile, path, blocked(assessment)), assessment, removed, texts };
+}
+
+/** The profile with the owner's answers beside it (2.22a); a refused one stops the run. */
+function answered(profile, path, out) {
+  let answers;
+  try {
+    answers = readAnswers(join(dirname(path), 'answers.json'));
+  } catch (error) {
+    throw new RunError(2, error.message);
+  }
+  const { profile: merged, errors } = mergeAnswers(profile, answers, { blocked: out });
+  if (errors.length) throw new RunError(2, `the answers cannot join the profile:\n- ${errors.join('\n- ')}`);
+  return merged;
 }
 
 /** "20260924-031500-architecte-solutions" from the time and the offer's first line. */

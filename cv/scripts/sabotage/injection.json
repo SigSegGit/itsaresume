@@ -7,6 +7,7 @@
   ],
   "files": [
     "src/analysis.js",
+    "src/answers.js",
     "src/ats.js",
     "src/evidence.js",
     "src/fit.js",

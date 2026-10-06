@@ -10,6 +10,7 @@
     "deploy/laptop/bionic-tunnel.sh",
     "deploy/laptop/wake-watcher.sh",
     "src/analysis.js",
+    "src/answers.js",
     "src/ats.js",
     "src/evidence.js",
     "src/fit.js",

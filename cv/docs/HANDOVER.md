@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.3b-ii
-TITLE: the shortlist: relate() gives candidate skills, the model only picks among them
+NEXT: 2.22b
+TITLE: the questions: requirements no profile skill meets, across runs, minus those answered
 WRITTEN-AT: 2026-10-06
 -->
 
@@ -65,7 +65,12 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 465 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+- 2.22 (the owner, 2026-10-06): refining the profile from the app. A
+  requirement no profile skill meets becomes a question; his "yes" (level,
+  one sentence) joins the profile through `answers.json` (2.22a done);
+  the questions (2.22b), the local form (2.22c), the measure (2.22d)
+  follow. 2.3b-ii's shortlist then comes, as a hint, never a lock.
+- 471 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   one plan per attack surface since router 8.46: injection, guard, public,
   http, billing, laptop, deploy, content; CI job `cv-sabotage` runs the
   plans whose `files` a PR touches, all of them on `main`).
@@ -239,9 +244,16 @@ Traps met, each cost time once:
       `devops` is unchanged: SRE is an alias the v4 gives (a profile
       question, §10, not code).
     - [ ] **2.3b-ii** The shortlist: for a requirement no name settles,
-      `relate()` gives the candidate skills, the model only picks among
-      them ("which of these, or none"). Red tests first on the synthetic
-      profile; replay as in 2.3b-i before shipping.
+      `relate()` gives the candidate skills and they are offered to the
+      model first ("which of these, or none"). **Not a lock** (the owner,
+      2026-10-06: "pas un matching artificiellement bas à cause d'un
+      verrouillage"): a pick outside the shortlist is kept when the
+      existing grounding keeps it (yes / adjacent as today); the shortlist
+      adds candidates, never removes one. Red tests first on the synthetic
+      profile, including a pick outside the shortlist that stays met;
+      replay as in 2.3b-i before shipping, and the replay must show, row by
+      row, no yes → no without a named reason. What stays "no" for want of
+      a profile skill feeds 2.22's questions, not a lower bar.
 - [x] **2.4** Public go-live (2026-09-28). Not checked by an agent: one
   offer end to end from a phone on 4G (the owner).
 - [x] **2.4b** Manual QA (2026-10-02): the page picks the model per run
@@ -530,6 +542,39 @@ Traps met, each cost time once:
   LibreOffice with its own profile, so two layouts never share one.
   Measured live the same night: a sleeping local model woken from the
   public page (watcher, Bionic, tunnel) and a CV in 434 s.
+- [ ] **2.22** (the owner, 2026-10-06: "je n'ai pas forcément mis toutes
+  mes compétences en avant… des questions pour savoir si j'ai telle ou
+  telle compétence et enrichir le profil petit à petit") **Refining the
+  profile from the app.** A requirement the profile cannot meet is a
+  question to the owner, not only a lower score. ADR-6 holds: the owner's
+  own words are a source; a model never writes an answer, and the public
+  host can neither read nor write them.
+  - [x] **2.22a** (2026-10-06, 6 tests, 11 defences; checked on the real
+    profile with a throwaway answer: merged, and a duplicate of a profile
+    skill refused by name) Answers into the profile. `src/answers.js`: an
+    `answers.json` beside `profile.json` (private), a list of
+    `{id, asked, answer: "yes"|"no", name, level, group, said, at}`;
+    `said` is the owner's sentence, kept as the skill's quote.
+    `loadProfile` merges each "yes" as a skill (id `answer-<id>`, the
+    owner's level, never raised; `provenance: {answer: id}`), so the
+    pipeline, grounding and score use it like any other. Refused, named
+    in the load error: a level outside LEVELS, an empty `said`, an unknown
+    group, a name an existing skill already carries (the answer adds
+    nothing; the v4 wins), a skill the evidence says is contradicted. A
+    "no" adds nothing and is remembered (never asked again). Red tests on
+    the synthetic profile; a defence per refusal.
+  - [ ] **2.22b** The questions. From one run (the report's requirement
+    table) and from all runs in `out/`: each requirement met by no profile
+    skill (verdict no, not adjacent), grouped by its concept (`lookup()`
+    in `src/lexicon.js`, else its text), minus what `answers.json`
+    already answers, ranked by how many offers ask it. `itsacv questions`
+    prints them.
+  - [ ] **2.22c** The page (local host only; the public host answers
+    404): the questions, each "Oui / Non", level, group, one sentence
+    ("où, quand, quoi"), written to `answers.json`; the next run uses it.
+    A run's report links its own unmet requirements to the form.
+  - [ ] **2.22d** Measure: the 26 real runs replayed with the answers the
+    owner gave; the score moves only through his answers.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).
