@@ -60,6 +60,7 @@
     "test/redteam.test.js",
     "test/render.test.js",
     "test/rules.test.js",
+    "test/schema.test.js",
     "test/scoring.test.js",
     "test/word.test.js"
   ],
