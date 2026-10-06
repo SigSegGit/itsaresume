@@ -8,8 +8,16 @@
     "--no-fail-fast"
   ],
   "files": [
+    "crates/itsaresume-router/src/backend.rs",
+    "crates/itsaresume-router/src/bin/itsaresume-fake-claude.rs",
+    "crates/itsaresume-router/src/claude_code.rs",
+    "crates/itsaresume-router/src/config.rs",
     "crates/itsaresume-router/src/journal.rs",
+    "crates/itsaresume-router/src/lib.rs",
+    "crates/itsaresume-router/src/lm_studio.rs",
     "crates/itsaresume-router/src/main.rs",
+    "crates/itsaresume-router/src/router.rs",
+    "crates/itsaresume-router/src/server.rs",
     "crates/itsaresume-router/src/stats.rs",
     "crates/itsaresume-router/tests/cli.rs",
     "crates/itsaresume-router/tests/journal.rs",

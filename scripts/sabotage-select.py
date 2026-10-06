@@ -136,7 +136,39 @@ def needs(plan, root):
                 files.update(hits)
             else:
                 lost.append(name)
+    # What these files use is what the plan depends on too (Rodin, 2026-10-06:
+    # a helper changed alone would skip the plans whose tests run through it).
+    if command[:2] == ['node', '--test']:
+        files = imported(files, root)
+    elif command[:2] == ['cargo', 'test']:
+        # A test links its whole crate: every source of each crate concerned.
+        crates = {m.group(1) for f in files for m in [re.match(r'(crates/[^/]+)/', f)] if m}
+        files |= {path for path in sources(root, os.path.join('crates', '**', '*.rs'))
+                  if any(path.startswith(crate + '/src/') for crate in crates)}
     return files, lost
+
+
+IMPORT = re.compile(r'''(?:\bfrom\s*|\bimport\s*\(?\s*)['"](\.{1,2}/[^'"]+)['"]''')
+
+
+def imported(files, root):
+    """`files` and every module they import by a relative path, transitively."""
+    seen, todo = set(files), list(files)
+    while todo:
+        path = todo.pop()
+        if not path.endswith(('.js', '.mjs')):
+            continue
+        try:
+            with io.open(os.path.join(root, path), encoding='utf-8', errors='replace') as handle:
+                text = handle.read()
+        except OSError:
+            continue
+        for target in IMPORT.findall(text):
+            module = os.path.normpath(os.path.join(os.path.dirname(path), target)).replace(os.sep, '/')
+            if module not in seen and os.path.exists(os.path.join(root, module)):
+                seen.add(module)
+                todo.append(module)
+    return seen
 
 
 def check(root):
