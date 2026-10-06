@@ -243,7 +243,7 @@ test('the page greys the models the server says cannot answer, and refreshes the
   const app = web('app.js');
   assert.match(app, /option\.disabled = !state\.available;/);
   assert.match(app, /button\.disabled = offers\.length === 0 \|\| !modelsReady;/);
-  assert.match(app, /setInterval\?\.\(refreshStatus, \d+\)/);
+  assert.match(app, /setInterval\?\.\(\(\) => document\.hidden \|\| refreshStatus\(\), \d+\)/);
   assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
 });
 
