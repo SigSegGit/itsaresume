@@ -62,10 +62,13 @@ the decisions waiting for him, how to reach his machines — are in
 - `complete({kind})` marks a call `classify` (router 8.36); none is marked:
   `scripts/measure-split.mjs` gives the split Sonnet 14/14, the local model
   7/14.
-- 454 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
-  CI job `cv-sabotage`, now ~10-18 min: each defence runs only the files of
-  its named tests). One CI workflow; a `changes` job runs the generator's
-  jobs only when `cv/` changed.
+- 462 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
+  one plan per attack surface since router 8.46: injection, guard, public,
+  http, billing, laptop, deploy, content; CI job `cv-sabotage` runs the
+  plans whose `files` a PR touches, all of them on `main`).
+- `test/hostile.test.js` (router 8.46b): hostile offers through the real
+  pipeline and the public page with an obedient model; five leaks found
+  and closed (#89-#93). A new attack goes there as a single-field variant.
 - Open PRs and CI are facts for `gh`, never for this file: re-derive them.
 
 ## 1. Resume cheaply (the owner pays every token)
@@ -101,7 +104,9 @@ cd cv && bash deploy/laptop/public.sh    # public instance on 8791 + tunnel; set
 `npm test` (includes hygiene: no CRLF, no invisible character, every
 sabotage anchor present once), `python scripts/sabotage.py <plan>` for new
 defences (the plan file must sit on the same drive as the repository),
-`python scripts/catalogue.py` then `--check`. A branch and a PR per change.
+`python scripts/catalogue.py` then `--check`. A new defence goes into the
+plan of its surface, then `python scripts/sabotage-select.py --check`
+(from the repository root). A branch and a PR per change.
 
 Traps met, each cost time once:
 - Git Bash heredocs eat backslashes: edit such lines with the Edit tool.

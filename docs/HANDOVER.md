@@ -1,10 +1,10 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.46
-TITLE: Defences by attack surface, run by what changed; an extraction and hijack red team
+NEXT: done
+TITLE: Every router step of section 8 is done; the generator's next is cv 2.3 (cv/docs/HANDOVER.md)
 WRITTEN-AT: 2026-10-06
-BASE: 15a9bc8
+BASE: 73725c8
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -39,38 +39,31 @@ Bionic's single slot busy.
 own `cv/docs/HANDOVER.md`; the `/itsaresume` skill covers both. The owner's
 private notes are in `~/.itsaresume/HANDOVER-prive.md`, never here.
 
-**2026-09-29.** 8.14 (endpoint hardening) and 8.15 (system prompt through
-`--system-prompt-file`, a private file per request) merged; details in §8.
-Trap: `sabotage.py` needs its plan on the repository's drive (`relpath`);
-put a partial plan in `target/`.
+**2026-09-29 to 2026-10-05**, all merged, details in §8: endpoint
+hardening and the system prompt through a private file (8.14-8.15);
+TESTING.md held to the plan (8.16); one completion at a time per local
+backend, merges pinned to the counted head, a private Claude workdir
+(8.17-8.20); tokens in the journal, `stats` and the answer (8.38-8.40);
+the contract frozen at 1.0, then 1.1 with `GET /status` (8.37, 8.42-8.44);
+one CI workflow (`changes` job). Traps: `sabotage.py` needs its plan on
+the repository's drive (put a partial plan in `target/`); removing an
+import breaks old `dead` lines that call it, so rerun the file's defences.
+8.12 closed 2026-10-06 (#87): the VM's container serves Claude on the plan.
 
-**2026-09-30.** 8.16: `check-testing.py` holds TESTING.md to the plan.
-
-**2026-09-30.** 8.17-8.20: one completion at a time per local backend,
-no userinfo in `base_url`, merges pinned to the counted head, a private
-Claude workdir.
-
-**2026-10-04.** 8.34-8.36 (`kind`; no call marked `classify`), tokens in
-the journal, `stats` and the HTTP answer (8.38-8.40, #69); cv 2.13-2.16,
-4.1, 3.5 and a red-team round in `cv/` (#70-#74). Cloud sessions: nothing
-measured on a real call.
-
-**2026-10-05.** 8.37: the contract is frozen at 1.0 (`server::CONTRACT`,
-in every answer; fields and ADR in ARCHITECTURE.md); the client refuses
-another major and reads no `contract` as 1.0. Done before cv 2.3 on
-purpose: 2.3 only decides whether the analysis call sends `schema`, a field
-already frozen (#75). Then 8.41: three error texts that could hold model
-text are lengths now; `claude`'s stderr keeps its excerpt (decided, §8).
-Trap: removing an import breaks old `dead` lines that call it; rerun the
-file's old defences. Then 8.42: `itsacv serve` reads `/healthz` at start
-and stops (exit 4, both versions named) on another major; a router down
-at start is not refused. The 503/400 refusals' key sets are frozen in
-`tests/server.rs`. Then 8.43 (contract 1.1): `GET /status`, each
-backend's state without spending a request; the cv menu follows it. Only
-8.12 is left in §8 (waits on Nicolas, §10); the generator's is cv 2.3.
-8.44: `/status` gives Claude's `usage` (its last rate-limit status). CI is
-one workflow (`changes` job, `scripts/ci-changes.sh`); sabotage runs only
-the files of each defence's tests (36 → 10 min).
+**2026-10-06, 8.46 (#88, #94).**
+(a) The sabotage plans are split by attack surface (router: billing, http,
+laptop; cv: injection, guard, public, http, billing, laptop, deploy,
+content; scripts: ci, deploy); each lists in `files` what its defences
+depend on, imports and the whole crate included, held by
+`scripts/sabotage-select.py --check` (CI, handover job). A PR runs only the
+plans its files touch; a push to `main` and `workflow_dispatch` run all.
+Measured: a cv `src/` change still runs 490-511 of 512 cv defences, a
+router `src/` change every router plan; the gain is for tests, docs,
+scripts, deploy and `web/` changes. (b) `cv/test/hostile.test.js`: hostile
+offers through the real pipeline and the public page with an obedient
+model; it found five leaks (#89-#93), all fixed, eight defences. **A new
+defence goes into the plan of its surface; then run
+`python scripts/sabotage-select.py --check`.**
 
 ## 1. Decisions never to reverse silently
 
@@ -567,7 +560,7 @@ branch with the local gates of §3 green.
   (cv 2.19) defaults to Claude until it warns. Same contract 1.1 (8.43 and
   8.44 ship together).
 
-- [ ] **8.46** (the owner, 2026-10-06) **Defences by attack surface, run
+- [x] **8.46** (the owner, 2026-10-06) **Defences by attack surface, run
   by what changed; an extraction and hijack red team.** (a) Split the
   sabotage plans (router and `cv/`) by surface: offer → model (injection),
   model → page (guard), public exposure, HTTP, billing, deploy, laptop;
@@ -580,9 +573,20 @@ branch with the local gates of §3 green.
   instructions") through the real pipeline with a fake model that obeys
   them: nothing private, no instruction and no link reaches the CV, the
   public report or the page. One defence per rule.
+  Done 2026-10-06: (a) PR #88; (b) #94, closing #89-#93. Rodin's audit
+  changed (a): `files` first held only broken files and test files, which
+  is narrower than sure (a helper changed alone skipped its plans).
 
 ## 9. Deliberately open
 
+- **The hostile corpus (8.46b) has limits.** French offers only; the PDF
+  is not read (layout off in tests: the docx text is); a system prompt
+  *translated* or paraphrased into the summary passes (the check is six
+  copied words); the canary rule has met no real instruction offer (none
+  of the 22 real runs has one), only the corpus.
+- **The sabotage selection saves little on source changes** (measured,
+  §0 2026-10-06): honest import closure makes most `src/` changes run
+  nearly every plan. Kept: never narrower than sure comes first.
 - **Usage-limit output format unknown.** Classified by `api_error_status`
   429 or a message pattern; an unrecognised limit message is `Other` and stops
   loudly, with the raw message in the error and the journal. Add its fixture
