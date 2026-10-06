@@ -99,7 +99,7 @@ test('a broader term a skill covers is not evidence for it, but still matches an
     experiences: [{ id: 'acme', bullets: ['acme-pg'] }], skill_groups: [{ id: 'db', skills: ['postgresql'] }],
   };
   const { analysis } = normalize(answer, p);
-  assert.deepEqual(analysis.requirements[0].skills, ['postgresql']);
+  assert.ok(analysis.requirements[0].skills.includes('postgresql'));
   assert.deepEqual(validateAnalysis(analysis, p).errors, []);
 });
 

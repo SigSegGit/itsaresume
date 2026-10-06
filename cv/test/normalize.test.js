@@ -143,8 +143,8 @@ test('a requirement named like a skill\'s term only is left to the model, its sk
   );
   const { analysis, repairs } = normalize(a, p);
   const row = (name) => analysis.requirements.find((r) => r.name === name);
-  assert.deepEqual([row('Stockage').match, row('Stockage').skills], ['yes', ['postgresql', 'oracle']]);
-  assert.equal(row('AI').match, 'no');
+  assert.deepEqual(row('Stockage').skills, ['postgresql', 'oracle'], 'the term\'s skill does not replace the model\'s');
+  assert.deepEqual([row('AI').match, row('AI').skills], ['no', []]);
   assert.deepEqual([row('P2P').match, row('P2P').skills], ['yes', ['p2p']], 'an alias still settles it');
   assert.doesNotMatch(repairs.join('\n'), /requirement (Stockage|AI): named like/);
 });

@@ -1322,12 +1322,13 @@
         "a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is"
       ]
     },
-    "Parts: a term does not name a part": {
+    "Names: a term does not name a requirement or a part": {
       "file": "src/normalize.js",
       "live": "    for (const name of identityNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);",
       "dead": "    for (const name of skillNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);",
       "expect": [
-        "a part named only by a skill term does not meet the requirement"
+        "a part named only by a skill term does not meet the requirement",
+        "a requirement named like a skill's term only is left to the model, its skills kept"
       ]
     },
     "Parts: one unnamed part leaves the requirement": {
