@@ -1097,6 +1097,46 @@
       "expect": [
         "a hidden skill group backs requirements but never shows in the sidebar"
       ]
+    },
+    "Analysis schema: requirement skills closed to the catalogue": {
+      "file": "src/prompt.js",
+      "live": "skills: ids(skills), note: string",
+      "dead": "skills: { type: 'array', items: string }, note: string",
+      "expect": [
+        "the analysis schema closes every id to the catalogue"
+      ]
+    },
+    "Analysis schema: bullets closed to the catalogue": {
+      "file": "src/prompt.js",
+      "live": "bullets: ids(profile.experiences.flatMap((e) => e.bullets.map((b) => b.id)))",
+      "dead": "bullets: { type: 'array', items: string }",
+      "expect": [
+        "the analysis schema closes every id to the catalogue"
+      ]
+    },
+    "Analysis schema: group skills closed to the catalogue": {
+      "file": "src/prompt.js",
+      "live": "skills: ids(skills) }) },",
+      "dead": "skills: { type: 'array', items: string } }) },",
+      "expect": [
+        "the analysis schema closes every id to the catalogue"
+      ]
+    },
+    "Analysis schema: sent when asked": {
+      "file": "src/pipeline.js",
+      "live": "prompt: current, ...schema });",
+      "dead": "prompt: current });",
+      "expect": [
+        "the analysis call sends its schema only when asked, never the listing"
+      ]
+    },
+    "Analysis schema: not sent by default": {
+      "file": "src/pipeline.js",
+      "live": "const schema = structured ? { schema: analysisSchema(profile) } : {};",
+      "dead": "const schema = { schema: analysisSchema(profile) };",
+      "expect": [
+        "the analysis call sends its schema only when asked, never the listing"
+      ]
     }
   }
 }

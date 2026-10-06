@@ -77,6 +77,33 @@ export function buildPrompt(profile, offer, listed = []) {
   return { system: SYSTEM, prompt: lines.join('\n') };
 }
 
+/**
+ * The analysis answer as a JSON schema (router 8.24) whose ids are closed to
+ * the catalogue: an invented skill, bullet or title id cannot be written.
+ * Sent only when asked (2.3): measured on the corpus first.
+ */
+export function analysisSchema(profile) {
+  const string = { type: 'string' };
+  const ids = (list) => ({ type: 'array', items: { type: 'string', enum: list } });
+  const object = (properties, required = Object.keys(properties)) => ({ type: 'object', properties, required, additionalProperties: false });
+  const skills = profile.skills.map((skill) => skill.id);
+  const properties = {
+    language: { type: 'string', enum: ['fr', 'en'] },
+    fit: object({ rationale: string }),
+    requirements: {
+      type: 'array',
+      items: object({ name: string, importance: { type: 'string', enum: ['must', 'nice'] }, match: { type: 'string', enum: ['yes', 'adjacent', 'no'] }, skills: ids(skills), note: string }),
+    },
+    headline: string,
+    summary: { type: 'array', items: string },
+    experiences: { type: 'array', items: object({ id: { type: 'string', enum: profile.experiences.map((e) => e.id) }, bullets: ids(profile.experiences.flatMap((e) => e.bullets.map((b) => b.id))) }) },
+    skill_groups: { type: 'array', items: object({ id: { type: 'string', enum: profile.skill_groups.map((g) => g.id) }, skills: ids(skills) }) },
+  };
+  if (profile.titles?.length) properties.headline_ids = ids(profile.titles.map((title) => title.id));
+  if (profile.profile_facts?.length) properties.summary_ids = ids(profile.profile_facts.map((fact) => fact.id));
+  return object(properties, ['language', 'fit', 'requirements', 'experiences', 'skill_groups']);
+}
+
 /** The prompt for a second attempt: the first one, the rejected answer, why. */
 export function retryPrompt(prompt, answer, errors) {
   return [
