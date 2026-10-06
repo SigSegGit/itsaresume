@@ -1,10 +1,396 @@
 {
+  "surface": "guard",
   "command": [
     "node",
     "--test",
     "--test-reporter=tap"
   ],
+  "files": [
+    "src/analysis.js",
+    "src/ats.js",
+    "src/evidence.js",
+    "src/fit.js",
+    "src/guard.js",
+    "src/importance.js",
+    "src/instructions.js",
+    "src/intake.js",
+    "src/invites.js",
+    "src/language.js",
+    "src/lexicon.js",
+    "src/libre.js",
+    "src/listing.js",
+    "src/llm.js",
+    "src/models.js",
+    "src/normalize.js",
+    "src/pipeline.js",
+    "src/profile.js",
+    "src/profiles.js",
+    "src/prompt.js",
+    "src/qa.js",
+    "src/render.js",
+    "src/report.js",
+    "src/run.js",
+    "src/score.js",
+    "src/serve.js",
+    "src/server.js",
+    "src/split.js",
+    "src/tailor.js",
+    "src/text.js",
+    "src/view.js",
+    "src/wake.js",
+    "src/word.js",
+    "test/closed.test.js",
+    "test/column.test.js",
+    "test/core.test.js",
+    "test/equivalent.test.js",
+    "test/evidence.test.js",
+    "test/fixtures/injected.js",
+    "test/fixtures/v4.js",
+    "test/floor.test.js",
+    "test/guard.test.js",
+    "test/honesty.test.js",
+    "test/hygiene.test.js",
+    "test/importance.test.js",
+    "test/must-stay-no.test.js",
+    "test/normalize.test.js",
+    "test/pipeline.test.js",
+    "test/redteam.test.js",
+    "test/rules.test.js",
+    "test/scoring.test.js",
+    "test/stem.test.js"
+  ],
   "defences": {
+    "Column: a met skill comes into it": {
+      "file": "src/normalize.js",
+      "live": "put(skill.group, skill.id);",
+      "dead": "void skill;",
+      "expect": [
+        "a met skill the model left out of its group comes into it",
+        "a met skill whose group the model did not list brings its group"
+      ]
+    },
+    "Column: a hidden group never shows": {
+      "file": "src/normalize.js",
+      "live": " || unseen.has(skill.group)) continue;",
+      "dead": ") continue;",
+      "expect": [
+        "a met skill of a hidden group stays out of the column"
+      ]
+    },
+    "Column: groups holding a met skill are kept first": {
+      "file": "src/normalize.js",
+      "live": "[...shownChoices.filter(holdsMet), ...shownChoices.filter((choice) => !holdsMet(choice))]",
+      "dead": "shownChoices",
+      "expect": [
+        "beyond the group cap, a group holding a met skill is kept before one that holds none"
+      ]
+    },
+    "Analysis: bullets belong to their experience": {
+      "file": "src/analysis.js",
+      "live": "need(own.has(bullet), `bullet ${bullet} does not belong to experience ${choice.id}`);",
+      "dead": "need(own.has(bullet) || true, `bullet ${bullet} does not belong to experience ${choice.id}`);",
+      "expect": [
+        "an analysis may not select an experience, a bullet or a skill the profile lacks"
+      ]
+    },
+    "Analysis: skills stay in their group": {
+      "file": "src/analysis.js",
+      "live": "else need(skill.group === choice.id, `skill ${id} is not in group ${choice.id}`);",
+      "dead": "else need(skill.group === choice.id || true, `skill ${id} is not in group ${choice.id}`);",
+      "expect": [
+        "an analysis may not select an experience, a bullet or a skill the profile lacks"
+      ]
+    },
+    "Analysis: free text may not claim an absent technology": {
+      "file": "src/analysis.js",
+      "live": "if (!known.has(requirement.name.toLowerCase()) && mentions(freeText, requirement.name)) {",
+      "dead": "if (!known.has(requirement.name.toLowerCase()) && mentions(freeText, requirement.name) && false) {",
+      "expect": [
+        "a summary or headline claiming a technology absent from the profile is refused"
+      ]
+    },
+    "Analysis: matched requirements name a skill": {
+      "file": "src/analysis.js",
+      "live": "need((requirement.skills ?? []).length > 0, `requirement ${name} is marked ${requirement.match} but names no profile skill`);",
+      "dead": "need((requirement.skills ?? []).length >= 0, `requirement ${name} is marked ${requirement.match} but names no profile skill`);",
+      "expect": [
+        "a requirement marked matched must name at least one profile skill, and an unmatched one none"
+      ]
+    },
+    "Analysis: score bounded": {
+      "file": "src/analysis.js",
+      "live": "fit.score >= 0 && fit.score <= 100",
+      "dead": "fit.score >= 0 && fit.score <= 1000",
+      "expect": [
+        "an analysis with an out-of-range score, a bad verdict, a bad language or no experience is refused"
+      ]
+    },
+    "Equivalents: a loose category holding profile skills is not a gap": {
+      "file": "src/normalize.js",
+      "live": "      if (found.length) {",
+      "dead": "      if (false) {",
+      "expect": [
+        "\"Conteneurisation\" marked no by the model comes out adjacent through Docker"
+      ]
+    },
+    "Equivalents: never-claimed stays no": {
+      "file": "src/normalize.js",
+      "live": "if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "dead": "if (requirement.match === 'no' && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "expect": [
+        "a never-claimed requirement stays no, whatever its category holds"
+      ]
+    },
+    "Equivalents: evidence-blocked skills are not equivalents": {
+      "file": "src/normalize.js",
+      "live": "profile.skills.filter((skill) => !out.has(skill.id))",
+      "dead": "profile.skills",
+      "expect": [
+        "contradicted and unsupported skills are removed from the analysis and reported"
+      ]
+    },
+    "Languages: a language requirement is judged by the profile": {
+      "file": "src/normalize.js",
+      "live": "const spoken = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' ? null : languageOf(requirement, profile, analysis.language);",
+      "dead": "const spoken = null;",
+      "expect": [
+        "\"Anglais professionnel\" is met by the profile's \"Anglais \u2014 bilingue\", and counts"
+      ]
+    },
+    "Languages: notions do not meet a language requirement": {
+      "file": "src/normalize.js",
+      "live": "const working = named.every((entry) => LANGUAGES.some((l) => WORKING_LEVEL.test(languageLevel(entry[l]))));",
+      "dead": "const working = true;",
+      "expect": [
+        "a language the profile holds at notions level only stays no, its level said"
+      ]
+    },
+    "Languages: a task in a language is not a language row": {
+      "file": "src/normalize.js",
+      "live": "if (!words.every((word) => names.has(word) || STOP.has(word) || GENERIC.has(word) || LANGUAGE_WORDS.has(word))) return null;",
+      "dead": "if (false) return null;",
+      "expect": [
+        "a task done in a language is not a language requirement"
+      ]
+    },
+    "Languages: a met language row validates without a skill": {
+      "file": "src/analysis.js",
+      "live": "&& requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "dead": "&& requirement.kind !== 'certification') {",
+      "expect": [
+        "a met language row passes validation without a profile skill (the run goes on)"
+      ]
+    },
+    "Equivalents: a concept holding the model's skills grounds its yes": {
+      "file": "src/normalize.js",
+      "live": "known.length > 0 && held.length === 0 && !grounded(",
+      "dead": "known.length > 0 && !grounded(",
+      "expect": [
+        "\"SQL\" met through PostgreSQL and Oracle stays yes, not \"to verify\""
+      ]
+    },
+    "Equivalents: the concept's other profile skills join the model's pick": {
+      "file": "src/normalize.js",
+      "live": "(met ? alike(defaultIndex(), asked(requirement.name), placed(), known) : [])",
+      "dead": "([])",
+      "expect": [
+        "\"Shell\" named like the profile's KSH also holds its Bash, the model's extra pick dropped"
+      ]
+    },
+    "Equivalents: the concept must hold the model's pick to ground it": {
+      "file": "src/normalize.js",
+      "live": "members(defaultIndex(), asked(requirement.name), placed()).filter((id) => known.includes(id))",
+      "dead": "members(defaultIndex(), asked(requirement.name), placed())",
+      "expect": [
+        "\"SQL\" met through Python alone stays \"to verify\": the concept must hold the model's pick"
+      ]
+    },
+    "Languages: a level asked above the profile's is not met": {
+      "file": "src/normalize.js",
+      "live": "if (held.every((rank) => rank >= asked)) return 'yes';",
+      "dead": "if (true) return 'yes';",
+      "expect": [
+        "a level asked above the profile's is adjacent, the profile's line said"
+      ]
+    },
+    "Languages: a level asked is compared, not only a working level": {
+      "file": "src/normalize.js",
+      "live": "if (asked === undefined) return working ? 'yes' : 'no';",
+      "dead": "return working ? 'yes' : 'no';",
+      "expect": [
+        "a level asked above the profile's is adjacent, the profile's line said",
+        "notions asked are met by notions held"
+      ]
+    },
+    "Languages: level words are language words": {
+      "file": "src/normalize.js",
+      "live": "technique technical notions notion basique",
+      "dead": "technique technical",
+      "expect": [
+        "notions asked are met by notions held"
+      ]
+    },
+    "Languages are never merged as examples": {
+      "file": "src/normalize.js",
+      "live": "requirement.kind !== 'quality' && requirement.kind !== 'certification' && languageOf(requirement, profile, lang) === null && mentions(inside, core(requirement.name)) ? [index] : []);",
+      "dead": "requirement.kind !== 'quality' && requirement.kind !== 'certification' && mentions(inside, core(requirement.name)) ? [index] : []);",
+      "expect": [
+        "languages an offer lists together are settled one by one, never merged"
+      ]
+    },
+    "Certifications are never merged as examples": {
+      "file": "src/normalize.js",
+      "live": "requirement.kind !== 'quality' && requirement.kind !== 'certification' && languageOf(",
+      "dead": "requirement.kind !== 'quality' && languageOf(",
+      "expect": [
+        "a certification is not merged into an enumeration with a held skill"
+      ]
+    },
+    "Category words do not hide a listed example": {
+      "file": "src/normalize.js",
+      "live": "  const kept = String(name ?? '').split(/\\s+/).filter((word) => !CATEGORY_WORDS.has(word.toLowerCase()));",
+      "dead": "  const kept = String(name ?? '').split(/\\s+/);",
+      "expect": [
+        "a row naming one member of a merged group plus a category word joins the group"
+      ]
+    },
+    "Evidence: the answer may not select a ruled-out skill": {
+      "file": "src/normalize.js",
+      "live": "if (!out.has(id)) return true;",
+      "dead": "if (true) return true;",
+      "expect": [
+        "contradicted and unsupported skills are removed from the analysis and reported"
+      ]
+    },
+    "Evidence: the free text may not name a ruled-out skill": {
+      "file": "src/analysis.js",
+      "live": "if (named) errors.push(`the headline or summary claims ${entry.name} (as",
+      "dead": "if (false) errors.push(`the headline or summary claims ${entry.name} (as",
+      "expect": [
+        "the summary may not name a contradicted skill, even one the profile lists",
+        "the model is never shown a skill the evidence rules out, and may not claim it"
+      ]
+    },
+    "Evidence: the pipeline checks the answer against the verdicts": {
+      "file": "src/pipeline.js",
+      "live": "validateAnalysis(analysis, profile, { language, assessment, offer })",
+      "dead": "validateAnalysis(analysis, profile, { language, offer })",
+      "expect": [
+        "the model is never shown a skill the evidence rules out, and may not claim it"
+      ]
+    },
+    "Floor: the listing keeps it": {
+      "file": "src/listing.js",
+      "live": "return withFloor(listed, offer);",
+      "dead": "return listed;",
+      "expect": [
+        "the listing gets back what the model dropped, and nothing twice"
+      ]
+    },
+    "Floor: an unreadable listing keeps it": {
+      "file": "src/listing.js",
+      "live": "return withFloor([], offer);",
+      "dead": "return [];",
+      "expect": [
+        "an unreadable listing still keeps the floor"
+      ]
+    },
+    "Floor: nothing twice": {
+      "file": "src/listing.js",
+      "live": "const missing = floorItems(offer).filter((item) => !listed.some((known) => mentions(item.name, known.name) || mentions(known.name, item.name)));",
+      "dead": "const missing = floorItems(offer);",
+      "expect": [
+        "the listing gets back what the model dropped, and nothing twice"
+      ]
+    },
+    "Floor: a header needs a cue": {
+      "file": "src/listing.js",
+      "live": "if (!own) continue;",
+      "dead": "if (false) continue;",
+      "expect": [
+        "a header without a cue, or a denied one, adds nothing"
+      ]
+    },
+    "Floor: a blank line ends the list": {
+      "file": "src/listing.js",
+      "live": "      section = null;\n      continue;",
+      "dead": "      continue;",
+      "expect": [
+        "a list ends at a blank line or the next header"
+      ]
+    },
+    "Floor: a header's enumeration": {
+      "file": "src/listing.js",
+      "live": "else for (const part of header[2].split(/,|;|\\bet\\b|\\band\\b/)) add(part, own);",
+      "dead": "else void header;",
+      "expect": [
+        "a header's own enumeration is floor items"
+      ]
+    },
+    "Floor: the header's importance": {
+      "file": "src/listing.js",
+      "live": "if (section) add(bullet[1], section);",
+      "dead": "if (section) add(bullet[1], 'must');",
+      "expect": [
+        "the items under a nice header are floor items, nice"
+      ]
+    },
+    "Denied: a name only denied leaves the listing": {
+      "file": "src/listing.js",
+      "live": "return [...listed, ...missing].filter((item) => !onlyDenied(offer, item.name));",
+      "dead": "return [...listed, ...missing];",
+      "expect": [
+        "a name the offer only denies leaves the listing"
+      ]
+    },
+    "Denied: a nice cue keeps it": {
+      "file": "src/listing.js",
+      "live": "return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause) && !NICE.test(clause));",
+      "dead": "return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause));",
+      "expect": [
+        "a denied must that the offer still wants stays, and so does a plain mention"
+      ]
+    },
+    "Denied: the clause judges, not the sentence": {
+      "file": "src/listing.js",
+      "live": ".split(/\\r?\\n|(?<=[.!?;])\\s+|,|\\s;\\s/)",
+      "dead": ".split(/\\r?\\n|(?<=[.!?;])\\s+/)",
+      "expect": [
+        "a denial judges the clause that names the requirement, not the sentence"
+      ]
+    },
+    "Listing: the schema only when asked": {
+      "file": "src/listing.js",
+      "live": "const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });",
+      "dead": "const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), schema: LISTING_SCHEMA });",
+      "expect": [
+        "the listing call sends its schema only when asked"
+      ]
+    },
+    "Listing: a name the analysis already covers is not added": {
+      "file": "src/listing.js",
+      "live": "return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": "return false;",
+      "expect": [
+        "a listed name whose words the analysis already names is not added twice"
+      ]
+    },
+    "Listing: one word is not covered by a longer row": {
+      "file": "src/listing.js",
+      "live": "return words.length >= 2 && analysed",
+      "dead": "return words.length >= 1 && analysed",
+      "expect": [
+        "a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps)"
+      ]
+    },
+    "Listing: a must is not covered by a nice row": {
+      "file": "src/listing.js",
+      "live": " && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": ");",
+      "expect": [
+        "a two-word listed must is not absorbed by a nice row that names its words"
+      ]
+    },
     "Injection: .NET in capitals is not a domain": {
       "file": "src/guard.js",
       "live": "const unlinked = folded.replace(DOT_NET, '$1');",
@@ -221,26 +607,10 @@
         "the offer is fenced by a marker it cannot guess"
       ]
     },
-    "Injection: the analysis prompt fences the offer": {
-      "file": "src/prompt.js",
-      "live": "lines.push('', ...fence(offer), '');",
-      "dead": "lines.push('', 'OFFER', '<<<', offer.trim(), '>>>', '');",
-      "expect": [
-        "the offer is fenced by a marker it cannot guess"
-      ]
-    },
     "Injection: the listing prompt fences the offer": {
       "file": "src/listing.js",
       "live": "return fence(offer).join('\\n');",
       "dead": "return ['OFFER', '<<<', offer.trim(), '>>>'].join('\\n');",
-      "expect": [
-        "the offer is fenced by a marker it cannot guess"
-      ]
-    },
-    "Injection: the analysis system prompt says the offer is untrusted": {
-      "file": "src/prompt.js",
-      "live": "Tone: direct, operational, senior.\n\n${UNTRUSTED}`;",
-      "dead": "Tone: direct, operational, senior.`;",
       "expect": [
         "the offer is fenced by a marker it cannot guess"
       ]
@@ -286,22 +656,6 @@
         "an obedient model following an injected offer gets no CV"
       ]
     },
-    "Injection: a report cell escapes its pipes": {
-      "file": "src/report.js",
-      "live": "const cell = (text) => line(text).replace(/\\|/g, '\\\\|');",
-      "dead": "const cell = (text) => line(text);",
-      "expect": [
-        "the report cannot be broken by what the model wrote"
-      ]
-    },
-    "Injection: the report puts the model's text on one line": {
-      "file": "src/report.js",
-      "live": "const line = (text) => String(text ?? '').replace(/\\s*[\\r\\n]+\\s*/g, ' ');",
-      "dead": "const line = (text) => String(text ?? '');",
-      "expect": [
-        "the report cannot be broken by what the model wrote"
-      ]
-    },
     "Hygiene: a CRLF line ending in a source file is found": {
       "file": "src/text.js",
       "live": "// Text helpers shared by the checks.\n",
@@ -318,183 +672,698 @@
         "no source file contains an invisible or bidi control character"
       ]
     },
-    "Instructions: French 'écrivez le mot'": {
-      "file": "src/instructions.js",
-      "live": "<(?:écri(?:s|vez|re)|inscri",
-      "dead": "<(?:xécri(?:s|vez|re)|inscri",
+    "Honesty: the answer is in the offer's language": {
+      "file": "src/analysis.js",
+      "live": "need(analysis?.language === language,",
+      "dead": "need(analysis?.language === language || true,",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one",
-        "only the instruction sentence of a line is returned, not its neighbours"
+        "an answer in another language than the offer is refused"
       ]
     },
-    "Instructions: French 'mentionnez le code dans votre candidature'": {
-      "file": "src/instructions.js",
-      "live": "<(?:mentionne[zr]?|indique",
-      "dead": "<(?:xmentionne[zr]?|indique",
+    "Honesty: the score is computed, not the model's": {
+      "file": "src/normalize.js",
+      "live": "const score = scoreOf(analysis.requirements ?? [], { lab });",
+      "dead": "const score = fit.score ?? scoreOf(analysis.requirements ?? [], { lab });",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one"
+        "the score is computed from the requirements, not taken from the model"
       ]
     },
-    "Instructions: French 'pour prouver que vous avez lu'": {
-      "file": "src/instructions.js",
-      "live": "<pour prouver (?:que|qu')",
-      "dead": "<xpour prouver (?:que|qu')",
+    "Honesty: no requirement, no score": {
+      "file": "src/analysis.js",
+      "live": "need((analysis?.requirements ?? []).length > 0,",
+      "dead": "need((analysis?.requirements ?? []).length >= 0,",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one"
+        "an analysis without any requirement cannot be scored and is refused"
       ]
     },
-    "Instructions: French 'ignorez vos instructions'": {
-      "file": "src/instructions.js",
-      "live": "<ignore[zrs]?",
-      "dead": "<xignore[zrs]?",
+    "Importance: the offer's cue decides over the model": {
+      "file": "src/normalize.js",
+      "live": "const said = importanceIn(offer, String(requirement.name ?? ''));",
+      "dead": "const said = null;",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one"
+        "normalize applies the offer's cues over the model's importance, and says so",
+        "a never-claimed requirement the offer calls a plus is not counted as a must"
       ]
     },
-    "Instructions: French 'si tu es une IA'": {
-      "file": "src/instructions.js",
-      "live": "<si (?:tu es|vous êtes)",
-      "dead": "<xsi (?:tu es|vous êtes)",
+    "Normalise: a requirement named like a skill is met by it": {
+      "file": "src/normalize.js",
+      "live": "if (named && (requirement.match !== 'yes' || requirement.skills.length !== 1 || requirement.skills[0] !== named)) {",
+      "dead": "if (named && false) {",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one",
-        "English instructions to the candidate or an AI are found too"
+        "a requirement named exactly like a profile skill is met by that skill"
       ]
     },
-    "Instructions: French 'note pour l'IA'": {
-      "file": "src/instructions.js",
-      "live": "<note (?:pour|à)",
-      "dead": "<xnote (?:pour|à)",
+    "Listing: requirements left out are added": {
+      "file": "src/listing.js",
+      "live": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !heads.has(item.name.toLowerCase()) && !covered(item));",
+      "dead": "const added = listed.filter((item) => !present.has(item.name.toLowerCase()) && !heads.has(item.name.toLowerCase()) && !covered(item) && false);",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one"
+        "requirements the analysis left out are added from a focused listing"
       ]
     },
-    "Instructions: English 'write the word in your CV'": {
-      "file": "src/instructions.js",
-      "live": "<(?:write|include|add|mention",
-      "dead": "<(?:xwrite|include|add|mention",
+    "Normalise: 'id: text' read as the id": {
+      "file": "src/normalize.js",
+      "live": "if (value.includes(':') && known.has(prefix)) {",
+      "dead": "if (value.includes(':') && known.has(prefix) && false) {",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "an \"id: text\" answer is read as the id"
       ]
     },
-    "Instructions: English 'to prove that you have read'": {
-      "file": "src/instructions.js",
-      "live": "<to prove (?:that )?you",
-      "dead": "<xto prove (?:that )?you",
+    "Must stay no: a certification is answered by the profile's certifications": {
+      "file": "src/normalize.js",
+      "live": "const certified = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' || spoken ? null : certificationOf(requirement, profile, analysis.language);",
+      "dead": "const certified = null;",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "a certification the profile does not hold stays no, though the skill is owned",
+        "a certification the model met through the skill is no: the profile holds no such certification",
+        "a certification named by its code alone (\"niveau CKA\") is not met by owning Kubernetes",
+        "a certification the profile holds, expired, is adjacent with its line"
       ]
     },
-    "Instructions: English 'ignore previous instructions'": {
-      "file": "src/instructions.js",
-      "live": "<ignore (?:all |any )?(?:the |your )?(?:previous",
-      "dead": "<xignore (?:all |any )?(?:the |your )?(?:previous",
+    "Must stay no: a certification row is not rescued through a skill": {
+      "file": "src/normalize.js",
+      "live": " && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "dead": " && requirement.kind !== 'language') {",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "a certification the profile does not hold stays no, though the skill is owned"
       ]
     },
-    "Instructions: English 'disregard previous instructions'": {
-      "file": "src/instructions.js",
-      "live": "<disregard (?:all",
-      "dead": "<xdisregard (?:all",
+    "Must stay no: certificates are not a certification": {
+      "file": "src/normalize.js",
+      "live": "certifi(?:cations?|[\u00e9e]e?s?|ed)",
+      "dead": "certifi\\w*",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "the TLS certificates of a PKI are not a certification"
       ]
     },
-    "Instructions: English 'as an AI'": {
-      "file": "src/instructions.js",
-      "live": "<as an? (?:ai",
-      "dead": "<xas an? (?:ai",
+    "Must stay no: a certification code names one": {
+      "file": "src/normalize.js",
+      "live": "(?:cations?|[\u00e9e]e?s?|ed)|CKA|",
+      "dead": "(?:cations?|[\u00e9e]e?s?|ed)|",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "a certification named by its code alone (\"niveau CKA\") is not met by owning Kubernetes"
       ]
     },
-    "Instructions: English 'if you are an AI'": {
-      "file": "src/instructions.js",
-      "live": "<if you are an?",
-      "dead": "<xif you are an?",
+    "Must stay no: an expired certification is adjacent": {
+      "file": "src/normalize.js",
+      "live": "certified.expired ? 'adjacent' : 'yes'",
+      "dead": "certified.expired ? 'yes' : 'yes'",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "a certification the profile holds, expired, is adjacent with its line"
       ]
     },
-    "Instructions: English 'note to the AI'": {
-      "file": "src/instructions.js",
-      "live": "<note (?:to|for)",
-      "dead": "<xnote (?:to|for)",
+    "Must stay no: a met certification row validates without a skill": {
+      "file": "src/analysis.js",
+      "live": " && requirement.kind !== 'certification') {",
+      "dead": ") {",
       "expect": [
-        "English instructions to the candidate or an AI are found too"
+        "a met certification row passes validation without a profile skill"
       ]
     },
-    "Instructions: at most five sentences": {
-      "file": "src/instructions.js",
-      "live": "if (found.length === MAX_SENTENCES) break;",
-      "dead": "",
+    "Must stay no: a migration asks for its target": {
+      "file": "src/normalize.js",
+      "live": "const asked = (name) => MIGRATION.exec(String(name ?? ''))?.[1] ?? name;",
+      "dead": "const asked = (name) => name;",
       "expect": [
-        "at most five sentences are returned, each of at most 200 characters"
+        "a migration to a tool the profile lacks is not met by the tool it leaves",
+        "a migration to a tool the profile holds is met through that tool only",
+        "a migration the model met through the tool it leaves is only the model's reading"
       ]
     },
-    "Instructions: each sentence cut to 200 characters": {
-      "file": "src/instructions.js",
-      "live": ".slice(0, MAX_CHARS)",
-      "dead": ".slice(0)",
+    "Normalise: a bullet id as experience id is relocated": {
+      "file": "src/normalize.js",
+      "live": "else if (owner.has(choice.id)) {",
+      "dead": "else if (owner.has(choice.id) && false) {",
       "expect": [
-        "at most five sentences are returned, each of at most 200 characters"
+        "a bullet id given as an experience id is moved under its experience",
+        "an answer that only needs safe repairs is accepted at once, the repairs reported"
       ]
     },
-    "Instructions: a line is split into sentences": {
-      "file": "src/instructions.js",
-      "live": "/\\n+|(?<=[.!?])\\s+/",
-      "dead": "/\\n+/",
+    "Normalise: matched without a skill becomes unmatched": {
+      "file": "src/normalize.js",
+      "live": "if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0) {",
+      "dead": "if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0 && false) {",
       "expect": [
-        "only the instruction sentence of a line is returned, not its neighbours"
+        "a requirement marked matched without any profile skill becomes unmatched"
       ]
     },
-    "Instructions: capitals are read as lower case": {
-      "file": "src/instructions.js",
-      "live": "sentence.toLowerCase()",
-      "dead": "sentence",
+    "Normalise: unknown skills never kept": {
+      "file": "src/normalize.js",
+      "live": "const known = (requirement.skills ?? []).filter((id) => skills.has(id));",
+      "dead": "const known = (requirement.skills ?? []).filter((id) => skills.has(id) || true);",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one",
-        "only the instruction sentence of a line is returned, not its neighbours"
+        "ids the profile does not have are dropped and reported, never kept"
       ]
     },
-    "Instructions: a typographic apostrophe is read as a plain one": {
-      "file": "src/instructions.js",
-      "live": "replace(/[’‘]/g, \"'\")",
-      "dead": "replace(/[‘]/g, \"'\")",
+    "Normalise: skills go to their own group": {
+      "file": "src/normalize.js",
+      "live": "put(skill.group, id);",
+      "dead": "put(groupIds.has(choice.id) ? choice.id : skill.group, id);",
       "expect": [
-        "French instructions to the candidate or an AI are found one by one"
+        "a skill shown in the wrong group moves to its own group"
       ]
     },
-    "Instructions: the report lists them": {
-      "file": "src/report.js",
-      "live": "if (instructions.length) {",
-      "dead": "if (false) {",
+    "Normalise: the input is not modified": {
+      "file": "src/normalize.js",
+      "live": "const analysis = structuredClone(input);",
+      "dead": "const analysis = input;",
       "expect": [
-        "the report lists the instructions of the offer as not applied, only when there are some"
+        "normalisation does not modify its input"
       ]
     },
-    "Instructions: the report section only appears when there are some": {
-      "file": "src/report.js",
-      "live": "if (instructions.length) {",
+    "Headline: a must the CV would not show brings its title": {
+      "file": "src/normalize.js",
+      "live": "headed.splice(1, 1, title.id);",
+      "dead": "void title;",
+      "expect": [
+        "a must met only through a hidden skill puts the profile's title naming it second in the headline"
+      ]
+    },
+    "Headline: a headline already naming the must is kept": {
+      "file": "src/normalize.js",
+      "live": "untold.filter((must) => !headed.some((id) => naming(id, must)));",
+      "dead": "untold;",
+      "expect": [
+        "a headline already naming that must is left as chosen"
+      ]
+    },
+    "Headline: a must no title names is said": {
+      "file": "src/normalize.js",
+      "live": "if (title && index === 0 && free) {",
       "dead": "if (true) {",
       "expect": [
-        "the report lists the instructions of the offer as not applied, only when there are some"
+        "a must met only through a hidden skill that no title names is reported as absent from the page"
       ]
     },
-    "Instructions: the report says the CV is built from the profile only": {
-      "file": "src/report.js",
-      "live": "follow them yourself if you apply.",
-      "dead": "follow them if you apply.",
+    "Headline: a must the picked text names is on the page": {
+      "file": "src/normalize.js",
+      "live": "musts.filter((must) => !must.names.some((name) => mentions(shownText, name)));",
+      "dead": "musts;",
       "expect": [
-        "the report lists the instructions of the offer as not applied, only when there are some"
+        "a must the picked bullets already name leaves the headline as chosen"
       ]
     },
-    "Instructions: the report section is titled": {
-      "file": "src/report.js",
-      "live": "'## Instructions in the offer — not applied'",
-      "dead": "'## Instructions'",
+    "Headline: a title naming another hidden must stays": {
+      "file": "src/normalize.js",
+      "live": "(headed.length === 2 && !untold.some((must) => naming(headed[1], must)))",
+      "dead": "headed.length === 2",
       "expect": [
-        "the report lists the instructions of the offer as not applied, only when there are some"
+        "a title naming one hidden must is not pushed out for another"
+      ]
+    },
+    "Headline: only a must met through hidden skills": {
+      "file": "src/normalize.js",
+      "live": ".filter((requirement) => requirement.skills.every((id) => hidden.has(skills.get(id)?.group)))",
+      "dead": ".filter(() => true)",
+      "expect": [
+        "a must met through a visible skill never takes the headline: the skills column is its place"
+      ]
+    },
+    "Pipeline: the retry says what was wrong": {
+      "file": "src/pipeline.js",
+      "live": "current = retryPrompt(prompt, text, errors);",
+      "dead": "current = prompt;",
+      "expect": [
+        "an invalid answer is sent back once with its errors, and a valid retry is accepted"
+      ]
+    },
+    "Pipeline: one retry": {
+      "file": "src/pipeline.js",
+      "live": "export const MAX_ATTEMPTS = 2;",
+      "dead": "export const MAX_ATTEMPTS = 1;",
+      "expect": [
+        "an invalid answer is sent back once with its errors, and a valid retry is accepted"
+      ]
+    },
+    "Pipeline: an invalid answer is never accepted": {
+      "file": "src/pipeline.js",
+      "live": "if (errors.length === 0) return",
+      "dead": "if (errors.length >= 0) return",
+      "expect": [
+        "an answer still invalid after the retry is refused, not rendered",
+        "itsacv tailor writes no CV when the answer stays invalid"
+      ]
+    },
+    "Raw: every call is recorded": {
+      "file": "src/pipeline.js",
+      "live": "calls.push({ step, backend: answer.backend, text: answer.text });",
+      "dead": "void calls;",
+      "expect": [
+        "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
+    },
+    "Raw: the analysis calls are labelled": {
+      "file": "src/pipeline.js",
+      "live": "  step = 'analysis';",
+      "dead": "  step = 'listing';",
+      "expect": [
+        "itsacv tailor keeps every raw model answer, in call order, in raw.json"
+      ]
+    },
+    "Red team: checks read the canonical text": {
+      "file": "src/text.js",
+      "live": "return String(text ?? '').normalize('NFKC').replace(/[\\p{Cf}\\p{Default_Ignorable_Code_Point}]/gu, '');",
+      "dead": "return String(text ?? '');",
+      "expect": [
+        "a never-claimed skill written with a lookalike letter or an invisible character is still refused"
+      ]
+    },
+    "Red team: no letter from another alphabet": {
+      "file": "src/guard.js",
+      "live": "['a letter from another alphabet', /(?=\\p{L})\\P{Script=Latin}/u],",
+      "dead": "['a letter from another alphabet', /(?!)/],",
+      "expect": [
+        "a never-claimed skill written with a lookalike letter or an invisible character is still refused"
+      ]
+    },
+    "Red team: format characters are refused": {
+      "file": "src/guard.js",
+      "live": ".join('')}]|\\\\p{Cf}|\\\\p{Default_Ignorable_Code_Point}`, 'u');",
+      "dead": ".join('')}]`, 'u');",
+      "expect": [
+        "a never-claimed skill written with a lookalike letter or an invisible character is still refused"
+      ]
+    },
+    "Red team: the guard reads the folded text": {
+      "file": "src/guard.js",
+      "live": "pattern.test(what === 'a control character' ? text : what === 'a link' ? unlinked : folded)",
+      "dead": "pattern.test(text)",
+      "expect": [
+        "a never-claimed skill written with a lookalike letter or an invisible character is still refused"
+      ]
+    },
+    "Red team: a named requirement is met by that skill alone": {
+      "file": "src/normalize.js",
+      "live": "requirement.skills.length !== 1 || requirement.skills[0] !== named",
+      "dead": "!requirement.skills.includes(named)",
+      "expect": [
+        "a lab-only requirement stays half credit when the model pads it with other skills"
+      ]
+    },
+    "Red team: a never-claimed item the offer names is counted": {
+      "file": "src/normalize.js",
+      "live": "if (!names.some((name) => mentions(offer, name))) continue;",
+      "dead": "continue;",
+      "expect": [
+        "a never-claimed item the offer names counts, even when the model leaves it out"
+      ]
+    },
+    "Red team: a requirement must be stated in the offer": {
+      "file": "src/normalize.js",
+      "live": "if (statedIn(offer, String(requirement.name ?? ''))) return true;",
+      "dead": "return true;",
+      "expect": [
+        "a requirement the offer never states is dropped, and brings nothing onto the CV"
+      ]
+    },
+    "Red team: an inflected word of the offer states it": {
+      "file": "src/text.js",
+      "live": "return wordsOf(name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).some((word) => stems.has(stem(word)));",
+      "dead": "return false;",
+      "expect": [
+        "a requirement the offer never states is dropped, and brings nothing onto the CV"
+      ]
+    },
+    "Red team: repeated rows count once": {
+      "file": "src/normalize.js",
+      "live": "if (!kept) return merged.set(key, { row: requirement, count: 1 });",
+      "dead": "return merged.set(Symbol(key), { row: requirement, count: 1 });",
+      "expect": [
+        "repeated requirement rows count once",
+        "of two rows for one requirement, the stricter match is kept"
+      ]
+    },
+    "Red team: the stricter row is kept": {
+      "file": "src/normalize.js",
+      "live": "if (STRICTNESS[requirement.match] < STRICTNESS[kept.row.match]) kept.row",
+      "dead": "if (false) kept.row",
+      "expect": [
+        "of two rows for one requirement, the stricter match is kept"
+      ]
+    },
+    "Red team: a skill stays with its missions in the free text": {
+      "file": "src/analysis.js",
+      "live": "if (!skill.where.includes(id)) errors.push(`${label}: ${skill.name} is tied to",
+      "dead": "if (false) errors.push(`${label}: ${skill.name} is tied to",
+      "expect": [
+        "a skill may not be tied in the free text to a mission that never used it"
+      ]
+    },
+    "Red team: the longer organisation name is the one meant": {
+      "file": "src/analysis.js",
+      "live": "const at = found.filter((org) => !found.some((other) => other.name.length > org.name.length && mentions(other.name, org.name)));",
+      "dead": "const at = found;",
+      "expect": [
+        "a skill may not be tied in the free text to a mission that never used it"
+      ]
+    },
+    "Layout: at most six shown groups": {
+      "file": "src/normalize.js",
+      "live": "if (hidden.has(choice.id) || kept.has(choice.id)) return true;",
+      "dead": "return true;",
+      "expect": [
+        "the skills column holds at most six groups of six skills, those meeting a requirement first"
+      ]
+    },
+    "Layout: at most six skills per group": {
+      "file": "src/normalize.js",
+      "live": "if (!hidden.has(choice.id) && ordered.length > MAX_GROUP_SKILLS) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the skills column holds at most six groups of six skills, those meeting a requirement first"
+      ]
+    },
+    "Layout: skills meeting a requirement come first": {
+      "file": "src/normalize.js",
+      "live": "const ordered = [...choice.skills.filter((id) => met.has(id)), ...choice.skills.filter((id) => !met.has(id))];",
+      "dead": "const ordered = [...choice.skills];",
+      "expect": [
+        "the skills column holds at most six groups of six skills, those meeting a requirement first"
+      ]
+    },
+    "Real run: a requirement is met only through a skill named for it": {
+      "file": "src/normalize.js",
+      "live": "&& known.length > 0 && held.length === 0 && !grounded(asked(requirement.name), known.map((id) => skills.get(id)))) {",
+      "dead": "&& known.length > 0 && held.length === 0 && false) {",
+      "expect": [
+        "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
+      ]
+    },
+    "Red team: default-ignorable marks are folded away": {
+      "file": "src/text.js",
+      "live": "\\p{Default_Ignorable_Code_Point}]/gu, '');",
+      "dead": "]/gu, '');",
+      "expect": [
+        "an invisible combining mark does not hide a never-claimed skill"
+      ]
+    },
+    "Red team: numbers in words come from the profile": {
+      "file": "src/guard.js",
+      "live": "if (/^\\d/.test(word) || NUMBER_WORDS.has(key)) {",
+      "dead": "if (/^\\d/.test(word)) {",
+      "expect": [
+        "a number written in words must come from the profile too"
+      ]
+    },
+    "Red team: summary sentences are strings": {
+      "file": "src/analysis.js",
+      "live": "need(typeof sentence === 'string', `summary ${i + 1} is not a sentence`)",
+      "dead": "need(true, `summary ${i + 1} is not a sentence`)",
+      "expect": [
+        "summary sentences are strings and importance is must or nice"
+      ]
+    },
+    "Red team: importance is must or nice": {
+      "file": "src/normalize.js",
+      "live": "if (requirement.importance !== 'must' && requirement.importance !== 'nice') {",
+      "dead": "if (false) {",
+      "expect": [
+        "summary sentences are strings and importance is must or nice"
+      ]
+    },
+    "Real run: a lab-only claim in the summary says so": {
+      "file": "src/analysis.js",
+      "live": "if (named) errors.push(`summary ${i + 1}: ${named} is practised in the lab only",
+      "dead": "if (false) errors.push(`summary ${i + 1}: ${named} is practised in the lab only",
+      "expect": [
+        "a summary sentence naming what only the lab covers says it comes from the lab or R&D"
+      ]
+    },
+    "Closed: the headline is the profile's titles": {
+      "file": "src/normalize.js",
+      "live": "analysis.headline = headed.map((id) => titles.get(id)[lang]).join(' \u00b7 ');",
+      "dead": "void headed;",
+      "expect": [
+        "the headline and the summary are the profile's own titles and facts, chosen by id; the model's free text is dropped"
+      ]
+    },
+    "Closed: the summary is the profile's facts, each once": {
+      "file": "src/normalize.js",
+      "live": "const pick = (ids, known, max) => [...new Set(Array.isArray(ids) ? ids : [])]",
+      "dead": "const pick = (ids, known, max) => [...(Array.isArray(ids) ? ids : [])]",
+      "expect": [
+        "unknown or missing ids are refused, not replaced by free text"
+      ]
+    },
+    "Closed: missing ids are refused": {
+      "file": "src/analysis.js",
+      "live": "need(analysis.headline !== '', 'headline_ids: none of them is a profile title');",
+      "dead": "void 0;",
+      "expect": [
+        "unknown or missing ids are refused, not replaced by free text"
+      ]
+    },
+    "Rules: normalisation scores with the lab skills": {
+      "file": "src/normalize.js",
+      "live": "const score = scoreOf(analysis.requirements ?? [], { lab });",
+      "dead": "const score = scoreOf(analysis.requirements ?? []);",
+      "expect": [
+        "a requirement met by lab skills only counts half"
+      ]
+    },
+    "Rules: a never-claimed requirement stays no": {
+      "file": "src/normalize.js",
+      "live": "if (isNever(requirement, profile.never)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a never-claimed skill stays a gap and may not be written"
+      ]
+    },
+    "Rules: normalisation says why a short or R&D bullet went": {
+      "file": "src/normalize.js",
+      "live": "if (kindOf(experience) === 'main') continue;",
+      "dead": "continue;",
+      "expect": [
+        "short missions and R&D projects appear only when they back a matched requirement"
+      ]
+    },
+    "Rules: the fit carries the qualification": {
+      "file": "src/normalize.js",
+      "live": "qualification: qualification(analysis.requirements ?? [], { lab, never: profile.never }),",
+      "dead": "qualification: undefined,",
+      "expect": [
+        "the normalised fit carries the qualification",
+        "the report states the qualification and what older CVs named that the profile lacks"
+      ]
+    },
+    "Rules: a never-claimed name may not be written": {
+      "file": "src/analysis.js",
+      "live": "if (named) errors.push(`the headline or summary claims ${named}, which the profile says",
+      "dead": "if (false) errors.push(`the headline or summary claims ${named}, which the profile says",
+      "expect": [
+        "a never-claimed skill stays a gap and may not be written"
+      ]
+    },
+    "Summary: the hook is the first hook listed, not the first id": {
+      "file": "src/normalize.js",
+      "live": "const hook = listed.find((id) => facts.get(id).kind === 'hook');",
+      "dead": "const hook = listed[0];",
+      "expect": [
+        "the summary is one hook, the first one listed, and at most one supporting fact; a note never prints",
+        "an answer whose summary names no hook is refused, so the model gets its one retry"
+      ]
+    },
+    "Summary: no hook, no summary": {
+      "file": "src/normalize.js",
+      "live": "analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
+      "dead": "analysis.summary = [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]);",
+      "expect": [
+        "an answer whose summary names no hook is refused, so the model gets its one retry"
+      ]
+    },
+    "Summary: notes, extra hooks and extra facts never print": {
+      "file": "src/normalize.js",
+      "live": "analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
+      "dead": "analysis.summary = hook ? listed.map((id) => facts.get(id)[lang]) : [];",
+      "expect": [
+        "the summary is one hook, the first one listed, and at most one supporting fact; a note never prints"
+      ]
+    },
+    "Summary: validation refuses an answer without a hook": {
+      "file": "src/analysis.js",
+      "live": "need(analysis.summary.length > 0, 'summary_ids: no hook among them",
+      "dead": "need(true, 'summary_ids: no hook among them",
+      "expect": [
+        "an answer whose summary names no hook is refused, so the model gets its one retry",
+        "unknown or missing ids are refused, not replaced by free text"
+      ]
+    },
+    "Quality: a requirement named with a quality word is set apart": {
+      "file": "src/normalize.js",
+      "live": "if (isQuality(requirement, profile)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Quality: a run of quality words names a quality": {
+      "file": "src/text.js",
+      "live": "return words.some((_, i) => starts.every((start, j) => words[i + j]?.startsWith(start)));",
+      "dead": "return words.some((word) => word.startsWith(entry));",
+      "expect": [
+        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+      ]
+    },
+    "Quality: a product name keeps a requirement scored": {
+      "file": "src/normalize.js",
+      "live": "!/\\p{N}|[\\p{L}\\p{N}]\\p{Lu}/u.test(name) && ",
+      "dead": "",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Quality: a never-claimed item keeps a requirement scored": {
+      "file": "src/normalize.js",
+      "live": "if (isNever(requirement, profile.never)) return false;",
+      "dead": "if (false) return false;",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Quality: a profile skill keeps a requirement scored": {
+      "file": "src/normalize.js",
+      "live": "return !profile.skills.some((skill) => skillNames(skill).some((named) => mentions(name, named)));",
+      "dead": "return true;",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Quality: the model's label is not trusted": {
+      "file": "src/normalize.js",
+      "live": "    delete requirement.kind;\n",
+      "dead": "",
+      "expect": [
+        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+      ]
+    },
+    "Examples: an enumeration's rows are united": {
+      "file": "src/normalize.js",
+      "live": "for (const index of named.slice(1)) parent[root(index)] = root(named[0]);",
+      "dead": "for (const index of named.slice(1)) void index;",
+      "expect": [
+        "examples the offer lists in parentheses are one requirement, met by its best example",
+        "a never-claimed example is reported as such, not counted as a must-have of its own when another example is met"
+      ]
+    },
+    "Examples: one item or prose is no enumeration": {
+      "file": "src/text.js",
+      "live": "return items.length >= 2 && items.every((item) => item.split(/\\s+/).length <= EXAMPLE_WORDS);",
+      "dead": "return items.length >= 1;",
+      "expect": [
+        "a parenthesis holding one item or prose merges nothing"
+      ]
+    },
+    "Examples: the merged row is met as its best example": {
+      "file": "src/normalize.js",
+      "live": "const best = members.reduce((kept, row) => (strength(row) > strength(kept) ? row : kept));",
+      "dead": "const best = members[members.length - 1];",
+      "expect": [
+        "examples the offer lists in parentheses are one requirement, met by its best example"
+      ]
+    },
+    "Listing: a failed call fails the run": {
+      "file": "src/listing.js",
+      "live": "  const { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });\n  try {",
+      "dead": "  try {\n    var { text } = await llm({ system: LISTING_SYSTEM, prompt: listingPrompt(offer), ...(structured ? { schema: LISTING_SCHEMA } : {}) });",
+      "expect": [
+        "a failed listing call fails the run; only an unreadable answer lists nothing"
+      ]
+    },
+    "Quality: learning fast is a quality": {
+      "file": "src/text.js",
+      "live": "    'monter rapidement', 'nouveaux sujets', 'mont\u00e9e comp\u00e9tence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact'])",
+      "dead": "    ])",
+      "expect": [
+        "learning fast is a personal quality; machine learning stays a skill"
+      ]
+    },
+    "Judged: the model's reading keeps half credit": {
+      "file": "src/normalize.js",
+      "live": "      requirement.match = 'adjacent';\n      requirement.judged = true;",
+      "dead": "      requirement.match = 'no';\n      requirement.skills = [];",
+      "expect": [
+        "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
+      ]
+    },
+    "Quality: working in pairs is a quality": {
+      "file": "src/text.js",
+      "live": "  .concat(['bin\u00f4m', 'binom', 'pair work']);",
+      "dead": ";",
+      "expect": [
+        "working in pairs is a personal quality, never a failed requirement"
+      ]
+    },
+    "Condition: an unstated administrative condition is to confirm": {
+      "file": "src/normalize.js",
+      "live": "if (requirement.kind !== 'quality' && requirement.match === 'no' && isCondition(requirement, profile)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart"
+      ]
+    },
+    "Listing: a name heading a row before its parenthesis is that row": {
+      "file": "src/listing.js",
+      "live": " && !heads.has(item.name.toLowerCase())",
+      "dead": "",
+      "expect": [
+        "a listed name that heads an analysed row before its parenthesis is that row"
+      ]
+    },
+    "Parts: every part naming a profile skill meets the requirement": {
+      "file": "src/normalize.js",
+      "live": "const parts = named ? null : partsNamed(requirement.name, byIdentity);",
+      "dead": "const parts = null;",
+      "expect": [
+        "a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is"
+      ]
+    },
+    "Parts: a term does not name a part": {
+      "file": "src/normalize.js",
+      "live": "    for (const name of identityNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);",
+      "dead": "    for (const name of skillNames(skill)) if (!byIdentity.has(name)) byIdentity.set(name, skill.id);",
+      "expect": [
+        "a part named only by a skill term does not meet the requirement"
+      ]
+    },
+    "Parts: one unnamed part leaves the requirement": {
+      "file": "src/normalize.js",
+      "live": "return ids.length && ids.every(Boolean) ? [...new Set(ids)] : null;",
+      "dead": "return ids.some(Boolean) ? [...new Set(ids.filter(Boolean))] : null;",
+      "expect": [
+        "a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is"
+      ]
+    },
+    "Stem: endings, not a prefix": {
+      "file": "src/text.js",
+      "live": "return found ? root.slice(0, -found[0].length) + found[1] : root;",
+      "dead": "return word.slice(0, 6);",
+      "expect": [
+        "stem: product and production are two words",
+        "a requirement \"Product ownership\" is not stated by an offer that says production"
+      ]
+    },
+    "Stem: a double s is no plural": {
+      "file": "src/text.js",
+      "live": "const root = word.length > MIN_ROOT && word.endsWith('s') && !word.endsWith('ss') ? word.slice(0, -1) : word;",
+      "dead": "const root = word.length > MIN_ROOT && word.endsWith('s') ? word.slice(0, -1) : word;",
+      "expect": [
+        "stem: process and processes are one word"
+      ]
+    },
+    "Stem: a root keeps four letters": {
+      "file": "src/text.js",
+      "live": "const MIN_ROOT = 4;",
+      "dead": "const MIN_ROOT = 1;",
+      "expect": [
+        "stem: a short root is never cut below four letters"
+      ]
+    },
+    "Stem: -ation and -ated meet at -at": {
+      "file": "src/text.js",
+      "live": "['ated', 'at']",
+      "dead": "['ated', '']",
+      "expect": [
+        "stem: automation and automated are one word"
       ]
     }
   }

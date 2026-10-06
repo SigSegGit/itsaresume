@@ -1,0 +1,206 @@
+{
+  "surface": "public",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "files": [
+    "src/evidence.js",
+    "src/guard.js",
+    "src/importance.js",
+    "src/intake.js",
+    "src/invites.js",
+    "src/lexicon.js",
+    "src/llm.js",
+    "src/normalize.js",
+    "src/profile.js",
+    "src/profiles.js",
+    "src/qa.js",
+    "src/score.js",
+    "src/server.js",
+    "src/tailor.js",
+    "src/text.js",
+    "src/view.js",
+    "test/importance.test.js",
+    "test/intake.test.js",
+    "test/invites.test.js",
+    "test/qa.test.js",
+    "test/server.test.js"
+  ],
+  "defences": {
+    "Intake: an offer holds several offer words": {
+      "file": "src/intake.js",
+      "live": "return [...OFFER_STEMS].filter((word) => stems.has(word)).length >= MIN_OFFER_WORDS;",
+      "dead": "return [...OFFER_STEMS].filter((word) => stems.has(word)).length >= 0;",
+      "expect": [
+        "a job offer is accepted; a question, a poem, code or an oversized text is not",
+        "a recruiter message is an offer: plurals, accents and a hiring verb count"
+      ]
+    },
+    "Intake: an offer has an offer size": {
+      "file": "src/intake.js",
+      "live": "if (clean.length < OFFER_CHARS.min || clean.length > OFFER_CHARS.max) return false;",
+      "dead": "",
+      "expect": [
+        "a job offer is accepted; a question, a poem, code or an oversized text is not"
+      ]
+    },
+    "Intake: mostly letters": {
+      "file": "src/intake.js",
+      "live": "if (letters / clean.replace(/\\s/g, '').length < MIN_LETTERS) return false;",
+      "dead": "",
+      "expect": [
+        "a job offer is accepted; a question, a poem, code or an oversized text is not"
+      ]
+    },
+    "Intake: only close offers are the same": {
+      "file": "src/intake.js",
+      "live": ".filter((run) => similarity(offer, run.offer) >= SAME_OFFER);",
+      "dead": ".filter(() => true);",
+      "expect": [
+        "a reusable run is the closest well-rated one; a run rated below 3 is never reused"
+      ]
+    },
+    "Intake: a run rated below 3 is never reused": {
+      "file": "src/intake.js",
+      "live": ".filter((run) => (run.quality ?? MIN_REUSED_QUALITY) >= MIN_REUSED_QUALITY)",
+      "dead": ".filter(() => true)",
+      "expect": [
+        "a reusable run is the closest well-rated one; a run rated below 3 is never reused"
+      ]
+    },
+    "Intake: the best rated run first": {
+      "file": "src/intake.js",
+      "live": "candidates.sort((a, b) => (b.quality ?? MIN_REUSED_QUALITY) - (a.quality ?? MIN_REUSED_QUALITY) || b.name.localeCompare(a.name));",
+      "dead": "",
+      "expect": [
+        "a reusable run is the closest well-rated one; a run rated below 3 is never reused"
+      ]
+    },
+    "Intake: similarity counts shared words": {
+      "file": "src/intake.js",
+      "live": "return shared / (left.size + right.size - shared);",
+      "dead": "return 1;",
+      "expect": [
+        "the same offer, reformatted or with a changed date, is recognised; another offer is not"
+      ]
+    },
+    "Intake: offer words compared by stem, without accents": {
+      "file": "src/intake.js",
+      "live": "const plain = (word) => stem(word).normalize('NFD').replace(/\\p{M}/gu, '');",
+      "dead": "const plain = (word) => word;",
+      "expect": [
+        "a recruiter message is an offer: plurals, accents and a hiring verb count"
+      ]
+    },
+    "Invite: a revoked code names nobody": {
+      "file": "src/invites.js",
+      "live": "return invite && !invite.revoked && typeof invite.label === 'string' ? invite.label : null;",
+      "dead": "return invite && typeof invite.label === 'string' ? invite.label : null;",
+      "expect": [
+        "an unknown or revoked code is no invitation",
+        "with --invite-only a job needs a live invitation: none, or a revoked one, is 403",
+        "an invitation is revoked by its label or its code; a revoked or unknown code names nobody"
+      ]
+    },
+    "Invite: a label is checked": {
+      "file": "src/invites.js",
+      "live": "if (!clean || clean.length > LABEL_MAX || /[\\u0000-\\u001f\\u007f]/.test(clean)) {",
+      "dead": "if (!clean) {",
+      "expect": [
+        "a label is a short line of text: empty, too long or with control characters is refused"
+      ]
+    },
+    "Invite: the file is the owner's alone": {
+      "file": "src/invites.js",
+      "live": "  chmodSync(temporary, 0o600);",
+      "dead": "  chmodSync(temporary, 0o644);",
+      "expect": [
+        "an invitation is a fresh 24-hex code naming its label, kept in invites.json for the owner alone",
+        "invites.json is 0600 even over a stale world-readable temporary file"
+      ]
+    },
+    "Invite: revoked by label too": {
+      "file": "src/invites.js",
+      "live": "if ((code === which || invite.label === which) && !invite.revoked) {",
+      "dead": "if (code === which && !invite.revoked) {",
+      "expect": [
+        "an invitation is revoked by its label or its code; a revoked or unknown code names nobody",
+        "itsacv invite prints the link, --list shows each one, --revoke ends it"
+      ]
+    },
+    "Invite usage: read tokens include the cache writes": {
+      "file": "src/invites.js",
+      "live": "total.read += count('input') + count('cache_read') + count('cache_creation');",
+      "dead": "total.read += count('input') + count('cache_read');",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: reused jobs are said apart": {
+      "file": "src/invites.js",
+      "live": "if (entry.reused) sum.reused += 1;",
+      "dead": "if (entry.reused && false) sum.reused += 1;",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite usage: anonymous jobs are listed too": {
+      "file": "src/invites.js",
+      "live": "if (byInvite.has(null)) labels.push(null);",
+      "dead": "if (byInvite.has(null) && false) labels.push(null);",
+      "expect": [
+        "usage per invitation: jobs and tokens per backend, from the QA log; anonymous jobs apart"
+      ]
+    },
+    "Invite: a live label is unique": {
+      "file": "src/invites.js",
+      "live": "if (Object.values(invites).some((invite) => invite.label === clean && !invite.revoked)) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a live label is unique: a second invitation with it is refused until the first is revoked"
+      ]
+    },
+    "Profile: a reuse never crosses profiles": {
+      "file": "src/intake.js",
+      "live": ".filter((run) => (run.profile ?? DEFAULT_PROFILE) === profile)",
+      "dead": ".filter((run) => (run.profile ?? DEFAULT_PROFILE) === profile || true)",
+      "expect": [
+        "a reused run is one of the same profile; a run without one is the owner's"
+      ]
+    },
+    "Profile: a run without run.json is the owner's": {
+      "file": "src/intake.js",
+      "live": "  } catch {\n    return DEFAULT_PROFILE;\n  }",
+      "dead": "  } catch {\n    return 'nobody';\n  }",
+      "expect": [
+        "a reused run is one of the same profile; a run without one is the owner's"
+      ]
+    },
+    "QA: every call of a run goes to the chosen backend": {
+      "file": "src/qa.js",
+      "live": "return (call) => llm({ ...call, backend });",
+      "dead": "return (call) => llm(call);",
+      "expect": [
+        "a chosen model goes with every call to the router; auto sends none"
+      ]
+    },
+    "QA: claude and local name the router backends": {
+      "file": "src/qa.js",
+      "live": "claude: 'claude-code', local: 'lm-studio' };",
+      "dead": "claude: undefined, local: undefined };",
+      "expect": [
+        "auto lets the router choose; claude and local name its backends"
+      ]
+    },
+    "QA: the log appends": {
+      "file": "src/qa.js",
+      "live": "appendFileSync(join(out, QA_LOG),",
+      "dead": "writeFileSync(join(out, QA_LOG),",
+      "expect": [
+        "each run appends one JSON line to the QA log, never rewriting it"
+      ]
+    }
+  }
+}

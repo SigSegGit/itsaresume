@@ -1,0 +1,290 @@
+{
+  "surface": "billing",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "files": [
+    "src/analysis.js",
+    "src/ats.js",
+    "src/evidence.js",
+    "src/fit.js",
+    "src/guard.js",
+    "src/importance.js",
+    "src/instructions.js",
+    "src/intake.js",
+    "src/invites.js",
+    "src/language.js",
+    "src/lexicon.js",
+    "src/libre.js",
+    "src/listing.js",
+    "src/llm.js",
+    "src/models.js",
+    "src/normalize.js",
+    "src/pipeline.js",
+    "src/profile.js",
+    "src/profiles.js",
+    "src/prompt.js",
+    "src/qa.js",
+    "src/render.js",
+    "src/report.js",
+    "src/run.js",
+    "src/score.js",
+    "src/serve.js",
+    "src/server.js",
+    "src/split.js",
+    "src/tailor.js",
+    "src/text.js",
+    "src/view.js",
+    "src/wake.js",
+    "src/word.js",
+    "test/client.test.js",
+    "test/models.test.js",
+    "test/pipeline.test.js",
+    "test/serve-contract.test.js",
+    "test/wake.test.js"
+  ],
+  "defences": {
+    "Contract: another major is refused": {
+      "file": "src/llm.js",
+      "live": "if (major !== undefined && Number(major) === CONTRACT_MAJOR) return null;",
+      "dead": "if (major !== undefined || true) return null;",
+      "expect": [
+        "an answer whose contract major is not the client's is refused, naming both"
+      ]
+    },
+    "Contract: the check comes before the answer is read": {
+      "file": "src/llm.js",
+      "live": "          if (problem) reject(new Error(problem));",
+      "dead": "          if (problem && response.statusCode < 200) reject(new Error(problem));",
+      "expect": [
+        "an answer whose contract major is not the client's is refused, naming both"
+      ]
+    },
+    "Contract: serve() stops at start on another major": {
+      "file": "src/serve.js",
+      "live": "  if (problem) throw new Error(problem);",
+      "dead": "  if (problem && false) throw new Error(problem);",
+      "expect": [
+        "serve() refuses to start on a router speaking another contract major, naming both"
+      ]
+    },
+    "Contract: no contract key is a router older than the field": {
+      "file": "src/llm.js",
+      "live": "if (!('contract' in parsed)) return null;",
+      "dead": "if (!('contract' in parsed) && false) return null;",
+      "expect": [
+        "an answer without contract, or with a newer minor, is read as contract 1"
+      ]
+    },
+    "Contract: a newer minor is the same contract": {
+      "file": "src/llm.js",
+      "live": "/^(\\d+)\\.\\d+$/.exec(parsed.contract)?.[1]",
+      "dead": "/^(\\d+)\\.0$/.exec(parsed.contract)?.[1]",
+      "expect": [
+        "an answer without contract, or with a newer minor, is read as contract 1"
+      ]
+    },
+    "Models: the local model down is unavailable": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'down') return { available: false, note: 'portable \u00e9teint ou hors ligne' };",
+      "dead": "if (backend.state === 'down') return { available: true, note: 'portable \u00e9teint ou hors ligne' };",
+      "expect": [
+        "the local model down is unavailable, said plainly, and auto takes the default"
+      ]
+    },
+    "Models: Claude at its limit pauses for an hour": {
+      "file": "src/models.js",
+      "live": "if (now - since < LIMIT_PAUSE_S)",
+      "dead": "if (now - since < 0)",
+      "expect": [
+        "Claude at its limit is unavailable for an hour, then offered again with the time it was seen"
+      ]
+    },
+    "Models: Claude stopped is unavailable": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'stopped') return { available: false,",
+      "dead": "if (backend.state === 'stopped') return { available: true,",
+      "expect": [
+        "Claude stopped (logged out, a tripwire) is unavailable"
+      ]
+    },
+    "Models: no router offers nothing": {
+      "file": "src/models.js",
+      "live": "if (backends === null) {",
+      "dead": "if (backends === 0) {",
+      "expect": [
+        "no router at all offers nothing, and says so"
+      ]
+    },
+    "Models: serve() hands the menu to the page": {
+      "file": "src/serve.js",
+      "live": "models: modelMenu(up ? backends : null,",
+      "dead": "models: modelMenu(undefined,",
+      "expect": [
+        "serve() hands the page the menu from the router, without any router reason"
+      ]
+    },
+    "Models: Claude in light use is the default": {
+      "file": "src/models.js",
+      "live": "const chosen = (claude.available && light && 'claude') || (local.available && 'local') || fallback;",
+      "dead": "const chosen = (local.available && 'local') || fallback;",
+      "expect": [
+        "Claude in light use is the default; the local model up says whether it must load first"
+      ]
+    },
+    "Models: near its limit, the local model is the default": {
+      "file": "src/models.js",
+      "live": "[undefined, 'allowed'].includes(claudeBackend?.usage)",
+      "dead": "[undefined, 'allowed', 'allowed_warning'].includes(claudeBackend?.usage)",
+      "expect": [
+        "Claude near its limit gives the default to the local model"
+      ]
+    },
+    "Models: an awake laptop's sleeping model is offered": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'down' && awake)",
+      "dead": "if (backend.state === 'down' && false)",
+      "expect": [
+        "a laptop that is on but whose local model sleeps is offered, to be woken at sending"
+      ]
+    },
+    "Wake: a local job goes through the wake check": {
+      "file": "src/serve.js",
+      "live": "if (model === 'local') await ensureLocal(",
+      "dead": "if (false) await ensureLocal(",
+      "expect": [
+        "serve() runs a local job through the wake check"
+      ]
+    },
+    "Client: JSON content type": {
+      "file": "src/llm.js",
+      "live": "'Content-Type': 'application/json', 'Content-Length'",
+      "dead": "'Content-Type': 'text/plain', 'Content-Length'",
+      "expect": [
+        "the client posts JSON to /v1/complete and surfaces a router refusal"
+      ]
+    },
+    "Client: a refusal is an error": {
+      "file": "src/llm.js",
+      "live": "if (response.statusCode < 200 || response.statusCode >= 300) {",
+      "dead": "if (false) {",
+      "expect": [
+        "the client posts JSON to /v1/complete and surfaces a router refusal"
+      ]
+    },
+    "Client: its own timeout, not fetch's": {
+      "file": "src/llm.js",
+      "live": "}, timeoutMs);",
+      "dead": "}, timeoutMs * 10);",
+      "expect": [
+        "the client waits as long as its own timeout, and no longer"
+      ]
+    },
+    "Client: a backend name is sent only when asked": {
+      "file": "src/llm.js",
+      "live": "{ prompt, system, ...(backend ? { backend } : {}),",
+      "dead": "{ prompt, system,",
+      "expect": [
+        "the client names a backend only when asked (router 8.22)"
+      ]
+    },
+    "Client: a schema is sent only when asked": {
+      "file": "src/llm.js",
+      "live": "...(schema ? { schema } : {}), ...(kind",
+      "dead": "...(kind",
+      "expect": [
+        "the client sends a schema only when asked (router 8.24)"
+      ]
+    },
+    "Client: a call's kind reaches the router": {
+      "file": "src/llm.js",
+      "live": ", ...(kind ? { kind } : {}) });",
+      "dead": " });",
+      "expect": [
+        "a call marked classify sends its kind; an unmarked call sends none"
+      ]
+    },
+    "Client: a call without a kind sends none": {
+      "file": "src/llm.js",
+      "live": ", ...(kind ? { kind } : {}) });",
+      "dead": ", kind: kind ?? 'generate' });",
+      "expect": [
+        "a call marked classify sends its kind; an unmarked call sends none"
+      ]
+    },
+    "Profile: serve() loads the named profile's file": {
+      "file": "src/serve.js",
+      "live": "const path = profiles().get(profile);",
+      "dead": "const path = profiles().get(DEFAULT_PROFILE) ?? profiles().get(profile);",
+      "expect": [
+        "serve() tailors a job to the profile it names, from --profiles, and the run records it"
+      ]
+    },
+    "Client: a cut answer fails at once": {
+      "file": "src/llm.js",
+      "live": "          if (!ended) {",
+      "dead": "          if (false) {",
+      "expect": [
+        "a connection cut mid-answer is an error at once, not a wait for the timer"
+      ]
+    },
+    "Client: a refusal carries each backend's reason": {
+      "file": "src/llm.js",
+      "live": "${reason}${attemptsOf(parsed.error)}",
+      "dead": "${reason}",
+      "expect": [
+        "a router refusal carries each backend's own reason"
+      ]
+    },
+    "Tokens: the client keeps the router's usage": {
+      "file": "src/llm.js",
+      "live": "backend: parsed.backend, usage: parsed.usage ?? null });",
+      "dead": "backend: parsed.backend, usage: null });",
+      "expect": [
+        "the answer carries the tokens the router reported, null when it reports none"
+      ]
+    },
+    "Tokens: each count is added, not replaced": {
+      "file": "src/llm.js",
+      "live": "if (Number.isSafeInteger(count) && count > 0) sum[key] += count;",
+      "dead": "if (Number.isSafeInteger(count) && count > 0) sum[key] = count;",
+      "expect": [
+        "tokens are summed per backend; an answer without usage counts as a call only"
+      ]
+    },
+    "Tokens: every answer is a call, usage or not": {
+      "file": "src/llm.js",
+      "live": "sum.calls += 1;",
+      "dead": "sum.calls = 1;",
+      "expect": [
+        "tokens are summed per backend; an answer without usage counts as a call only"
+      ]
+    },
+    "Tokens: a counted call reports its answer": {
+      "file": "src/llm.js",
+      "live": "    onAnswer(answer);",
+      "dead": "    void onAnswer;",
+      "expect": [
+        "a counted model call hands each answer on, unchanged, after the model gave it"
+      ]
+    },
+    "Tokens: serve() counts the real pipeline's answers": {
+      "file": "src/serve.js",
+      "live": "llm: counted(withModel(llm, model), onAnswer),",
+      "dead": "llm: withModel(llm, model),",
+      "expect": [
+        "serve() writes each job's tokens per backend to the QA log, through the real pipeline"
+      ]
+    },
+    "Tokens: a backend name is a plain id": {
+      "file": "src/llm.js",
+      "live": "&& !['constructor', 'prototype'].includes(answer.backend) ? answer.backend : '?';",
+      "dead": "? answer.backend : '?';",
+      "expect": [
+        "a backend name that is no plain id is counted as \"?\", and never touches a prototype"
+      ]
+    }
+  }
+}

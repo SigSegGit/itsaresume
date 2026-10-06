@@ -10,8 +10,13 @@ cannot be stated in one sentence does not belong here — or in the code.
   merge commits so that order stays visible in `git log`.
 - **Sabotage-verified.** Every fallback and error test is listed in a plan
   under `scripts/sabotage/`, which names the line to break and the tests that
-  must go red. CI runs `scripts/sabotage.py` on every change: the column
-  *Sabotage* below names the defence in that plan. A test that passes with its
+  must go red. The plans are split by attack surface (8.46: `router-billing`,
+  `router-http`, `router-laptop`, `ci`, `deploy`; in `cv/` injection, guard,
+  public, http, billing, laptop, deploy, content), each naming in `files`
+  what its defences depend on. A pull request runs only the plans whose
+  files it touches (`scripts/sabotage-select.py`, never narrower than sure);
+  a push to `main` and a manual run (`workflow_dispatch`) run them all. The
+  column *Sabotage* below names the defence in its plan. A test that passes with its
   behaviour removed is decoration and is removed.
 - **Real data where it exists.** The Claude classifier is tested on CLI output
   captured on the real machine (`tests/fixtures/claude/observed-*`); the
@@ -192,6 +197,24 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `an_unknown_base_runs_both` | `scripts/test-ci-changes.sh` | No base sha: both groups (an empty base would diff HEAD with itself) | CI changes: an empty base runs both |
 | `a_new_branch_runs_both` | `scripts/test-ci-changes.sh` | A new branch (base all zeros): both groups | CI changes: a base git cannot diff runs both |
 | `a_base_git_cannot_diff_runs_both` | `scripts/test-ci-changes.sh` | A base git does not know: both groups | CI changes: a base git cannot diff runs both |
+| `a_crate_source_selects_every_plan_of_its_crate` | `scripts/test-sabotage-select.sh` | A router source runs every plan of its crate: their tests link the whole crate (8.46) | Select: a named file selects its plans |
+| `a_test_file_selects_every_plan_naming_it` | `scripts/test-sabotage-select.sh` | A test file two cv plans depend on runs both | Select: a named file selects its plans |
+| `a_cv_source_selects_its_cv_plan` | `scripts/test-sabotage-select.sh` | A cv source runs the cv plan naming it, from `cv/` | Select: a named file selects its plans |
+| `a_file_no_plan_names_runs_its_whole_tree` | `scripts/test-sabotage-select.sh` | A router file no plan names (helper, fixture, manifest): every root plan — never narrower than sure | Select: a file no plan names runs its whole tree |
+| `a_cv_file_no_plan_names_runs_all_cv` | `scripts/test-sabotage-select.sh` | The same under `cv/`: every cv plan | Select: a file no plan names runs its whole tree |
+| `docs_run_no_plan` | `scripts/test-sabotage-select.sh` | `docs/` or a `.md`: no plan | Select: docs run no plan |
+| `a_test_fixture_in_markdown_is_not_docs` | `scripts/test-sabotage-select.sh` | A `.md` under a test directory may be a fixture: every plan of its tree | Select: Markdown under a test directory is not docs |
+| `a_changed_plan_runs_itself` | `scripts/test-sabotage-select.sh` | A changed plan runs itself | Select: a changed plan runs itself |
+| `the_sabotage_script_runs_its_whole_tree` | `scripts/test-sabotage-select.sh` | A tree's `scripts/sabotage.py`: every plan of that tree | Select: a file no plan names runs its whole tree |
+| `a_workflow_change_runs_every_plan` | `scripts/test-sabotage-select.sh` | A workflow: every plan of both trees | Select: a workflow runs every plan |
+| `an_unknown_base_runs_every_plan` | `scripts/test-sabotage-select.sh` | No base (a push to main, a manual run): every plan, the full pass | Select: an empty base runs every plan |
+| `a_new_branch_runs_every_plan` | `scripts/test-sabotage-select.sh` | A base of zeros: every plan | Select: a base git cannot diff runs every plan |
+| `a_base_git_cannot_diff_runs_every_plan` | `scripts/test-sabotage-select.sh` | A base git does not know: every plan | Select: a base git cannot diff runs every plan |
+| `complete_plans_pass_the_check` | `scripts/test-sabotage-select.sh` | `--check` accepts plans naming each broken file and each test's file, a templated test name included | Check: a templated test name is found |
+| `a_plan_missing_its_broken_file_fails_the_check` | `scripts/test-sabotage-select.sh` | `--check` refuses a plan that forgets the file a defence breaks | Check: a file a plan forgets is reported |
+| `a_plan_missing_its_test_file_fails_the_check` | `scripts/test-sabotage-select.sh` | `--check` refuses a plan that forgets the test file holding a named test | Check: a file a plan forgets is reported; Check: the test files of a plan are its files |
+| `a_test_found_nowhere_fails_the_check` | `scripts/test-sabotage-select.sh` | `--check` refuses a named test found in no test file | Check: a test found nowhere is reported |
+| `a_plan_without_a_surface_fails_the_check` | `scripts/test-sabotage-select.sh` | `--check` refuses a plan without a surface | Check: a plan needs a surface |
 | `a_matrix_job_skipped_at_job_level_is_refused` | `scripts/test-check-workflow.sh` | A matrix job with a job-level `if` is refused: skipped, it reports one unexpanded name and the required per-OS checks never come (#85) | Workflow: a matrix job is never skipped at job level |
 | `step_conditions_and_plain_job_skips_pass` | `scripts/test-check-workflow.sh` | The same job with the condition on its steps, and a plain job skipped at job level, pass | Workflow: only a job-level if counts |
 | `a_new_commit_is_pulled_and_deployed` | `cv/deploy/vm-generator/test-auto-deploy.sh` | cv 3.5: a new commit on origin/main is fast-forwarded on the VM's checkout, then `docker compose ... up -d --build` runs | Auto-deploy: a new commit is deployed |

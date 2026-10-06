@@ -1,6 +1,11 @@
 {
+  "surface": "ci",
   "command": [
     "bash",
+    "scripts/test-check-workflow.sh"
+  ],
+  "files": [
+    "scripts/check-workflow.py",
     "scripts/test-check-workflow.sh"
   ],
   "defences": {

@@ -1,6 +1,11 @@
 {
+  "surface": "ci",
   "command": [
     "bash",
+    "scripts/test-merge-when-green.sh"
+  ],
+  "files": [
+    "scripts/merge-when-green.sh",
     "scripts/test-merge-when-green.sh"
   ],
   "defences": {

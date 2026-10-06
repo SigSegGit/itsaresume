@@ -7,6 +7,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # The full pass on demand, for a major step (8.46).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,18 +26,25 @@ jobs:
   # One workflow for the router and the generator (2026-10-06, was two):
   # this job says which group a change needs (scripts/ci-changes.sh); the
   # other group's jobs are skipped, which the required checks and
-  # scripts/merge-when-green.sh accept once this job passed.
+  # scripts/merge-when-green.sh accept once this job passed. It also says
+  # which sabotage plans a pull request touches (scripts/sabotage-select.py).
+  # A push to main and a manual run pass no base: everything runs, the full
+  # pass after each merge (8.46).
   changes:
     runs-on: ubuntu-latest
     outputs:
       rust: ${{ steps.diff.outputs.rust }}
       cv: ${{ steps.diff.outputs.cv }}
+      sabotage_root: ${{ steps.diff.outputs.sabotage_root }}
+      sabotage_cv: ${{ steps.diff.outputs.sabotage_cv }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: diff
-        run: bash scripts/ci-changes.sh "${{ github.event.pull_request.base.sha || github.event.before }}" >> "$GITHUB_OUTPUT"
+        run: |
+          bash scripts/ci-changes.sh "${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+          python3 scripts/sabotage-select.py "${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
 
   fmt:
     needs: changes
@@ -97,16 +106,17 @@ jobs:
 
   # Each fallback/error test must go red when the behaviour it guards is
   # removed. Doing this in CI turns "sabotage-verified" from a claim made once
-  # into a property checked on every change (docs/TESTING.md).
+  # into a property checked on every change (docs/TESTING.md). Only the
+  # plans whose files the change touches (the changes job).
   sabotage:
     needs: changes
-    if: needs.changes.outputs.rust == 'true'
+    if: needs.changes.outputs.sabotage_root != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: python3 scripts/sabotage.py
+      - run: python3 scripts/sabotage.py ${{ needs.changes.outputs.sabotage_root }}
 
   # The image, with the real claude CLI inside: see scripts/docker-smoke.sh
   # for what each check proves.
@@ -129,6 +139,8 @@ jobs:
       - run: python3 scripts/check-testing.py
       - run: bash scripts/test-merge-when-green.sh
       - run: bash scripts/test-ci-changes.sh
+      - run: bash scripts/test-sabotage-select.sh
+      - run: python3 scripts/sabotage-select.py --check
       - run: python3 scripts/check-workflow.py
       - run: bash scripts/test-check-workflow.sh
       - run: bash cv/deploy/vm-generator/test-auto-deploy.sh
@@ -182,10 +194,11 @@ jobs:
       - run: python -m unittest discover -q -s tools -p "test_*.py"
 
   # Break each defence in scripts/sabotage/*.json, check its tests go red,
-  # restore it byte for byte. A test that stays green is decoration.
+  # restore it byte for byte. A test that stays green is decoration. Only the
+  # plans whose files the change touches (the changes job).
   cv-sabotage:
     needs: changes
-    if: needs.changes.outputs.cv == 'true'
+    if: needs.changes.outputs.sabotage_cv != ''
     defaults:
       run:
         working-directory: cv
@@ -201,4 +214,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
-      - run: python scripts/sabotage.py
+      - run: python scripts/sabotage.py ${{ needs.changes.outputs.sabotage_cv }}

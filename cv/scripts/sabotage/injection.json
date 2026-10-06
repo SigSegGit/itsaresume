@@ -1,0 +1,348 @@
+{
+  "surface": "injection",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "files": [
+    "src/analysis.js",
+    "src/ats.js",
+    "src/evidence.js",
+    "src/fit.js",
+    "src/guard.js",
+    "src/importance.js",
+    "src/instructions.js",
+    "src/intake.js",
+    "src/invites.js",
+    "src/language.js",
+    "src/lexicon.js",
+    "src/libre.js",
+    "src/listing.js",
+    "src/llm.js",
+    "src/models.js",
+    "src/normalize.js",
+    "src/pipeline.js",
+    "src/profile.js",
+    "src/profiles.js",
+    "src/prompt.js",
+    "src/qa.js",
+    "src/render.js",
+    "src/report.js",
+    "src/run.js",
+    "src/score.js",
+    "src/serve.js",
+    "src/server.js",
+    "src/split.js",
+    "src/tailor.js",
+    "src/text.js",
+    "src/view.js",
+    "src/wake.js",
+    "src/word.js",
+    "test/closed.test.js",
+    "test/fixtures/injected.js",
+    "test/fixtures/v4.js",
+    "test/guard.test.js",
+    "test/honesty.test.js",
+    "test/instructions.test.js",
+    "test/pipeline.test.js",
+    "test/rules.test.js",
+    "test/split.test.js"
+  ],
+  "defences": {
+    "Injection: the analysis prompt fences the offer": {
+      "file": "src/prompt.js",
+      "live": "lines.push('', ...fence(offer), '');",
+      "dead": "lines.push('', 'OFFER', '<<<', offer.trim(), '>>>', '');",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Injection: the analysis system prompt says the offer is untrusted": {
+      "file": "src/prompt.js",
+      "live": "Tone: direct, operational, senior.\n\n${UNTRUSTED}`;",
+      "dead": "Tone: direct, operational, senior.`;",
+      "expect": [
+        "the offer is fenced by a marker it cannot guess"
+      ]
+    },
+    "Instructions: French '\u00e9crivez le mot'": {
+      "file": "src/instructions.js",
+      "live": "<(?:\u00e9cri(?:s|vez|re)|inscri",
+      "dead": "<(?:x\u00e9cri(?:s|vez|re)|inscri",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one",
+        "only the instruction sentence of a line is returned, not its neighbours"
+      ]
+    },
+    "Instructions: French 'mentionnez le code dans votre candidature'": {
+      "file": "src/instructions.js",
+      "live": "<(?:mentionne[zr]?|indique",
+      "dead": "<(?:xmentionne[zr]?|indique",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: French 'pour prouver que vous avez lu'": {
+      "file": "src/instructions.js",
+      "live": "<pour prouver (?:que|qu')",
+      "dead": "<xpour prouver (?:que|qu')",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: French 'ignorez vos instructions'": {
+      "file": "src/instructions.js",
+      "live": "<ignore[zrs]?",
+      "dead": "<xignore[zrs]?",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: French 'si tu es une IA'": {
+      "file": "src/instructions.js",
+      "live": "<si (?:tu es|vous \u00eates)",
+      "dead": "<xsi (?:tu es|vous \u00eates)",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one",
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: French 'note pour l'IA'": {
+      "file": "src/instructions.js",
+      "live": "<note (?:pour|\u00e0)",
+      "dead": "<xnote (?:pour|\u00e0)",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Instructions: English 'write the word in your CV'": {
+      "file": "src/instructions.js",
+      "live": "<(?:write|include|add|mention",
+      "dead": "<(?:xwrite|include|add|mention",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'to prove that you have read'": {
+      "file": "src/instructions.js",
+      "live": "<to prove (?:that )?you",
+      "dead": "<xto prove (?:that )?you",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'ignore previous instructions'": {
+      "file": "src/instructions.js",
+      "live": "<ignore (?:all |any )?(?:the |your )?(?:previous",
+      "dead": "<xignore (?:all |any )?(?:the |your )?(?:previous",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'disregard previous instructions'": {
+      "file": "src/instructions.js",
+      "live": "<disregard (?:all",
+      "dead": "<xdisregard (?:all",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'as an AI'": {
+      "file": "src/instructions.js",
+      "live": "<as an? (?:ai",
+      "dead": "<xas an? (?:ai",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'if you are an AI'": {
+      "file": "src/instructions.js",
+      "live": "<if you are an?",
+      "dead": "<xif you are an?",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: English 'note to the AI'": {
+      "file": "src/instructions.js",
+      "live": "<note (?:to|for)",
+      "dead": "<xnote (?:to|for)",
+      "expect": [
+        "English instructions to the candidate or an AI are found too"
+      ]
+    },
+    "Instructions: at most five sentences": {
+      "file": "src/instructions.js",
+      "live": "if (found.length === MAX_SENTENCES) break;",
+      "dead": "",
+      "expect": [
+        "at most five sentences are returned, each of at most 200 characters"
+      ]
+    },
+    "Instructions: each sentence cut to 200 characters": {
+      "file": "src/instructions.js",
+      "live": ".slice(0, MAX_CHARS)",
+      "dead": ".slice(0)",
+      "expect": [
+        "at most five sentences are returned, each of at most 200 characters"
+      ]
+    },
+    "Instructions: a line is split into sentences": {
+      "file": "src/instructions.js",
+      "live": "/\\n+|(?<=[.!?])\\s+/",
+      "dead": "/\\n+/",
+      "expect": [
+        "only the instruction sentence of a line is returned, not its neighbours"
+      ]
+    },
+    "Instructions: capitals are read as lower case": {
+      "file": "src/instructions.js",
+      "live": "sentence.toLowerCase()",
+      "dead": "sentence",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one",
+        "only the instruction sentence of a line is returned, not its neighbours"
+      ]
+    },
+    "Instructions: a typographic apostrophe is read as a plain one": {
+      "file": "src/instructions.js",
+      "live": "replace(/[\u2019\u2018]/g, \"'\")",
+      "dead": "replace(/[\u2018]/g, \"'\")",
+      "expect": [
+        "French instructions to the candidate or an AI are found one by one"
+      ]
+    },
+    "Honesty: the offer language is detected": {
+      "file": "src/language.js",
+      "live": "return count('fr') > count('en') ? 'fr' : 'en';",
+      "dead": "return count('fr') > count('en') && false ? 'fr' : 'en';",
+      "expect": [
+        "the offer language is detected from its words",
+        "the prompt imposes the offer language"
+      ]
+    },
+    "Prompt: one requirement per skill": {
+      "file": "src/prompt.js",
+      "live": "one requirement per skill, technology, tool or quality",
+      "dead": "requirements for the skills, technologies, tools or qualities",
+      "expect": [
+        "the prompt asks for one requirement per skill or technology"
+      ]
+    },
+    "Closed: the prompt lists titles by id": {
+      "file": "src/prompt.js",
+      "live": "for (const title of profile.titles) lines.push(`- ${title.id} \u2014 ${title.en}`);",
+      "dead": "void 0;",
+      "expect": [
+        "the prompt lists the titles and facts by id and asks for ids"
+      ]
+    },
+    "Rules: the prompt marks lab skills": {
+      "file": "src/prompt.js",
+      "live": "const level = skill.level === 'lab' ? 'lab (personal R&D only)' : skill.level;",
+      "dead": "const level = skill.level;",
+      "expect": [
+        "the model is told which skills are lab-only and which are never to be claimed"
+      ]
+    },
+    "Rules: the prompt lists what is never claimed": {
+      "file": "src/prompt.js",
+      "live": "if (never.length) lines.push('', `Never claim",
+      "dead": "if (false) lines.push('', `Never claim",
+      "expect": [
+        "the model is told which skills are lab-only and which are never to be claimed"
+      ]
+    },
+    "Prompt: each fact is listed with its kind": {
+      "file": "src/prompt.js",
+      "live": "lines.push(`- ${fact.id} (${fact.kind}) \u2014 ${fact.en}`);",
+      "dead": "lines.push(`- ${fact.id} \u2014 ${fact.en}`);",
+      "expect": [
+        "the prompt gives each fact its kind and says the summary is one hook",
+        "the prompt lists the titles and facts by id and asks for ids"
+      ]
+    },
+    "Prompt: the one-hook rule is stated": {
+      "file": "src/prompt.js",
+      "live": "summary_ids: exactly one hook id, the hook that fits the offer best, then at most one fact id; a note is context about the candidate, never on the CV.",
+      "dead": "summary_ids 2 or 3 fact ids, the most relevant to the offer first;",
+      "expect": [
+        "the prompt gives each fact its kind and says the summary is one hook"
+      ]
+    },
+    "Split: a line left out is said": {
+      "file": "src/split.js",
+      "live": "return { offers, repairs: leftOut(lines, [...checked.ranges.map((item) => item.range), ...(checked.shared ? [checked.shared] : [])]) };",
+      "dead": "return { offers, repairs: [] };",
+      "expect": [
+        "each offer is cut from the lines the model points at, with the shared context first",
+        "a requirement line in no range is said, never dropped silently"
+      ]
+    },
+    "Split: blank lines are not reported": {
+      "file": "src/split.js",
+      "live": "lines.map((line, index) => index + 1).filter((number) => lines[number - 1].trim() && !covered(number));",
+      "dead": "lines.map((line, index) => index + 1).filter((number) => !covered(number));",
+      "expect": [
+        "each offer is cut from the lines the model points at, with the shared context first"
+      ]
+    },
+    "Split: a range stays inside the text": {
+      "file": "src/split.js",
+      "live": "if (!isRange(range, lines.length)) return { reason:",
+      "dead": "if (false) return { reason:",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: an offer holds a few lines": {
+      "file": "src/split.js",
+      "live": "if (filled < MIN_LINES) return",
+      "dead": "if (false) return",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: the shared range stays inside the text": {
+      "file": "src/split.js",
+      "live": "if (shared !== null && !isRange(shared, lines.length)) return",
+      "dead": "if (false) return",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: ranges do not overlap": {
+      "file": "src/split.js",
+      "live": "if (all[i][0] <= all[i - 1][1]) return { reason:",
+      "dead": "if (false) return { reason:",
+      "expect": [
+        "ranges out of the text, overlapping, reversed or too short fall back to one offer"
+      ]
+    },
+    "Split: the shared context comes first": {
+      "file": "src/split.js",
+      "live": "const context = checked.shared ? [...cut(checked.shared), ''] : [];",
+      "dead": "const context = [];",
+      "expect": [
+        "each offer is cut from the lines the model points at, with the shared context first"
+      ]
+    },
+    "Split: a title is a plain name": {
+      "file": "src/split.js",
+      "live": "title: cleanName(title ?? '') ?? firstLine(cut(range)),",
+      "dead": "title: title || firstLine(cut(range)),",
+      "expect": [
+        "a title is a plain, short name, or the first line of the offer"
+      ]
+    },
+    "Split: the text is fenced": {
+      "file": "src/split.js",
+      "live": "return fence(numbered).join('\\n');",
+      "dead": "return numbered;",
+      "expect": [
+        "the model is shown numbered lines inside a fence it cannot close"
+      ]
+    }
+  }
+}
