@@ -97,7 +97,8 @@ class FakeElement extends FakeNode {
 /**
  * Load the page. `server(path, init)` answers each fetch with
  * `{ status, body }` (or a promise of it). Returns the page's elements by id,
- * the fetches made, `settle()` to let pending work finish, `tick()` to fire
+ * the fetches made, the timer `delays` asked, its `document` (set `hidden` to
+ * play a background tab), `settle()` to let pending work finish, `tick()` to fire
  * the timers due, and `close()` to leave every later fetch pending.
  */
 export function loadPage(server, { token = 't'.repeat(48) } = {}) {
@@ -118,6 +119,7 @@ export function loadPage(server, { token = 't'.repeat(48) } = {}) {
   };
   const fetches = [];
   const timers = [];
+  const delays = [];
   let closed = false;
   const fetch = async (path, init = {}) => {
     if (closed) return new Promise(() => {});
@@ -125,14 +127,16 @@ export function loadPage(server, { token = 't'.repeat(48) } = {}) {
     const { status = 200, body = {} } = await server(path, init);
     return { ok: status >= 200 && status < 300, status, json: async () => JSON.parse(JSON.stringify(body)) };
   };
-  const context = createContext({ document, Node: FakeNode, fetch, console, setTimeout: (fn) => timers.push(fn), clearTimeout: () => {} });
+  const context = createContext({ document, Node: FakeNode, fetch, console, setTimeout: (fn, ms) => { delays.push(ms); timers.push(fn); }, clearTimeout: () => {} });
   runInContext(`'use strict';\n${SOURCE}`, context, { filename: 'web/app.js' });
   const settle = async () => {
     for (let i = 0; i < 50; i += 1) await new Promise((resolve) => setImmediate(resolve));
   };
   return {
     $: (id) => byId.get(id),
+    document,
     fetches,
+    delays,
     settle,
     async tick() {
       for (const fn of timers.splice(0)) fn();
