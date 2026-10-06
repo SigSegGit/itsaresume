@@ -1402,6 +1402,22 @@
       "expect": [
         "hostile: a link the offer asks to carry reaches neither the CV nor the public page"
       ]
+    },
+    "Hostile: a requirement name is no host name": {
+      "file": "src/guard.js",
+      "live": "  if ([...canonical(flat).matchAll(DOTTED)].some(([dotted]) => !TECH_SUFFIX.test(dotted))) return null;",
+      "dead": "  if (false) return null;",
+      "expect": [
+        "hostile: requirement names carry nothing private, no link and no instruction to the public page"
+      ]
+    },
+    "Hostile: only a word the instruction singles out is a canary": {
+      "file": "src/guard.js",
+      "live": "  const canaries = new Set(singled.filter((word) => !known.has(word) && !offerRest.has(word)));",
+      "dead": "  const canaries = new Set(told.flatMap((sentence) => words(sentence)).filter((word) => !known.has(word) && !offerRest.has(word)));",
+      "expect": [
+        "hostile: requirement names carry nothing private, no link and no instruction to the public page"
+      ]
     }
   }
 }
