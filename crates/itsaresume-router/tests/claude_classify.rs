@@ -370,8 +370,7 @@ fn a_result_message_not_understood_is_counted_not_quoted() {
 /// 2.1.162, Linux, the subscription token in the container's environment),
 /// with the backend's own flag set: an answer, read as such, through the
 /// subscription (`apiKeySource: "none"`), its rate limit kept.
-const OBSERVED_DOCKER: &str =
-    include_str!("fixtures/claude/observed-docker-success.verbose.json");
+const OBSERVED_DOCKER: &str = include_str!("fixtures/claude/observed-docker-success.verbose.json");
 
 #[test]
 fn the_success_observed_in_docker_is_an_answer_on_the_subscription() {
@@ -380,6 +379,12 @@ fn the_success_observed_in_docker_is_an_answer_on_the_subscription() {
     assert_eq!(messages[0]["tools"], json!([]));
     let answer = classify(OBSERVED_DOCKER).expect("an answer");
     assert_eq!(answer.text, "OK");
-    assert_eq!(answer.rate_limit.as_ref().map(|limit| limit["status"].clone()), Some(json!("allowed")));
+    assert_eq!(
+        answer
+            .rate_limit
+            .as_ref()
+            .map(|limit| limit["status"].clone()),
+        Some(json!("allowed"))
+    );
     assert!(answer.usage.is_some_and(|usage| usage.output > 0));
 }
