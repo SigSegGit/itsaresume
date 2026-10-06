@@ -524,6 +524,16 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 9. Open on purpose
 
+- **Seen 2026-10-06 on a real offer (both models, private run in
+  `~/.itsaresume/out`): requirements matched to the wrong profile skill by
+  name.** "stockage" became yes through the skill `p2p` (both runs), "AI"
+  through `alerting` (Sonnet), "SRE" through `devops` (the local model);
+  each "named like the profile skill" repair keeps that one skill and drops
+  the right ones (PostgreSQL, Prometheus...). The local model also scored
+  88 where Sonnet scored 70, and a misspelt requirement ("scalarment")
+  passed the stated-in-the-offer rule. Not caused by router 8.46: no
+  refusal, no leak (links and the recruiter's name absent from both PDFs).
+  A candidate step before or with 2.3.
 - **The owner's own Bionic use** (2026-10-06, not tested): a visitor's
   local job loads qwen3-coder-next (48 GB) at its first request; if the
   owner is using another model in Bionic then, Bionic's JIT eviction may
