@@ -452,8 +452,8 @@
     },
     "Web: the script writes text only": {
       "file": "web/app.js",
-      "live": "const POLL_MS = 1500;",
-      "dead": "const POLL_MS = 1500; document.body.innerHTML = '';",
+      "live": "const POLL_MS = 5000;",
+      "dead": "const POLL_MS = 5000; document.body.innerHTML = '';",
       "expect": [
         "the script never parses HTML nor evaluates code"
       ]
@@ -857,6 +857,22 @@
         "hostile: the never list asked for reaches neither the CV nor the public page",
         "hostile: the system prompt asked for reaches neither the CV nor the public page",
         "hostile: a link the offer asks to carry reaches neither the CV nor the public page"
+      ]
+    },
+    "Web: a running job is asked about every 5 s at most": {
+      "file": "web/app.js",
+      "live": "const POLL_MS = 5000;",
+      "dead": "const POLL_MS = 1500;",
+      "expect": [
+        "a running job is asked about no more often than every 5 seconds"
+      ]
+    },
+    "Web: a hidden tab asks nothing": {
+      "file": "web/app.js",
+      "live": "      if (document.hidden) {\n",
+      "dead": "      if (false) {\n",
+      "expect": [
+        "a tab out of sight asks nothing, and asks again when it is back in sight"
       ]
     }
   }

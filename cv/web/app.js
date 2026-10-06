@@ -5,7 +5,9 @@
 const token = document.querySelector('meta[name="csrf-token"]').content;
 const $ = (id) => document.getElementById(id);
 const MAX_TEXT = 60000;
-const POLL_MS = 1500;
+// A job's progress seen 5 s late costs nothing (a local model runs for
+// minutes); a tab out of sight asks nothing until it is back.
+const POLL_MS = 5000;
 const MODEL_NAMES = { auto: 'auto', claude: 'Claude seul', local: 'IA locale seule' };
 const seconds = (ms) => (Number.isFinite(ms) ? `${Math.round(ms / 1000)} s` : 'durée inconnue');
 
@@ -378,6 +380,10 @@ async function poll() {
   polling = true;
   try {
     for (;;) {
+      if (document.hidden) {
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+        continue;
+      }
       const jobs = await api('/api/jobs');
       for (const job of jobs) {
         if (job.status === 'done' && !details.has(job.id)) details.set(job.id, await api(`/api/jobs/${job.id}`));
@@ -397,7 +403,7 @@ setupOffers();
 renderOffers();
 $('model').addEventListener('change', () => { modelChosen = true; });
 refreshStatus();
-// Every 30 s, and when the menu is opened (a test sandbox has no interval).
-globalThis.setInterval?.(refreshStatus, 30000);
+// Every 30 s while in sight, and when the menu is opened (a test sandbox has no interval).
+globalThis.setInterval?.(() => document.hidden || refreshStatus(), 30000);
 $('model').addEventListener('focus', refreshStatus);
 poll();

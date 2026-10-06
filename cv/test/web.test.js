@@ -243,7 +243,7 @@ test('the page greys the models the server says cannot answer, and refreshes the
   const app = web('app.js');
   assert.match(app, /option\.disabled = !state\.available;/);
   assert.match(app, /button\.disabled = offers\.length === 0 \|\| !modelsReady;/);
-  assert.match(app, /setInterval\?\.\(refreshStatus, \d+\)/);
+  assert.match(app, /setInterval\?\.\(\(\) => document\.hidden \|\| refreshStatus\(\), \d+\)/);
   assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
 });
 
@@ -251,4 +251,31 @@ test('the page greys the models the server says cannot answer, and refreshes the
 test('the page shows a queued job its place in the queue', () => {
   const app = web('app.js');
   assert.match(app, /queued: \['', Number\.isInteger\(job\.position\) \? `en attente : \$\{job\.position === 1 \? 'prochain'/);
+});
+
+// 2026-10-06 (the owner's technical note): no minute is lost by seeing a
+// job's progress 5 s late, and a local model's run lasts minutes. The page
+// asks no more often than every 5 s, and a tab out of sight asks nothing.
+const RUNNING = [{ id: 'j1', title: 'Senior SRE', status: 'running', steps: [] }];
+
+test('a running job is asked about no more often than every 5 seconds', async () => {
+  const page = pageWith(RUNNING);
+  await page.settle();
+  await page.tick();
+  await page.tick();
+  assert.ok(page.delays.length > 0, 'the page waits between two asks');
+  assert.ok(page.delays.every((ms) => ms >= 5000), `delays: ${page.delays}`);
+});
+
+test('a tab out of sight asks nothing, and asks again when it is back in sight', async () => {
+  const page = pageWith(RUNNING);
+  await page.settle();
+  page.document.hidden = true;
+  const before = page.fetches.length;
+  await page.tick();
+  await page.tick();
+  assert.equal(page.fetches.length, before, 'a hidden tab fetched');
+  page.document.hidden = false;
+  await page.tick();
+  assert.ok(page.fetches.some((call, i) => i >= before && call.path === '/api/jobs'), 'a visible tab asks again');
 });
