@@ -206,6 +206,18 @@ property it proves.
 | an analysis without any requirement cannot be scored and is refused | Honesty: no requirement, no score |
 | the report labels the model's own comment as unchecked | — |
 
+## `test/hostile.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| hostile: an honest offer and answer give a CV the checks can read | — |
+| hostile: the never list asked for reaches neither the CV nor the public page | Hostile: the never list is never written; Hostile: the public page has no requirement note |
+| hostile: the system prompt asked for reaches neither the CV nor the public page | Injection: validation runs the free-text checks; Hostile: the CV never copies the model's instructions; Hostile: the public page has no requirement note |
+| hostile: a link the offer asks to carry reaches neither the CV nor the public page | Injection: validation runs the free-text checks; Hostile: a dotted name the profile does not use is refused; Hostile: the public page has no requirement note |
+| hostile: contact data the offer asks to carry reaches neither the CV nor the public page | Injection: validation runs the free-text checks |
+| hostile: an instruction the offer gives is not followed into the CV or the public page | Injection: validation runs the free-text checks; Hostile: a canary word the offer asks for is refused |
+| hostile: the owner's notes asked for reach neither the CV nor the public page | Hostile: the public page has no requirement note |
+
 ## `test/hygiene.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -610,6 +622,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**401 tests, 336 of them covered by at least one sabotage defence.**
+**408 tests, 342 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

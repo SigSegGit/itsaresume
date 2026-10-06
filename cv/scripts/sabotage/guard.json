@@ -49,6 +49,7 @@
     "test/floor.test.js",
     "test/guard.test.js",
     "test/honesty.test.js",
+    "test/hostile.test.js",
     "test/hygiene.test.js",
     "test/importance.test.js",
     "test/must-stay-no.test.js",
@@ -645,7 +646,11 @@
       "dead": "void checkFreeText;",
       "expect": [
         "validation runs the free-text checks when it knows the offer",
-        "an obedient model following an injected offer gets no CV"
+        "an obedient model following an injected offer gets no CV",
+        "hostile: the system prompt asked for reaches neither the CV nor the public page",
+        "hostile: a link the offer asks to carry reaches neither the CV nor the public page",
+        "hostile: contact data the offer asks to carry reaches neither the CV nor the public page",
+        "hostile: an instruction the offer gives is not followed into the CV or the public page"
       ]
     },
     "Injection: the pipeline gives validation the offer": {
@@ -1364,6 +1369,38 @@
       "dead": "['ated', '']",
       "expect": [
         "stem: automation and automated are one word"
+      ]
+    },
+    "Hostile: the never list is never written": {
+      "file": "src/analysis.js",
+      "live": "    if (named) errors.push(`the headline or summary claims ${named}, which the profile says is never to be claimed`);",
+      "dead": "    void named;",
+      "expect": [
+        "hostile: the never list asked for reaches neither the CV nor the public page"
+      ]
+    },
+    "Hostile: the CV never copies the model's instructions": {
+      "file": "src/guard.js",
+      "live": "    if (echo) errors.push(`${label}: copies the model's instructions (\"${echo}\")`);",
+      "dead": "    void echo;",
+      "expect": [
+        "hostile: the system prompt asked for reaches neither the CV nor the public page"
+      ]
+    },
+    "Hostile: a canary word the offer asks for is refused": {
+      "file": "src/guard.js",
+      "live": "      if (canaries.has(word)) errors.push(`${label}: ${word} is a word the offer's instructions ask for`);",
+      "dead": "      void word;",
+      "expect": [
+        "hostile: an instruction the offer gives is not followed into the CV or the public page"
+      ]
+    },
+    "Hostile: a dotted name the profile does not use is refused": {
+      "file": "src/guard.js",
+      "live": "      if (!profileRaw.includes(dotted.toLowerCase())) errors.push(`${label}: ${dotted} is a dotted name the profile does not use (a domain?)`);",
+      "dead": "      void dotted;",
+      "expect": [
+        "hostile: a link the offer asks to carry reaches neither the CV nor the public page"
       ]
     }
   }

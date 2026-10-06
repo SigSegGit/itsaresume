@@ -42,6 +42,7 @@
     "test/fixtures/injected.js",
     "test/fixtures/page.js",
     "test/fixtures/v4.js",
+    "test/hostile.test.js",
     "test/importance.test.js",
     "test/instructions.test.js",
     "test/pipeline.test.js",
@@ -844,6 +845,17 @@
       "dead": "queued: ['', false ?",
       "expect": [
         "the page shows a queued job its place in the queue"
+      ]
+    },
+    "Hostile: the public page has no requirement note": {
+      "file": "src/server.js",
+      "live": "    requirements: (full.requirements ?? []).map((requirement) => ({ ...requirement, note: '' })),",
+      "dead": "    requirements: full.requirements,",
+      "expect": [
+        "hostile: the owner's notes asked for reach neither the CV nor the public page",
+        "hostile: the never list asked for reaches neither the CV nor the public page",
+        "hostile: the system prompt asked for reaches neither the CV nor the public page",
+        "hostile: a link the offer asks to carry reaches neither the CV nor the public page"
       ]
     }
   }
