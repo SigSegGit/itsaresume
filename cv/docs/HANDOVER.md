@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.22c
-TITLE: the page: the questions as a local form writing answers.json
+NEXT: 2.24a
+TITLE: the A4 page in the browser: the server's ranked content as data
 WRITTEN-AT: 2026-10-06
 -->
 
@@ -20,6 +20,10 @@ the decisions waiting for him, how to reach his machines — are in
   (cv.<domain>) generates on the always-on VM, Claude first, the laptop's
   Bionic through a tunnel when the laptop is on (ADR-11); the VM follows
   `main` by itself (3.5, timer installed 2026-10-05).
+- **Order set by the owner (2026-10-06)**: 2.24 (the A4 page laid out and
+  printed by the browser, docx kept as an option), then 2.25 (a shorter
+  prompt through standard profiles), then 2.22c. A local model on the Pi
+  or the VM is not wanted now: Claude then Bionic is enough.
 - **Moved on 2026-09-30** from the private `itsaresume-cv` repository into
   `cv/` of the public `itsaresume` repository, as a fresh history (the
   private repository, archived, keeps the past; the owner's data never was
@@ -580,6 +584,47 @@ Traps met, each cost time once:
     A run's report links its own unmet requirements to the form.
   - [ ] **2.22d** Measure: the 26 real runs replayed with the answers the
     owner gave; the score moves only through his answers.
+- [x] **2.23** (a tester, 2026-10-06: "ton front spam pour récup les
+  status") The page asks `/api/jobs` every 5 s, not 1.5 s (measured on his
+  capture: ~20 calls per 30 s, not 30/s), and a hidden tab asks nothing.
+  SSE (one stream per job) stays possible; low value while the VM's load
+  is 0.00. PR #100.
+- [ ] **2.24** (the owner, 2026-10-06, before 2.22c) **The A4 page in the
+  browser.** Some CVs fill less than 80 % of the page. The browser lays out
+  a fixed A4 template (thin margins, our fonts served locally, no remote
+  asset) and fills it exactly; the PDF is the browser's print (`@page`
+  A4, an "Exporter en PDF" button). The docx stays, as an option, without
+  the full-page promise. The split keeps "the model selects, the code
+  decides": the server sends only what the honesty checks allow, ranked;
+  the browser only chooses how many of them fit. Steps:
+  - [ ] **2.24a** The server's ranked content: `GET /api/jobs/:id/page`
+    returns the CV as data (header, summary, sections, items each with a
+    rank and a "must" flag: main missions always), no layout. Red tests:
+    nothing the docx would refuse appears; the order is the docx's.
+  - [ ] **2.24b** The A4 template (`web/cv.html` + `cv.css`, served by
+    `serve`, same CSP: no inline script or style) and the fill in
+    `web/cv.js`: add items by rank while the page does not overflow
+    (`scrollHeight` against the A4 box), then widen the line spacing
+    within fixed bounds until the fill reaches >= 95 % or the bound.
+    Must items never dropped; if they overflow, shrink within bounds and
+    say so. Tested over the fake DOM of `test/fixtures/page.js` with
+    item heights given.
+  - [ ] **2.24c** Print: `@media print` hides everything but the page;
+    the button calls `window.print()`. Check by hand in Chrome and
+    Firefox (PDF one page, text selectable); write the fill measured on
+    the 26 real runs next to LibreOffice's.
+  - Lost, said in the page: the server's ATS check of the PDF (the server
+    no longer sees the printed PDF).
+- [ ] **2.25** (the owner, 2026-10-06) **A shorter prompt, same
+  quality.** Today the whole profile goes into every prompt (<= 14.5k
+  tokens at worst). Standard profiles: a few role families (e.g. SRE,
+  DevOps/platform, cloud architect, infra/system), each a subset of the
+  profile compiled by code (skills and experiences tagged by family in
+  the v4 compilation, never invented); the offer's family is chosen by
+  code from its requirements, the prompt carries that subset only. First
+  measure (prompt tokens per section on the 26 runs, from the QA log),
+  then replay (`rules-replay.mjs`, `guard-replay.mjs`): the subset ships
+  only if no run loses a matched requirement it had.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1. The cost is the model calls: the
   listing is per offer (N calls, cacheable), the analysis per pair (N×M).
