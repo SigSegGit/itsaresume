@@ -148,6 +148,7 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
       org: t(experience.org),
       dates: experience.end ? `${experience.start} – ${experience.end}` : experience.start,
       bullets: ids.map((id) => t(byId.get(id))),
+      bullet_ids: ids,
       env: env.join(', '),
       has_env: env.length > 0,
     }];
@@ -183,5 +184,26 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
     languages: (profile.languages ?? []).map(t),
     profile: analysis.summary,
     experiences,
+  };
+}
+
+/**
+ * 2.24a: the CV as data for the browser's A4 page, no layout. Every bullet
+ * the docx could show, in the docx's order; each item has its rank in
+ * rankBullets (0: not ranked, shown only as a main mission's floor) and
+ * `must` when the docx shows it even with no bullet chosen. The browser
+ * adds items by rank while they fit; it never adds anything else.
+ */
+export function pageData(profile, analysis) {
+  const ranked = rankBullets(profile, analysis).map((entry) => entry.id);
+  const all = buildModel(profile, analysis, { bullets: new Set(ranked) });
+  const floor = new Set(buildModel(profile, analysis, { bullets: new Set() }).experiences.flatMap((e) => e.bullet_ids));
+  const { keywords, name_caps, company_line, glance, ...rest } = all;
+  return {
+    ...rest,
+    experiences: all.experiences.map(({ bullets, bullet_ids, ...experience }) => ({
+      ...experience,
+      items: bullet_ids.map((id, index) => ({ id, text: bullets[index], rank: ranked.indexOf(id) + 1, must: floor.has(id) })),
+    })),
   };
 }
