@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.24a
-TITLE: the A4 page in the browser: the server's ranked content as data
-WRITTEN-AT: 2026-10-06
+NEXT: 2.24b
+TITLE: the A4 template and its fill in the browser (web/cv.html, cv.css, cv.js)
+WRITTEN-AT: 2026-10-12
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -597,10 +597,19 @@ Traps met, each cost time once:
   the full-page promise. The split keeps "the model selects, the code
   decides": the server sends only what the honesty checks allow, ranked;
   the browser only chooses how many of them fit. Steps:
-  - [ ] **2.24a** The server's ranked content: `GET /api/jobs/:id/page`
+  - [x] **2.24a** (2026-10-12) The server's ranked content: `GET /api/jobs/:id/page`
     returns the CV as data (header, summary, sections, items each with a
     rank and a "must" flag: main missions always), no layout. Red tests:
     nothing the docx would refuse appears; the order is the docx's.
+    Done: `pageData` (src/tailor.js), stored as `result.page` by serve.js
+    (fresh and reused runs), `GET /api/jobs/:id/page` (404 when absent,
+    same visitor check as files); items `{id, text, rank, must}`, rank 0 =
+    a main mission's floor bullet not ranked; 3 defences (public.json).
+    **For 2.24b**: the docx caps every other experience at the reference
+    experience's bullet count (`most` in buildModel); the fill must keep
+    that cap when it adds by rank, or the page shows what the docx would not.
+    Known: the "Invite 0600" defence stays green on Windows (chmod is a
+    no-op there); Linux CI verifies it.
   - [ ] **2.24b** The A4 template (`web/cv.html` + `cv.css`, served by
     `serve`, same CSP: no inline script or style) and the fill in
     `web/cv.js`: add items by rank while the page does not overflow
