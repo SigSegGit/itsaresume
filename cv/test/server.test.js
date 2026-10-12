@@ -168,6 +168,23 @@ test('offers are split, then tailored one after the other, with their progress',
   }
 });
 
+test('2.24a: a done job gives its page as data; a job without one is 404', async () => {
+  const page = { name: 'Alex', experiences: [{ title: 'SRE', items: [{ id: 'b1', text: 'x', rank: 1, must: true }] }] };
+  const app = await start({ tailor: async ({ offer }) => (offer.includes('old') ? fakeResult(offer) : { ...fakeResult(offer), page }) });
+  try {
+    await post(app, '/api/jobs', { offers: [{ title: 'A', text: 'offer' }, { title: 'B', text: 'old offer' }] });
+    const list = await until(app, (jobs) => jobs.length === 2 && jobs.every((job) => job.status === 'done'));
+    const fresh = list.find((job) => job.title === 'A');
+    const old = list.find((job) => job.title === 'B');
+    const got = await call(app.port, { path: `/api/jobs/${fresh.id}/page` });
+    assert.equal(got.status, 200);
+    assert.deepEqual(JSON.parse(got.text), page);
+    assert.equal((await call(app.port, { path: `/api/jobs/${old.id}/page` })).status, 404);
+  } finally {
+    app.server.close();
+  }
+});
+
 test('a CV downloads as an attachment, and nothing outside the run\'s listed files does', async () => {
   const app = await start();
   try {
