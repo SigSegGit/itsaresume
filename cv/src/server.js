@@ -378,10 +378,15 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
           return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode, position: positionOf(job) })));
         }
-        const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+))?$/);
+        const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+)|\/(page))?$/);
         // Public: a job is its visitor's alone; to anyone else it does not exist.
         const job = match && (!publicMode || visitors.get(readerOf(request))?.has(match[1])) && jobs.get(match[1]);
         if (!job) throw new HttpError(404, 'not found');
+        // 2.24a: the CV as ranked data, for the browser's A4 page.
+        if (match[3]) {
+          if (!job.result?.page) throw new HttpError(404, 'not found');
+          return send(response, 200, job.result.page);
+        }
         if (!match[2]) return send(response, 200, view(job, { detail: true, publicMode }));
         const type = DOWNLOADS[match[2]];
         const listed = type && job.result?.view.files.includes(match[2]) && (!publicMode || PUBLIC_FILES.has(match[2]));

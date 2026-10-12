@@ -372,6 +372,15 @@ property it proves.
 | a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is | Parts: every part naming a profile skill meets the requirement; Parts: one unnamed part leaves the requirement |
 | a part named only by a skill term does not meet the requirement | Names: a term does not name a requirement or a part |
 
+## `test/page.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the page holds nothing the docx would refuse, in the docx order | — |
+| each item carries its rank in rankBullets, and no layout | Page: an item's rank is its place in rankBullets |
+| a main mission always shows: its first bullets are a must, the rest are not | Page: must is the docx's floor, not every item |
+| a bullet the ranking leaves out never reaches the page | — |
+
 ## `test/pipeline.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -534,6 +543,7 @@ property it proves.
 | a request naming another host is refused | Web: only this server's own host name |
 | a POST from another origin, without the token, or not in JSON is refused | Web: a POST comes from this origin; Web: a POST carries the CSRF token; Web: a POST is JSON; Web: a body is bounded |
 | offers are split, then tailored one after the other, with their progress | Web: one run at a time |
+| 2.24a: a done job gives its page as data; a job without one is 404 | Page: a job without a page is 404 |
 | a CV downloads as an attachment, and nothing outside the run's listed files does | Web: only the run's listed files download; Web: a download is an attachment |
 | a failed run shows its error, and the next one still runs | Web: a failed run does not stop the queue |
 | what a job may carry is bounded, and its title is a plain name | Web: a split text is bounded; Web: a batch is bounded; Web: a job title is a plain name |
@@ -658,6 +668,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**429 tests, 363 of them covered by at least one sabotage defence.**
+**434 tests, 366 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

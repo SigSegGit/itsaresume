@@ -3,6 +3,7 @@
 import { request } from 'node:http';
 import { createApp } from './server.js';
 import { loadProfile, readRun, tailorOffer } from './run.js';
+import { pageData } from './tailor.js';
 import { appendQaLog, withModel } from './qa.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
@@ -113,7 +114,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep });
       const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep, profileId: profile });
-      return { ...result, view: jobView(result, loaded) };
+      return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.
     reuse: publicMode
@@ -121,7 +122,8 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
           const run = findReusable(offer, loadRuns(out));
           if (!run) return null;
           const result = readRun(run.dir);
-          return { ...result, view: jobView(result, loadProfile(profilePath)) };
+          const loaded = loadProfile(profilePath);
+          return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
         }
       : undefined,
     log: (entry) => appendQaLog(out, entry),

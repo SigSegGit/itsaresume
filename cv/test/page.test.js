@@ -59,10 +59,13 @@ test('a main mission always shows: its first bullets are a must, the rest are no
 
 test('a bullet the ranking leaves out never reaches the page', () => {
   const profile = load();
+  // A short mission whose bullet backs nothing the offer asks: never shown.
+  profile.experiences.push({ ...profile.experiences[1], id: 'gig', kind: 'short', bullets: [{ ...profile.experiences[1].bullets[1], id: 'gig-oncall' }] });
   const a = analysis();
   const ranked = new Set(rankBullets(profile, a).map((entry) => entry.id));
   const fallback = new Set(profile.experiences.flatMap((e) => e.bullets.slice(0, 1).map((b) => b.id)));
   for (const item of pageData(profile, a).experiences.flatMap((e) => e.items)) {
     assert.ok(ranked.has(item.id) || fallback.has(item.id), item.id);
   }
+  assert.ok(!JSON.stringify(pageData(profile, a)).includes('gig-oncall'));
 });

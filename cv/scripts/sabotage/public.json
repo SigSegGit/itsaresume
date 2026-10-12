@@ -26,6 +26,7 @@
     "test/importance.test.js",
     "test/intake.test.js",
     "test/invites.test.js",
+    "test/page.test.js",
     "test/qa.test.js",
     "test/server.test.js"
   ],
@@ -201,6 +202,30 @@
       "dead": "writeFileSync(join(out, QA_LOG),",
       "expect": [
         "each run appends one JSON line to the QA log, never rewriting it"
+      ]
+    },
+    "Page: an item's rank is its place in rankBullets": {
+      "file": "src/tailor.js",
+      "live": "rank: ranked.indexOf(id) + 1,",
+      "dead": "rank: index + 1,",
+      "expect": [
+        "each item carries its rank in rankBullets, and no layout"
+      ]
+    },
+    "Page: must is the docx's floor, not every item": {
+      "file": "src/tailor.js",
+      "live": "must: floor.has(id) }",
+      "dead": "must: true }",
+      "expect": [
+        "a main mission always shows: its first bullets are a must, the rest are not"
+      ]
+    },
+    "Page: a job without a page is 404": {
+      "file": "src/server.js",
+      "live": "if (!job.result?.page) throw new HttpError(404, 'not found');",
+      "dead": "if (!job.result) throw new HttpError(404, 'not found');",
+      "expect": [
+        "2.24a: a done job gives its page as data; a job without one is 404"
       ]
     }
   }
