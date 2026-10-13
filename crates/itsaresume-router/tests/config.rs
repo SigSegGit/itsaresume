@@ -367,3 +367,14 @@ fn an_openai_backend_has_a_model_and_no_key_or_url() {
         assert!(Config::parse(&text).is_err(), "{extra}");
     }
 }
+
+#[test]
+fn checks_are_off_unless_a_period_is_given() {
+    let base = "journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"m\"\n";
+    assert_eq!(Config::parse(base).expect("valid").check_every_secs, None);
+    let every = format!("check_every_secs = 900\n{base}");
+    assert_eq!(
+        Config::parse(&every).expect("valid").check_every_secs,
+        Some(900)
+    );
+}

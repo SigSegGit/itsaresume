@@ -161,7 +161,10 @@ fn serve(config: &Config, listen: &str) -> ExitCode {
         }
     };
     let server = match Server::bind(router, listen) {
-        Ok(server) => server,
+        Ok(server) => match config.check_every_secs {
+            Some(secs) if secs > 0 => server.with_checks(std::time::Duration::from_secs(secs)),
+            _ => server,
+        },
         Err(error) => {
             eprintln!("itsaresume: {error}");
             return ExitCode::from(EXIT_USAGE);

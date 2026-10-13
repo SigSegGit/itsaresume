@@ -28,6 +28,9 @@ pub struct Config {
     /// Backends, in the order they are tried.
     #[serde(rename = "backend", default)]
     pub backends: Vec<BackendConfig>,
+    /// `serve` checks each backend that cannot probe itself this often
+    /// (8.49; 900 = 15 min); absent, never.
+    pub check_every_secs: Option<u64>,
 }
 
 /// One backend. The list of kinds is closed, and no kind has a credential.

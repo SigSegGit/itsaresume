@@ -1,11 +1,14 @@
 //! Tries backends in order; falls back on quota or outage, stops on anything else.
 
-use crate::backend::{Backend, BackendError, Probe, Request};
+use crate::backend::{Backend, BackendError, Kind, Probe, Request};
 use crate::journal::Journal;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Mutex;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+/// The tiny request of a check (8.49): a few tokens either way.
+pub const CHECK_PROMPT: &str = "Reply with the single word: ok";
 
 /// One backend that failed, in the order it was tried.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -214,6 +217,41 @@ impl Router {
         if let Ok(mut seen) = self.seen.lock() {
             seen.insert(backend.to_owned(), Seen { at, error, usage });
         }
+    }
+
+    /// 8.49: ask each backend that cannot probe itself one tiny request,
+    /// unless it answered or failed within `period` (real traffic counts
+    /// as a check: no quota spent twice). Returns the names asked; their
+    /// state is then what [`Router::status`] reports.
+    pub fn check(&self, period: Duration) -> Vec<String> {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |elapsed| elapsed.as_secs());
+        let recent: Vec<String> = self.seen.lock().map_or_else(
+            |_| Vec::new(),
+            |seen| {
+                seen.iter()
+                    .filter(|(_, s)| now.saturating_sub(s.at) < period.as_secs())
+                    .map(|(name, _)| name.clone())
+                    .collect()
+            },
+        );
+        let mut asked = Vec::new();
+        for backend in &self.backends {
+            let name = backend.name();
+            if backend.probe().is_some() || recent.iter().any(|r| r == name) {
+                continue;
+            }
+            let kind = if backend.serves(Kind::Classify) {
+                Kind::Classify
+            } else {
+                Kind::Generate
+            };
+            let request = Request::new(CHECK_PROMPT).with_kind(kind);
+            let _ = self.complete_on(&request, Some(name));
+            asked.push(name.to_owned());
+        }
+        asked
     }
 
     /// Answer `request` from the first backend that can, and journal it.

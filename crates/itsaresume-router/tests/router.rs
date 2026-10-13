@@ -270,7 +270,13 @@ fn a_check_asks_each_backend_once_and_records_its_state() {
     let (router, _dir) = router(vec![ok, spent, off]);
     let checked = router.check(std::time::Duration::from_secs(900));
     assert_eq!(checked, vec!["ok", "spent", "off"]);
-    assert_eq!((ok_calls.load(Ordering::SeqCst), spent_calls.load(Ordering::SeqCst)), (1, 1));
+    assert_eq!(
+        (
+            ok_calls.load(Ordering::SeqCst),
+            spent_calls.load(Ordering::SeqCst)
+        ),
+        (1, 1)
+    );
     let states: Vec<_> = router.status().into_iter().map(|s| s.state).collect();
     assert_eq!(states, vec!["up", "limited", "down"]);
 }
@@ -281,6 +287,10 @@ fn a_backend_seen_within_the_period_is_not_checked_again() {
     let (router, _dir) = router(vec![ok]);
     let _ = router.complete(&request());
     assert!(router.check(std::time::Duration::from_secs(900)).is_empty());
-    assert_eq!(calls.load(Ordering::SeqCst), 1, "real traffic counts as a check");
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        1,
+        "real traffic counts as a check"
+    );
     assert_eq!(router.check(std::time::Duration::ZERO), vec!["ok"]);
 }
