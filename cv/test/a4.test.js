@@ -132,3 +132,11 @@ test('the A4 page prints alone, from a button wired in cv.js', () => {
   assert.match(css, /@media print\s*\{[^@]*#notice[^@]*#print[^@]*display:\s*none/);
   assert.match(read('cv.js'), /getElementById\('print'\)\.addEventListener\('click', \(\) => window\.print\(\)\)/);
 });
+
+test('the fill is measured on the content, not on the fixed A4 box', () => {
+  // A fixed-height box's scrollHeight never drops below its clientHeight: the
+  // fill read 1.00 on every real run and the spacing never widened (2.24d).
+  const script = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
+  assert.match(script, /height: \(\) => root\.offsetHeight \+ padding\(\)/);
+  assert.match(script, /const root = element\('div', 'content'\);\n  sheet\.replaceChildren\(root\);/);
+});
