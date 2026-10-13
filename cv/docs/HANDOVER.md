@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.25-decision
-TITLE: the owner chooses 2.25's vocabulary (ESCO covers 9 of 84 skills; or the home lexicon); 2.22d once he has answered the questions
+TITLE: 2.25 option b fails its gate offline (16-23 of 26 runs lose a matched skill); the owner drops 2.25 or picks a format-only shrink; 2.22d once he has answered
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -685,6 +685,19 @@ Traps met, each cost time once:
     (a) ESCO for occupations and generic skills + the home lexicon
     (`src/lexicon.js`) for tools; (b) the home lexicon alone for the
     prompt subset, ESCO deferred to 5.x.
+  - **Option (b) chosen (owner, 2026-10-13), replayed offline the same
+    day** (`~/.itsaresume/migrations/subset-replay.mjs`, no model call: the
+    skills each past run's requirements pick through `relate()` and names,
+    against the skills the model matched and put in the CV's groups).
+    Per skill: subset median 6 of 84, **23 of 26 runs lose a matched
+    skill** (gitlab-ci, architecture, prod-ops, puppet...: the model links
+    "CI/CD" to GitLab CI, the lexicon does not), 26 of 26 lose CV-group
+    skills. Per group (keep every group touched): median 32, still **16 of
+    26** and 25 of 26. The gate fails; nothing shipped. The skills
+    section also feeds the CV's skill groups, so a requirement-driven
+    subset cannot hold that role. **Waiting on the owner**: drop 2.25 (the
+    prompt is ~5k tokens, ceiling ~3k saved), or a format-only shrink
+    (same skills, fewer tokens: measure first).
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the
