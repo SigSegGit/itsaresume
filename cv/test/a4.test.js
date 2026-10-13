@@ -140,3 +140,10 @@ test('the fill is measured on the content, not on the fixed A4 box', () => {
   assert.match(script, /height: \(\) => root\.offsetHeight \+ padding\(\)/);
   assert.match(script, /const root = element\('div', 'content'\);\n  sheet\.replaceChildren\(root\);/);
 });
+
+test('an experience reads title, organisation, then dates (no float before the title)', () => {
+  // Chrome's printed PDF gave every float:right date before any title (2.24d).
+  const script = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
+  assert.match(script, /element\('div', 'head'\);\n\s*head\.append\(title, element\('span', 'org', [^\n]*\), element\('span', 'dates', experience\.dates\)\);/);
+  assert.doesNotMatch(readFileSync(new URL('../web/cv.css', import.meta.url), 'utf8'), /float:/);
+});
