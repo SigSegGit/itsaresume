@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/questions.test.js",
     "src/analysis.js",
     "src/answers.js",
     "src/ats.js",
@@ -52,9 +53,22 @@
     "test/word.test.js",
     "web/app.js",
     "web/index.html",
-    "web/style.css"
+    "web/style.css",
+    "web/cv.js",
+    "web/cv.css",
+    "test/a4.test.js",
+    "test/answers.test.js",
+    "src/questions.js"
   ],
   "defences": {
+    "Questions page: the runs of out/, not readRuns' wrapper": {
+      "file": "src/questions.js",
+      "live": "    questions: gatherQuestions(readRuns(out).runs, { profile: loaded.profile, answers }),",
+      "dead": "    questions: gatherQuestions([], { profile: loaded.profile, answers }),",
+      "expect": [
+        "2.22c: the page’s questions come from the runs in out/ and answers.json beside the profile, with the levels and groups to answer with"
+      ]
+    },
     "Server: public admits offers only": {
       "file": "src/server.js",
       "live": "if (publicMode && !looksLikeOffer(offer.text)) {",
@@ -229,7 +243,7 @@
     "Page: the pill names the router": {
       "file": "web/app.js",
       "live": "router.up ? 'Routeur joignable' : 'Routeur injoignable'",
-      "dead": "router.up ? 'Mod\u00e8le joignable' : 'Routeur injoignable'",
+      "dead": "router.up ? 'Modèle joignable' : 'Routeur injoignable'",
       "expect": [
         "the status pill says the router answers, not that the model does"
       ]
@@ -252,8 +266,8 @@
     },
     "Page: an unbacked quality is for the interview, not a no": {
       "file": "web/app.js",
-      "live": ": `${r.name} \u2014 \u00e0 montrer en entretien : ton profil n\u2019en dit rien encore`,",
-      "dead": ": `${r.name} \u2014 non`,",
+      "live": ": `${r.name} — à montrer en entretien : ton profil n’en dit rien encore`,",
+      "dead": ": `${r.name} — non`,",
       "expect": [
         "a personal quality is never shown as a failed requirement"
       ]
@@ -532,8 +546,8 @@
     },
     "Public: no split": {
       "file": "src/server.js",
-      "live": "        if (publicMode) throw new HttpError(403, 'le d\u00e9coupage",
-      "dead": "        if (false) throw new HttpError(403, 'le d\u00e9coupage",
+      "live": "        if (publicMode) throw new HttpError(403, 'le découpage",
+      "dead": "        if (false) throw new HttpError(403, 'le découpage",
       "expect": [
         "in public mode the owner's internal notes and the report are not served, and splitting is off"
       ]
@@ -612,8 +626,8 @@
     },
     "Web: a public failed job has a generic error": {
       "file": "src/server.js",
-      "live": "publicMode && job.status === 'failed' ? '\u00e9chec'",
-      "dead": "false ? '\u00e9chec'",
+      "live": "publicMode && job.status === 'failed' ? 'échec'",
+      "dead": "false ? 'échec'",
       "expect": [
         "in public mode a done job keeps no repair lines, a failed job has a generic error"
       ]
@@ -628,8 +642,8 @@
     },
     "Page: the public status renders without verdicts": {
       "file": "web/app.js",
-      "live": "const verified = profile.verdicts ? ` \u00b7 ${profile.verdicts.verified ?? 0} v\u00e9rifi\u00e9es` : '';",
-      "dead": "const verified = ` \u00b7 ${profile.verdicts.verified ?? 0} v\u00e9rifi\u00e9es`;",
+      "live": "const verified = profile.verdicts ? ` · ${profile.verdicts.verified ?? 0} vérifiées` : '';",
+      "dead": "const verified = ` · ${profile.verdicts.verified ?? 0} vérifiées`;",
       "expect": [
         "the public status renders without the owner assessment"
       ]
@@ -754,7 +768,7 @@
     },
     "Web: the footer never claims the analysis stays local": {
       "file": "web/index.html",
-      "live": "L'offre est analys\u00e9e par Claude (forfait Claude Code, donc envoy\u00e9e \u00e0 Anthropic), ou par une IA locale en secours",
+      "live": "L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours",
       "dead": "100 % local",
       "expect": [
         "the footer never claims the analysis stays local: it names Claude and the local fallback"
@@ -873,6 +887,86 @@
       "dead": "      if (false) {\n",
       "expect": [
         "a tab out of sight asks nothing, and asks again when it is back in sight"
+      ]
+    },
+    "A4 page: a done job links its page": {
+      "file": "web/app.js",
+      "live": "  downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: 'Page A4' }));",
+      "dead": "",
+      "expect": [
+        "a finished card links its A4 page, built from the job id only"
+      ]
+    },
+    "A4 page: the button prints": {
+      "file": "web/cv.js",
+      "live": "  document.getElementById('print').addEventListener('click', () => window.print());",
+      "dead": "",
+      "expect": [
+        "the A4 page prints alone, from a button wired in cv.js"
+      ]
+    },
+    "A4 page: print hides all but the sheet": {
+      "file": "web/cv.css",
+      "live": "  #notice, #print { display: none; }",
+      "dead": "",
+      "expect": [
+        "the A4 page prints alone, from a button wired in cv.js"
+      ]
+    },
+    "A4 page: the fill is measured on the content": {
+      "file": "web/cv.js",
+      "live": "    height: () => root.offsetHeight + padding(),",
+      "dead": "    height: () => sheet.scrollHeight,",
+      "expect": [
+        "the fill is measured on the content, not on the fixed A4 box"
+      ]
+    },
+    "A4 page: title before dates": {
+      "file": "web/cv.js",
+      "live": "    head.append(title, element('span', 'org', ` — ${experience.org}`), element('span', 'dates', experience.dates));",
+      "dead": "    head.append(element('span', 'dates', experience.dates), title, element('span', 'org', ` — ${experience.org}`));",
+      "expect": [
+        "an experience reads title, organisation, then dates (no float before the title)"
+      ]
+    },
+    "Questions: the public host has none": {
+      "file": "src/server.js",
+      "live": "      if (LOCAL_ONLY.has(path) && (publicMode || !deps.questions)) throw new HttpError(404, 'not found');",
+      "dead": "      if (LOCAL_ONLY.has(path) && !deps.questions) throw new HttpError(404, 'not found');",
+      "expect": [
+        "2.22c: the public host has no questions page, no questions and takes no answer, even with the deps there"
+      ]
+    },
+    "Answers: a refusal is a 400": {
+      "file": "src/server.js",
+      "live": "          throw new HttpError(400, String(error.message ?? error));",
+      "dead": "          return send(response, 200, {});",
+      "expect": [
+        "2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400"
+      ]
+    },
+    "Answers: checked before written": {
+      "file": "src/answers.js",
+      "live": "  if (errors.length) throw new Error(errors.join('; '));",
+      "dead": "",
+      "expect": [
+        "2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing"
+      ]
+    },
+    "Answers: an id is answered once": {
+      "file": "src/answers.js",
+      "live": "  if (kept.some((earlier) => earlier.id === id)) throw new Error(`answer ${id}: already answered`);",
+      "dead": "",
+      "expect": [
+        "2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing"
+      ]
+    },
+    "Answers: stamped by the server": {
+      "file": "src/answers.js",
+      "live": "  stored.at = now();",
+      "dead": "",
+      "expect": [
+        "2.22c: addAnswer appends a checked answer, stamped, and the next read has it"
       ]
     }
   }

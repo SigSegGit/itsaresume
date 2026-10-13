@@ -11,7 +11,8 @@ import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { gatherQuestions, readRuns } from '../src/questions.js';
+import { gatherQuestions, pageQuestions, readRuns } from '../src/questions.js';
+import { loadProfile } from '../src/run.js';
 
 const PROFILE = new URL('./fixtures/profile.synthetic.json', import.meta.url);
 const CLI = new URL('../bin/itsacv.js', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
@@ -134,5 +135,24 @@ test('itsacv questions prints the questions of every run, or of the runs named, 
     assert.doesNotMatch(one.stdout, /Rust|Zig/);
   } finally {
     rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('2.22c: the page’s questions come from the runs in out/ and answers.json beside the profile, with the levels and groups to answer with', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-page-questions-'));
+  try {
+    const profilePath = join(dir, 'profile.json');
+    writeFileSync(profilePath, readFileSync(PROFILE, 'utf8'));
+    const out = join(dir, 'out');
+    mkdirSync(join(out, '20261001-100000-sre'), { recursive: true });
+    writeFileSync(join(out, '20261001-100000-sre', 'analysis.json'), JSON.stringify({ requirements: [req('Rust'), req('Erlang')] }));
+    writeFileSync(join(dir, 'answers.json'), JSON.stringify([{ id: 'erlang', asked: 'Erlang', answer: 'no', at: 'x' }]));
+    const page = pageQuestions({ loaded: loadProfile(profilePath), profilePath, out });
+    assert.deepEqual(asked(page.questions), ['Rust']);
+    assert.ok(page.levels.includes('working'));
+    assert.deepEqual(page.groups.map((group) => group.id), profile().skill_groups.map((group) => group.id));
+    assert.ok(page.groups.every((group) => typeof group.label === 'string' && group.label));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

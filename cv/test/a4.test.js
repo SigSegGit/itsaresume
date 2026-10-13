@@ -123,3 +123,27 @@ test('musts that overflow shrink the spacing within bounds, and say so', () => {
   assert.equal(over.overflow, true);
   assert.equal(over.spacing, SPACING.min);
 });
+
+test('the A4 page prints alone, from a button wired in cv.js', () => {
+  const read = (name) => readFileSync(new URL(`../web/${name}`, import.meta.url), 'utf8');
+  assert.match(read('cv.html'), /<button id="print"[^>]*>/);
+  const css = read('cv.css');
+  assert.match(css, /@page\s*\{[^}]*size:\s*A4[^}]*margin:\s*0/);
+  assert.match(css, /@media print\s*\{[^@]*#notice[^@]*#print[^@]*display:\s*none/);
+  assert.match(read('cv.js'), /getElementById\('print'\)\.addEventListener\('click', \(\) => window\.print\(\)\)/);
+});
+
+test('the fill is measured on the content, not on the fixed A4 box', () => {
+  // A fixed-height box's scrollHeight never drops below its clientHeight: the
+  // fill read 1.00 on every real run and the spacing never widened (2.24d).
+  const script = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
+  assert.match(script, /height: \(\) => root\.offsetHeight \+ padding\(\)/);
+  assert.match(script, /const root = element\('div', 'content'\);\n  sheet\.replaceChildren\(root\);/);
+});
+
+test('an experience reads title, organisation, then dates (no float before the title)', () => {
+  // Chrome's printed PDF gave every float:right date before any title (2.24d).
+  const script = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
+  assert.match(script, /element\('div', 'head'\);\n\s*head\.append\(title, element\('span', 'org', [^\n]*\), element\('span', 'dates', experience\.dates\)\);/);
+  assert.doesNotMatch(readFileSync(new URL('../web/cv.css', import.meta.url), 'utf8'), /float:/);
+});

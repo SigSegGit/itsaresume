@@ -78,7 +78,15 @@ function element(tag, className, text) {
 }
 
 /** Lays the whole page out, every item hidden; fill() then shows some. */
-function render(page, root) {
+function render(page, sheet) {
+  // The sheet's height is fixed, so its scrollHeight never drops below its
+  // box: the fill is measured on an inner block that grows with the content.
+  const root = element('div', 'content');
+  sheet.replaceChildren(root);
+  const padding = () => {
+    const style = getComputedStyle(sheet);
+    return parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  };
   const items = new Map();
   const experiences = [];
   const section = (label, ...children) => {
@@ -103,7 +111,9 @@ function render(page, root) {
     const title = element('span', 'title', experience.title);
     const env = element('p', 'env', experience.env ? page.labels.env + experience.env : '');
     const ul = element('ul');
-    block.append(element('span', 'dates', experience.dates), title, element('span', 'org', ` — ${experience.org}`), ul, env);
+    const head = element('div', 'head');
+    head.append(title, element('span', 'org', ` — ${experience.org}`), element('span', 'dates', experience.dates));
+    block.append(head, ul, env);
     for (const item of experience.items) {
       const li = element('li', '', item.text);
       li.hidden = true;
@@ -127,9 +137,9 @@ function render(page, root) {
       title.textContent = empty ? empty.title : experience.title;
       env.hidden = Boolean(empty) || !experience.env;
     },
-    spacing: (value) => root.style.setProperty('--spacing', String(value)),
-    height: () => root.scrollHeight,
-    box: () => root.clientHeight,
+    spacing: (value) => sheet.style.setProperty('--spacing', String(value)),
+    height: () => root.offsetHeight + padding(),
+    box: () => sheet.clientHeight,
   };
 }
 
@@ -140,6 +150,7 @@ async function start() {
     notice.textContent = text;
     notice.hidden = false;
   };
+  document.getElementById('print').addEventListener('click', () => window.print());
   const job = new URLSearchParams(location.search).get('job') ?? '';
   const response = await fetch(`/api/jobs/${encodeURIComponent(job)}/page`);
   if (!response.ok) return say('CV introuvable : relancez la génération depuis la page d’accueil.');

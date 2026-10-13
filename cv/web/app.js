@@ -326,6 +326,7 @@ function resultOf(job, detail) {
     download: '',
     text: { 'cv.pdf': 'CV (PDF)', 'cv.docx': 'CV (Word)', 'report.md': 'Rapport' }[name],
   }));
+  downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: 'Page A4' }));
   return [
     h('div', { class: 'result' }, ring(fit.score), h('div', {},
       h('div', { class: 'verdict' },

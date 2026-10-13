@@ -7,10 +7,11 @@
 // meets, ranked by how many offers ask it. The page (2.22c) asks them.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { defaultIndex, key, lookup, members, skillConcepts } from './lexicon.js';
 import { settledKind } from './normalize.js';
-import { identityNames } from './profile.js';
+import { LEVELS, identityNames } from './profile.js';
+import { readAnswers } from './answers.js';
 import { isNever } from './score.js';
 
 /** Not a skill to ask about: code settles these from the profile's own lines, or the interview does. */
@@ -119,4 +120,18 @@ export function formatQuestions(questions, runCount) {
     return `${offers}  must in ${question.must}  ${question.asked}${also.length ? ` (also: ${also.join(', ')})` : ''}`;
   });
   return `${questions.length} question(s) from ${runCount} run(s), most asked first\n${lines.map((line) => `${line}\n`).join('')}`;
+}
+
+/**
+ * 2.22c: what the questions page shows: the questions over every run in
+ * `out`, minus the answers beside the profile, and what to answer with
+ * (the levels, the profile's groups with their French title).
+ */
+export function pageQuestions({ loaded, profilePath, out }) {
+  const answers = readAnswers(join(dirname(profilePath), 'answers.json'));
+  return {
+    questions: gatherQuestions(readRuns(out).runs, { profile: loaded.profile, answers }),
+    levels: LEVELS,
+    groups: (loaded.profile.skill_groups ?? []).map((group) => ({ id: group.id, label: group.title?.fr ?? group.title?.en ?? group.id })),
+  };
 }

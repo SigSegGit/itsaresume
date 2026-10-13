@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.24c
-TITLE: print the A4 page (window.print), link it from the job, check fill by hand in Chrome and Firefox
+NEXT: 2.22c-link
+TITLE: link the questions page from the local home page and from a run's unmet requirements (hidden on the public host); then 2.22d once the owner has answered
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -20,6 +20,7 @@ the decisions waiting for him, how to reach his machines — are in
   (cv.<domain>) generates on the always-on VM, Claude first, the laptop's
   Bionic through a tunnel when the laptop is on (ADR-11); the VM follows
   `main` by itself (3.5, timer installed 2026-10-05).
+- **2.24 done 2026-10-13** (browser fill 0.95-1.00 on the 26 runs).
 - **Order set by the owner (2026-10-06)**: 2.24 (the A4 page laid out and
   printed by the browser, docx kept as an option), then 2.25 (a shorter
   prompt through standard profiles), then 2.22c. A local model on the Pi
@@ -72,7 +73,7 @@ the decisions waiting for him, how to reach his machines — are in
 - 2.22 (the owner, 2026-10-06): refining the profile from the app. A
   requirement no profile skill meets becomes a question; his "yes" (level,
   one sentence) joins the profile through `answers.json` (2.22a done);
-  `itsacv questions` lists them (2.22b done: 36 on the 26 real runs); the local form (2.22c), the measure (2.22d)
+  `itsacv questions` lists them (2.22b done: 36 on the 26 real runs); the local form (2.22c done 2026-10-13, ahead of 2.25 in the owner's order; its links are 2.22c-link), the measure (2.22d)
   follow. 2.3b-ii's shortlist then comes, as a hint, never a lock.
 - 471 tests; every defence is sabotage-verified (`scripts/sabotage/*.json`,
   one plan per attack surface since router 8.46: injection, guard, public,
@@ -578,10 +579,16 @@ Traps met, each cost time once:
     in `src/lexicon.js`, else its text), minus what `answers.json`
     already answers, ranked by how many offers ask it. `itsacv questions`
     prints them.
-  - [ ] **2.22c** The page (local host only; the public host answers
-    404): the questions, each "Oui / Non", level, group, one sentence
-    ("où, quand, quoi"), written to `answers.json`; the next run uses it.
-    A run's report links its own unmet requirements to the form.
+  - [x] **2.22c** (2026-10-13) `/questions.html` + `web/questions.js`,
+    `GET /api/questions` (`pageQuestions()`), `POST /api/answers`
+    (`addAnswer()`: mergeAnswers must take it, an id once, stamped by the
+    server, written atomically); all four 404 on the public host
+    (`LOCAL_ONLY`). Checked on the real profile read-only: 36 questions,
+    10 groups; a refusal shows in the page; nothing written.
+  - [ ] **2.22c-link** Link `/questions.html` from the local home page
+    (the status says it is local; hidden in public) and, per finished
+    job, its unmet requirements (`/questions.html?job=<id>` filtering to
+    `runs` containing that run). Test in web.test.js.
   - [ ] **2.22d** Measure: the 26 real runs replayed with the answers the
     owner gave; the score moves only through his answers.
 - [x] **2.23** (a tester, 2026-10-06: "ton front spam pour récup les
@@ -630,11 +637,19 @@ Traps met, each cost time once:
     Must items never dropped; if they overflow, shrink within bounds and
     say so. Tested over the fake DOM of `test/fixtures/page.js` with
     item heights given.
-  - [ ] **2.24c** First: a link « Page A4 » per done job in web/app.js
-    (test in web.test.js), then open it on a real run and look. Print: `@media print` hides everything but the page;
-    the button calls `window.print()`. Check by hand in Chrome and
-    Firefox (PDF one page, text selectable); write the fill measured on
-    the 26 real runs next to LibreOffice's.
+  - [x] **2.24c** A link « Page A4 » per done job (web/app.js, new tab);
+    a button « Imprimer / PDF » calls `window.print()`; `@page` A4 margin 0
+    and `@media print` hide all but the sheet. 3 defences (http.json).
+  - [x] **2.24d** (2026-10-13) Measured on the 26 real runs (bench:
+    `~/.itsaresume/migrations/a4-fill-bench.mjs`): the browser fills
+    0.95-1.00, spacing 1.15-1.35, no overflow; the Word/LibreOffice PDFs
+    fill 0.67-1.03 (11 under 0.95). Two bugs of 2.24b found and fixed:
+    the fill was read on the fixed A4 box (scrollHeight >= clientHeight,
+    so 1.00 everywhere and the spacing never widened), now on an inner
+    block; the float:right dates came out before every title in Chrome's
+    PDF text, now a flex head (title, org, dates). Chrome headless
+    print: one page, text selectable, button hidden. **Left to the
+    owner**: the same print by hand in Firefox.
   - Lost, said in the page: the server's ATS check of the PDF (the server
     no longer sees the printed PDF).
 - [ ] **2.25** (the owner, 2026-10-06) **A shorter prompt, same

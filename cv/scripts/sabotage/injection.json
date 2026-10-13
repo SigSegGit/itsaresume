@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/questions.js",
     "src/analysis.js",
     "src/answers.js",
     "src/ats.js",

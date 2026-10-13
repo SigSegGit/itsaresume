@@ -279,3 +279,13 @@ test('a tab out of sight asks nothing, and asks again when it is back in sight',
   await page.tick();
   assert.ok(page.fetches.some((call, i) => i >= before && call.path === '/api/jobs'), 'a visible tab asks again');
 });
+
+test('a finished card links its A4 page, built from the job id only', async () => {
+  const page = pageWith([{ id: 'j1', title: 'Senior SRE', status: 'done', steps: [], error: null }], { j1: detail() });
+  await page.settle();
+  const walk = (node) => [node, ...(node.childNodes ?? []).flatMap(walk)];
+  const link = walk(page.$('jobs')).find((node) => node.tagName === 'A' && node.textContent === 'Page A4');
+  assert.ok(link, 'no « Page A4 » link');
+  assert.equal(link.attributes.href ?? link.href, '/cv.html?job=j1');
+  page.close();
+});

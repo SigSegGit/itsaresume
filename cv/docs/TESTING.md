@@ -29,6 +29,9 @@ property it proves.
 | a short mission with nothing shown is dropped; with an item, it shows | — |
 | the spacing widens within bounds until the page is 95 % full, never past the page | A4: the spacing widens no further than its bound |
 | musts that overflow shrink the spacing within bounds, and say so | A4: musts that overflow shrink the spacing |
+| the A4 page prints alone, from a button wired in cv.js | A4 page: the button prints; A4 page: print hides all but the sheet |
+| the fill is measured on the content, not on the fixed A4 box | A4 page: the fill is measured on the content |
+| an experience reads title, organisation, then dates (no float before the title) | A4 page: title before dates |
 
 ## `test/answers.test.js`
 
@@ -40,6 +43,8 @@ property it proves.
 | two answers with one id are refused | Answers: one answer per id |
 | an answer cannot bring back a skill the evidence contradicts | Answers: a contradicted skill stays out |
 | loadProfile merges answers.json beside the profile, and refuses a bad one | Answers: loadProfile merges them; Answers: a refused answer stops the run |
+| 2.22c: addAnswer appends a checked answer, stamped, and the next read has it | Answers: stamped by the server |
+| 2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing | Answers: checked before written; Answers: an id is answered once |
 
 ## `test/client.test.js`
 
@@ -454,6 +459,7 @@ property it proves.
 | runs older than offer.txt are one offer per first line, joined to the text a later run of it kept | Questions: an offer run twice counts once; Questions: a run older than offer.txt joins the text its first line kept; Questions: runs older than offer.txt are one offer per first line |
 | readRuns reads each run with an analysis, skips the others, and names the unreadable | Questions: a run that wrote no analysis is not read; Questions: an unreadable run is named, not fatal |
 | itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile | Questions: the command subtracts answers.json beside the profile; Questions: the command reads the runs named |
+| 2.22c: the page’s questions come from the runs in out/ and answers.json beside the profile, with the levels and groups to answer with | Questions page: the runs of out/, not readRuns' wrapper |
 
 ## `test/redteam.test.js`
 
@@ -593,6 +599,8 @@ property it proves.
 | a flood of page loads evicts empty visitors first, never one with jobs while an empty one remains | Public: a visitor with jobs is evicted last |
 | an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500 | Invite: an unreadable file names nobody |
 | Claude and the local model run in two lanes, one job each, and a queued job says its place | Web: Claude and the local model have their own lanes; Web: a queued job says its place |
+| 2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400 | Answers: a refusal is a 400 |
+| 2.22c: the public host has no questions page, no questions and takes no answer, even with the deps there | Questions: the public host has none |
 
 ## `test/split.test.js`
 
@@ -664,6 +672,7 @@ property it proves.
 | the page shows a queued job its place in the queue | Web: the page shows the place in the queue |
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
+| a finished card links its A4 page, built from the job id only | A4 page: a done job links its page |
 
 ## `test/word.test.js`
 
@@ -680,6 +689,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**441 tests, 371 of them covered by at least one sabotage defence.**
+**450 tests, 380 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

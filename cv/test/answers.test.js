@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mergeAnswers } from '../src/answers.js';
+import { addAnswer, mergeAnswers } from '../src/answers.js';
 import { validateProfile } from '../src/profile.js';
 import { loadProfile, RunError } from '../src/run.js';
 
@@ -78,6 +78,38 @@ test('loadProfile merges answers.json beside the profile, and refuses a bad one'
     assert.equal(loadProfile(path).profile.skills.some((skill) => skill.id === 'answer-kafka-1'), true);
     writeFileSync(join(dir, 'answers.json'), JSON.stringify([yes({ level: 'guru' })]));
     assert.throws(() => loadProfile(path), (error) => error instanceof RunError && error.code === 2 && /kafka-1: level guru/.test(error.message));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('2.22c: addAnswer appends a checked answer, stamped, and the next read has it', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'answers-'));
+  try {
+    const path = join(dir, 'answers.json');
+    const stored = addAnswer(path, { ...yes(), at: undefined }, { profile: profile(), now: () => '2026-10-13T00:00:00.000Z' });
+    assert.equal(stored.at, '2026-10-13T00:00:00.000Z');
+    addAnswer(path, { id: 'cobol-1', asked: 'COBOL', answer: 'no' }, { profile: profile(), now: () => 'x' });
+    const kept = JSON.parse(readFileSync(path, 'utf8'));
+    assert.deepEqual(kept.map((answer) => [answer.id, answer.answer]), [['kafka-1', 'yes'], ['cobol-1', 'no']]);
+    assert.deepEqual(Object.keys(kept[1]).sort(), ['answer', 'asked', 'at', 'id']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'answers-'));
+  try {
+    const path = join(dir, 'answers.json');
+    assert.throws(() => addAnswer(path, yes({ level: 'god' }), { profile: profile() }), /level god/);
+    assert.throws(() => addAnswer(path, yes({ said: ' ' }), { profile: profile() }), /no sentence from the owner/);
+    assert.throws(() => addAnswer(path, { id: 'x', asked: 'X', answer: 'maybe' }, { profile: profile() }), /neither yes nor no/);
+    assert.throws(() => addAnswer(path, { asked: 'X', answer: 'no' }, { profile: profile() }), /id/);
+    assert.throws(() => readFileSync(path), /ENOENT/);
+    addAnswer(path, yes(), { profile: profile() });
+    assert.throws(() => addAnswer(path, yes({ name: 'Kafka Streams' }), { profile: profile() }), /already answered/);
+    assert.equal(JSON.parse(readFileSync(path, 'utf8')).length, 1);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

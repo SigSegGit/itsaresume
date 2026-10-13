@@ -885,3 +885,63 @@ test('Claude and the local model run in two lanes, one job each, and a queued jo
     app.server.close();
   }
 });
+
+test('2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400', async () => {
+  const given = [];
+  const app = await start({
+    questions: () => ({ questions: [{ id: 'kafka', asked: 'Kafka', offers: 3, must: 1 }], levels: ['working'], groups: [{ id: 'db', label: 'Data' }] }),
+    answer: (body) => {
+      if (body.answer === 'maybe') throw new Error('answer x: answer maybe is neither yes nor no');
+      given.push(body);
+      return { ...body, at: 'now' };
+    },
+  });
+  try {
+    const listed = await call(app.port, { path: '/api/questions' });
+    assert.equal(listed.status, 200);
+    assert.equal(JSON.parse(listed.text).questions[0].asked, 'Kafka');
+    const page = await call(app.port, { path: '/questions.html' });
+    assert.equal(page.status, 200);
+    assert.ok(page.text.includes(TOKEN), 'the questions page carries the CSRF token');
+    const ok = await post(app, '/api/answers', { id: 'kafka', asked: 'Kafka', answer: 'no' });
+    assert.equal(ok.status, 200);
+    assert.deepEqual(given, [{ id: 'kafka', asked: 'Kafka', answer: 'no' }]);
+    const bad = await post(app, '/api/answers', { id: 'x', asked: 'X', answer: 'maybe' });
+    assert.equal(bad.status, 400);
+    assert.match(JSON.parse(bad.text).error, /neither yes nor no/);
+    assert.equal((await post(app, '/api/answers', { id: 'kafka', answer: 'no' }, { 'X-CSRF-Token': 'b'.repeat(48) })).status, 403);
+  } finally {
+    app.server.close();
+  }
+});
+
+test('2.22c: the public host has no questions page, no questions and takes no answer, even with the deps there', async (t) => {
+  let answered = 0;
+  const app = createApp({
+    token: TOKEN,
+    deps: {
+      status: async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } }),
+      tailor: async () => { throw new Error('no'); },
+      questions: () => ({ questions: [{ id: 'kafka', asked: 'Kafka' }] }),
+      answer: (body) => { answered += 1; return body; },
+    },
+    publicMode: { host: 'cv.example.org', perDay: 5, perVisitorPerHour: 2, maxQueued: 3, now: () => Date.now() },
+  });
+  await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { app.server.closeAllConnections(); app.server.close(); });
+  const port = app.server.address().port;
+  const host = { Host: 'cv.example.org', 'X-Forwarded-For': '203.0.113.7' };
+  const page = await call(port, { headers: host });
+  const token = page.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+  const cookie = String(page.headers['set-cookie'] ?? '').split(';')[0];
+  for (const path of ['/api/questions', '/questions.html', '/questions.js']) {
+    assert.equal((await call(port, { path, headers: { ...host, Cookie: cookie } })).status, 404, path);
+  }
+  const posted = await call(port, {
+    method: 'POST', path: '/api/answers',
+    headers: { ...host, Cookie: cookie, Origin: 'https://cv.example.org', 'X-CSRF-Token': token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: 'kafka', asked: 'Kafka', answer: 'no' }),
+  });
+  assert.equal(posted.status, 404);
+  assert.equal(answered, 0);
+});
