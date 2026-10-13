@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.48
-TITLE: gemini-cli backend (8.47, free-tier key, real run OK on the laptop); next: enable it on the VM, then codex
+TITLE: gemini + openai backends and 15-min checks merged (8.47-8.49); next: enable them on the VM and one real CV run on Gemini
 WRITTEN-AT: 2026-10-14
 BASE: 73725c8
 -->
@@ -85,7 +85,9 @@ consequences — before any code. Never a quiet decision.
    (`login = "free-tier-key"`), read from the router's environment only
    (`$DATA/gemini.env` on the VM, `~/.itsaresume/gemini.env` on the
    laptop), never in a repository or a config file. Enabling billing on
-   that project is the line he holds; any other key: ask.
+   that project is the line he holds. Same day, same terms: his OpenAI
+   free-tier service-account key (no overage possible), `OPENAI_API_KEY`
+   in `openai.env`. Any other key: ask.
 3. **`Other` never triggers a fallback.** Only `QuotaExceeded` and
    `Unreachable` hand over to the next backend (ARCHITECTURE explains why).
 4. **Rust** for all orchestration and routing logic.
@@ -602,18 +604,32 @@ branch with the local gates of §3 green.
   valid JSON; gemini-2.5-flash is retired for new keys: the CLI then prints
   an **empty** `response` and the cause only in a report file (now read:
   404 → `Other`, 429 → `QuotaExceeded`). Sabotage `router-gemini.json` (8).
-- [ ] **8.48** **Gemini live on the VM, then the `codex` backend.** The key
-  is already in the VM's `~/itsacv-data/gemini.env` (600). After the merge
-  deploys the image: uncomment the gemini block in the VM's private
-  `router.toml` between claude and bionic, restart, one real CV run.
-  Then `codex exec --json` on a ChatGPT login (`~/.codex/auth.json`; codex
-  is not installed on the laptop). Benches across providers later (owner,
-  2026-10-14: capabilities first, A/B after).
+- [x] **8.48a** **`openai` backend** (`kind = "openai"`, model only; fixed
+  endpoint, key from `OPENAI_API_KEY`, bearer header; schema through the
+  shared JSON rule + `json_object`). Real run 2026-10-14: 429 "no credits
+  remaining" = `limited`, falls back: the account has no API allowance yet.
+- [x] **8.49** **Checks every 15 min** (`check_every_secs = 900`): one tiny
+  request to each backend that cannot probe itself and saw no real traffic
+  within the period; `/status` then holds the last known state; the page
+  menu shows only what can answer (cv). Real run: claude up, gemini up,
+  bionic down -> menu auto/claude/gemini, default gemini (Claude near its
+  limit).
+- [ ] **8.48** **Enable on the VM.** Keys already in `~/itsacv-data/
+  {gemini,openai}.env` (600). After the merge deploys the image: in the
+  VM's private `router.toml` add `check_every_secs = 900`, uncomment the
+  gemini block (gemini-3.8-flash, free-tier-key) between claude and
+  bionic, the openai one after it; restart; one real CV run on Gemini
+  (`model: gemini`). Then bench providers (owner: later).
 
 ## 9. Deliberately open
 
-- **Gemini output shapes are hypotheses** (CLI 0.11, not logged in here);
-  the env scrub in the child process has no process test, only the list.
+- **Gemini output shapes**: success and the empty-response error observed
+  (CLI 0.11, key login); a real 429 not yet. The env scrub in the child
+  process has no process test, only the list.
+- **The checks spend a little quota**: at most one tiny request per
+  backend per 15 min, none when real traffic answered meanwhile (Claude's
+  check is a `claude -p` call on the plan). The check thread has no test of
+  its own (`Router::check` has two).
 
 - **The hostile corpus (8.46b) has limits.** French offers only; the PDF
   is not read (layout off in tests: the docx text is); a system prompt
