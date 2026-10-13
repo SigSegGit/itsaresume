@@ -124,3 +124,13 @@ test('a pick outside the shortlist stays met when the grounding keeps it', () =>
   const { analysis: out } = normalize(analysis([{ name: 'Python', importance: 'must', match: 'yes', skills: ['python'], note: '' }]), p);
   assert.equal(out.requirements[0].match, 'yes');
 });
+
+test('loadProfile reads links.json beside the profile', async () => {
+  const { loadProfile } = await import('../src/run.js');
+  const dir = mkdtempSync(join(tmpdir(), 'links-profile-'));
+  const p = profile();
+  delete p.links;
+  writeFileSync(join(dir, 'profile.json'), JSON.stringify(p));
+  writeFileSync(join(dir, 'links.json'), JSON.stringify({ links: [{ words: 'ADFS', skill: 'ad', offers: 0, verdict: 'near' }] }));
+  assert.deepEqual(loadProfile(join(dir, 'profile.json')).profile.links, [{ words: 'adf', skill: 'ad', offers: 0, verdict: 'near' }]);
+});
