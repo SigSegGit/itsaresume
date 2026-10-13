@@ -64,7 +64,7 @@ fn a_schema_answer_must_be_json_even_inside_a_fence() {
     let fenced = json!({"response": "Voici :\n```json\n{\"a\": 1}\n```"}).to_string();
     let completion = classify(&fenced, "", true).expect("json in a fence");
     assert_eq!(
-        serde_json::from_str::<serde_json::Value>(&completion.text).unwrap(),
+        serde_json::from_str::<serde_json::Value>(&completion.text).expect("json"),
         json!({"a": 1})
     );
     let prose = json!({"response": "Je ne sais pas."}).to_string();
@@ -136,7 +136,7 @@ fn a_missing_program_is_unreachable() {
         &settings,
         r#"{"security":{"auth":{"selectedType":"oauth-personal"}}}"#,
     )
-    .unwrap();
+    .expect("temp settings");
     let backend = GeminiCliBackend::new("definitely-not-gemini-xyz").with_settings_file(&settings);
     let outcome = backend.complete_with_env(&Request::new("x"), Vec::new());
     let _ = std::fs::remove_file(&settings);
@@ -153,7 +153,7 @@ fn an_api_key_login_never_starts_the_cli() {
         &settings,
         r#"{"security":{"auth":{"selectedType":"gemini-api-key"}}}"#,
     )
-    .unwrap();
+    .expect("temp settings");
     // A program that does not exist: Unreachable would prove it was started.
     let backend = GeminiCliBackend::new("definitely-not-gemini-xyz").with_settings_file(&settings);
     let outcome = backend.complete_with_env(&Request::new("x"), Vec::new());
