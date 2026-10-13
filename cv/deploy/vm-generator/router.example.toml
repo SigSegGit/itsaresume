@@ -4,6 +4,9 @@
 # a Claude that is not logged in STOPS the request ("Other"), it does not
 # fall back.
 journal = "/home/node/journal/journal.jsonl"
+# 8.49: every 15 min, one tiny request to each backend that has not answered
+# real traffic meanwhile, so the page offers only what can answer.
+check_every_secs = 900
 
 [[backend]]
 kind = "claude-code"
@@ -25,6 +28,16 @@ timeout_secs = 900
 # model = "gemini-3.8-flash"
 # login = "free-tier-key"
 # timeout_secs = 900
+
+# OpenAI with the owner's free-tier service-account key: OPENAI_API_KEY in
+# $DATA/openai.env, never here. gpt-5-mini: the cheapest that holds the
+# JSON contract. Observed 2026-10-14: "no credits remaining" (429) =
+# limited, the router falls back; it answers only once the account has a
+# free allowance.
+# [[backend]]
+# kind = "openai"
+# model = "gpt-5-mini"
+# timeout_secs = 600
 
 # The laptop's local model, through the tunnel the laptop opens when it is
 # on (deploy/laptop/bionic-tunnel.sh). Off: an outage, the request is

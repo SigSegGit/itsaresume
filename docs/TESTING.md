@@ -198,6 +198,15 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_free_tier_login_without_a_key_never_starts_the_cli` | `tests/gemini_cli.rs` | `free-tier-key` with no key in the environment: `Other`, CLI not started | Gemini free-tier needs a key |
 | `an_empty_response_is_an_error_read_from_the_report` | `tests/gemini_cli.rs` | Observed: empty `response` = API error; the report file says quota (429) or `Other` (404) | Gemini empty response is an error |
 | `a_gemini_free_tier_login_is_named_not_given` | `tests/config.rs` | `login = "free-tier-key"` parses; an unknown login is refused | — |
+| `the_key_goes_as_a_bearer_and_never_in_the_body` | `tests/openai.rs` | The key travels as `Authorization: Bearer`, never in the body | OpenAI key goes as a bearer |
+| `no_key_is_other_and_sends_nothing` | `tests/openai.rs` | No `OPENAI_API_KEY`: `Other`, nothing sent | OpenAI never sends without a key |
+| `insufficient_quota_falls_back` | `tests/openai.rs` | 429 `insufficient_quota` (observed: no credits) is `QuotaExceeded` | — |
+| `a_schema_uses_the_shared_rule_and_json_object_mode` | `tests/openai.rs` | A schema goes as the shared JSON rule plus `json_object` mode | OpenAI schema through the shared rule |
+| `its_name_is_openai` | `tests/openai.rs` | The journal name | — |
+| `an_openai_backend_has_a_model_and_no_key_or_url` | `tests/config.rs` | `kind = "openai"`: a model; `api_key` and `base_url` refused | — |
+| `checks_are_off_unless_a_period_is_given` | `tests/config.rs` | `check_every_secs` absent: no checks | — |
+| `a_check_asks_each_backend_once_and_records_its_state` | `tests/router.rs` | 8.49: one tiny request per silent backend; status up/limited/down | — |
+| `a_backend_seen_within_the_period_is_not_checked_again` | `tests/router.rs` | Real traffic within the period counts as a check | Check skips a backend seen within the period |
 | `scripts/docker-smoke.sh` (CI job `docker`) | — | The image holds the pinned `claude` CLI and not the test double; `/healthz` answers; a real request through the **real** CLI with a bogus `ANTHROPIC_API_KEY` on the container returns 502 "Not logged in" — proving the key is stripped and the stop does not fall back | — (the script states what each other outcome would mean) |
 | `a_green_pr_is_merged_pinned_to_its_head` | `scripts/test-merge-when-green.sh` | Twelve passing checks: the merge names the head it counted (`--match-head-commit`) | Merge: pinned to the counted head |
 | `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |

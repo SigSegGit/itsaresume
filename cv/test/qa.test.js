@@ -7,9 +7,8 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MODELS, backendFor, withModel, appendQaLog, QA_LOG } from '../src/qa.js';
-
+test('auto lets the router choose; claude, gemini, openai and local name its backends', () => {
   assert.deepEqual(MODELS, ['auto', 'claude', 'gemini', 'openai', 'local']);
-  assert.deepEqual(MODELS, ['auto', 'claude', 'local']);
   assert.equal(backendFor('auto'), undefined);
   assert.equal(backendFor('claude'), 'claude-code');
   assert.equal(backendFor('gemini'), 'gemini-cli');

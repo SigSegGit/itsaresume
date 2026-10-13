@@ -388,6 +388,9 @@ property it proves.
 | a router older than /status leaves the menu as it was: everything offered, auto first | — |
 | no router at all offers nothing, and says so | Models: no router offers nothing |
 | serve() hands the page the menu from the router, without any router reason | Models: serve() hands the menu to the page |
+| Gemini and OpenAI are offered when up, and unconfigured ones are not | — |
+| Claude spent hands the default to Gemini before the slow local model | Models: Gemini before the slow local model |
+| nothing able to answer leaves no default and auto off | — |
 
 ## `test/must-stay-no.test.js`
 
@@ -478,7 +481,7 @@ property it proves.
 
 | Property (the test name) | Sabotage defences |
 |---|---|
-| auto lets the router choose; claude and local name its backends | QA: claude and local name the router backends |
+| auto lets the router choose; claude, gemini, openai and local name its backends | QA: claude and local name the router backends |
 | each run appends one JSON line to the QA log, never rewriting it | QA: the log appends |
 | a chosen model goes with every call to the router; auto sends none | QA: every call of a run goes to the chosen backend |
 
@@ -705,7 +708,7 @@ property it proves.
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 | an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
 | the page offers a profile choice only when the status lists several, and sends the one chosen | — |
-| the page greys the models the server says cannot answer, and refreshes the menu | Models: the page greys what cannot answer |
+| the page greys the models the server says cannot answer, and refreshes the menu | Models: the page greys what cannot answer; Models: the page hides what cannot answer |
 | the page shows a queued job its place in the queue | Web: the page shows the place in the queue |
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
@@ -727,6 +730,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**473 tests, 396 of them covered by at least one sabotage defence.**
+**476 tests, 397 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

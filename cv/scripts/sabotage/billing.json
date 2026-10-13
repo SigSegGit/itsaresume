@@ -91,8 +91,8 @@
     },
     "Models: the local model down is unavailable": {
       "file": "src/models.js",
-      "live": "if (backend.state === 'down') return { available: false, note: 'portable \u00e9teint ou hors ligne' };",
-      "dead": "if (backend.state === 'down') return { available: true, note: 'portable \u00e9teint ou hors ligne' };",
+      "live": "if (backend.state === 'down') return { available: false, note: 'portable éteint ou hors ligne' };",
+      "dead": "if (backend.state === 'down') return { available: true, note: 'portable éteint ou hors ligne' };",
       "expect": [
         "the local model down is unavailable, said plainly, and auto takes the default"
       ]
@@ -131,8 +131,8 @@
     },
     "Models: Claude in light use is the default": {
       "file": "src/models.js",
-      "live": "const chosen = (claude.available && light && 'claude') || (local.available && 'local') || fallback;",
-      "dead": "const chosen = (local.available && 'local') || fallback;",
+      "live": "const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')",
+      "dead": "const chosen = (gemini.available && 'gemini')",
       "expect": [
         "Claude in light use is the default; the local model up says whether it must load first"
       ]
@@ -287,6 +287,14 @@
       "dead": "? answer.backend : '?';",
       "expect": [
         "a backend name that is no plain id is counted as \"?\", and never touches a prototype"
+      ]
+    },
+    "Models: Gemini before the slow local model": {
+      "file": "src/models.js",
+      "live": "    || (openai.available && 'openai') || (local.available && 'local') || fallback;",
+      "dead": "    || (local.available && 'local') || (openai.available && 'openai') || fallback;",
+      "expect": [
+        "Claude spent hands the default to Gemini before the slow local model"
       ]
     }
   }

@@ -1,5 +1,5 @@
 {
-  "surface": "gemini billing",
+  "surface": "cloud fallbacks (gemini, openai) and checks",
   "command": [
     "cargo",
     "test",
@@ -9,6 +9,10 @@
     "gemini_cli",
     "--test",
     "config",
+    "--test",
+    "openai",
+    "--test",
+    "router",
     "--no-fail-fast"
   ],
   "files": [
@@ -21,11 +25,14 @@
     "crates/itsaresume-router/src/lib.rs",
     "crates/itsaresume-router/src/lm_studio.rs",
     "crates/itsaresume-router/src/main.rs",
+    "crates/itsaresume-router/src/openai.rs",
     "crates/itsaresume-router/src/router.rs",
     "crates/itsaresume-router/src/server.rs",
     "crates/itsaresume-router/src/stats.rs",
     "crates/itsaresume-router/tests/config.rs",
-    "crates/itsaresume-router/tests/gemini_cli.rs"
+    "crates/itsaresume-router/tests/gemini_cli.rs",
+    "crates/itsaresume-router/tests/openai.rs",
+    "crates/itsaresume-router/tests/router.rs"
   ],
   "defences": {
     "Gemini accepts only a Google account login": {
@@ -91,6 +98,38 @@
       "dead": "        Some(v) if false && v[\"response\"].as_str().is_none_or(|r| r.trim().is_empty()) => {",
       "expect": [
         "an_empty_response_is_an_error_read_from_the_report"
+      ]
+    },
+    "OpenAI never sends without a key": {
+      "file": "crates/itsaresume-router/src/openai.rs",
+      "live": "        if self.inner.bearer.is_none() {",
+      "dead": "        if false {",
+      "expect": [
+        "no_key_is_other_and_sends_nothing"
+      ]
+    },
+    "OpenAI key goes as a bearer": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "            post = post.header(\"Authorization\", &format!(\"Bearer {bearer}\"));",
+      "dead": "            let _ = bearer;",
+      "expect": [
+        "the_key_goes_as_a_bearer_and_never_in_the_body"
+      ]
+    },
+    "OpenAI schema through the shared rule": {
+      "file": "crates/itsaresume-router/src/openai.rs",
+      "live": "        inner.schema_as_rule = true;",
+      "dead": "        inner.schema_as_rule = false;",
+      "expect": [
+        "a_schema_uses_the_shared_rule_and_json_object_mode"
+      ]
+    },
+    "Check skips a backend seen within the period": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "            if backend.probe().is_some() || recent.iter().any(|r| r == name) {",
+      "dead": "            if backend.probe().is_some() {",
+      "expect": [
+        "a_backend_seen_within_the_period_is_not_checked_again"
       ]
     }
   }

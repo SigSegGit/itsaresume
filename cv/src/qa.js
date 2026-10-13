@@ -9,10 +9,10 @@
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const MODELS = ['auto', 'claude', 'local'];
+export const MODELS = ['auto', 'claude', 'gemini', 'openai', 'local'];
 export const QA_LOG = 'qa-log.jsonl';
 
-const BACKENDS = { auto: undefined, claude: 'claude-code', local: 'lm-studio' };
+const BACKENDS = { auto: undefined, claude: 'claude-code', gemini: 'gemini-cli', openai: 'openai', local: 'lm-studio' };
 
 /** The router backend name for a model the page offers; undefined lets the router choose. */
 export function backendFor(model) {

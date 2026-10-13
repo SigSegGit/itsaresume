@@ -190,7 +190,7 @@ test('the public status renders without the owner assessment', async () => {
 test('the page lets the owner pick the model, and sends the choice with the offers', () => {
   const html = web('index.html');
   const select = html.match(/<select id="model"[\s\S]*?<\/select>/)?.[0] ?? '';
-  assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'local']);
+  assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'gemini', 'openai', 'local']);
   assert.match(web('app.js'), /api\('\/api\/jobs', \{ offers: [^\n]*, model: \$\('model'\)\.value[,} ]/);
 });
 
@@ -241,7 +241,8 @@ test('the page offers a profile choice only when the status lists several, and s
 // menu's logic is src/models.js (test/models.test.js).
 test('the page greys the models the server says cannot answer, and refreshes the menu', () => {
   const app = web('app.js');
-  assert.match(app, /option\.disabled = !state\.available;/);
+  assert.match(app, /option\.disabled = !state\?\.available;/);
+  assert.match(app, /option\.hidden = !state\?\.available;/);
   assert.match(app, /button\.disabled = offers\.length === 0 \|\| !modelsReady;/);
   assert.match(app, /setInterval\?\.\(\(\) => document\.hidden \|\| refreshStatus\(\), \d+\)/);
   assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
