@@ -46,7 +46,7 @@ check() {  # name, files to change, expected output
 }
 all_root="sabotage_root=scripts/sabotage/r1.json scripts/sabotage/r2.json"
 all_cv="sabotage_cv=scripts/sabotage/c1.json scripts/sabotage/c2.json"
-# A pull request runs the plans that defend the file (owner, 2026-10-13: CI
+# A pull request runs the plans that defend the file (owner, 2026-10-13, 8.46c: CI
 # minutes); a file plans only depend on runs every plan naming it; main runs all.
 check a_defended_source_selects_only_the_plans_defending_it "crates/r/src/a.rs" "sabotage_root=scripts/sabotage/r1.json sabotage_cv= "
 check a_source_plans_only_depend_on_selects_every_plan_naming_it "crates/r/src/c.rs" "$all_root sabotage_cv= "

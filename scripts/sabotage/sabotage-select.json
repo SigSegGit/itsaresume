@@ -9,6 +9,22 @@
     "scripts/test-sabotage-select.sh"
   ],
   "defences": {
+    "Select: a defended source runs only its defenders (8.46c)": {
+      "file": "scripts/sabotage-select.py",
+      "live": "        if defending:\n            hits = defending",
+      "dead": "        if False:\n            hits = defending",
+      "expect": [
+        "a_defended_source_selects_only_the_plans_defending_it"
+      ]
+    },
+    "Select: a dependency-only source runs every plan naming it (8.46c)": {
+      "file": "scripts/sabotage-select.py",
+      "live": "        defending = {plan for plan in hits if any(d.get('file') == rel for d in found[plan].get('defences', {}).values())}",
+      "dead": "        defending = set(sorted(hits)[:1])",
+      "expect": [
+        "a_source_plans_only_depend_on_selects_every_plan_naming_it"
+      ]
+    },
     "Select: a file no plan names runs its whole tree": {
       "file": "scripts/sabotage-select.py",
       "live": "        if not hits:\n            chosen[name] = set(every[name])",
@@ -24,7 +40,7 @@
       "live": "            chosen[name] |= hits",
       "dead": "            chosen[name] |= set()",
       "expect": [
-        "a_crate_source_selects_every_plan_of_its_crate",
+        "a_defended_source_selects_only_the_plans_defending_it",
         "a_test_file_selects_every_plan_naming_it",
         "a_cv_source_selects_its_cv_plan"
       ]

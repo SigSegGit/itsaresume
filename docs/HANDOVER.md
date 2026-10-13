@@ -576,6 +576,10 @@ branch with the local gates of §3 green.
   Done 2026-10-06: (a) PR #88; (b) #94, closing #89-#93. Rodin's audit
   changed (a): `files` first held only broken files and test files, which
   is narrower than sure (a helper changed alone skipped its plans).
+- [x] **8.46c** (the owner, 2026-10-13: CI minutes) A pull request runs only
+  the sabotage plans that **defend** a source it touches; a test file, or a
+  file plans only depend on, runs every plan naming it; `main` runs all.
+  Measured: the branch of cv 2.22c-link went from 8 cv plans to 2.
 
 ## 9. Deliberately open
 

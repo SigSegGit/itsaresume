@@ -8,7 +8,8 @@ The plans are split by attack surface (offer → model, model → page, public
 exposure, HTTP, billing, deploy, laptop, plus what faces no attacker), and
 each plan lists in "files" what its defences depend on: the file each
 defence breaks and the test files that hold its named tests. A pull request
-runs only the plans whose files it touches; the full pass runs on `main`
+runs only the plans that defend a source it touches (a test file, or a
+file plans only depend on, runs every plan naming it, 8.46c); the full pass runs on `main`
 after each merge and on `workflow_dispatch` (both pass an empty base).
 
 Never narrower than sure: a file no plan names (a helper, a fixture, a
@@ -83,6 +84,12 @@ def select(files, trees):
             chosen[name].add(rel)
             continue
         hits = {plan for plan, body in found.items() if rel in body.get('files', [])}
+        # 8.46c (owner, 2026-10-13: CI minutes): a source some plan defends
+        # runs only those plans; a test file, or a file plans only depend
+        # on, runs every plan naming it. main still runs every plan.
+        defending = {plan for plan in hits if any(d.get('file') == rel for d in found[plan].get('defences', {}).values())}
+        if defending:
+            hits = defending
         if not hits:
             chosen[name] = set(every[name])
         else:

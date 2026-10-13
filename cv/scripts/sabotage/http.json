@@ -6,6 +6,8 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "web/questions.html",
+    "web/questions.js",
     "test/questions.test.js",
     "src/analysis.js",
     "src/answers.js",
