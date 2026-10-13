@@ -12,6 +12,7 @@
     "crates/itsaresume-router/src/bin/itsaresume-fake-claude.rs",
     "crates/itsaresume-router/src/claude_code.rs",
     "crates/itsaresume-router/src/config.rs",
+    "crates/itsaresume-router/src/gemini_cli.rs",
     "crates/itsaresume-router/src/journal.rs",
     "crates/itsaresume-router/src/lib.rs",
     "crates/itsaresume-router/src/lm_studio.rs",
