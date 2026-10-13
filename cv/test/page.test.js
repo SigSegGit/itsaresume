@@ -78,6 +78,7 @@ test('2.24b: the page names its reference experience and what the docx does with
     { ...profile.experiences[1], id: 'lab', kind: 'rnd', title_empty: { fr: 'Projet R&D', en: 'R&D project' }, bullets: [{ ...pg, id: 'lab-pg' }] },
   );
   const a = analysis();
+  a.experiences.push({ id: 'gig', bullets: ['gig-pg'] }, { id: 'lab', bullets: ['lab-pg'] });
   const page = pageData(profile, a);
   assert.deepEqual(page.experiences.map((e) => e.reference), [true, false, false, false], 'the first main mission is the reference');
   const [acme, bank, gig, lab] = page.experiences;

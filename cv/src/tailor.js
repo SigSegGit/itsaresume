@@ -144,6 +144,7 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
     const sober = kind === 'rnd' && ids.length === 0;
     const env = sober ? [] : experience.env ?? [];
     return [{
+      id: experience.id,
       title: t(sober && experience.title_empty ? experience.title_empty : experience.title),
       org: t(experience.org),
       dates: experience.end ? `${experience.start} – ${experience.end}` : experience.start,
@@ -199,11 +200,23 @@ export function pageData(profile, analysis) {
   const all = buildModel(profile, analysis, { bullets: new Set(ranked) });
   const floor = new Set(buildModel(profile, analysis, { bullets: new Set() }).experiences.flatMap((e) => e.bullet_ids));
   const { keywords, name_caps, company_line, glance, ...rest } = all;
+  const reference = profile.experiences.find((experience) => experience.reference) ?? profile.experiences.find((e) => kindOf(e) === 'main');
   return {
     ...rest,
-    experiences: all.experiences.map(({ bullets, bullet_ids, ...experience }) => ({
-      ...experience,
-      items: bullet_ids.map((id, index) => ({ id, text: bullets[index], rank: ranked.indexOf(id) + 1, must: floor.has(id) })),
-    })),
+    // 2.24b: the reference caps the others' bullet count, as in the docx;
+    // when_empty is what the docx does with no bullet: drop a short
+    // mission (null), show an R&D project sober; a main one is never empty.
+    experiences: all.experiences.map(({ id: experienceId, bullets, bullet_ids, ...experience }) => {
+      const source = profile.experiences.find((e) => e.id === experienceId);
+      const kind = kindOf(source);
+      const whenEmpty = kind === 'short' ? { when_empty: null }
+        : kind === 'rnd' ? { when_empty: { title: (source.title_empty ?? source.title)[analysis.language], env: '' } } : {};
+      return {
+        ...experience,
+        reference: source === reference,
+        ...whenEmpty,
+        items: bullet_ids.map((id, index) => ({ id, text: bullets[index], rank: ranked.indexOf(id) + 1, must: floor.has(id) })),
+      };
+    }),
   };
 }

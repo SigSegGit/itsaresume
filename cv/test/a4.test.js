@@ -10,9 +10,9 @@ import { createContext, runInContext } from 'node:vm';
 const SOURCE = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
 
 function load() {
-  const context = createContext({});
-  runInContext(SOURCE, context);
-  return context;
+  // const bindings stay in the script's scope: read them out at its end.
+  return runInContext(`${SOURCE}
+;({ fill, SPACING });`, createContext({}));
 }
 
 // heights: per item id; an experience costs `head` unless bare and dropped.
@@ -22,7 +22,7 @@ function sheet(page, { heights, box, base = 100, head = 20 }) {
   let spacing = 1;
   return {
     shown,
-    bare,
+    bares: bare,
     get spacingNow() { return spacing; },
     show(id, on) { if (on) shown.add(id); else shown.delete(id); },
     bare(index, on) { bare.set(index, on); },
@@ -92,10 +92,10 @@ test('a short mission with nothing shown is dropped; with an item, it shows', ()
   const data = page();
   const tight = sheet(data, { heights: {}, box: 200 });
   fill(data, tight);
-  assert.equal(tight.bare.get(2), true);
+  assert.equal(tight.bares.get(2), true);
   const wide = sheet(data, { heights: {}, box: 10000 });
   fill(data, wide);
-  assert.equal(wide.bare.get(2), false);
+  assert.equal(wide.bares.get(2), false);
 });
 
 test('the spacing widens within bounds until the page is 95 % full, never past the page', () => {

@@ -1,0 +1,26 @@
+/* 2.24b: a fixed A4 page; web/cv.js fills it and sets --spacing. No remote
+   asset: installed fonts until our own are served (2.24c). */
+:root { color-scheme: light; }
+body { margin: 0; padding: 16px; background: #e8e8e8; color: #111; }
+#notice { max-width: 210mm; margin: 0 auto 12px; padding: 8px 12px; background: #fff4d6; border: 1px solid #e0b84a; font: 14px system-ui, sans-serif; }
+#notice[hidden] { display: none; }
+.a4 {
+  --spacing: 1.15;
+  box-sizing: border-box; width: 210mm; height: 297mm; margin: 0 auto; padding: 9mm 11mm;
+  overflow: hidden; background: #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+  font: 9.5pt/var(--spacing) Calibri, Carlito, "Segoe UI", Arial, sans-serif;
+}
+.a4 h1 { margin: 0; font-size: 18pt; line-height: 1.1; }
+.a4 .headline { margin: 1mm 0 0; font-weight: 600; font-size: 11pt; }
+.a4 .contact { margin: 0 0 2mm; color: #444; }
+.a4 h2 { margin: 2.5mm 0 1mm; padding-bottom: .5mm; border-bottom: 1px solid #333; font-size: 10pt; letter-spacing: .04em; }
+.a4 p, .a4 ul, .a4 dl { margin: 0; }
+.a4 ul { padding-left: 4.5mm; }
+.a4 li[hidden], .a4 article[hidden], .a4 .env[hidden] { display: none; }
+.a4 .skills { display: grid; grid-template-columns: max-content 1fr; column-gap: 3mm; }
+.a4 .skills dt { font-weight: 600; }
+.a4 .skills dd { margin: 0; }
+.a4 .experience { margin-top: 1.5mm; }
+.a4 .title { font-weight: 700; }
+.a4 .dates { float: right; color: #444; }
+.a4 .env { font-style: italic; color: #333; }
