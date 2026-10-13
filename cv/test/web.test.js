@@ -289,3 +289,19 @@ test('a finished card links its A4 page, built from the job id only', async () =
   assert.equal(link.attributes.href ?? link.href, '/cv.html?job=j1');
   page.close();
 });
+
+test('2.22c-link: locally, the page and each finished card link the questions; in public, neither does', async () => {
+  const walk = (node) => [node, ...(node.childNodes ?? []).flatMap(walk)];
+  const linkIn = (page) => walk(page.$('jobs')).find((node) => node.tagName === 'A' && node.textContent === 'Compléter le profil');
+  const jobs = [{ id: 'j1', title: 'Senior SRE', status: 'done', steps: [], error: null }];
+  const local = pageWith(jobs, { j1: detail() });
+  await local.settle();
+  assert.equal(local.$('questions-link').hidden, false);
+  assert.equal(linkIn(local)?.attributes.href, '/questions.html?job=j1');
+  local.close();
+  const open = pageWith(jobs, { j1: detail() }, { '/api/status': () => ({ body: { ...STATUS, public: true } }) });
+  await open.settle();
+  assert.equal(open.$('questions-link').hidden, true);
+  assert.equal(linkIn(open), undefined);
+  open.close();
+});
