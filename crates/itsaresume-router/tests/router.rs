@@ -258,3 +258,29 @@ fn a_request_no_backend_serves_is_unserved() {
     );
     assert_eq!(small_calls.load(Ordering::SeqCst), 0);
 }
+
+/// 8.49 (the owner, 2026-10-14): every ~15 min each backend that cannot
+/// probe itself gets one tiny request, so the page offers only what can
+/// answer; one that answered real traffic within the period is not asked.
+#[test]
+fn a_check_asks_each_backend_once_and_records_its_state() {
+    let (ok, ok_calls) = scripted("ok", Ok("ok"));
+    let (spent, spent_calls) = scripted("spent", Err(BackendError::QuotaExceeded("429".into())));
+    let (off, _) = scripted("off", Err(BackendError::Unreachable("down".into())));
+    let (router, _dir) = router(vec![ok, spent, off]);
+    let checked = router.check(std::time::Duration::from_secs(900));
+    assert_eq!(checked, vec!["ok", "spent", "off"]);
+    assert_eq!((ok_calls.load(Ordering::SeqCst), spent_calls.load(Ordering::SeqCst)), (1, 1));
+    let states: Vec<_> = router.status().into_iter().map(|s| s.state).collect();
+    assert_eq!(states, vec!["up", "limited", "down"]);
+}
+
+#[test]
+fn a_backend_seen_within_the_period_is_not_checked_again() {
+    let (ok, calls) = scripted("ok", Ok("ok"));
+    let (router, _dir) = router(vec![ok]);
+    let _ = router.complete(&request());
+    assert!(router.check(std::time::Duration::from_secs(900)).is_empty());
+    assert_eq!(calls.load(Ordering::SeqCst), 1, "real traffic counts as a check");
+    assert_eq!(router.check(std::time::Duration::ZERO), vec!["ok"]);
+}
