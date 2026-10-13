@@ -2,8 +2,8 @@
 
 <!-- ITSARESUME-STATE
 NEXT: done
-TITLE: Every router step of section 8 is done; the generator's next is cv 2.22c (cv/docs/HANDOVER.md)
-WRITTEN-AT: 2026-10-06
+TITLE: Every router step of section 8 is done; the generator waits on the owner for 2.25 (cv/docs/HANDOVER.md)
+WRITTEN-AT: 2026-10-13
 BASE: 73725c8
 -->
 
