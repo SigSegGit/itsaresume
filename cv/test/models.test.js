@@ -129,6 +129,8 @@ test('Claude spent hands the default to Gemini before the slow local model', () 
   assert.match(menu.options.openai.note, /limite/);
   const noGemini = modelMenu([claude('limited', { since }), gemini('stopped'), openai('up'), local('down')], NOW);
   assert.equal(noGemini.default, 'openai');
+  const both = modelMenu([claude('limited', { since }), gemini('down'), openai('up'), local('up', { loaded: true })], NOW);
+  assert.equal(both.default, 'openai', 'a cloud free tier before the slow local model');
   assert.equal(noGemini.options.auto.available, true);
 });
 

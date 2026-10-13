@@ -45,7 +45,7 @@ export function complete({ url, system, prompt, backend, schema, kind, timeoutMs
   return new Promise((resolve, reject) => {
     const outgoing = httpRequest(
       target,
-      { method: 'POST', headers: { 'Content-Type': 'text/plain', 'Content-Length': Buffer.byteLength(body) } },
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } },
       (response) => {
         let raw = '';
         let ended = false;
