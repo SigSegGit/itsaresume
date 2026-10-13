@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.25c
-TITLE: one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
+NEXT: 2.26a
+TITLE: the listing cached per offer (hash of offer.txt) so one offer is listed once; then 2.25c, one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -745,6 +745,27 @@ Traps met, each cost time once:
     quota, the owner's go first); compare matched requirements row by row
     (2.3b-ii's rule: no yes -> no without a named reason); switch the
     default on only if none is lost.
+- [ ] **2.26** (the owner, 2026-10-13) **Run-to-run variance, framed.**
+  Temperature: `claude -p` takes none (router `claude_code.rs`), Bionic's
+  API would (not sent today). **Measured 2026-10-13 on Sonnet**
+  (`~/.itsaresume/migrations/variance.mjs`, 5 listings + 5 analyses on a
+  frozen listing, same prompt; Bionic was off): SRE offer, listing 13 of 14
+  rows in 5/5, scores 75 x4 / 69 (one row, "Go", adjacent 4x, no 1x).
+  CLM offer: listing 24 rows stable, the rest varies by **grouping** ("AWS,
+  Azure or GCP" one row 4/5, three rows 1/5), optional rows (web servers
+  2/5, load balancers 3/5) and French must/nice; analysis scores 58 x3 /
+  55, one attempt cut (no JSON, the retry covers it); the skills picked
+  per row vary (CV, not score); AD CS adjacent 4/4 (2.25a live).
+  **Reading**: the past swings (one offer 5 to 100) came from code and
+  profile changes between runs, not the model; the model's own spread is
+  ~6 points, mostly from the listing.
+  - [ ] **2.26a** Cache the listing per offer (sha256 of the offer text,
+    beside the runs): one offer is listed once, its rows stable across
+    runs. Red test: a second run of the same offer makes no listing call.
+  - [ ] **2.26b** Alternatives as one row by code ("A, B or C" / "A ou B"
+    listed apart are merged, met by any), tested on the CLM rows above.
+  - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
+    configured; measure the same way when the laptop is on.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the
