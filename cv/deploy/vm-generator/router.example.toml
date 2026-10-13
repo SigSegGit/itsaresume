@@ -12,6 +12,17 @@ program = "claude"
 model = "sonnet"
 timeout_secs = 900
 
+# Gemini on a Google account (free tier or a Google AI subscription), when
+# Claude's plan is spent. Needs $DATA/gemini/ (compose.yaml); its settings
+# must select "oauth-personal" or the router never starts it (an API key
+# would bill per token). Leave it commented out without that login.
+# [[backend]]
+# kind = "gemini-cli"
+# name = "gemini"
+# program = "gemini"
+# model = "gemini-2.5-pro"
+# timeout_secs = 900
+
 # The laptop's local model, through the tunnel the laptop opens when it is
 # on (deploy/laptop/bionic-tunnel.sh). Off: an outage, the request is
 # exhausted, the page says so.

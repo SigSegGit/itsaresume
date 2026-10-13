@@ -12,6 +12,8 @@
 #                             ROUTER_URL=http://127.0.0.1:18789 (optional: the
 #                             laptop's router through its tunnel, Claude first,
 #                             until the VM has its own token)
+#   gemini/                   oauth_creds.json + settings.json of a `gemini`
+#                             "Login with Google" (optional; never a key)
 #   out/ journal/             runs and the router journal
 #
 #   DATA=~/itsacv-data docker compose up -d --build
@@ -36,6 +38,9 @@ services:
     volumes:
       - ${DATA:-~/itsacv-data}/router.toml:/etc/itsaresume/config.toml:ro
       - ${DATA:-~/itsacv-data}/journal:/home/node/journal
+      # Gemini CLI login (oauth_creds.json + settings.json), read-write: the
+      # CLI refreshes its token. Absent: a gemini block STOPS, never bills.
+      - ${DATA:-~/itsacv-data}/gemini:/home/node/.gemini
     command: ["serve", "--config", "/etc/itsaresume/config.toml", "--listen", "127.0.0.1:8789"]
     # The image's HEALTHCHECK asks 8787, its default; here the router is on 8789.
     healthcheck:

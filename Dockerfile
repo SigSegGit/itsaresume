@@ -15,7 +15,10 @@ FROM node:24-trixie-slim
 # Pinned: the output format the router parses was observed on this version
 # (docs/HANDOVER.md §4). Raise it deliberately, with a new observation.
 ARG CLAUDE_CODE_VERSION=2.1.162
+# The Gemini CLI on a Google account login (src/gemini_cli.rs); same rule.
+ARG GEMINI_CLI_VERSION=0.11.0
 RUN npm install --global "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+        "@google/gemini-cli@${GEMINI_CLI_VERSION}" \
     && npm cache clean --force
 COPY --from=build /src/target/release/itsaresume /usr/local/bin/itsaresume
 RUN mkdir -p /etc/itsaresume

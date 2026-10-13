@@ -1,9 +1,9 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: done
-TITLE: Every router step of section 8 is done; the generator waits on the owner (2.25 batch merged, opt-ins off until the A/B 2.25c; cv/docs/HANDOVER.md)
-WRITTEN-AT: 2026-10-13
+NEXT: 8.48
+TITLE: gemini-cli backend merged (8.47); first real run needs the owner's Google login copied to the VM, then the codex backend
+WRITTEN-AT: 2026-10-14
 BASE: 73725c8
 -->
 
@@ -77,6 +77,10 @@ consequences — before any code. Never a quiet decision.
    LM Studio on the XPS 15 (RTX 4070) over Tailscale → a micro-model on the
    Pi 4B or the Freebox Delta VM. The micro-model does light
    sorting/classification only, **never long text generation**.
+   Amended by Nicolas 2026-10-14: other **subscription CLIs** may sit
+   between Claude and the local model as cloud fallbacks (`gemini-cli` on a
+   Google account login; `codex` on a ChatGPT plan next), order set per
+   config; an API key stays forbidden (decision 1).
 3. **`Other` never triggers a fallback.** Only `QuotaExceeded` and
    `Unreachable` hand over to the next backend (ARCHITECTURE explains why).
 4. **Rust** for all orchestration and routing logic.
@@ -581,7 +585,26 @@ branch with the local gates of §3 green.
   file plans only depend on, runs every plan naming it; `main` runs all.
   Measured: the branch of cv 2.22c-link went from 8 cv plans to 2.
 
+- [x] **8.47** (the owner, 2026-10-14) **`gemini-cli` backend**: `gemini -p
+  --output-format json` on a Google account login. Never started unless
+  `~/.gemini/settings.json` selects `oauth-personal`; API-key, Vertex and
+  gateway variables scrubbed; system prompt through `GEMINI_SYSTEM_MD`; a
+  schema request gets the shared JSON rule (`gemini_cli::schema_rule`) and
+  the answer must parse as JSON. Sabotage plan `router-gemini.json` (5).
+  Image ships `@google/gemini-cli` 0.11.0; the VM mounts `$DATA/gemini`.
+- [ ] **8.48** **First real Gemini run, then `codex` backend.** Needs the
+  owner: `gemini` once on the laptop, "Login with Google"; copy
+  `~/.gemini/{oauth_creds.json,settings.json}` to the VM's
+  `~/itsacv-data/gemini/` and uncomment its block in `router.toml`. Then:
+  capture a real success/quota output into `tests/fixtures/gemini/`
+  (replace the hypotheses), and the same backend for `codex exec --json`
+  (ChatGPT login only, `~/.codex/auth.json`). Bench across providers
+  later (owner, 2026-10-14: A/B after the capabilities).
+
 ## 9. Deliberately open
+
+- **Gemini output shapes are hypotheses** (CLI 0.11, not logged in here);
+  the env scrub in the child process has no process test, only the list.
 
 - **The hostile corpus (8.46b) has limits.** French offers only; the PDF
   is not read (layout off in tests: the docx text is); a system prompt
