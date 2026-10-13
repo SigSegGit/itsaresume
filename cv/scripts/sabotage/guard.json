@@ -1478,6 +1478,23 @@
       "expect": [
         "the prompt offers each listed requirement its shortlist, and says it is not a limit"
       ]
+    },
+    "Compact: each alike term once, every term kept": {
+      "file": "src/prompt.js",
+      "live": "!seen.has(key(term)) && seen.add(key(term))",
+      "dead": "seen.size === 0 && seen.add(key(term))",
+      "expect": [
+        "the compact catalogue keeps every skill id, name, alias and term",
+        "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
+      ]
+    },
+    "Compact: levels as one letter, stated once": {
+      "file": "src/prompt.js",
+      "live": "${LEVELS[skill.level] ?? skill.level}",
+      "dead": "${skill.level}",
+      "expect": [
+        "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
+      ]
     }
   }
 }
