@@ -43,6 +43,8 @@ property it proves.
 | two answers with one id are refused | Answers: one answer per id |
 | an answer cannot bring back a skill the evidence contradicts | Answers: a contradicted skill stays out |
 | loadProfile merges answers.json beside the profile, and refuses a bad one | Answers: loadProfile merges them; Answers: a refused answer stops the run |
+| 2.22c: addAnswer appends a checked answer, stamped, and the next read has it | Answers: stamped by the server |
+| 2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing | Answers: checked before written; Answers: an id is answered once |
 
 ## `test/client.test.js`
 
@@ -596,6 +598,8 @@ property it proves.
 | a flood of page loads evicts empty visitors first, never one with jobs while an empty one remains | Public: a visitor with jobs is evicted last |
 | an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500 | Invite: an unreadable file names nobody |
 | Claude and the local model run in two lanes, one job each, and a queued job says its place | Web: Claude and the local model have their own lanes; Web: a queued job says its place |
+| 2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400 | Answers: a refusal is a 400 |
+| 2.22c: the public host has no questions page, no questions and takes no answer, even with the deps there | Questions: the public host has none |
 
 ## `test/split.test.js`
 
@@ -684,6 +688,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**445 tests, 375 of them covered by at least one sabotage defence.**
+**449 tests, 379 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

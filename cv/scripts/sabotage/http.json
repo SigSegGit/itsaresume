@@ -55,7 +55,9 @@
     "web/style.css",
     "web/cv.js",
     "web/cv.css",
-    "test/a4.test.js"
+    "test/a4.test.js",
+    "test/answers.test.js",
+    "src/questions.js"
   ],
   "defences": {
     "Server: public admits offers only": {
@@ -916,6 +918,46 @@
       "dead": "    head.append(element('span', 'dates', experience.dates), title, element('span', 'org', ` — ${experience.org}`));",
       "expect": [
         "an experience reads title, organisation, then dates (no float before the title)"
+      ]
+    },
+    "Questions: the public host has none": {
+      "file": "src/server.js",
+      "live": "      if (LOCAL_ONLY.has(path) && (publicMode || !deps.questions)) throw new HttpError(404, 'not found');",
+      "dead": "      if (LOCAL_ONLY.has(path) && !deps.questions) throw new HttpError(404, 'not found');",
+      "expect": [
+        "2.22c: the public host has no questions page, no questions and takes no answer, even with the deps there"
+      ]
+    },
+    "Answers: a refusal is a 400": {
+      "file": "src/server.js",
+      "live": "          throw new HttpError(400, String(error.message ?? error));",
+      "dead": "          return send(response, 200, {});",
+      "expect": [
+        "2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400"
+      ]
+    },
+    "Answers: checked before written": {
+      "file": "src/answers.js",
+      "live": "  if (errors.length) throw new Error(errors.join('; '));",
+      "dead": "",
+      "expect": [
+        "2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing"
+      ]
+    },
+    "Answers: an id is answered once": {
+      "file": "src/answers.js",
+      "live": "  if (kept.some((earlier) => earlier.id === id)) throw new Error(`answer ${id}: already answered`);",
+      "dead": "",
+      "expect": [
+        "2.22c: addAnswer refuses, by name, what mergeAnswers would refuse, a known id, and writes nothing"
+      ]
+    },
+    "Answers: stamped by the server": {
+      "file": "src/answers.js",
+      "live": "  stored.at = now();",
+      "dead": "",
+      "expect": [
+        "2.22c: addAnswer appends a checked answer, stamped, and the next read has it"
       ]
     }
   }
