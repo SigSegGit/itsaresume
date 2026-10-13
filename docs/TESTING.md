@@ -183,6 +183,30 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_serve_command_answers_on_the_given_address` | `tests/server.rs` | `itsaresume serve --listen` as a process answers `/healthz` | — |
 | `a_named_backend_is_found_by_its_kind_too` | `tests/config.rs` | A backend configured as `bionic` is also found as `lm-studio`: the cv page asks by kind, the VM names its backends | Named backend: found by its kind too; Named backend: a configured name keeps its kind |
 | `the_committed_docker_example_parses` | `tests/config.rs` | `docker/config.example.toml` stays valid and journals into the mounted directory | — |
+| `a_gemini_cli_backend_parses_and_refuses_a_key` | `tests/config.rs` | `kind = "gemini-cli"` parses into a router; an `api_key` line is refused | — |
+| `a_response_is_the_answer_with_its_tokens` | `tests/gemini_cli.rs` | A JSON `response` is the answer; `stats` tokens become usage (cached split out) | — |
+| `a_quota_error_falls_back` | `tests/gemini_cli.rs` | 429, `RESOURCE_EXHAUSTED`, "quota" are `QuotaExceeded` | Gemini quota falls back |
+| `a_network_failure_falls_back_and_anything_else_stops` | `tests/gemini_cli.rs` | A network failure is `Unreachable`; no auth or garbage is `Other` | — |
+| `a_schema_answer_must_be_json_even_inside_a_fence` | `tests/gemini_cli.rs` | A schema answer is JSON, fenced or not; prose is `Other` | Gemini schema answer must be JSON |
+| `extract_json_takes_the_outermost_object` | `tests/gemini_cli.rs` | The first whole JSON object or array in the text | — |
+| `only_a_google_account_login_is_accepted` | `tests/gemini_cli.rs` | Only `selectedType = oauth-personal` passes the guard; key, Vertex, none refused | Gemini accepts only a Google account login |
+| `api_keys_and_vertex_switches_are_scrubbed` | `tests/gemini_cli.rs` | API-key, Vertex and gateway variables are metered, case-insensitive | Gemini API key is a metered variable |
+| `a_schema_request_carries_the_schema_and_the_json_only_rule` | `tests/gemini_cli.rs` | The shared JSON rule and the schema follow the prompt | — |
+| `a_missing_program_is_unreachable` | `tests/gemini_cli.rs` | A missing `gemini` is `Unreachable` (falls back) | — |
+| `an_api_key_login_never_starts_the_cli` | `tests/gemini_cli.rs` | An API-key login is refused before the CLI starts | Gemini accepts only a Google account login; Gemini checks the login before starting the CLI |
+| `a_free_tier_key_passes_only_the_key` | `tests/gemini_cli.rs` | `free-tier-key` keeps `GEMINI_API_KEY`, still scrubs every other switch; `account` scrubs it | Gemini account login scrubs the key |
+| `a_free_tier_login_without_a_key_never_starts_the_cli` | `tests/gemini_cli.rs` | `free-tier-key` with no key in the environment: `Other`, CLI not started | Gemini free-tier needs a key |
+| `an_empty_response_is_an_error_read_from_the_report` | `tests/gemini_cli.rs` | Observed: empty `response` = API error; the report file says quota (429) or `Other` (404) | Gemini empty response is an error |
+| `a_gemini_free_tier_login_is_named_not_given` | `tests/config.rs` | `login = "free-tier-key"` parses; an unknown login is refused | — |
+| `the_key_goes_as_a_bearer_and_never_in_the_body` | `tests/openai.rs` | The key travels as `Authorization: Bearer`, never in the body | OpenAI key goes as a bearer |
+| `no_key_is_other_and_sends_nothing` | `tests/openai.rs` | No `OPENAI_API_KEY`: `Other`, nothing sent | OpenAI never sends without a key |
+| `insufficient_quota_falls_back` | `tests/openai.rs` | 429 `insufficient_quota` (observed: no credits) is `QuotaExceeded` | — |
+| `a_schema_uses_the_shared_rule_and_json_object_mode` | `tests/openai.rs` | A schema goes as the shared JSON rule plus `json_object` mode | OpenAI schema through the shared rule |
+| `its_name_is_openai` | `tests/openai.rs` | The journal name | — |
+| `an_openai_backend_has_a_model_and_no_key_or_url` | `tests/config.rs` | `kind = "openai"`: a model; `api_key` and `base_url` refused | — |
+| `checks_are_off_unless_a_period_is_given` | `tests/config.rs` | `check_every_secs` absent: no checks | — |
+| `a_check_asks_each_backend_once_and_records_its_state` | `tests/router.rs` | 8.49: one tiny request per silent backend; status up/limited/down | — |
+| `a_backend_seen_within_the_period_is_not_checked_again` | `tests/router.rs` | Real traffic within the period counts as a check | Check skips a backend seen within the period |
 | `scripts/docker-smoke.sh` (CI job `docker`) | — | The image holds the pinned `claude` CLI and not the test double; `/healthz` answers; a real request through the **real** CLI with a bogus `ANTHROPIC_API_KEY` on the container returns 502 "Not logged in" — proving the key is stripped and the stop does not fall back | — (the script states what each other outcome would mean) |
 | `a_green_pr_is_merged_pinned_to_its_head` | `scripts/test-merge-when-green.sh` | Twelve passing checks: the merge names the head it counted (`--match-head-commit`) | Merge: pinned to the counted head |
 | `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |

@@ -1,9 +1,9 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: done
-TITLE: Every router step of section 8 is done; the generator waits on the owner (2.25 batch merged, opt-ins off until the A/B 2.25c; cv/docs/HANDOVER.md)
-WRITTEN-AT: 2026-10-13
+NEXT: 8.48
+TITLE: gemini + openai backends and 15-min checks merged (8.47-8.49); next: enable them on the VM and one real CV run on Gemini
+WRITTEN-AT: 2026-10-14
 BASE: 73725c8
 -->
 
@@ -77,6 +77,17 @@ consequences — before any code. Never a quiet decision.
    LM Studio on the XPS 15 (RTX 4070) over Tailscale → a micro-model on the
    Pi 4B or the Freebox Delta VM. The micro-model does light
    sorting/classification only, **never long text generation**.
+   Amended by Nicolas 2026-10-14: other **subscription CLIs** may sit
+   between Claude and the local model as cloud fallbacks (`gemini-cli` on a
+   Google account login; `codex` on a ChatGPT plan next), order set per
+   config. Decision 1, amended by Nicolas the same day: **one** key is
+   allowed, his Gemini AI Studio key on a project **without billing**
+   (`login = "free-tier-key"`), read from the router's environment only
+   (`$DATA/gemini.env` on the VM, `~/.itsaresume/gemini.env` on the
+   laptop), never in a repository or a config file. Enabling billing on
+   that project is the line he holds. Same day, same terms: his OpenAI
+   free-tier service-account key (no overage possible), `OPENAI_API_KEY`
+   in `openai.env`. Any other key: ask.
 3. **`Other` never triggers a fallback.** Only `QuotaExceeded` and
    `Unreachable` hand over to the next backend (ARCHITECTURE explains why).
 4. **Rust** for all orchestration and routing logic.
@@ -581,7 +592,44 @@ branch with the local gates of §3 green.
   file plans only depend on, runs every plan naming it; `main` runs all.
   Measured: the branch of cv 2.22c-link went from 8 cv plans to 2.
 
+- [x] **8.47** (the owner, 2026-10-14) **`gemini-cli` backend**: `gemini -p
+  --output-format json` on a Google account login. Never started unless
+  `~/.gemini/settings.json` selects `oauth-personal`; API-key, Vertex and
+  gateway variables scrubbed; system prompt through `GEMINI_SYSTEM_MD`; a
+  schema request gets the shared JSON rule (`gemini_cli::schema_rule`) and
+  the answer must parse as JSON. Sabotage plan `router-gemini.json` (5).
+  Image ships `@google/gemini-cli` 0.11.0; the VM mounts `$DATA/gemini`.
+  Then `login = "free-tier-key"` (owner's key, no billing). Real runs on the
+  laptop, 2026-10-14: gemini-3.8-flash answered a schema request in 17 s,
+  valid JSON; gemini-2.5-flash is retired for new keys: the CLI then prints
+  an **empty** `response` and the cause only in a report file (now read:
+  404 → `Other`, 429 → `QuotaExceeded`). Sabotage `router-gemini.json` (8).
+- [x] **8.48a** **`openai` backend** (`kind = "openai"`, model only; fixed
+  endpoint, key from `OPENAI_API_KEY`, bearer header; schema through the
+  shared JSON rule + `json_object`). Real run 2026-10-14: 429 "no credits
+  remaining" = `limited`, falls back: the account has no API allowance yet.
+- [x] **8.49** **Checks every 15 min** (`check_every_secs = 900`): one tiny
+  request to each backend that cannot probe itself and saw no real traffic
+  within the period; `/status` then holds the last known state; the page
+  menu shows only what can answer (cv). Real run: claude up, gemini up,
+  bionic down -> menu auto/claude/gemini, default gemini (Claude near its
+  limit).
+- [ ] **8.48** **Enable on the VM.** Keys already in `~/itsacv-data/
+  {gemini,openai}.env` (600). After the merge deploys the image: in the
+  VM's private `router.toml` add `check_every_secs = 900`, uncomment the
+  gemini block (gemini-3.8-flash, free-tier-key) between claude and
+  bionic, the openai one after it; restart; one real CV run on Gemini
+  (`model: gemini`). Then bench providers (owner: later).
+
 ## 9. Deliberately open
+
+- **Gemini output shapes**: success and the empty-response error observed
+  (CLI 0.11, key login); a real 429 not yet. The env scrub in the child
+  process has no process test, only the list.
+- **The checks spend a little quota**: at most one tiny request per
+  backend per 15 min, none when real traffic answered meanwhile (Claude's
+  check is a `claude -p` call on the plan). The check thread has no test of
+  its own (`Router::check` has two).
 
 - **The hostile corpus (8.46b) has limits.** French offers only; the PDF
   is not read (layout off in tests: the docx text is); a system prompt

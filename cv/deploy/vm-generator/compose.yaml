@@ -12,6 +12,10 @@
 #                             ROUTER_URL=http://127.0.0.1:18789 (optional: the
 #                             laptop's router through its tunnel, Claude first,
 #                             until the VM has its own token)
+#   gemini.env                GEMINI_API_KEY=... (owner's free-tier key, no billing)
+#   openai.env                OPENAI_API_KEY=... (owner's free-tier key, no overage)
+#   gemini/                   oauth_creds.json + settings.json of a `gemini`
+#                             "Login with Google" (optional; never a key)
 #   out/ journal/             runs and the router journal
 #
 #   DATA=~/itsacv-data docker compose up -d --build
@@ -33,9 +37,18 @@ services:
     env_file:
       - path: ${DATA:-~/itsacv-data}/.env
         required: false
+      # GEMINI_API_KEY (login = "free-tier-key"), for the router only.
+      - path: ${DATA:-~/itsacv-data}/gemini.env
+        required: false
+      # OPENAI_API_KEY (kind = "openai"), for the router only.
+      - path: ${DATA:-~/itsacv-data}/openai.env
+        required: false
     volumes:
       - ${DATA:-~/itsacv-data}/router.toml:/etc/itsaresume/config.toml:ro
       - ${DATA:-~/itsacv-data}/journal:/home/node/journal
+      # Gemini CLI login (oauth_creds.json + settings.json), read-write: the
+      # CLI refreshes its token. Absent: a gemini block STOPS, never bills.
+      - ${DATA:-~/itsacv-data}/gemini:/home/node/.gemini
     command: ["serve", "--config", "/etc/itsaresume/config.toml", "--listen", "127.0.0.1:8789"]
     # The image's HEALTHCHECK asks 8787, its default; here the router is on 8789.
     healthcheck:

@@ -304,3 +304,77 @@ timeout_secs = 2
     );
     assert!(router.complete_on(&request, Some("claude-code")).is_err());
 }
+
+/// The Gemini CLI on a Google account login: a program and a model, no key.
+#[test]
+fn a_gemini_cli_backend_parses_and_refuses_a_key() {
+    let config = Config::parse(
+        r#"
+        journal = "j.jsonl"
+        [[backend]]
+        kind = "gemini-cli"
+        program = "gemini.cmd"
+        model = "gemini-2.5-pro"
+        timeout_secs = 42
+        "#,
+    )
+    .expect("valid");
+    let backend = &config.backends[0];
+    assert!(matches!(backend, BackendConfig::GeminiCli { .. }));
+    assert_eq!(backend.name(), "gemini-cli");
+    assert_eq!(backend.timeout(), Duration::from_secs(42));
+    assert_eq!(backend.max_concurrent(), None);
+    config.router().expect("a router");
+
+    let keyed = Config::parse(
+        r#"
+        journal = "j.jsonl"
+        [[backend]]
+        kind = "gemini-cli"
+        program = "gemini"
+        api_key = "x"
+        "#,
+    );
+    assert!(keyed.is_err(), "an api_key line must be refused");
+}
+
+#[test]
+fn a_gemini_free_tier_login_is_named_not_given() {
+    let config = Config::parse(
+        r#"
+        journal = "j.jsonl"
+        [[backend]]
+        kind = "gemini-cli"
+        program = "gemini"
+        login = "free-tier-key"
+        "#,
+    )
+    .expect("valid");
+    config.router().expect("a router");
+    assert!(Config::parse("journal = \"j\"\n[[backend]]\nkind = \"gemini-cli\"\nprogram = \"g\"\nlogin = \"paid\"\n").is_err());
+}
+
+#[test]
+fn an_openai_backend_has_a_model_and_no_key_or_url() {
+    let config =
+        Config::parse("journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"gpt-5-nano\"\n")
+            .expect("valid");
+    assert_eq!(config.backends[0].name(), "openai");
+    config.router().expect("a router");
+    for extra in ["api_key = \"x\"", "base_url = \"http://evil/v1\""] {
+        let text =
+            format!("journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"m\"\n{extra}\n");
+        assert!(Config::parse(&text).is_err(), "{extra}");
+    }
+}
+
+#[test]
+fn checks_are_off_unless_a_period_is_given() {
+    let base = "journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"m\"\n";
+    assert_eq!(Config::parse(base).expect("valid").check_every_secs, None);
+    let every = format!("check_every_secs = 900\n{base}");
+    assert_eq!(
+        Config::parse(&every).expect("valid").check_every_secs,
+        Some(900)
+    );
+}

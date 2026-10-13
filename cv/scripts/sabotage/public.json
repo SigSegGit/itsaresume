@@ -193,10 +193,10 @@
     },
     "QA: claude and local name the router backends": {
       "file": "src/qa.js",
-      "live": "claude: 'claude-code', local: 'lm-studio' };",
-      "dead": "claude: undefined, local: undefined };",
+      "live": "claude: 'claude-code', gemini: 'gemini-cli', openai: 'openai', local: 'lm-studio' };",
+      "dead": "claude: undefined, gemini: undefined, openai: undefined, local: undefined };",
       "expect": [
-        "auto lets the router choose; claude and local name its backends"
+        "auto lets the router choose; claude, gemini, openai and local name its backends"
       ]
     },
     "QA: the log appends": {

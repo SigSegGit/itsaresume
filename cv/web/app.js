@@ -60,7 +60,9 @@ function applyModels(models) {
     const state = models.options[option.value];
     if (!state) continue;
     option.dataset.label ??= option.textContent;
-    option.disabled = !state.available;
+    // Only what can answer is shown (the owner, 2026-10-14).
+    option.disabled = !state?.available;
+    option.hidden = !state?.available;
     option.textContent = state.note ? `${option.dataset.label} (${state.note})` : option.dataset.label;
   }
   if ((!modelChosen || !models.options[select.value]?.available) && models.default) select.value = models.default;

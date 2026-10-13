@@ -2,8 +2,10 @@
 
 use crate::backend::{Backend, Kind};
 use crate::claude_code::ClaudeCodeBackend;
+use crate::gemini_cli::{GeminiCliBackend, Login};
 use crate::journal::Journal;
 use crate::lm_studio::LmStudioBackend;
+use crate::openai::OpenAiBackend;
 use crate::router::Router;
 use serde::Deserialize;
 use std::fmt;
@@ -26,6 +28,9 @@ pub struct Config {
     /// Backends, in the order they are tried.
     #[serde(rename = "backend", default)]
     pub backends: Vec<BackendConfig>,
+    /// `serve` checks each backend that cannot probe itself this often
+    /// (8.49; 900 = 15 min); absent, never.
+    pub check_every_secs: Option<u64>,
 }
 
 /// One backend. The list of kinds is closed, and no kind has a credential.
@@ -49,6 +54,38 @@ pub enum BackendConfig {
         /// The directory the CLI runs in.
         workdir: Option<PathBuf>,
     },
+    /// The `gemini` CLI on a Google account login (free tier or a Google AI
+    /// subscription); never an API key (`gemini_cli`).
+    GeminiCli {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
+        /// The request kinds it takes (default: all).
+        serves: Option<Vec<Kind>>,
+        /// The executable (`gemini.cmd` on Windows).
+        program: PathBuf,
+        /// A model for `gemini -m`.
+        model: Option<String>,
+        /// `account` (default) or `free-tier-key`: names the login, never
+        /// holds a key (the key comes from the environment).
+        #[serde(default)]
+        login: Login,
+        /// Seconds before the CLI is killed.
+        timeout_secs: Option<u64>,
+        /// The directory the CLI runs in.
+        workdir: Option<PathBuf>,
+    },
+    /// OpenAI chat completions with the owner's free-tier key, read from
+    /// `OPENAI_API_KEY` (never a field here).
+    Openai {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
+        /// The request kinds it takes (default: all).
+        serves: Option<Vec<Kind>>,
+        /// The model id (the cheapest that does the job).
+        model: String,
+        /// Seconds before giving up.
+        timeout_secs: Option<u64>,
+    },
     /// LM Studio's OpenAI-compatible server.
     LmStudio {
         /// The name requests and the journal use (default: the kind).
@@ -71,9 +108,10 @@ impl BackendConfig {
     /// The configured timeout, or [`DEFAULT_TIMEOUT_SECS`].
     pub fn timeout(&self) -> Duration {
         let seconds = match self {
-            Self::ClaudeCode { timeout_secs, .. } | Self::LmStudio { timeout_secs, .. } => {
-                timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS)
-            }
+            Self::ClaudeCode { timeout_secs, .. }
+            | Self::GeminiCli { timeout_secs, .. }
+            | Self::Openai { timeout_secs, .. }
+            | Self::LmStudio { timeout_secs, .. } => timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS),
         };
         Duration::from_secs(seconds)
     }
@@ -83,13 +121,18 @@ impl BackendConfig {
     pub fn name(&self) -> String {
         match self {
             Self::ClaudeCode { name, .. } => name.clone().unwrap_or_else(|| "claude-code".into()),
+            Self::GeminiCli { name, .. } => name.clone().unwrap_or_else(|| "gemini-cli".into()),
+            Self::Openai { name, .. } => name.clone().unwrap_or_else(|| "openai".into()),
             Self::LmStudio { name, .. } => name.clone().unwrap_or_else(|| "lm-studio".into()),
         }
     }
 
     /// The request kinds this backend takes: its `serves`, else all.
     pub fn serves(&self) -> Vec<Kind> {
-        let (Self::ClaudeCode { serves, .. } | Self::LmStudio { serves, .. }) = self;
+        let (Self::ClaudeCode { serves, .. }
+        | Self::GeminiCli { serves, .. }
+        | Self::Openai { serves, .. }
+        | Self::LmStudio { serves, .. }) = self;
         serves
             .clone()
             .unwrap_or_else(|| vec![Kind::Generate, Kind::Classify])
@@ -98,7 +141,7 @@ impl BackendConfig {
     /// How many completions may reach the backend at once (`None`: no limit).
     pub fn max_concurrent(&self) -> Option<usize> {
         match self {
-            Self::ClaudeCode { .. } => None,
+            Self::ClaudeCode { .. } | Self::GeminiCli { .. } | Self::Openai { .. } => None,
             Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(1)),
         }
     }
@@ -136,6 +179,32 @@ impl BackendConfig {
                 }
                 Box::new(backend)
             }
+            Self::GeminiCli {
+                program,
+                model,
+                workdir,
+                login,
+                ..
+            } => {
+                let mut backend = GeminiCliBackend::new(program)
+                    .with_timeout(self.timeout())
+                    .with_login(*login);
+                if let Some(model) = model {
+                    backend = backend.with_model(model);
+                }
+                if let Some(workdir) = workdir {
+                    backend = backend.with_workdir(workdir);
+                }
+                Box::new(backend)
+            }
+            Self::Openai { model, .. } => Box::new(
+                OpenAiBackend::new(
+                    "https://api.openai.com/v1",
+                    model,
+                    std::env::var(crate::openai::KEY_ENV).ok(),
+                )
+                .with_timeout(self.timeout()),
+            ),
             Self::LmStudio {
                 base_url, model, ..
             } => Box::new(

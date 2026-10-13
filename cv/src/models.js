@@ -8,7 +8,9 @@ export const LIMIT_PAUSE_S = 60 * 60;
 const clock = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
 const at = (seconds) => clock.format(new Date(seconds * 1000));
 
-function claudeOption(backend, now) {
+// Claude, Gemini, OpenAI: a cloud plan or free tier, judged alike from the
+// router's last answer or check (8.49, every ~15 min).
+function cloudOption(backend, now) {
   if (!backend) return { available: false, note: 'non configuré' };
   if (backend.state === 'limited') {
     const since = backend.since ?? now;
@@ -41,18 +43,23 @@ function localOption(backend, awake) {
 export function modelMenu(backends, now = Date.now() / 1000, { awake = false } = {}) {
   if (backends === null) {
     const off = { available: false, note: 'routeur injoignable' };
-    return { default: null, options: { auto: off, claude: off, local: off } };
+    return { default: null, options: { auto: off, claude: off, gemini: off, openai: off, local: off } };
   }
   if (!Array.isArray(backends)) {
     const open = { available: true, note: '' };
-    return { default: 'auto', options: { auto: open, claude: open, local: open } };
+    const unknown = { available: false, note: 'non configuré' };
+    return { default: 'auto', options: { auto: open, claude: open, gemini: unknown, openai: unknown, local: open } };
   }
   const claudeBackend = backends.find((backend) => backend.kind === 'claude-code');
-  const claude = claudeOption(claudeBackend, now);
+  const claude = cloudOption(claudeBackend, now);
+  const gemini = cloudOption(backends.find((backend) => backend.kind === 'gemini-cli'), now);
+  const openai = cloudOption(backends.find((backend) => backend.kind === 'openai'), now);
   const local = localOption(backends.find((backend) => backend.kind === 'lm-studio'), awake);
   const light = claudeBackend?.state !== 'limited' && [undefined, 'allowed'].includes(claudeBackend?.usage);
-  const auto = { available: claude.available || local.available, note: '' };
+  const auto = { available: claude.available || gemini.available || openai.available || local.available, note: '' };
   const fallback = auto.available ? 'auto' : null;
-  const chosen = (claude.available && light && 'claude') || (local.available && 'local') || fallback;
-  return { default: chosen, options: { auto, claude, local } };
+  // The owner, 2026-10-14: past Claude, the cloud free tiers before the slow local model.
+  const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')
+    || (openai.available && 'openai') || (local.available && 'local') || fallback;
+  return { default: chosen, options: { auto, claude, gemini, openai, local } };
 }

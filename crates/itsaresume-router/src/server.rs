@@ -56,6 +56,19 @@ impl Server {
         })
     }
 
+    /// 8.49: check every silent backend now, then every `period`, on a
+    /// thread of its own (`Router::check`), so `/status` holds a recent state.
+    pub fn with_checks(self, period: std::time::Duration) -> Self {
+        let router = Arc::clone(&self.router);
+        std::thread::spawn(move || {
+            loop {
+                let _ = router.check(period);
+                std::thread::sleep(period);
+            }
+        });
+        self
+    }
+
     /// The address actually bound.
     pub fn local_addr(&self) -> SocketAddr {
         self.address

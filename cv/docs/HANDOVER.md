@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.26b
 TITLE: alternatives ("A, B or C") merged into one row by code, tested on the CLM rows; 2.26a done (listing cached in <out>/.listings); then 2.25c, one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
-WRITTEN-AT: 2026-10-13
+WRITTEN-AT: 2026-10-14
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -764,6 +764,13 @@ Traps met, each cost time once:
     `src/listing.js`): one offer is listed once. A cache that cannot be
     read or written is skipped, never fatal. To re-list an offer: delete
     its file there. Sabotaged (content.json).
+  - [x] **2.27** (the owner, 2026-10-14) **Gemini and OpenAI in the menu,
+    only what can answer shown.** `MODELS` gains `gemini` (`gemini-cli`)
+    and `openai`; `modelMenu` judges them like Claude from the router's
+    `/status`, which the router's 15-min checks keep fresh (router 8.49);
+    unavailable options are hidden, not just greyed. Default: Claude while
+    light, then Gemini, then OpenAI, then the slow local model. Sabotaged
+    (billing.json, http.json).
   - [ ] **2.26b** Alternatives as one row by code ("A, B or C" / "A ou B"
     listed apart are merged, met by any), tested on the CLM rows above.
   - [ ] **2.26c** Bionic: send `temperature` (0) from the router when

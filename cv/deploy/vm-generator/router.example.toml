@@ -4,6 +4,9 @@
 # a Claude that is not logged in STOPS the request ("Other"), it does not
 # fall back.
 journal = "/home/node/journal/journal.jsonl"
+# 8.49: every 15 min, one tiny request to each backend that has not answered
+# real traffic meanwhile, so the page offers only what can answer.
+check_every_secs = 900
 
 [[backend]]
 kind = "claude-code"
@@ -11,6 +14,30 @@ name = "claude"
 program = "claude"
 model = "sonnet"
 timeout_secs = 900
+
+# Gemini when Claude's plan is spent. Two logins, never a key in this file:
+# login = "account" (default): $DATA/gemini/ from a "Login with Google",
+#   settings selecting "oauth-personal", else the router never starts it;
+# login = "free-tier-key": GEMINI_API_KEY from $DATA/gemini.env, a key on a
+#   project WITHOUT billing (enabling billing there would bill per token).
+# Models: 2.5 is retired for new keys (404 observed 2026-10-14).
+# [[backend]]
+# kind = "gemini-cli"
+# name = "gemini"
+# program = "gemini"
+# model = "gemini-3.8-flash"
+# login = "free-tier-key"
+# timeout_secs = 900
+
+# OpenAI with the owner's free-tier service-account key: OPENAI_API_KEY in
+# $DATA/openai.env, never here. gpt-5-mini: the cheapest that holds the
+# JSON contract. Observed 2026-10-14: "no credits remaining" (429) =
+# limited, the router falls back; it answers only once the account has a
+# free allowance.
+# [[backend]]
+# kind = "openai"
+# model = "gpt-5-mini"
+# timeout_secs = 600
 
 # The laptop's local model, through the tunnel the laptop opens when it is
 # on (deploy/laptop/bionic-tunnel.sh). Off: an outage, the request is

@@ -108,3 +108,34 @@ test('serve() hands the page the menu from the router, without any router reason
     stand.close();
   }
 });
+
+// The owner, 2026-10-14: Gemini and OpenAI as cloud fallbacks; the menu
+// offers only what the router's last check says can answer.
+const gemini = (state, extra = {}) => ({ name: 'gemini', kind: 'gemini-cli', state, ...extra });
+const openai = (state, extra = {}) => ({ name: 'openai', kind: 'openai', state, ...extra });
+
+test('Gemini and OpenAI are offered when up, and unconfigured ones are not', () => {
+  const menu = modelMenu([claude('up'), gemini('up'), local('up', { loaded: true })], NOW);
+  assert.equal(menu.options.gemini.available, true);
+  assert.equal(menu.options.openai.available, false);
+  assert.equal(menu.options.openai.note, 'non configuré');
+});
+
+test('Claude spent hands the default to Gemini before the slow local model', () => {
+  const since = NOW - 60;
+  const menu = modelMenu([claude('limited', { since }), gemini('up'), openai('limited', { since }), local('up', { loaded: true })], NOW);
+  assert.equal(menu.default, 'gemini');
+  assert.equal(menu.options.openai.available, false);
+  assert.match(menu.options.openai.note, /limite/);
+  const noGemini = modelMenu([claude('limited', { since }), gemini('stopped'), openai('up'), local('down')], NOW);
+  assert.equal(noGemini.default, 'openai');
+  const both = modelMenu([claude('limited', { since }), gemini('down'), openai('up'), local('up', { loaded: true })], NOW);
+  assert.equal(both.default, 'openai', 'a cloud free tier before the slow local model');
+  assert.equal(noGemini.options.auto.available, true);
+});
+
+test('nothing able to answer leaves no default and auto off', () => {
+  const menu = modelMenu([claude('stopped'), gemini('down'), openai('limited', { since: NOW }), local('down')], NOW);
+  assert.equal(menu.default, null);
+  assert.equal(menu.options.auto.available, false);
+});

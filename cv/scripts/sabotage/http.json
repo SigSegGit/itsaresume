@@ -147,8 +147,8 @@
     },
     "Models: the page greys what cannot answer": {
       "file": "web/app.js",
-      "live": "option.disabled = !state.available;",
-      "dead": "option.disabled = false;",
+      "live": "    option.disabled = !state?.available;",
+      "dead": "    option.disabled = false;",
       "expect": [
         "the page greys the models the server says cannot answer, and refreshes the menu"
       ]
@@ -1002,6 +1002,14 @@
       "dead": "",
       "expect": [
         "2.22c: addAnswer appends a checked answer, stamped, and the next read has it"
+      ]
+    },
+    "Models: the page hides what cannot answer": {
+      "file": "web/app.js",
+      "live": "    option.hidden = !state?.available;",
+      "dead": "    option.hidden = false;",
+      "expect": [
+        "the page greys the models the server says cannot answer, and refreshes the menu"
       ]
     }
   }
