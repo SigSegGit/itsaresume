@@ -11,9 +11,10 @@ use std::time::{Duration, Instant};
 
 /// LM Studio's `/v1/chat/completions`, with no credential of any kind.
 ///
-/// There is deliberately no API-key field: pointed at a paid
-/// OpenAI-compatible service, this backend gets a 401 (`Other`, the request
-/// stops), never a bill (docs/HANDOVER.md §1, decision 1).
+/// There is deliberately no API-key field you can configure: pointed at a
+/// paid OpenAI-compatible service, this backend gets a 401 (`Other`, the
+/// request stops), never a bill (docs/HANDOVER.md §1, decision 1). Only
+/// [`crate::openai`] sets a bearer, from the environment.
 #[derive(Debug, Clone)]
 pub struct LmStudioBackend {
     base_url: String,
@@ -21,6 +22,14 @@ pub struct LmStudioBackend {
     timeout: Duration,
     /// Shared by clones: the server's slots, not this value's.
     slots: Arc<Slots>,
+    /// Sent as `Authorization: Bearer`; set by [`crate::openai`] only.
+    pub(crate) bearer: Option<String>,
+    /// A schema goes as the shared JSON rule plus `json_object` mode
+    /// instead of a strict `json_schema` (OpenAI's strict mode refuses
+    /// schemas without `additionalProperties: false` everywhere).
+    pub(crate) schema_as_rule: bool,
+    /// The name in errors and the journal.
+    pub(crate) label: &'static str,
 }
 
 /// How many completions may be on the server at once, and how many are.
@@ -79,6 +88,9 @@ impl LmStudioBackend {
             model: model.into(),
             timeout: Duration::from_secs(300),
             slots: Slots::new(1),
+            bearer: None,
+            schema_as_rule: false,
+            label: "lm-studio",
         }
     }
 
@@ -101,6 +113,15 @@ impl LmStudioBackend {
         if let Some(system) = &request.system {
             messages.push(json!({"role": "system", "content": system}));
         }
+        if self.schema_as_rule {
+            let prompt = crate::gemini_cli::prompt_for(request);
+            messages.push(json!({"role": "user", "content": prompt}));
+            let mut body = json!({"model": self.model, "messages": messages, "stream": false});
+            if request.schema.is_some() {
+                body["response_format"] = json!({"type": "json_object"});
+            }
+            return body.to_string();
+        }
         messages.push(json!({"role": "user", "content": request.prompt}));
         let mut body = json!({"model": self.model, "messages": messages, "stream": false});
         if let Some(schema) = &request.schema {
@@ -117,7 +138,7 @@ impl LmStudioBackend {
 
 impl Backend for LmStudioBackend {
     fn name(&self) -> &str {
-        "lm-studio"
+        self.label
     }
 
     /// Two GETs, a few seconds at most: is the server there, does it list
@@ -171,9 +192,11 @@ impl Backend for LmStudioBackend {
             .build()
             .into();
 
-        let mut response = agent
-            .post(&url)
-            .header("Content-Type", "application/json")
+        let mut post = agent.post(&url).header("Content-Type", "application/json");
+        if let Some(bearer) = &self.bearer {
+            post = post.header("Authorization", &format!("Bearer {bearer}"));
+        }
+        let mut response = post
             .send(self.body(request))
             .map_err(|error| transport(&url, error))?;
         let status = response.status().as_u16();

@@ -11,6 +11,7 @@ pub mod config;
 pub mod gemini_cli;
 pub mod journal;
 pub mod lm_studio;
+pub mod openai;
 pub mod router;
 pub mod server;
 pub mod stats;
