@@ -450,7 +450,7 @@ static SYSTEM_FILES: AtomicU64 = AtomicU64::new(0);
 /// On Unix: a directory, not a link, that no other user can write into, left
 /// 0700 (a 0755 one of ours is tightened; `chmod` fails on someone else's).
 /// On Windows the temp directory is per user: a directory, not a link.
-fn private_workdir(workdir: &Path) -> Result<(), BackendError> {
+pub(crate) fn private_workdir(workdir: &Path) -> Result<(), BackendError> {
     let refuse = |why: String| {
         BackendError::Other(format!(
             "the claude working directory {} {why}",
@@ -500,12 +500,12 @@ fn private_workdir(workdir: &Path) -> Result<(), BackendError> {
 /// only its owner can read (0600 on Unix; on Windows the default working
 /// directory is in the user's own temp folder). Deleted on drop; a crash
 /// mid-request leaves it behind (docs/HANDOVER.md §9).
-struct SystemFile {
-    path: PathBuf,
+pub(crate) struct SystemFile {
+    pub(crate) path: PathBuf,
 }
 
 impl SystemFile {
-    fn write(workdir: &Path, system: &str) -> Result<Self, BackendError> {
+    pub(crate) fn write(workdir: &Path, system: &str) -> Result<Self, BackendError> {
         let (file, mut handle) = Self::create(workdir, "system")?;
         handle.write_all(system.as_bytes()).map_err(|error| {
             BackendError::Other(format!(
@@ -517,7 +517,7 @@ impl SystemFile {
     }
 
     /// A new private file in `workdir` (removed on drop) and its handle.
-    fn create(workdir: &Path, stem: &str) -> Result<(Self, std::fs::File), BackendError> {
+    pub(crate) fn create(workdir: &Path, stem: &str) -> Result<(Self, std::fs::File), BackendError> {
         let name = format!(
             "{stem}-{}-{}.txt",
             std::process::id(),
@@ -557,7 +557,7 @@ fn is_metered(name: &OsStr) -> bool {
 }
 
 /// Read a pipe to the end on its own thread.
-fn drain(pipe: Option<impl Read + Send + 'static>) -> thread::JoinHandle<String> {
+pub(crate) fn drain(pipe: Option<impl Read + Send + 'static>) -> thread::JoinHandle<String> {
     thread::spawn(move || {
         let mut text = String::new();
         if let Some(mut pipe) = pipe {
