@@ -20,7 +20,7 @@ export const MAX_ATTEMPTS = 2;
  * `profile` is the one the CV may draw from (restricted by the evidence,
  * src/evidence.js); `assessment`, when given, is checked again on the answer.
  */
-export async function analyse({ profile, offer, llm: call, assessment, structured = false, prompt: options = promptOptions(), onStep = () => {} }) {
+export async function analyse({ profile, offer, llm: call, assessment, structured = false, listingCache = null, prompt: options = promptOptions(), onStep = () => {} }) {
   // Every raw answer, in call order (2.8): a replay re-normalizes the stored
   // analysis, so a rule acting on the model's own answer shows only here.
   const calls = [];
@@ -31,7 +31,11 @@ export async function analyse({ profile, offer, llm: call, assessment, structure
     return answer;
   };
   onStep('listing');
-  const listed = await listRequirements({ offer, llm });
+  let listed = listingCache?.read(offer);
+  if (!listed) {
+    listed = await listRequirements({ offer, llm });
+    listingCache?.write(offer, listed);
+  }
   step = 'analysis';
   const { system, prompt } = buildPrompt(profile, offer, listed, options);
   // 2.3: ids closed to the catalogue, only when asked (measured first).

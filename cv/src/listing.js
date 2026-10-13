@@ -5,6 +5,9 @@
 // the list then does two jobs: the analysis must classify every item, and the
 // honesty check knows every name the offer uses.
 
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { extractJson } from './llm.js';
 import { cleanName, fence, UNTRUSTED } from './guard.js';
 import { MUST, NICE } from './importance.js';
@@ -74,6 +77,34 @@ export async function listRequirements({ offer, llm, structured = false }) {
  * The analysis with every listed requirement it left out added as unmet;
  * normalisation then marks met the ones named like a profile skill.
  */
+/**
+ * The listing kept per offer (2.26a), keyed by the sha256 of its text: the
+ * model's own spread came mostly from the listing, so one offer is listed
+ * once and its rows stay the same across runs. A cache that cannot be read
+ * or written is no cache: the run lists the offer and goes on.
+ */
+export function fileListingCache(dir) {
+  const path = (offer) => join(dir, `${createHash('sha256').update(offer).digest('hex')}.json`);
+  return {
+    read(offer) {
+      try {
+        const listed = JSON.parse(readFileSync(path(offer), 'utf8'));
+        return Array.isArray(listed) ? listed : null;
+      } catch {
+        return null;
+      }
+    },
+    write(offer, listed) {
+      try {
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(path(offer), JSON.stringify(listed, null, 2));
+      } catch {
+        // the next run lists it again
+      }
+    },
+  };
+}
+
 export function mergeListed(analysis, listed) {
   const present = new Set((analysis.requirements ?? []).map((requirement) => String(requirement.name).trim().toLowerCase()));
   // A listed name whose every content word the analysis already names, in

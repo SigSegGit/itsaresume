@@ -1411,6 +1411,14 @@
       "expect": [
         "itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile"
       ]
+    },
+    "Listing cached per offer (2.26a): one offer is listed once": {
+      "file": "src/pipeline.js",
+      "live": "let listed = listingCache?.read(offer);",
+      "dead": "let listed = null;",
+      "expect": [
+        "2.26a: a second run of the same offer makes no listing call, its rows read from the cache"
+      ]
     }
   }
 }
