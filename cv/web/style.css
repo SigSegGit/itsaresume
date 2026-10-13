@@ -324,3 +324,11 @@ td .chip { margin: 0 4px 2px 0; }
   color: var(--muted);
   font-size: 12.5px;
 }
+/* 2.22c: the questions page. */
+.questions { max-width: 760px; margin: 0 auto; padding: 16px; }
+.questions li { margin: 0 0 16px; }
+.questions .yes-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 6px 0; }
+.questions textarea { grid-column: 1 / -1; }
+.questions .actions { display: flex; gap: 8px; }
+.questions .status { margin: 4px 0 0; }
+@media (max-width: 600px) { .questions .yes-fields { grid-template-columns: 1fr; } }

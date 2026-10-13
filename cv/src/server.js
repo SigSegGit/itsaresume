@@ -34,6 +34,8 @@ const STATIC = {
   '/cv.html': ['cv.html', 'text/html; charset=utf-8'],
   '/cv.js': ['cv.js', 'text/javascript; charset=utf-8'],
   '/cv.css': ['cv.css', 'text/css; charset=utf-8'],
+  // 2.22c: the questions page's script (local only, LOCAL_ONLY).
+  '/questions.js': ['questions.js', 'text/javascript; charset=utf-8'],
   // The tab's icon and the link preview (Open Graph); a browser asks for
   // /favicon.ico on its own, and takes a PNG there.
   '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
@@ -41,6 +43,7 @@ const STATIC = {
   '/icon-180.png': ['icon-180.png', 'image/png'],
   '/banner.png': ['banner.png', 'image/png'],
 };
+const LOCAL_ONLY = new Set(['/questions.html', '/questions.js', '/api/questions', '/api/answers']);
 const DOWNLOADS = {
   'cv.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'cv.pdf': 'application/pdf',
@@ -362,7 +365,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       const url = new URL(request.url, `http://${request.headers.host}`);
       const path = url.pathname;
 
+      // 2.22c: the owner's questions and answers are his alone: on the public
+      // host they do not exist, whatever the deps hold.
+      if (LOCAL_ONLY.has(path) && (publicMode || !deps.questions)) throw new HttpError(404, 'not found');
+
       if (request.method === 'GET') {
+        if (path === '/questions.html') {
+          const html = readFileSync(join(WEB, 'questions.html'), 'utf8').replace('__CSRF_TOKEN__', token);
+          return send(response, 200, html, 'text/html; charset=utf-8');
+        }
+        if (path === '/api/questions') return send(response, 200, await deps.questions());
         if (path === '/') {
           const issued = pageToken(request, url.searchParams.get('i'));
           // A link preview's image must be an absolute URL: the public name, or none locally.
@@ -413,6 +425,13 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         throw new HttpError(400, 'the body is not JSON');
       }
 
+      if (path === '/api/answers') {
+        try {
+          return send(response, 200, await deps.answer(body));
+        } catch (error) {
+          throw new HttpError(400, String(error.message ?? error));
+        }
+      }
       if (path === '/api/split') {
         // A free text sent to the model on the owner's quota: the owner's alone.
         if (publicMode) throw new HttpError(403, 'le découpage de mails n’est pas disponible en accès public : colle une offre à la fois');

@@ -4,7 +4,7 @@
 // a source; a model never writes an answer). A "no" adds nothing and is
 // remembered so the question is not asked again (2.22b).
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { LEVELS, identityNames } from './profile.js';
 
 /** The answers in `path`, or none when the file does not exist. Throws on bad JSON. */
@@ -61,4 +61,27 @@ export function mergeAnswers(input, answers, { blocked = new Map() } = {}) {
     added.push(`answer-${id}`);
   }
   return { profile, added, errors };
+}
+
+/**
+ * 2.22c: one answer from the page, appended to `path` once mergeAnswers
+ * takes it over `profile` (today's, its earlier answers merged) with nothing
+ * refused. Stamped `at`; only the fields of its kind are kept. Throws, by
+ * name, and writes nothing, on a refusal or an id already answered.
+ */
+export function addAnswer(path, answer, { profile, blocked = new Map(), now = () => new Date().toISOString() }) {
+  const id = String(answer?.id ?? '').trim();
+  if (!id) throw new Error('an answer needs an id');
+  const kept = readAnswers(path);
+  if (kept.some((earlier) => earlier.id === id)) throw new Error(`answer ${id}: already answered`);
+  const fields = answer.answer === 'yes' ? ['id', 'asked', 'answer', 'name', 'level', 'group', 'said'] : ['id', 'asked', 'answer'];
+  const stored = Object.fromEntries(fields.map((field) => [field, field === 'id' ? id : answer[field]]));
+  stored.at = now();
+  const { errors } = mergeAnswers(profile, [stored], { blocked });
+  if (errors.length) throw new Error(errors.join('; '));
+  const temporary = `${path}.tmp`;
+  writeFileSync(temporary, `${JSON.stringify([...kept, stored], null, 2)}
+`);
+  renameSync(temporary, path);
+  return stored;
 }

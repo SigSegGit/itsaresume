@@ -886,7 +886,7 @@ test('Claude and the local model run in two lanes, one job each, and a queued jo
   }
 });
 
-test('2.22c: the owner's questions are served, and an answer is handed to deps.answer; a refusal is a 400', async () => {
+test('2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400', async () => {
   const given = [];
   const app = await start({
     questions: () => ({ questions: [{ id: 'kafka', asked: 'Kafka', offers: 3, must: 1 }], levels: ['working'], groups: [{ id: 'db', label: 'Data' }] }),

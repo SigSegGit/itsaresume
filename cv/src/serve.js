@@ -1,6 +1,7 @@
 // `itsacv serve`: the web server wired to the real profile, model and Word.
 
 import { request } from 'node:http';
+import { dirname, join } from 'node:path';
 import { createApp } from './server.js';
 import { loadProfile, readRun, tailorOffer } from './run.js';
 import { pageData } from './tailor.js';
@@ -13,6 +14,10 @@ import { loadInvites } from './invites.js';
 import { DEFAULT_PROFILE, listProfiles } from './profiles.js';
 import { modelMenu } from './models.js';
 import { ensureLocal, laptopAwake } from './wake.js';
+import { addAnswer, readAnswers } from './answers.js';
+import { gatherQuestions, readRuns } from './questions.js';
+import { blocked } from './evidence.js';
+import { LEVELS } from './profile.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -126,6 +131,21 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
           return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
         }
       : undefined,
+    // 2.22c: the owner's questions over every run, and his answers beside
+    // the profile; the server never offers these on the public host.
+    questions: publicMode ? undefined : () => {
+      const loaded = loadProfile(profilePath);
+      const answers = readAnswers(join(dirname(profilePath), 'answers.json'));
+      return {
+        questions: gatherQuestions(readRuns(out), { profile: loaded.profile, answers }),
+        levels: LEVELS,
+        groups: (loaded.profile.skill_groups ?? []).map((group) => ({ id: group.id, label: group.label ?? group.name ?? group.id })),
+      };
+    },
+    answer: publicMode ? undefined : (body) => {
+      const loaded = loadProfile(profilePath);
+      return addAnswer(join(dirname(profilePath), 'answers.json'), body, { profile: loaded.profile, blocked: blocked(loaded.assessment) });
+    },
     log: (entry) => appendQaLog(out, entry),
     invites: () => loadInvites(out),
   };
