@@ -191,6 +191,7 @@ pub struct GeminiCliBackend {
 }
 
 impl GeminiCliBackend {
+    /// A backend running `program`, with the defaults.
     pub fn new(program: impl Into<PathBuf>) -> Self {
         Self {
             program: program.into(),
@@ -201,21 +202,25 @@ impl GeminiCliBackend {
         }
     }
 
+    /// The model for `-m`.
     pub fn with_model(mut self, model: impl Into<String>) -> Self {
         self.model = Some(model.into());
         self
     }
 
+    /// Seconds before the CLI is killed.
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
     }
 
+    /// The directory the CLI runs in.
     pub fn with_workdir(mut self, workdir: impl Into<PathBuf>) -> Self {
         self.workdir = workdir.into();
         self
     }
 
+    /// The CLI's settings file, read by the billing guard.
     pub fn with_settings_file(mut self, file: impl AsRef<Path>) -> Self {
         self.settings_file = Some(file.as_ref().to_path_buf());
         self
