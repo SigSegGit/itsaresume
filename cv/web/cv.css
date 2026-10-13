@@ -24,3 +24,11 @@ body { margin: 0; padding: 16px; background: #e8e8e8; color: #111; }
 .a4 .title { font-weight: 700; }
 .a4 .dates { float: right; color: #444; }
 .a4 .env { font-style: italic; color: #333; }
+#print { display: block; margin: 0 auto 12px; font: 14px system-ui, sans-serif; }
+/* 2.24c: print the sheet alone, one A4 page, no browser margin. */
+@page { size: A4; margin: 0; }
+@media print {
+  body { padding: 0; background: #fff; }
+  #notice, #print { display: none; }
+  .a4 { margin: 0; box-shadow: none; }
+}

@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.24c
-TITLE: print the A4 page (window.print), link it from the job, check fill by hand in Chrome and Firefox
+NEXT: 2.24d
+TITLE: open the A4 page on a real run; print to PDF in Chrome and Firefox (one page, text selectable); fill on the 26 runs vs LibreOffice
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -630,8 +630,10 @@ Traps met, each cost time once:
     Must items never dropped; if they overflow, shrink within bounds and
     say so. Tested over the fake DOM of `test/fixtures/page.js` with
     item heights given.
-  - [ ] **2.24c** First: a link « Page A4 » per done job in web/app.js
-    (test in web.test.js), then open it on a real run and look. Print: `@media print` hides everything but the page;
+  - [x] **2.24c** A link « Page A4 » per done job (web/app.js, new tab);
+    a button « Imprimer / PDF » calls `window.print()`; `@page` A4 margin 0
+    and `@media print` hide all but the sheet. 3 defences (http.json).
+  - [ ] **2.24d** Open the A4 page on a real run and look. Print: `@media print` hides everything but the page;
     the button calls `window.print()`. Check by hand in Chrome and
     Firefox (PDF one page, text selectable); write the fill measured on
     the 26 real runs next to LibreOffice's.

@@ -29,6 +29,7 @@ property it proves.
 | a short mission with nothing shown is dropped; with an item, it shows | — |
 | the spacing widens within bounds until the page is 95 % full, never past the page | A4: the spacing widens no further than its bound |
 | musts that overflow shrink the spacing within bounds, and say so | A4: musts that overflow shrink the spacing |
+| the A4 page prints alone, from a button wired in cv.js | A4 page: the button prints; A4 page: print hides all but the sheet |
 
 ## `test/answers.test.js`
 
@@ -664,6 +665,7 @@ property it proves.
 | the page shows a queued job its place in the queue | Web: the page shows the place in the queue |
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
+| a finished card links its A4 page, built from the job id only | A4 page: a done job links its page |
 
 ## `test/word.test.js`
 
@@ -680,6 +682,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**441 tests, 371 of them covered by at least one sabotage defence.**
+**443 tests, 373 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

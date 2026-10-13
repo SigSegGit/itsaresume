@@ -140,6 +140,7 @@ async function start() {
     notice.textContent = text;
     notice.hidden = false;
   };
+  document.getElementById('print').addEventListener('click', () => window.print());
   const job = new URLSearchParams(location.search).get('job') ?? '';
   const response = await fetch(`/api/jobs/${encodeURIComponent(job)}/page`);
   if (!response.ok) return say('CV introuvable : relancez la génération depuis la page d’accueil.');
