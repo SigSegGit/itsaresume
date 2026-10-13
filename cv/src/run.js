@@ -18,6 +18,7 @@ import { mergeAnswers, readAnswers } from './answers.js';
 import { readLinks } from './links.js';
 import { assess, blocked, checkProvenance, checkQuotes, olderMentions, readSources, restrict, scanSources } from './evidence.js';
 import { analyse } from './pipeline.js';
+import { fileListingCache } from './listing.js';
 import { buildModel, rankBullets, defaultBullets } from './tailor.js';
 import { fitToPage } from './fit.js';
 import { startWord } from './word.js';
@@ -105,7 +106,7 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   const dir = join(outDir, runName(offer));
   let result;
   try {
-    result = await analyse({ profile, offer, llm, assessment, onStep });
+    result = await analyse({ profile, offer, llm, assessment, onStep, listingCache: fileListingCache(join(outDir, '.listings')) });
   } catch (error) {
     // Keep what the model said: the next attempt at a prompt starts there.
     (error.answers ?? []).forEach((answer, index) => {

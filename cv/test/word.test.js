@@ -202,7 +202,7 @@ test('itsacv tailor: Word failing on an offer costs neither its CV nor the next 
       { ITSACV_PWSH: process.execPath },
     );
     assert.equal(status, 5, stderr);
-    const runs = readdirSync(out);
+    const runs = readdirSync(out).filter((name) => name !== '.listings');
     assert.equal(runs.length, 2, 'both offers were tailored');
     for (const name of runs) {
       assert.ok(existsSync(join(out, name, 'cv.docx')), `${name}: the CV is written`);

@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.26a
-TITLE: the listing cached per offer (hash of offer.txt) so one offer is listed once; then 2.25c, one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
+NEXT: 2.26b
+TITLE: alternatives ("A, B or C") merged into one row by code, tested on the CLM rows; 2.26a done (listing cached in <out>/.listings); then 2.25c, one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -759,9 +759,11 @@ Traps met, each cost time once:
   **Reading**: the past swings (one offer 5 to 100) came from code and
   profile changes between runs, not the model; the model's own spread is
   ~6 points, mostly from the listing.
-  - [ ] **2.26a** Cache the listing per offer (sha256 of the offer text,
-    beside the runs): one offer is listed once, its rows stable across
-    runs. Red test: a second run of the same offer makes no listing call.
+  - [x] **2.26a** (2026-10-13) Cache the listing per offer (sha256 of the
+    offer text, `<out>/.listings/`, `fileListingCache` in
+    `src/listing.js`): one offer is listed once. A cache that cannot be
+    read or written is skipped, never fatal. To re-list an offer: delete
+    its file there. Sabotaged (content.json).
   - [ ] **2.26b** Alternatives as one row by code ("A, B or C" / "A ou B"
     listed apart are merged, met by any), tested on the CLM rows above.
   - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
