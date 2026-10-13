@@ -113,7 +113,9 @@ test('a "no" ruling drops that pick; with nothing left the requirement is no', (
 
 test('the prompt offers each listed requirement its shortlist, and says it is not a limit', () => {
   const p = profile([{ words: 'ci', skill: 'docker', offers: 3, verdict: null }]);
-  const { prompt } = buildPrompt(p, 'Offre : chaîne CI/CD et PostgreSQL.', [{ name: 'Chaîne CI/CD', importance: 'must' }, { name: 'Gouvernance', importance: 'nice' }]);
+  const listed = [{ name: 'Chaîne CI/CD', importance: 'must' }, { name: 'Gouvernance', importance: 'nice' }];
+  assert.doesNotMatch(buildPrompt(p, 'Offre.', listed).prompt, /candidates/, 'off by default until a real replay');
+  const { prompt } = buildPrompt(p, 'Offre : chaîne CI/CD et PostgreSQL.', listed, { shortlist: true });
   assert.match(prompt, /- Chaîne CI\/CD \(must\) — candidates: docker/);
   assert.match(prompt, /- Gouvernance \(nice\)$/m, 'no candidate, nothing added');
   assert.match(prompt, /any other catalogue skill/i);
@@ -133,4 +135,11 @@ test('loadProfile reads links.json beside the profile', async () => {
   writeFileSync(join(dir, 'profile.json'), JSON.stringify(p));
   writeFileSync(join(dir, 'links.json'), JSON.stringify({ links: [{ words: 'ADFS', skill: 'ad', offers: 0, verdict: 'near' }] }));
   assert.deepEqual(loadProfile(join(dir, 'profile.json')).profile.links, [{ words: 'adf', skill: 'ad', offers: 0, verdict: 'near' }]);
+});
+
+test('ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else', async () => {
+  const { promptOptions } = await import('../src/prompt.js');
+  assert.deepEqual(promptOptions({}), { compact: false, shortlist: false });
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact, shortlist' }), { compact: true, shortlist: true });
+  assert.throws(() => promptOptions({ ITSACV_PROMPT: 'tiny' }), /ITSACV_PROMPT/);
 });

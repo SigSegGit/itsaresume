@@ -15,6 +15,7 @@ import { join, dirname, basename } from 'node:path';
 import { DEFAULT_PROFILE } from './profiles.js';
 import { validateProfile } from './profile.js';
 import { mergeAnswers, readAnswers } from './answers.js';
+import { readLinks } from './links.js';
 import { assess, blocked, checkProvenance, checkQuotes, olderMentions, readSources, restrict, scanSources } from './evidence.js';
 import { analyse } from './pipeline.js';
 import { buildModel, rankBullets, defaultBullets } from './tailor.js';
@@ -77,6 +78,12 @@ function answered(profile, path, out) {
   }
   const { profile: merged, errors } = mergeAnswers(profile, answers, { blocked: out });
   if (errors.length) throw new RunError(2, `the answers cannot join the profile:\n- ${errors.join('\n- ')}`);
+  // 2.25a: the owner's links (mined and ruled) beside the profile, private.
+  try {
+    merged.links = readLinks(join(dirname(path), 'links.json'));
+  } catch (error) {
+    throw new RunError(2, error.message);
+  }
   return merged;
 }
 
