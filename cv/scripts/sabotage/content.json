@@ -67,7 +67,8 @@
     "test/rules.test.js",
     "test/schema.test.js",
     "test/scoring.test.js",
-    "test/word.test.js"
+    "test/word.test.js",
+    "src/links.js"
   ],
   "defences": {
     "Profile: bullet skills must exist": {

@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: done
-TITLE: Every router step of section 8 is done; the generator waits on the owner (2.25 failed its gate offline; cv/docs/HANDOVER.md)
+TITLE: Every router step of section 8 is done; the generator waits on the owner (2.25 batch merged, opt-ins off until the A/B 2.25c; cv/docs/HANDOVER.md)
 WRITTEN-AT: 2026-10-13
 BASE: 73725c8
 -->

@@ -62,7 +62,10 @@
     "test/scoring.test.js",
     "test/stem.test.js",
     "src/links.js",
-    "src/matrix.js"
+    "src/matrix.js",
+    "test/compact.test.js",
+    "test/links.test.js",
+    "test/matrix.test.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {

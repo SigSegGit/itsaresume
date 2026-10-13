@@ -60,7 +60,8 @@
     "web/cv.css",
     "test/a4.test.js",
     "test/answers.test.js",
-    "src/questions.js"
+    "src/questions.js",
+    "src/links.js"
   ],
   "defences": {
     "Questions link: hidden in public": {
