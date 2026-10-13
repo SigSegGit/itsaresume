@@ -38,7 +38,7 @@
     "Gemini accepts only a Google account login": {
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "        Some(ACCOUNT_LOGIN) => Ok(()),",
-      "dead": "        _ => Ok(()),",
+      "dead": "        Some(_) => Ok(()),",
       "expect": [
         "only_a_google_account_login_is_accepted",
         "an_api_key_login_never_starts_the_cli"
@@ -79,7 +79,7 @@
     "Gemini account login scrubs the key": {
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "        && !(login == Login::FreeTierKey && name.eq_ignore_ascii_case(\"GEMINI_API_KEY\"))",
-      "dead": "        && !name.eq_ignore_ascii_case(\"GEMINI_API_KEY\")",
+      "dead": "        && !((login == Login::FreeTierKey || true) && name.eq_ignore_ascii_case(\"GEMINI_API_KEY\"))",
       "expect": [
         "a_free_tier_key_passes_only_the_key"
       ]
@@ -111,7 +111,7 @@
     "OpenAI key goes as a bearer": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "            post = post.header(\"Authorization\", &format!(\"Bearer {bearer}\"));",
-      "dead": "            let _ = bearer;",
+      "dead": "            post = post.header(\"X-Key-Length\", &bearer.len().to_string());",
       "expect": [
         "the_key_goes_as_a_bearer_and_never_in_the_body"
       ]
@@ -127,7 +127,7 @@
     "Check skips a backend seen within the period": {
       "file": "crates/itsaresume-router/src/router.rs",
       "live": "            if backend.probe().is_some() || recent.iter().any(|r| r == name) {",
-      "dead": "            if backend.probe().is_some() {",
+      "dead": "            if backend.probe().is_some() || (recent.is_empty() && false) {",
       "expect": [
         "a_backend_seen_within_the_period_is_not_checked_again"
       ]
