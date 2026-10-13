@@ -22,7 +22,8 @@ body { margin: 0; padding: 16px; background: #e8e8e8; color: #111; }
 .a4 .skills dd { margin: 0; }
 .a4 .experience { margin-top: 1.5mm; }
 .a4 .title { font-weight: 700; }
-.a4 .dates { float: right; color: #444; }
+.a4 .head { display: flex; align-items: baseline; }
+.a4 .dates { margin-left: auto; padding-left: 3mm; white-space: nowrap; color: #444; }
 .a4 .env { font-style: italic; color: #333; }
 #print { display: block; margin: 0 auto 12px; font: 14px system-ui, sans-serif; }
 /* 2.24c: print the sheet alone, one A4 page, no browser margin. */

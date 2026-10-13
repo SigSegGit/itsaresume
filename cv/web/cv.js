@@ -111,7 +111,9 @@ function render(page, sheet) {
     const title = element('span', 'title', experience.title);
     const env = element('p', 'env', experience.env ? page.labels.env + experience.env : '');
     const ul = element('ul');
-    block.append(element('span', 'dates', experience.dates), title, element('span', 'org', ` — ${experience.org}`), ul, env);
+    const head = element('div', 'head');
+    head.append(title, element('span', 'org', ` — ${experience.org}`), element('span', 'dates', experience.dates));
+    block.append(head, ul, env);
     for (const item of experience.items) {
       const li = element('li', '', item.text);
       li.hidden = true;
