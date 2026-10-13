@@ -353,3 +353,17 @@ fn a_gemini_free_tier_login_is_named_not_given() {
     config.router().expect("a router");
     assert!(Config::parse("journal = \"j\"\n[[backend]]\nkind = \"gemini-cli\"\nprogram = \"g\"\nlogin = \"paid\"\n").is_err());
 }
+
+#[test]
+fn an_openai_backend_has_a_model_and_no_key_or_url() {
+    let config =
+        Config::parse("journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"gpt-5-nano\"\n")
+            .expect("valid");
+    assert_eq!(config.backends[0].name(), "openai");
+    config.router().expect("a router");
+    for extra in ["api_key = \"x\"", "base_url = \"http://evil/v1\""] {
+        let text =
+            format!("journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"m\"\n{extra}\n");
+        assert!(Config::parse(&text).is_err(), "{extra}");
+    }
+}
