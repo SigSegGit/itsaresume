@@ -304,3 +304,36 @@ timeout_secs = 2
     );
     assert!(router.complete_on(&request, Some("claude-code")).is_err());
 }
+
+/// The Gemini CLI on a Google account login: a program and a model, no key.
+#[test]
+fn a_gemini_cli_backend_parses_and_refuses_a_key() {
+    let config = Config::parse(
+        r#"
+        journal = "j.jsonl"
+        [[backend]]
+        kind = "gemini-cli"
+        program = "gemini.cmd"
+        model = "gemini-2.5-pro"
+        timeout_secs = 42
+        "#,
+    )
+    .expect("valid");
+    let backend = &config.backends[0];
+    assert!(matches!(backend, BackendConfig::GeminiCli { .. }));
+    assert_eq!(backend.name(), "gemini-cli");
+    assert_eq!(backend.timeout(), Duration::from_secs(42));
+    assert_eq!(backend.max_concurrent(), None);
+    config.router().expect("a router");
+
+    let keyed = Config::parse(
+        r#"
+        journal = "j.jsonl"
+        [[backend]]
+        kind = "gemini-cli"
+        program = "gemini"
+        api_key = "x"
+        "#,
+    );
+    assert!(keyed.is_err(), "an api_key line must be refused");
+}
