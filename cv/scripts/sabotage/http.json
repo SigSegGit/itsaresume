@@ -54,7 +54,8 @@
     "web/index.html",
     "web/style.css",
     "web/cv.js",
-    "web/cv.css"
+    "web/cv.css",
+    "test/a4.test.js"
   ],
   "defences": {
     "Server: public admits offers only": {
@@ -899,6 +900,22 @@
       "dead": "",
       "expect": [
         "the A4 page prints alone, from a button wired in cv.js"
+      ]
+    },
+    "A4 page: the fill is measured on the content": {
+      "file": "web/cv.js",
+      "live": "    height: () => root.offsetHeight + padding(),",
+      "dead": "    height: () => sheet.scrollHeight,",
+      "expect": [
+        "the fill is measured on the content, not on the fixed A4 box"
+      ]
+    },
+    "A4 page: title before dates": {
+      "file": "web/cv.js",
+      "live": "    head.append(title, element('span', 'org', ` — ${experience.org}`), element('span', 'dates', experience.dates));",
+      "dead": "    head.append(element('span', 'dates', experience.dates), title, element('span', 'org', ` — ${experience.org}`));",
+      "expect": [
+        "an experience reads title, organisation, then dates (no float before the title)"
       ]
     }
   }
