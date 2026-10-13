@@ -123,3 +123,12 @@ test('musts that overflow shrink the spacing within bounds, and say so', () => {
   assert.equal(over.overflow, true);
   assert.equal(over.spacing, SPACING.min);
 });
+
+test('the A4 page prints alone, from a button wired in cv.js', () => {
+  const read = (name) => readFileSync(new URL(`../web/${name}`, import.meta.url), 'utf8');
+  assert.match(read('cv.html'), /<button id="print"[^>]*>/);
+  const css = read('cv.css');
+  assert.match(css, /@page\s*\{[^}]*size:\s*A4[^}]*margin:\s*0/);
+  assert.match(css, /@media print\s*\{[^@]*#notice[^@]*#print[^@]*display:\s*none/);
+  assert.match(read('cv.js'), /getElementById\('print'\)\.addEventListener\('click', \(\) => window\.print\(\)\)/);
+});
