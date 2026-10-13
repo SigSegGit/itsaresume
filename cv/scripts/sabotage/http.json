@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/questions.test.js",
     "src/analysis.js",
     "src/answers.js",
     "src/ats.js",
@@ -60,6 +61,14 @@
     "src/questions.js"
   ],
   "defences": {
+    "Questions page: the runs of out/, not readRuns' wrapper": {
+      "file": "src/questions.js",
+      "live": "    questions: gatherQuestions(readRuns(out).runs, { profile: loaded.profile, answers }),",
+      "dead": "    questions: gatherQuestions([], { profile: loaded.profile, answers }),",
+      "expect": [
+        "2.22c: the page’s questions come from the runs in out/ and answers.json beside the profile, with the levels and groups to answer with"
+      ]
+    },
     "Server: public admits offers only": {
       "file": "src/server.js",
       "live": "if (publicMode && !looksLikeOffer(offer.text)) {",
