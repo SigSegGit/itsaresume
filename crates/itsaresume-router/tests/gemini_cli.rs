@@ -171,7 +171,11 @@ fn a_free_tier_key_passes_only_the_key() {
     use itsaresume_router::gemini_cli::{Login, scrubbed};
     assert!(!scrubbed(Login::FreeTierKey, "GEMINI_API_KEY"));
     assert!(scrubbed(Login::Account, "GEMINI_API_KEY"));
-    for name in ["GOOGLE_API_KEY", "GOOGLE_GENAI_USE_VERTEXAI", "GOOGLE_GEMINI_BASE_URL"] {
+    for name in [
+        "GOOGLE_API_KEY",
+        "GOOGLE_GENAI_USE_VERTEXAI",
+        "GOOGLE_GEMINI_BASE_URL",
+    ] {
         assert!(scrubbed(Login::FreeTierKey, name), "{name}");
     }
 }
@@ -181,8 +185,14 @@ fn a_free_tier_login_without_a_key_never_starts_the_cli() {
     use itsaresume_router::gemini_cli::Login;
     let backend = GeminiCliBackend::new("definitely-not-gemini-xyz").with_login(Login::FreeTierKey);
     let outcome = backend.complete_with_env(&Request::new("x"), Vec::new());
-    assert!(matches!(outcome, Err(BackendError::Other(_))), "{outcome:?}");
+    assert!(
+        matches!(outcome, Err(BackendError::Other(_))),
+        "{outcome:?}"
+    );
     let keyed = vec![("GEMINI_API_KEY".into(), "k".into())];
     let outcome = backend.complete_with_env(&Request::new("x"), keyed);
-    assert!(matches!(outcome, Err(BackendError::Unreachable(_))), "{outcome:?}");
+    assert!(
+        matches!(outcome, Err(BackendError::Unreachable(_))),
+        "{outcome:?}"
+    );
 }

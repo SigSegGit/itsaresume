@@ -2,7 +2,7 @@
 
 use crate::backend::{Backend, Kind};
 use crate::claude_code::ClaudeCodeBackend;
-use crate::gemini_cli::GeminiCliBackend;
+use crate::gemini_cli::{GeminiCliBackend, Login};
 use crate::journal::Journal;
 use crate::lm_studio::LmStudioBackend;
 use crate::router::Router;
@@ -61,6 +61,10 @@ pub enum BackendConfig {
         program: PathBuf,
         /// A model for `gemini -m`.
         model: Option<String>,
+        /// `account` (default) or `free-tier-key`: names the login, never
+        /// holds a key (the key comes from the environment).
+        #[serde(default)]
+        login: Login,
         /// Seconds before the CLI is killed.
         timeout_secs: Option<u64>,
         /// The directory the CLI runs in.
@@ -160,9 +164,12 @@ impl BackendConfig {
                 program,
                 model,
                 workdir,
+                login,
                 ..
             } => {
-                let mut backend = GeminiCliBackend::new(program).with_timeout(self.timeout());
+                let mut backend = GeminiCliBackend::new(program)
+                    .with_timeout(self.timeout())
+                    .with_login(*login);
                 if let Some(model) = model {
                     backend = backend.with_model(model);
                 }

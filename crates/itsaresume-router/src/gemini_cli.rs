@@ -43,6 +43,26 @@ pub fn is_metered(name: &str) -> bool {
     METERED_ENV.iter().any(|m| name.eq_ignore_ascii_case(m))
 }
 
+/// How the CLI logs in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Login {
+    /// A Google account (`oauth-personal`), checked in the CLI's settings.
+    #[default]
+    Account,
+    /// The owner's AI Studio key on a project with no billing (decision of
+    /// 2026-10-14): `GEMINI_API_KEY` from the router's environment, never
+    /// from the configuration. Billing enabled on that project would make
+    /// it per-token: that is the owner's line to hold.
+    FreeTierKey,
+}
+
+/// Whether `name` is removed from the child's environment under `login`.
+pub fn scrubbed(login: Login, name: &str) -> bool {
+    is_metered(name)
+        && !(login == Login::FreeTierKey && name.eq_ignore_ascii_case("GEMINI_API_KEY"))
+}
+
 /// Refuse unless the CLI's settings (`~/.gemini/settings.json`) select a
 /// Google account login. Absent or unreadable settings are refused too: the
 /// CLI would then fall back to whatever key it finds.
@@ -188,6 +208,7 @@ pub struct GeminiCliBackend {
     workdir: PathBuf,
     /// The CLI's settings file; `~/.gemini/settings.json` when unset.
     settings_file: Option<PathBuf>,
+    login: Login,
 }
 
 impl GeminiCliBackend {
@@ -199,6 +220,7 @@ impl GeminiCliBackend {
             timeout: Duration::from_secs(crate::config::DEFAULT_TIMEOUT_SECS),
             workdir: std::env::temp_dir().join("itsaresume-gemini"),
             settings_file: None,
+            login: Login::Account,
         }
     }
 
@@ -223,6 +245,12 @@ impl GeminiCliBackend {
     /// The CLI's settings file, read by the billing guard.
     pub fn with_settings_file(mut self, file: impl AsRef<Path>) -> Self {
         self.settings_file = Some(file.as_ref().to_path_buf());
+        self
+    }
+
+    /// How the CLI logs in.
+    pub fn with_login(mut self, login: Login) -> Self {
+        self.login = login;
         self
     }
 
@@ -255,10 +283,28 @@ impl GeminiCliBackend {
         request: &Request,
         env: impl IntoIterator<Item = (OsString, OsString)>,
     ) -> Result<Completion, BackendError> {
-        let settings = self
-            .settings_path()
-            .and_then(|p| std::fs::read_to_string(p).ok());
-        auth_guard(settings.as_deref())?;
+        let env: Vec<(OsString, OsString)> = env
+            .into_iter()
+            .filter(|(n, _)| !scrubbed(self.login, &n.to_string_lossy()))
+            .collect();
+        match self.login {
+            Login::Account => {
+                let settings = self
+                    .settings_path()
+                    .and_then(|p| std::fs::read_to_string(p).ok());
+                auth_guard(settings.as_deref())?;
+            }
+            Login::FreeTierKey => {
+                if !env.iter().any(|(n, v)| {
+                    n.to_string_lossy().eq_ignore_ascii_case("GEMINI_API_KEY") && !v.is_empty()
+                }) {
+                    return Err(BackendError::Other(
+                        "gemini login free-tier-key: GEMINI_API_KEY is not in the router's environment"
+                            .into(),
+                    ));
+                }
+            }
+        }
         private_workdir(&self.workdir)?;
         let system = request.system.as_deref().unwrap_or(DEFAULT_SYSTEM_PROMPT);
         // GEMINI_SYSTEM_MD replaces the CLI's agentic system prompt.
@@ -269,10 +315,7 @@ impl GeminiCliBackend {
             .args(self.arguments())
             .current_dir(&self.workdir)
             .env_clear()
-            .envs(
-                env.into_iter()
-                    .filter(|(n, _)| !is_metered(&n.to_string_lossy())),
-            )
+            .envs(env)
             .env("GEMINI_SYSTEM_MD", &system_file.path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
