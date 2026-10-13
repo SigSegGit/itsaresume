@@ -24,7 +24,7 @@ test('the page holds no inline script, style or handler, and loads nothing from 
   assert.ok(!/\sstyle=/.test(html), 'inline style');
   assert.ok(!/\son[a-z]+=/.test(html), 'inline handler');
   const urls = [...html.matchAll(/\b(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/style.css']);
+  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/questions.html', '/style.css']);
   assert.ok(!/@import|url\(\s*['"]?https?:/.test(web('style.css')), 'no remote stylesheet or font');
 });
 
@@ -297,7 +297,8 @@ test('2.22c-link: locally, the page and each finished card link the questions; i
   const local = pageWith(jobs, { j1: detail() });
   await local.settle();
   assert.equal(local.$('questions-link').hidden, false);
-  assert.equal(linkIn(local)?.attributes.href, '/questions.html?job=j1');
+  const link = linkIn(local);
+  assert.equal(link?.attributes.href ?? link?.href, '/questions.html?job=j1');
   local.close();
   const open = pageWith(jobs, { j1: detail() }, { '/api/status': () => ({ body: { ...STATUS, public: true } }) });
   await open.settle();

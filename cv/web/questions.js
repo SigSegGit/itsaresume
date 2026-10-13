@@ -51,7 +51,8 @@ function card(question, { levels, groups }) {
 async function start() {
   const list = document.getElementById('questions');
   const notice = document.getElementById('notice');
-  const response = await fetch('/api/questions');
+  const job = new URLSearchParams(location.search).get('job');
+  const response = await fetch(job ? `/api/questions?job=${encodeURIComponent(job)}` : '/api/questions');
   if (!response.ok) {
     notice.textContent = 'Les questions ne sont disponibles que sur la page locale.';
     notice.hidden = false;

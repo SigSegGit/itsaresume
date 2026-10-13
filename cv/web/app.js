@@ -49,6 +49,8 @@ function setPill(id, state, text) {
 /* 8.43: the menu follows the router: a model that cannot answer is greyed
    with the server's note; the default is set once, and again when the chosen
    model goes away. Nothing can answer: no generation. */
+// 2.22c-link: the questions are the owner's, on the local page only.
+let local = false;
 let modelChosen = false;
 let modelsReady = true;
 function applyModels(models) {
@@ -69,6 +71,8 @@ function applyModels(models) {
 async function refreshStatus() {
   try {
     const { profile, profiles, router, models, layout, public: open } = await api('/api/status');
+    local = !open;
+    $('questions-link').hidden = Boolean(open);
     applyModels(models);
     // 4.1: several profiles (the owner's --profiles): choose the one to tailor to.
     if (!open && profiles?.length > 1 && $('profile-row').hidden) {
@@ -327,6 +331,7 @@ function resultOf(job, detail) {
     text: { 'cv.pdf': 'CV (PDF)', 'cv.docx': 'CV (Word)', 'report.md': 'Rapport' }[name],
   }));
   downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: 'Page A4' }));
+  if (local) downloads.push(h('a', { href: `/questions.html?job=${encodeURIComponent(job.id)}`, text: 'Compléter le profil' }));
   return [
     h('div', { class: 'result' }, ring(fit.score), h('div', {},
       h('div', { class: 'verdict' },
