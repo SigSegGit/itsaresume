@@ -78,7 +78,15 @@ function element(tag, className, text) {
 }
 
 /** Lays the whole page out, every item hidden; fill() then shows some. */
-function render(page, root) {
+function render(page, sheet) {
+  // The sheet's height is fixed, so its scrollHeight never drops below its
+  // box: the fill is measured on an inner block that grows with the content.
+  const root = element('div', 'content');
+  sheet.replaceChildren(root);
+  const padding = () => {
+    const style = getComputedStyle(sheet);
+    return parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  };
   const items = new Map();
   const experiences = [];
   const section = (label, ...children) => {
@@ -127,9 +135,9 @@ function render(page, root) {
       title.textContent = empty ? empty.title : experience.title;
       env.hidden = Boolean(empty) || !experience.env;
     },
-    spacing: (value) => root.style.setProperty('--spacing', String(value)),
-    height: () => root.scrollHeight,
-    box: () => root.clientHeight,
+    spacing: (value) => sheet.style.setProperty('--spacing', String(value)),
+    height: () => root.offsetHeight + padding(),
+    box: () => sheet.clientHeight,
   };
 }
 

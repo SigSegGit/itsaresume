@@ -32,3 +32,4 @@ body { margin: 0; padding: 16px; background: #e8e8e8; color: #111; }
   #notice, #print { display: none; }
   .a4 { margin: 0; box-shadow: none; }
 }
+.a4 .content { display: flow-root; }
