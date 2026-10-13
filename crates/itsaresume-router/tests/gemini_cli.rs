@@ -204,19 +204,35 @@ const OBSERVED_EMPTY: &str = r#"{"response":"","stats":{"models":{"gemini-2.5-fl
 
 #[test]
 fn an_empty_response_is_an_error_read_from_the_report() {
-    let report = std::env::temp_dir().join(format!("gemini-client-error-t{}.json", std::process::id()));
-    let stderr = format!("Error when talking to Gemini API Full report available at: {}", report.display());
-    std::fs::write(&report, r#"{"error":{"message":"{\"error\":{\"code\":429,\"status\":\"RESOURCE_EXHAUSTED\"}}"}}"#)
-        .expect("report");
+    let report =
+        std::env::temp_dir().join(format!("gemini-client-error-t{}.json", std::process::id()));
+    let stderr = format!(
+        "Error when talking to Gemini API Full report available at: {}",
+        report.display()
+    );
+    std::fs::write(
+        &report,
+        r#"{"error":{"message":"{\"error\":{\"code\":429,\"status\":\"RESOURCE_EXHAUSTED\"}}"}}"#,
+    )
+    .expect("report");
     let quota = classify(OBSERVED_EMPTY, &stderr, false);
-    std::fs::write(&report, r#"{"error":{"message":"{\"error\":{\"code\":404,\"message\":\"no longer available\"}}"}}"#)
-        .expect("report");
+    std::fs::write(
+        &report,
+        r#"{"error":{"message":"{\"error\":{\"code\":404,\"message\":\"no longer available\"}}"}}"#,
+    )
+    .expect("report");
     let retired = classify(OBSERVED_EMPTY, &stderr, false);
     let _ = std::fs::remove_file(&report);
-    assert!(matches!(quota, Err(BackendError::QuotaExceeded(_))), "{quota:?}");
+    assert!(
+        matches!(quota, Err(BackendError::QuotaExceeded(_))),
+        "{quota:?}"
+    );
     match retired {
         Err(BackendError::Other(m)) => assert!(m.contains("no longer available"), "{m}"),
         other => panic!("{other:?}"),
     }
-    assert!(matches!(classify(OBSERVED_EMPTY, "", false), Err(BackendError::Other(_))));
+    assert!(matches!(
+        classify(OBSERVED_EMPTY, "", false),
+        Err(BackendError::Other(_))
+    ));
 }

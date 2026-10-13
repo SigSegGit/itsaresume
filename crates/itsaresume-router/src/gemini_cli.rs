@@ -162,11 +162,32 @@ fn usage_of(stats: &Value) -> Option<Usage> {
     Some(usage)
 }
 
+/// The `error.message` of the report file named in `stderr` ("Full report
+/// available at: <path>"), or an empty string.
+fn report_message(stderr: &str) -> String {
+    let Some((_, rest)) = stderr.split_once("Full report available at: ") else {
+        return String::new();
+    };
+    let path = rest.lines().next().unwrap_or("").trim();
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return String::new();
+    };
+    serde_json::from_str::<Value>(&text)
+        .ok()
+        .and_then(|v| v["error"]["message"].as_str().map(str::to_owned))
+        .unwrap_or(text)
+}
+
 /// Classify one run of the CLI from what it printed.
 pub fn classify(stdout: &str, stderr: &str, schema: bool) -> Result<Completion, BackendError> {
     let parsed = serde_json::from_str::<Value>(stdout.trim()).ok();
     let error_text = match &parsed {
         Some(v) if !v["error"].is_null() => format!("{} {stderr}", v["error"]),
+        // Observed on 0.11: an API error is an empty response, its cause in
+        // the report file stderr names.
+        Some(v) if v["response"].as_str().is_none_or(|r| r.trim().is_empty()) => {
+            format!("empty response: {} ({stderr})", report_message(stderr))
+        }
         Some(_) => String::new(),
         None => format!("{stdout} {stderr}"),
     };
