@@ -183,6 +183,17 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_serve_command_answers_on_the_given_address` | `tests/server.rs` | `itsaresume serve --listen` as a process answers `/healthz` | — |
 | `a_named_backend_is_found_by_its_kind_too` | `tests/config.rs` | A backend configured as `bionic` is also found as `lm-studio`: the cv page asks by kind, the VM names its backends | Named backend: found by its kind too; Named backend: a configured name keeps its kind |
 | `the_committed_docker_example_parses` | `tests/config.rs` | `docker/config.example.toml` stays valid and journals into the mounted directory | — |
+| `a_gemini_cli_backend_parses_and_refuses_a_key` | `tests/config.rs` | `kind = "gemini-cli"` parses into a router; an `api_key` line is refused | — |
+| `a_response_is_the_answer_with_its_tokens` | `tests/gemini_cli.rs` | A JSON `response` is the answer; `stats` tokens become usage (cached split out) | — |
+| `a_quota_error_falls_back` | `tests/gemini_cli.rs` | 429, `RESOURCE_EXHAUSTED`, "quota" are `QuotaExceeded` | Gemini quota falls back |
+| `a_network_failure_falls_back_and_anything_else_stops` | `tests/gemini_cli.rs` | A network failure is `Unreachable`; no auth or garbage is `Other` | — |
+| `a_schema_answer_must_be_json_even_inside_a_fence` | `tests/gemini_cli.rs` | A schema answer is JSON, fenced or not; prose is `Other` | Gemini schema answer must be JSON |
+| `extract_json_takes_the_outermost_object` | `tests/gemini_cli.rs` | The first whole JSON object or array in the text | — |
+| `only_a_google_account_login_is_accepted` | `tests/gemini_cli.rs` | Only `selectedType = oauth-personal` passes the guard; key, Vertex, none refused | Gemini accepts only a Google account login |
+| `api_keys_and_vertex_switches_are_scrubbed` | `tests/gemini_cli.rs` | API-key, Vertex and gateway variables are metered, case-insensitive | Gemini API key is a metered variable |
+| `a_schema_request_carries_the_schema_and_the_json_only_rule` | `tests/gemini_cli.rs` | The shared JSON rule and the schema follow the prompt | — |
+| `a_missing_program_is_unreachable` | `tests/gemini_cli.rs` | A missing `gemini` is `Unreachable` (falls back) | — |
+| `an_api_key_login_never_starts_the_cli` | `tests/gemini_cli.rs` | An API-key login is refused before the CLI starts | Gemini accepts only a Google account login; Gemini checks the login before starting the CLI |
 | `scripts/docker-smoke.sh` (CI job `docker`) | — | The image holds the pinned `claude` CLI and not the test double; `/healthz` answers; a real request through the **real** CLI with a bogus `ANTHROPIC_API_KEY` on the container returns 502 "Not logged in" — proving the key is stripped and the stop does not fall back | — (the script states what each other outcome would mean) |
 | `a_green_pr_is_merged_pinned_to_its_head` | `scripts/test-merge-when-green.sh` | Twelve passing checks: the merge names the head it counted (`--match-head-commit`) | Merge: pinned to the counted head |
 | `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |
