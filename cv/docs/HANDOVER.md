@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.25-decision
-TITLE: 2.25 option b fails its gate offline (16-23 of 26 runs lose a matched skill); the owner drops 2.25 or picks a format-only shrink; 2.22d once he has answered
+NEXT: 2.25a
+TITLE: mined lexicon links (auto >= 3 offers, below that a reviewed index), AD CS/ADFS near Active Directory; then 2.25b, a compact prompt format measured
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -698,6 +698,22 @@ Traps met, each cost time once:
     subset cannot hold that role. **Waiting on the owner**: drop 2.25 (the
     prompt is ~5k tokens, ceiling ~3k saved), or a format-only shrink
     (same skills, fewer tokens: measure first).
+  - **The owner's decision (2026-10-13)**: links + compact format; no
+    prompt filtering until the leave-one-out replay loses 0 runs. Measured
+    first (`~/.itsaresume/migrations/links-loo.mjs`): links mined from the
+    model's past matches (requirement words -> skills), learnt on 25 runs
+    and tested on the 26th: kept median 41 of 84, 10 of 26 runs lose a
+    matched skill, 53 of 277 matches missed (lexicon alone: 23 of 26).
+  - [ ] **2.25a** Mined links in the lexicon. A link seen in >= 3 distinct
+    offers is accepted by code; below that it waits in a small private
+    index the owner fills now and then (`~/.itsaresume/links.json`:
+    `{words, skill, verdict: same|near|no}`), never in the repository
+    (his skills). `relate()` reads both. Also the owner's ruling: AD CS and
+    ADFS are near Active Directory (adjacent, never yes, never no). Test on
+    the synthetic profile; replay `links-loo.mjs` and the score replays.
+  - [ ] **2.25b** A compact prompt format, same skills: measure tokens
+    first (aliases, terms, level words, ids), then `rules-replay.mjs`;
+    ships only if no run loses a matched requirement.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the
