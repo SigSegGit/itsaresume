@@ -4,7 +4,7 @@
 //! until a logged-in capture replaces them.
 
 use itsaresume_router::gemini_cli::{
-    auth_guard, classify, extract_json, is_metered, prompt_for, GeminiCliBackend,
+    GeminiCliBackend, auth_guard, classify, extract_json, is_metered, prompt_for,
 };
 use itsaresume_router::{BackendError, Request, Usage};
 use serde_json::json;
@@ -17,7 +17,12 @@ fn a_response_is_the_answer_with_its_tokens() {
     assert_eq!(completion.text, "Bonjour.");
     assert_eq!(
         completion.usage,
-        Some(Usage { input: 90, output: 7, cache_read: 30, cache_creation: 0 })
+        Some(Usage {
+            input: 90,
+            output: 7,
+            cache_read: 30,
+            cache_creation: 0
+        })
     );
 }
 
@@ -29,7 +34,10 @@ fn a_quota_error_falls_back() {
         r#"{"error":{"type":"Error","message":"You have exhausted your daily quota on this model.","code":429}}"#,
     ] {
         assert!(
-            matches!(classify("", stderr, false), Err(BackendError::QuotaExceeded(_))),
+            matches!(
+                classify("", stderr, false),
+                Err(BackendError::QuotaExceeded(_))
+            ),
             "{stderr}"
         );
     }
@@ -45,21 +53,33 @@ fn a_network_failure_falls_back_and_anything_else_stops() {
         classify("", "Please set an Auth method", false),
         Err(BackendError::Other(_))
     ));
-    assert!(matches!(classify("not json", "", false), Err(BackendError::Other(_))));
+    assert!(matches!(
+        classify("not json", "", false),
+        Err(BackendError::Other(_))
+    ));
 }
 
 #[test]
 fn a_schema_answer_must_be_json_even_inside_a_fence() {
     let fenced = json!({"response": "Voici :\n```json\n{\"a\": 1}\n```"}).to_string();
     let completion = classify(&fenced, "", true).expect("json in a fence");
-    assert_eq!(serde_json::from_str::<serde_json::Value>(&completion.text).unwrap(), json!({"a": 1}));
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&completion.text).unwrap(),
+        json!({"a": 1})
+    );
     let prose = json!({"response": "Je ne sais pas."}).to_string();
-    assert!(matches!(classify(&prose, "", true), Err(BackendError::Other(_))));
+    assert!(matches!(
+        classify(&prose, "", true),
+        Err(BackendError::Other(_))
+    ));
 }
 
 #[test]
 fn extract_json_takes_the_outermost_object() {
-    assert_eq!(extract_json("x {\"a\": {\"b\": [1]}} y"), Some(json!({"a": {"b": [1]}})));
+    assert_eq!(
+        extract_json("x {\"a\": {\"b\": [1]}} y"),
+        Some(json!({"a": {"b": [1]}}))
+    );
     assert_eq!(extract_json("[1, 2]"), Some(json!([1, 2])));
     assert_eq!(extract_json("rien"), None);
 }
@@ -74,7 +94,10 @@ fn only_a_google_account_login_is_accepted() {
         "{}",
         "not json",
     ] {
-        assert!(matches!(auth_guard(Some(refused)), Err(BackendError::Other(_))), "{refused}");
+        assert!(
+            matches!(auth_guard(Some(refused)), Err(BackendError::Other(_))),
+            "{refused}"
+        );
     }
     assert!(matches!(auth_guard(None), Err(BackendError::Other(_))));
 }
@@ -107,21 +130,36 @@ fn a_schema_request_carries_the_schema_and_the_json_only_rule() {
 
 #[test]
 fn a_missing_program_is_unreachable() {
-    let settings = std::env::temp_dir().join(format!("gemini-settings-{}.json", std::process::id()));
-    std::fs::write(&settings, r#"{"security":{"auth":{"selectedType":"oauth-personal"}}}"#).unwrap();
+    let settings =
+        std::env::temp_dir().join(format!("gemini-settings-{}.json", std::process::id()));
+    std::fs::write(
+        &settings,
+        r#"{"security":{"auth":{"selectedType":"oauth-personal"}}}"#,
+    )
+    .unwrap();
     let backend = GeminiCliBackend::new("definitely-not-gemini-xyz").with_settings_file(&settings);
     let outcome = backend.complete_with_env(&Request::new("x"), Vec::new());
     let _ = std::fs::remove_file(&settings);
-    assert!(matches!(outcome, Err(BackendError::Unreachable(_))), "{outcome:?}");
+    assert!(
+        matches!(outcome, Err(BackendError::Unreachable(_))),
+        "{outcome:?}"
+    );
 }
 
 #[test]
 fn an_api_key_login_never_starts_the_cli() {
     let settings = std::env::temp_dir().join(format!("gemini-key-{}.json", std::process::id()));
-    std::fs::write(&settings, r#"{"security":{"auth":{"selectedType":"gemini-api-key"}}}"#).unwrap();
+    std::fs::write(
+        &settings,
+        r#"{"security":{"auth":{"selectedType":"gemini-api-key"}}}"#,
+    )
+    .unwrap();
     // A program that does not exist: Unreachable would prove it was started.
     let backend = GeminiCliBackend::new("definitely-not-gemini-xyz").with_settings_file(&settings);
     let outcome = backend.complete_with_env(&Request::new("x"), Vec::new());
     let _ = std::fs::remove_file(&settings);
-    assert!(matches!(outcome, Err(BackendError::Other(_))), "{outcome:?}");
+    assert!(
+        matches!(outcome, Err(BackendError::Other(_))),
+        "{outcome:?}"
+    );
 }

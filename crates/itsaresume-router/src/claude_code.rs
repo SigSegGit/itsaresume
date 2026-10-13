@@ -517,7 +517,10 @@ impl SystemFile {
     }
 
     /// A new private file in `workdir` (removed on drop) and its handle.
-    pub(crate) fn create(workdir: &Path, stem: &str) -> Result<(Self, std::fs::File), BackendError> {
+    pub(crate) fn create(
+        workdir: &Path,
+        stem: &str,
+    ) -> Result<(Self, std::fs::File), BackendError> {
         let name = format!(
             "{stem}-{}-{}.txt",
             std::process::id(),

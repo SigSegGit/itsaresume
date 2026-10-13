@@ -49,7 +49,11 @@ pub fn is_metered(name: &str) -> bool {
 pub fn auth_guard(settings: Option<&str>) -> Result<(), BackendError> {
     let selected = settings
         .and_then(|text| serde_json::from_str::<Value>(text).ok())
-        .and_then(|v| v["security"]["auth"]["selectedType"].as_str().map(str::to_owned));
+        .and_then(|v| {
+            v["security"]["auth"]["selectedType"]
+                .as_str()
+                .map(str::to_owned)
+        });
     match selected.as_deref() {
         Some(ACCOUNT_LOGIN) => Ok(()),
         other => Err(BackendError::Other(format!(
@@ -96,16 +100,29 @@ pub fn prompt_for(request: &Request) -> String {
 
 fn looks_like_quota(text: &str) -> bool {
     let text = text.to_lowercase();
-    ["429", "resource_exhausted", "quota", "rate limit", "ratelimit"]
-        .iter()
-        .any(|n| text.contains(n))
+    [
+        "429",
+        "resource_exhausted",
+        "quota",
+        "rate limit",
+        "ratelimit",
+    ]
+    .iter()
+    .any(|n| text.contains(n))
 }
 
 fn looks_like_network(text: &str) -> bool {
     let text = text.to_lowercase();
-    ["econnrefused", "enotfound", "etimedout", "econnreset", "fetch failed", "network"]
-        .iter()
-        .any(|n| text.contains(n))
+    [
+        "econnrefused",
+        "enotfound",
+        "etimedout",
+        "econnreset",
+        "fetch failed",
+        "network",
+    ]
+    .iter()
+    .any(|n| text.contains(n))
 }
 
 /// The tokens of every model the run used, summed.
@@ -115,7 +132,10 @@ fn usage_of(stats: &Value) -> Option<Usage> {
     for model in models.values() {
         let tokens = &model["tokens"];
         let cached = tokens["cached"].as_u64().unwrap_or(0);
-        usage.input += tokens["prompt"].as_u64().unwrap_or(0).saturating_sub(cached);
+        usage.input += tokens["prompt"]
+            .as_u64()
+            .unwrap_or(0)
+            .saturating_sub(cached);
         usage.output += tokens["candidates"].as_u64().unwrap_or(0);
         usage.cache_read += cached;
     }
@@ -152,7 +172,11 @@ pub fn classify(stdout: &str, stderr: &str, schema: bool) -> Result<Completion, 
     } else {
         answer.to_owned()
     };
-    Ok(Completion { text, rate_limit: None, usage })
+    Ok(Completion {
+        text,
+        rate_limit: None,
+        usage,
+    })
 }
 
 /// The Gemini CLI backend: `gemini -p` in a child process.
@@ -226,7 +250,9 @@ impl GeminiCliBackend {
         request: &Request,
         env: impl IntoIterator<Item = (OsString, OsString)>,
     ) -> Result<Completion, BackendError> {
-        let settings = self.settings_path().and_then(|p| std::fs::read_to_string(p).ok());
+        let settings = self
+            .settings_path()
+            .and_then(|p| std::fs::read_to_string(p).ok());
         auth_guard(settings.as_deref())?;
         private_workdir(&self.workdir)?;
         let system = request.system.as_deref().unwrap_or(DEFAULT_SYSTEM_PROMPT);
@@ -238,7 +264,10 @@ impl GeminiCliBackend {
             .args(self.arguments())
             .current_dir(&self.workdir)
             .env_clear()
-            .envs(env.into_iter().filter(|(n, _)| !is_metered(&n.to_string_lossy())))
+            .envs(
+                env.into_iter()
+                    .filter(|(n, _)| !is_metered(&n.to_string_lossy())),
+            )
             .env("GEMINI_SYSTEM_MD", &system_file.path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -279,7 +308,9 @@ impl GeminiCliBackend {
             }
             Err(error) => {
                 let _ = child.kill();
-                return Err(BackendError::Other(format!("cannot wait for gemini: {error}")));
+                return Err(BackendError::Other(format!(
+                    "cannot wait for gemini: {error}"
+                )));
             }
         }
         let _ = writer.join();
