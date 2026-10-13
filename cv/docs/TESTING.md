@@ -601,6 +601,7 @@ property it proves.
 | Claude and the local model run in two lanes, one job each, and a queued job says its place | Web: Claude and the local model have their own lanes; Web: a queued job says its place |
 | 2.22c: the owner’s questions are served, and an answer is handed to deps.answer; a refusal is a 400 | Answers: a refusal is a 400 |
 | 2.22c: the public host has no questions page, no questions and takes no answer, even with the deps there | Questions: the public host has none |
+| 2.22c-link: /api/questions?job=<id> keeps the questions that job's run asked; an unknown job is 404 | Questions link: filtered to the job's run; Questions link: an unknown job is 404 |
 
 ## `test/split.test.js`
 
@@ -673,6 +674,7 @@ property it proves.
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
 | a finished card links its A4 page, built from the job id only | A4 page: a done job links its page |
+| 2.22c-link: locally, the page and each finished card link the questions; in public, neither does | Questions link: hidden in public; Questions link: a card links them only locally |
 
 ## `test/word.test.js`
 
@@ -689,6 +691,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**450 tests, 380 of them covered by at least one sabotage defence.**
+**452 tests, 382 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

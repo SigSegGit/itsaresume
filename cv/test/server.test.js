@@ -945,3 +945,20 @@ test('2.22c: the public host has no questions page, no questions and takes no an
   assert.equal(posted.status, 404);
   assert.equal(answered, 0);
 });
+
+test('2.22c-link: /api/questions?job=<id> keeps the questions that job\'s run asked; an unknown job is 404', async () => {
+  const app = await start({
+    questions: () => ({ questions: [{ id: 'a', asked: 'Kafka', runs: ['run-1', 'run-2'] }, { id: 'b', asked: 'COBOL', runs: ['run-2'] }], levels: [], groups: [] }),
+    answer: (body) => body,
+  });
+  try {
+    await post(app, '/api/jobs', { offers: [{ title: 'A', text: 'offer' }] });
+    const [job] = await until(app, (jobs) => jobs.length === 1 && jobs[0].status === 'done');
+    const one = await call(app.port, { path: `/api/questions?job=${job.id}` });
+    assert.deepEqual(JSON.parse(one.text).questions.map((q) => q.asked), ['Kafka']);
+    assert.equal(JSON.parse((await call(app.port, { path: '/api/questions' })).text).questions.length, 2);
+    assert.equal((await call(app.port, { path: '/api/questions?job=00000000-0000-0000-0000-000000000000' })).status, 404);
+  } finally {
+    app.server.close();
+  }
+});

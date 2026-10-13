@@ -332,3 +332,4 @@ td .chip { margin: 0 4px 2px 0; }
 .questions .actions { display: flex; gap: 8px; }
 .questions .status { margin: 4px 0 0; }
 @media (max-width: 600px) { .questions .yes-fields { grid-template-columns: 1fr; } }
+.questions-link { align-self: center; }

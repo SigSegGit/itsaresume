@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.22c-link
-TITLE: link the questions page from the local home page and from a run's unmet requirements (hidden on the public host); then 2.22d once the owner has answered
+NEXT: 2.25-decision
+TITLE: the owner chooses 2.25's vocabulary (ESCO covers 9 of 84 skills; or the home lexicon); 2.22d once he has answered the questions
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -585,7 +585,7 @@ Traps met, each cost time once:
     server, written atomically); all four 404 on the public host
     (`LOCAL_ONLY`). Checked on the real profile read-only: 36 questions,
     10 groups; a refusal shows in the page; nothing written.
-  - [ ] **2.22c-link** Link `/questions.html` from the local home page
+  - [x] **2.22c-link** (2026-10-13) Link `/questions.html` from the local home page
     (the status says it is local; hidden in public) and, per finished
     job, its unmet requirements (`/questions.html?job=<id>` filtering to
     `runs` containing that run). Test in web.test.js.
@@ -669,6 +669,22 @@ Traps met, each cost time once:
   measure (prompt tokens per section on the 26 runs, from the QA log),
   then replay (`rules-replay.mjs`, `guard-replay.mjs`): the subset ships
   only if no run loses a matched requirement it had.
+  - **Measured 2026-10-13** (`~/.itsaresume/migrations/prompt-sections.mjs`,
+    the 7 runs that kept offer.txt; tokens ~ chars/4): the analysis
+    prompt is 4.9-5.1k tokens, not 14.5k: skills 2.2k, experiences 1.1k,
+    system 0.8k, facts 0.4k, offer 0.1-0.4k. The ceiling of the saving is
+    ~3k tokens per analysis call.
+  - **ESCO, measured 2026-10-13** (search API, French; private
+    `~/.itsaresume/esco/skills-candidates.json`): 9 of the 84 profile
+    skills have an exact ESCO title (PostgreSQL, Ansible, C++, C#, DevOps,
+    Cisco, HTML/JS, two languages); 18 have nothing (Prometheus, Grafana,
+    Terraform, Vault, ELK, PagerDuty, ServiceNow...); the 57 others get
+    hints, mostly wrong ("GitLab CI" -> "inspirer de l'enthousiasme pour
+    la nature"). **Waiting on the owner**: ESCO as the common vocabulary
+    covers occupations and soft skills, not this profile's tools. Options:
+    (a) ESCO for occupations and generic skills + the home lexicon
+    (`src/lexicon.js`) for tools; (b) the home lexicon alone for the
+    prompt subset, ESCO deferred to 5.x.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the

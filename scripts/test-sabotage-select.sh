@@ -16,9 +16,9 @@ plan() {  # path, surface, command (json), files (json), defences (json)
 }
 cargo='["cargo", "test", "--no-fail-fast"]'
 node='["node", "--test"]'
-plan scripts/sabotage/r1.json billing "$cargo" '["crates/r/src/a.rs", "crates/r/src/b.rs", "crates/r/tests/a.rs"]' \
+plan scripts/sabotage/r1.json billing "$cargo" '["crates/r/src/a.rs", "crates/r/src/b.rs", "crates/r/src/c.rs", "crates/r/tests/a.rs"]' \
     '{"a": {"file": "crates/r/src/a.rs", "live": "x", "dead": "y", "expect": ["t_a"]}}'
-plan scripts/sabotage/r2.json http "$cargo" '["crates/r/src/a.rs", "crates/r/src/b.rs", "crates/r/tests/a.rs"]' \
+plan scripts/sabotage/r2.json http "$cargo" '["crates/r/src/a.rs", "crates/r/src/b.rs", "crates/r/src/c.rs", "crates/r/tests/a.rs"]' \
     '{"b": {"file": "crates/r/src/b.rs", "live": "x", "dead": "y", "expect": ["t_b"]}}'
 plan cv/scripts/sabotage/c1.json guard "$node" '["src/g.js", "test/g.test.js"]' \
     '{"g": {"file": "src/g.js", "live": "x", "dead": "y", "expect": ["g holds", "g one holds"]}}'
@@ -28,7 +28,7 @@ echo 'fn t_a() {} fn t_b() {}' > crates/r/tests/a.rs
 printf "test('g holds', () => {});\ntest('p holds', () => {});\n" > cv/test/g.test.js
 # A name built from a template is found through it.
 echo "for (const n of ['one']) test(\`g \${n} holds\`, () => {});" >> cv/test/g.test.js
-for f in crates/r/src/a.rs crates/r/src/b.rs crates/r/Cargo.toml scripts/sabotage.py \
+for f in crates/r/src/a.rs crates/r/src/b.rs crates/r/src/c.rs crates/r/Cargo.toml scripts/sabotage.py \
          cv/scripts/sabotage.py cv/src/g.js cv/src/p.js cv/src/other.js \
          cv/test/fixtures/offer.md docs/X.md .github/workflows/ci.yml; do echo x > "$f"; done
 git add -A && git commit -qm base
@@ -46,7 +46,10 @@ check() {  # name, files to change, expected output
 }
 all_root="sabotage_root=scripts/sabotage/r1.json scripts/sabotage/r2.json"
 all_cv="sabotage_cv=scripts/sabotage/c1.json scripts/sabotage/c2.json"
-check a_crate_source_selects_every_plan_of_its_crate "crates/r/src/a.rs" "$all_root sabotage_cv= "
+# A pull request runs the plans that defend the file (owner, 2026-10-13, 8.46c: CI
+# minutes); a file plans only depend on runs every plan naming it; main runs all.
+check a_defended_source_selects_only_the_plans_defending_it "crates/r/src/a.rs" "sabotage_root=scripts/sabotage/r1.json sabotage_cv= "
+check a_source_plans_only_depend_on_selects_every_plan_naming_it "crates/r/src/c.rs" "$all_root sabotage_cv= "
 check a_test_file_selects_every_plan_naming_it "cv/test/g.test.js" "sabotage_root= $all_cv "
 check a_cv_source_selects_its_cv_plan "cv/src/p.js" "sabotage_root= sabotage_cv=scripts/sabotage/c2.json "
 check a_file_no_plan_names_runs_its_whole_tree "crates/r/Cargo.toml" "$all_root sabotage_cv= "

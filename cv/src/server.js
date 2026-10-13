@@ -374,7 +374,15 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           const html = readFileSync(join(WEB, 'questions.html'), 'utf8').replace('__CSRF_TOKEN__', token);
           return send(response, 200, html, 'text/html; charset=utf-8');
         }
-        if (path === '/api/questions') return send(response, 200, await deps.questions());
+        if (path === '/api/questions') {
+          const all = await deps.questions();
+          const wanted = url.searchParams.get('job');
+          if (!wanted) return send(response, 200, all);
+          // 2.22c-link: the questions one run asked, from its card.
+          const run = jobs.get(wanted)?.result?.name;
+          if (!run) throw new HttpError(404, 'not found');
+          return send(response, 200, { ...all, questions: all.questions.filter((question) => question.runs?.includes(run)) });
+        }
         if (path === '/') {
           const issued = pageToken(request, url.searchParams.get('i'));
           // A link preview's image must be an absolute URL: the public name, or none locally.

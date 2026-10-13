@@ -6,6 +6,8 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "web/questions.html",
+    "web/questions.js",
     "test/questions.test.js",
     "src/analysis.js",
     "src/answers.js",
@@ -61,6 +63,38 @@
     "src/questions.js"
   ],
   "defences": {
+    "Questions link: hidden in public": {
+      "file": "web/app.js",
+      "live": "    $('questions-link').hidden = Boolean(open);",
+      "dead": "    $('questions-link').hidden = false;",
+      "expect": [
+        "2.22c-link: locally, the page and each finished card link the questions; in public, neither does"
+      ]
+    },
+    "Questions link: a card links them only locally": {
+      "file": "web/app.js",
+      "live": "  if (local) downloads.push(",
+      "dead": "  if (true) downloads.push(",
+      "expect": [
+        "2.22c-link: locally, the page and each finished card link the questions; in public, neither does"
+      ]
+    },
+    "Questions link: filtered to the job's run": {
+      "file": "src/server.js",
+      "live": "          return send(response, 200, { ...all, questions: all.questions.filter((question) => question.runs?.includes(run)) });",
+      "dead": "          return send(response, 200, all);",
+      "expect": [
+        "2.22c-link: /api/questions?job=<id> keeps the questions that job's run asked; an unknown job is 404"
+      ]
+    },
+    "Questions link: an unknown job is 404": {
+      "file": "src/server.js",
+      "live": "          if (!run) throw new HttpError(404, 'not found');",
+      "dead": "",
+      "expect": [
+        "2.22c-link: /api/questions?job=<id> keeps the questions that job's run asked; an unknown job is 404"
+      ]
+    },
     "Questions page: the runs of out/, not readRuns' wrapper": {
       "file": "src/questions.js",
       "live": "    questions: gatherQuestions(readRuns(out).runs, { profile: loaded.profile, answers }),",
