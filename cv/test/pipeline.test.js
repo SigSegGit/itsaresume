@@ -500,3 +500,20 @@ test('serve() tailors a job to the profile it names, from --profiles, and the ru
     server.close();
   }
 });
+
+test('2.26a: a second run of the same offer makes no listing call, its rows read from the cache', async () => {
+  const { fileListingCache } = await import('../src/listing.js');
+  const cache = fileListingCache(mkdtempSync(join(tmpdir(), 'listings-')));
+  const listing = JSON.stringify({ requirements: [{ name: 'PostgreSQL', importance: 'must' }] });
+  const systems = [];
+  const llm = async ({ system }) => {
+    systems.push(system);
+    return { text: system === LISTING_SYSTEM ? listing : JSON.stringify(valid()), backend: 'fake' };
+  };
+  const first = await analyse({ profile: profile(), offer: OFFER, llm, listingCache: cache });
+  const second = await analyse({ profile: profile(), offer: OFFER, llm, listingCache: cache });
+  assert.equal(systems.filter((s) => s === LISTING_SYSTEM).length, 1, 'listed once');
+  assert.deepEqual(second.listed, first.listed);
+  await analyse({ profile: profile(), offer: `${OFFER} Also Go.`, llm, listingCache: cache });
+  assert.equal(systems.filter((s) => s === LISTING_SYSTEM).length, 2, 'another offer is listed');
+});
