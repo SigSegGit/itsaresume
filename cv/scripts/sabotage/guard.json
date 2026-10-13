@@ -61,7 +61,8 @@
     "test/rules.test.js",
     "test/scoring.test.js",
     "test/stem.test.js",
-    "src/links.js"
+    "src/links.js",
+    "src/matrix.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {
@@ -1494,6 +1495,38 @@
       "dead": "${skill.level}",
       "expect": [
         "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
+      ]
+    },
+    "Prompt opt-ins: off by default": {
+      "file": "src/prompt.js",
+      "live": "shortlist: asked.includes('shortlist') };",
+      "dead": "shortlist: true };",
+      "expect": [
+        "ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else"
+      ]
+    },
+    "Links: read beside the profile": {
+      "file": "src/run.js",
+      "live": "merged.links = readLinks(join(dirname(path), 'links.json'));",
+      "dead": "merged.links = [];",
+      "expect": [
+        "loadProfile reads links.json beside the profile"
+      ]
+    },
+    "Matrix: a near concept counts half": {
+      "file": "src/matrix.js",
+      "live": "linked.near.length ? 0.5 : 0;",
+      "dead": "linked.near.length ? 1 : 0;",
+      "expect": [
+        "the matrix ranks the profiles per offer as a person would"
+      ]
+    },
+    "Matrix: a shared theme is not coverage": {
+      "file": "src/matrix.js",
+      "live": "relations.includes('same') || linked.same.length) return 1;",
+      "dead": "relations.length || linked.same.length) return 1;",
+      "expect": [
+        "a requirement no skill names is not covered: a shared theme is not enough"
       ]
     }
   }

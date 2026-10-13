@@ -62,7 +62,18 @@ function compactSkills(profile) {
   return lines;
 }
 
-export function buildPrompt(profile, offer, listed = [], { compact = false } = {}) {
+/**
+ * The prompt's opt-ins, off until a real replay shows no run loses a matched
+ * requirement: ITSACV_PROMPT="compact,shortlist" (2.25b, 2.3b-ii).
+ */
+export function promptOptions(env = process.env) {
+  const asked = String(env.ITSACV_PROMPT ?? '').split(',').map((word) => word.trim()).filter(Boolean);
+  const unknown = asked.filter((word) => word !== 'compact' && word !== 'shortlist');
+  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist)`);
+  return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist') };
+}
+
+export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false } = {}) {
   const lines = ['CATALOGUE', ''];
   if (compact) lines.push(...compactSkills(profile));
   else {
@@ -99,10 +110,12 @@ export function buildPrompt(profile, offer, listed = [], { compact = false } = {
     // 2.3b-ii: the candidates code finds for each requirement, offered first;
     // the model may still pick any other skill (not a lock, the owner 2026-10-06).
     const index = defaultIndex();
-    const placed = skillConcepts(index, profile.skills);
-    lines.push('Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):');
+    const placed = offered ? skillConcepts(index, profile.skills) : null;
+    lines.push(offered
+      ? 'Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):'
+      : 'Requirements found in the offer (classify every one of them in "requirements"):');
     for (const item of listed) {
-      const candidates = shortlist(profile, item.name, { index, placed });
+      const candidates = offered ? shortlist(profile, item.name, { index, placed }) : [];
       lines.push(`- ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
     }
     lines.push('');
