@@ -4,6 +4,8 @@
 import { detectLanguage, LANGUAGE_NAMES } from './language.js';
 import { fence, UNTRUSTED } from './guard.js';
 import { kindOf } from './profile.js';
+import { shortlist } from './links.js';
+import { defaultIndex, skillConcepts } from './lexicon.js';
 
 const SHAPE = {
   language: 'fr | en',
@@ -69,8 +71,15 @@ export function buildPrompt(profile, offer, listed = []) {
   const language = detectLanguage(offer);
   lines.push('', ...fence(offer), '');
   if (listed.length) {
-    lines.push('Requirements found in the offer (classify every one of them in "requirements"):');
-    for (const item of listed) lines.push(`- ${item.name} (${item.importance})`);
+    // 2.3b-ii: the candidates code finds for each requirement, offered first;
+    // the model may still pick any other skill (not a lock, the owner 2026-10-06).
+    const index = defaultIndex();
+    const placed = skillConcepts(index, profile.skills);
+    lines.push('Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):');
+    for (const item of listed) {
+      const candidates = shortlist(profile, item.name, { index, placed });
+      lines.push(`- ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
+    }
     lines.push('');
   }
   lines.push(`The offer is in ${LANGUAGE_NAMES[language]}: set "language" to "${language}" and write the headline, summary, rationale and notes in ${LANGUAGE_NAMES[language]}.`);

@@ -13,6 +13,7 @@ import { backsRequirement } from './tailor.js';
 import { cleanName, LIMITS } from './guard.js';
 import { alike, defaultIndex, members, skillConcepts } from './lexicon.js';
 import { importanceIn } from './importance.js';
+import { linkedSkills } from './links.js';
 import { canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
 
 /** Lower is stricter: of two rows for one requirement, the stricter match is kept. */
@@ -382,8 +383,15 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // verify), and another name of that pick's concept meets it too ("Shell"
     // kept KSH and dropped Bash, expert: "Shell" names KSH in the profile).
     // Only the model's extra picks are dropped for a named requirement (above).
+    // The owner's rulings on this requirement's words (2.25a, links.json):
+    // "no" takes a skill out, "same" grounds it, "near" holds at adjacent.
+    const ruled = requirement.never ? { same: [], near: [], no: [] } : linkedSkills(profile.links, asked(requirement.name));
+    for (const id of known.filter((id) => ruled.no.includes(id))) {
+      known.splice(known.indexOf(id), 1);
+      repairs.push(`requirement ${requirement.name}: the owner ruled ${skills.get(id).name} unrelated, dropped`);
+    }
     const met = (requirement.match === 'yes' || requirement.match === 'adjacent') && known.length > 0 && !requirement.never;
-    const held = met ? members(defaultIndex(), asked(requirement.name), placed()).filter((id) => known.includes(id)) : [];
+    const held = met ? [...members(defaultIndex(), asked(requirement.name), placed()), ...ruled.same].filter((id) => known.includes(id)) : [];
     for (const id of (met ? alike(defaultIndex(), asked(requirement.name), placed(), known) : []).filter((id) => !known.includes(id))) {
       known.push(id);
       repairs.push(`requirement ${requirement.name}: the profile's ${skills.get(id).name} meets it too`);
@@ -399,6 +407,10 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       repairs.push(`requirement ${requirement.name}: no profile skill names it, the model's reading only: adjacent, to verify`);
       requirement.match = 'adjacent';
       requirement.judged = true;
+    }
+    if (requirement.match === 'yes' && known.length > 0 && known.every((id) => ruled.near.includes(id))) {
+      repairs.push(`requirement ${requirement.name}: the owner ruled it near ${known.map((id) => skills.get(id).name).join(', ')}: adjacent, never yes`);
+      requirement.match = 'adjacent';
     }
     if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0) {
       repairs.push(`requirement ${requirement.name}: marked ${requirement.match} without a profile skill, now no`);
@@ -454,7 +466,8 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // that holds skills of the profile is not a gap: adjacent, by code, with
     // the equivalent named for the owner (seen: false "non" on generic rows).
     if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {
-      const found = members(defaultIndex(), asked(requirement.name), placed());
+      const ruledIn = linkedSkills(profile.links, asked(requirement.name));
+      const found = [...new Set([...members(defaultIndex(), asked(requirement.name), placed()), ...ruledIn.same, ...ruledIn.near])].filter((id) => skills.has(id) && !ruledIn.no.includes(id));
       if (found.length) {
         const names = found.map((id) => skills.get(id).name);
         requirement.match = 'adjacent';
