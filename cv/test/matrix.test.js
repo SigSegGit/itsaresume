@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { coverage, matrix, toCsv, toMarkdown } from '../src/matrix.js';
+import { buildIndex, relate, skillConcepts } from '../src/lexicon.js';
 
 function synthetic() {
   return JSON.parse(readFileSync(new URL('./fixtures/profile.synthetic.json', import.meta.url), 'utf8'));
@@ -35,6 +36,18 @@ test('coverage counts the requirements a profile skill names, and names them', (
 
 test('a requirement no skill names is not covered: a shared theme is not enough', () => {
   assert.equal(coverage(cloudOnly(), ['PostgreSQL']).share, 0);
+  // Ansible and PostgreSQL share only "IT", two steps up: a theme.
+  const index = buildIndex([
+    { id: 'ict', fr: 'informatique', en: 'IT', alt: {}, broader: [] },
+    { id: 'cfg', fr: 'gestion de configuration', en: 'configuration management', alt: {}, broader: ['ict'] },
+    { id: 'ansible', fr: 'Ansible', en: 'Ansible', alt: {}, broader: ['cfg'] },
+    { id: 'db', fr: 'bases de données', en: 'databases', alt: {}, broader: ['ict'] },
+    { id: 'pg', fr: 'PostgreSQL', en: 'PostgreSQL', alt: {}, broader: ['db'] },
+  ]);
+  const p = { skills: [{ id: 'ansible', name: 'Ansible', aliases: [] }] };
+  const placed = skillConcepts(index, p.skills);
+  assert.equal(relate(index, 'PostgreSQL', placed)[0]?.relation, 'theme', 'the case is a theme');
+  assert.equal(coverage(p, ['PostgreSQL'], { index, placed }).share, 0);
 });
 
 test('the matrix ranks the profiles per offer as a person would', () => {

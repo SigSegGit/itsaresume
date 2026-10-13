@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.25a
-TITLE: mined lexicon links (auto >= 3 offers, below that a reviewed index), AD CS/ADFS near Active Directory; then 2.25b, a compact prompt format measured
+NEXT: 2.25c
+TITLE: one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
 WRITTEN-AT: 2026-10-13
 -->
 
@@ -21,6 +21,10 @@ the decisions waiting for him, how to reach his machines — are in
   Bionic through a tunnel when the laptop is on (ADR-11); the VM follows
   `main` by itself (3.5, timer installed 2026-10-05).
 - **2.24 done 2026-10-13** (browser fill 0.95-1.00 on the 26 runs).
+- **2.25 batch done 2026-10-13** (one PR): owner-ruled and mined links
+  (`src/links.js`), the shortlist and a compact catalogue **behind
+  `ITSACV_PROMPT`** (off until 2.25c's real A/B), 2.22d measured, 5.1
+  coverage matrix in code (Spearman 0.62 vs the pipeline's score).
 - **Order set by the owner (2026-10-06)**: 2.24 (the A4 page laid out and
   printed by the browser, docx kept as an option), then 2.25 (a shorter
   prompt through standard profiles), then 2.22c. A local model on the Pi
@@ -248,7 +252,8 @@ Traps met, each cost time once:
       goes yes → adjacent (a docker term; grounding decides). "SRE" →
       `devops` is unchanged: SRE is an alias the v4 gives (a profile
       question, §10, not code).
-    - [ ] **2.3b-ii** The shortlist: for a requirement no name settles,
+    - [x] **2.3b-ii** (code 2026-10-13, opt-in `ITSACV_PROMPT=shortlist`
+      until 2.25c) The shortlist: for a requirement no name settles,
       `relate()` gives the candidate skills and they are offered to the
       model first ("which of these, or none"). **Not a lock** (the owner,
       2026-10-06: "pas un matching artificiellement bas à cause d'un
@@ -589,8 +594,12 @@ Traps met, each cost time once:
     (the status says it is local; hidden in public) and, per finished
     job, its unmet requirements (`/questions.html?job=<id>` filtering to
     `runs` containing that run). Test in web.test.js.
-  - [ ] **2.22d** Measure: the 26 real runs replayed with the answers the
-    owner gave; the score moves only through his answers.
+  - [x] **2.22d** Measure: the 26 real runs replayed with the answers the
+    owner gave; the score moves only through his answers. **2026-10-13**
+    (`~/.itsaresume/migrations/answers-replay.mjs`, code only): 2 answers;
+    6 runs keep raw.json, 2 moved (Active Directory no -> yes, score
+    33->37, 38->42), 0 changes not through an answer. To redo when he has
+    answered more of the 36 questions.
 - [x] **2.23** (a tester, 2026-10-06: "ton front spam pour récup les
   status") The page asks `/api/jobs` every 5 s, not 1.5 s (measured on his
   capture: ~20 calls per 30 s, not 30/s), and a hidden tab asks nothing.
@@ -704,16 +713,38 @@ Traps met, each cost time once:
     model's past matches (requirement words -> skills), learnt on 25 runs
     and tested on the 26th: kept median 41 of 84, 10 of 26 runs lose a
     matched skill, 53 of 277 matches missed (lexicon alone: 23 of 26).
-  - [ ] **2.25a** Mined links in the lexicon. A link seen in >= 3 distinct
+  - **Batch of 2026-10-13** (the owner asked for several steps in one PR):
+    2.25a, 2.25b, 2.3b-ii (opt-in), 2.22d, 5.1 below.
+  - [x] **2.25a** Mined links in the lexicon. A link seen in >= 3 distinct
     offers is accepted by code; below that it waits in a small private
     index the owner fills now and then (`~/.itsaresume/links.json`:
     `{words, skill, verdict: same|near|no}`), never in the repository
     (his skills). `relate()` reads both. Also the owner's ruling: AD CS and
     ADFS are near Active Directory (adjacent, never yes, never no). Test on
     the synthetic profile; replay `links-loo.mjs` and the score replays.
-  - [ ] **2.25b** A compact prompt format, same skills: measure tokens
+    **Done 2026-10-13**: `src/links.js` (mine, merge, read, `linkedSkills`,
+    `shortlist`); `loadProfile` reads `links.json` beside the profile.
+    Mined links only shortlist (the model's past readings never ground a
+    match); the owner's verdicts act in `normalize()`: same grounds, near
+    holds a yes at adjacent and lifts a no to adjacent, no drops the pick.
+    Private file written by `~/.itsaresume/migrations/mine-links.mjs`
+    (runs grouped by offer.txt): **only 8 distinct offers** behind the 26
+    runs, so 5 links reach 3 offers and 929 wait; AD CS / ADFS ruled near
+    the answered Active Directory skill. Reviewing 929 by hand is not
+    realistic: see §10.
+  - [x] **2.25b** A compact prompt format, same skills: measure tokens
     first (aliases, terms, level words, ids), then `rules-replay.mjs`;
     ships only if no run loses a matched requirement.
+    **Done as an opt-in 2026-10-13**: `buildPrompt(..., {compact: true})`,
+    skills under their group, one letter per level, alike terms once;
+    -2.1k chars (~525 tokens, 13 %) on the real profile. Every id, name,
+    alias and term kept (tested). Not on by default: the gate needs the
+    model (rules-replay cannot see a prompt change) -> 2.25c.
+  - [ ] **2.25c** The real A/B: `ITSACV_PROMPT=compact,shortlist` vs off on
+    the 6 runs that kept offer.txt and raw.json (~24 calls on the Pro
+    quota, the owner's go first); compare matched requirements row by row
+    (2.3b-ii's rule: no yes -> no without a named reason); switch the
+    default on only if none is lost.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the
@@ -728,6 +759,12 @@ Traps met, each cost time once:
   (estimate) and after (measure). Measure first: does 5.1's ranking agree
   with the full pipeline's qualification on the corpus? If not, 5.2 is
   not worth its tokens.
+  - [x] **5.1** (code, 2026-10-13) `src/matrix.js`: `coverage` (name or
+    same concept or same link whole, near half, theme nothing), `matrix`,
+    `toCsv`, `toMarkdown`; tested on two synthetic profiles, hand ranking.
+    No CLI yet. **Measured** (`matrix-agree.mjs`): Spearman 0.62 between
+    coverage and the pipeline's score on the 26 runs; the pipeline itself
+    scored one offer 5 to 100 across runs. A pre-filter, not a verdict.
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
