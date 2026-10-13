@@ -23,12 +23,14 @@
     "src/tailor.js",
     "src/text.js",
     "src/view.js",
+    "test/a4.test.js",
     "test/importance.test.js",
     "test/intake.test.js",
     "test/invites.test.js",
     "test/page.test.js",
     "test/qa.test.js",
-    "test/server.test.js"
+    "test/server.test.js",
+    "web/cv.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {
@@ -226,6 +228,46 @@
       "dead": "if (!job.result) throw new HttpError(404, 'not found');",
       "expect": [
         "2.24a: a done job gives its page as data; a job without one is 404"
+      ]
+    },
+    "A4: no experience shows more than the reference (docx cap)": {
+      "file": "web/cv.js",
+      "live": "const next = pending.findIndex(({ experience }) => experience === reference || experience.shown.size < reference.shown.size);",
+      "dead": "const next = pending.findIndex(() => true);",
+      "expect": [
+        "no experience shows more items than the reference (the docx cap)"
+      ]
+    },
+    "A4: a rank-0 item that is not a must never shows": {
+      "file": "web/cv.js",
+      "live": ".flatMap((experience) => experience.items.filter((item) => !item.must && item.rank > 0).map((item) => ({ experience, item })))",
+      "dead": ".flatMap((experience) => experience.items.filter((item) => !item.must).map((item) => ({ experience, item })))",
+      "expect": [
+        "a rank-0 item that is not a must never shows"
+      ]
+    },
+    "A4: musts that overflow shrink the spacing": {
+      "file": "web/cv.js",
+      "live": "while (!fits() && spacing > SPACING.min) {",
+      "dead": "while (false) {",
+      "expect": [
+        "musts that overflow shrink the spacing within bounds, and say so"
+      ]
+    },
+    "Page: an empty short mission is dropped, as in the docx": {
+      "file": "src/tailor.js",
+      "live": "const whenEmpty = kind === 'short' ? { when_empty: null }",
+      "dead": "const whenEmpty = kind === 'none' ? { when_empty: null }",
+      "expect": [
+        "2.24b: the page names its reference experience and what the docx does with an empty one"
+      ]
+    },
+    "A4: the spacing widens no further than its bound": {
+      "file": "web/cv.js",
+      "live": "while (!shrunk && ratio() < TARGET && spacing < SPACING.max) {",
+      "dead": "while (!shrunk && ratio() < TARGET && spacing < 9) {",
+      "expect": [
+        "the spacing widens within bounds until the page is 95 % full, never past the page"
       ]
     }
   }

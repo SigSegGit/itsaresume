@@ -69,3 +69,22 @@ test('a bullet the ranking leaves out never reaches the page', () => {
   }
   assert.ok(!JSON.stringify(pageData(profile, a)).includes('gig-oncall'));
 });
+
+test('2.24b: the page names its reference experience and what the docx does with an empty one', () => {
+  const profile = load();
+  const pg = profile.experiences[0].bullets.find((bullet) => bullet.id === 'acme-pg');
+  profile.experiences.push(
+    { ...profile.experiences[1], id: 'gig', kind: 'short', bullets: [{ ...pg, id: 'gig-pg' }] },
+    { ...profile.experiences[1], id: 'lab', kind: 'rnd', title_empty: { fr: 'Projet R&D', en: 'R&D project' }, bullets: [{ ...pg, id: 'lab-pg' }] },
+  );
+  const a = analysis();
+  a.experiences.push({ id: 'gig', bullets: ['gig-pg'] }, { id: 'lab', bullets: ['lab-pg'] });
+  const page = pageData(profile, a);
+  assert.deepEqual(page.experiences.map((e) => e.reference), [true, false, false, false], 'the first main mission is the reference');
+  const [acme, bank, gig, lab] = page.experiences;
+  assert.equal(acme.when_empty, undefined, 'a main mission is never empty');
+  assert.equal(bank.when_empty, undefined);
+  assert.equal(gig.when_empty, null, 'a short mission with no bullet is dropped');
+  assert.deepEqual(lab.when_empty, { title: 'R&D project', env: '' }, 'an R&D project with no bullet is sober');
+  assert.ok(gig.items.length > 0 && lab.items.length > 0, 'both reach the page when ranked');
+});

@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.24b
-TITLE: the A4 template and its fill in the browser (web/cv.html, cv.css, cv.js)
-WRITTEN-AT: 2026-10-12
+NEXT: 2.24c
+TITLE: print the A4 page (window.print), link it from the job, check fill by hand in Chrome and Firefox
+WRITTEN-AT: 2026-10-13
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -610,7 +610,19 @@ Traps met, each cost time once:
     that cap when it adds by rank, or the page shows what the docx would not.
     Known: the "Invite 0600" defence stays green on Windows (chmod is a
     no-op there); Linux CI verifies it.
-  - [ ] **2.24b** The A4 template (`web/cv.html` + `cv.css`, served by
+  - [x] **2.24b** (2026-10-13) Done: `web/cv.html` + `cv.css` + `cv.js`,
+    served at `/cv.html?job=<id>` (STATIC, same CSP). `fill(page, sheet)`:
+    musts first (spacing shrinks 1.15 → 1.0 if they overflow, said in
+    `#notice`), then items by rank under the docx cap (an experience waits
+    until the reference has as many), stop at the first overflow; then
+    spacing widens by 0.05 up to 1.5 while under 95 %. `pageData` now gives
+    each experience `reference` and `when_empty` (null: a short mission is
+    dropped; `{title, env: ''}`: an R&D project goes sober). Tested in
+    `test/a4.test.js` over a fake sheet (heights given), not the page.js
+    DOM; 5 defences (public.json). **Not yet seen in a real browser**: no
+    link to it from the job page, fonts are installed ones (Calibri,
+    Carlito fallback), not served.
+    The spec: the A4 template (`web/cv.html` + `cv.css`, served by
     `serve`, same CSP: no inline script or style) and the fill in
     `web/cv.js`: add items by rank while the page does not overflow
     (`scrollHeight` against the A4 box), then widen the line spacing
@@ -618,7 +630,8 @@ Traps met, each cost time once:
     Must items never dropped; if they overflow, shrink within bounds and
     say so. Tested over the fake DOM of `test/fixtures/page.js` with
     item heights given.
-  - [ ] **2.24c** Print: `@media print` hides everything but the page;
+  - [ ] **2.24c** First: a link « Page A4 » per done job in web/app.js
+    (test in web.test.js), then open it on a real run and look. Print: `@media print` hides everything but the page;
     the button calls `window.print()`. Check by hand in Chrome and
     Firefox (PDF one page, text selectable); write the fill measured on
     the 26 real runs next to LibreOffice's.

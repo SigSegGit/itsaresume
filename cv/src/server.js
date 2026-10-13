@@ -30,6 +30,10 @@ const WEB = fileURLToPath(new URL('../web/', import.meta.url));
 const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
+  // 2.24b: the A4 page, filled in the browser (/cv.html?job=<id>).
+  '/cv.html': ['cv.html', 'text/html; charset=utf-8'],
+  '/cv.js': ['cv.js', 'text/javascript; charset=utf-8'],
+  '/cv.css': ['cv.css', 'text/css; charset=utf-8'],
   // The tab's icon and the link preview (Open Graph); a browser asks for
   // /favicon.ico on its own, and takes a PNG there.
   '/favicon.svg': ['favicon.svg', 'image/svg+xml'],

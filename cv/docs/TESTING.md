@@ -19,6 +19,17 @@ property it proves.
 - **No personal data.** Tests use `test/fixtures/profile.synthetic.json`, a
   fictitious person. The real profile never enters the repository.
 
+## `test/a4.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| items come in by rank while the page does not overflow, musts first | — |
+| a rank-0 item that is not a must never shows | A4: a rank-0 item that is not a must never shows |
+| no experience shows more items than the reference (the docx cap) | A4: no experience shows more than the reference (docx cap) |
+| a short mission with nothing shown is dropped; with an item, it shows | — |
+| the spacing widens within bounds until the page is 95 % full, never past the page | A4: the spacing widens no further than its bound |
+| musts that overflow shrink the spacing within bounds, and say so | A4: musts that overflow shrink the spacing |
+
 ## `test/answers.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -380,6 +391,7 @@ property it proves.
 | each item carries its rank in rankBullets, and no layout | Page: an item's rank is its place in rankBullets |
 | a main mission always shows: its first bullets are a must, the rest are not | Page: must is the docx's floor, not every item |
 | a bullet the ranking leaves out never reaches the page | — |
+| 2.24b: the page names its reference experience and what the docx does with an empty one | Page: an empty short mission is dropped, as in the docx |
 
 ## `test/pipeline.test.js`
 
@@ -668,6 +680,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**434 tests, 366 of them covered by at least one sabotage defence.**
+**441 tests, 371 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
