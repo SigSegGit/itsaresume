@@ -337,3 +337,19 @@ fn a_gemini_cli_backend_parses_and_refuses_a_key() {
     );
     assert!(keyed.is_err(), "an api_key line must be refused");
 }
+
+#[test]
+fn a_gemini_free_tier_login_is_named_not_given() {
+    let config = Config::parse(
+        r#"
+        journal = "j.jsonl"
+        [[backend]]
+        kind = "gemini-cli"
+        program = "gemini"
+        login = "free-tier-key"
+        "#,
+    )
+    .expect("valid");
+    config.router().expect("a router");
+    assert!(Config::parse("journal = \"j\"\n[[backend]]\nkind = \"gemini-cli\"\nprogram = \"g\"\nlogin = \"paid\"\n").is_err());
+}
