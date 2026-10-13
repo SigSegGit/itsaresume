@@ -45,7 +45,8 @@
     "test/models.test.js",
     "test/pipeline.test.js",
     "test/serve-contract.test.js",
-    "test/wake.test.js"
+    "test/wake.test.js",
+    "src/links.js"
   ],
   "defences": {
     "Contract: another major is refused": {

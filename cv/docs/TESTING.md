@@ -90,6 +90,14 @@ property it proves.
 | a met skill of a hidden group stays out of the column | Column: a hidden group never shows |
 | beyond the group cap, a group holding a met skill is kept before one that holds none | Column: groups holding a met skill are kept first |
 
+## `test/compact.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the compact catalogue keeps every skill id, name, alias and term | Compact: each alike term once, every term kept |
+| the compact catalogue states each skill’s level and group, lab still spelt out | Compact: each alike term once, every term kept; Compact: levels as one letter, stated once |
+| the compact catalogue is shorter, and the default prompt is unchanged | — |
+
 ## `test/core.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -339,6 +347,33 @@ property it proves.
 | a conversion that writes no PDF, or a reader that answers nonsense, fails the measure | — |
 | a conversion that hangs is stopped at the timeout | — |
 | the engine cleans its working directory on close | — |
+
+## `test/links.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| mining pairs each content word of a matched requirement with its skills, counted once per offer | Links: a mined pair counts once per offer |
+| a mined link joins the shortlist from 3 offers; below that it waits for a verdict | Links: a mined link needs 3 offers |
+| the owner’s verdicts rule: same and near join the shortlist whatever the count, no removes a skill from it | Shortlist: a no ruling is never offered |
+| words match whole words of the requirement, not inside another word | — |
+| merging keeps the owner’s verdicts and refreshes the counts | — |
+| the links file: missing is empty, a wrong verdict stops the run | — |
+| AD CS ruled near Active Directory: a "yes" through AD is adjacent, never yes | Links: a near ruling holds a yes at adjacent |
+| ADFS ruled near Active Directory: a "no" is adjacent through AD, never no | Links: a near ruling lifts a no to adjacent |
+| a "no" ruling drops that pick; with nothing left the requirement is no | Links: a no ruling drops the pick |
+| the prompt offers each listed requirement its shortlist, and says it is not a limit | Shortlist: the prompt carries the candidates |
+| a pick outside the shortlist stays met when the grounding keeps it | — |
+| loadProfile reads links.json beside the profile | Links: read beside the profile |
+| ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else | Prompt opt-ins: off by default |
+
+## `test/matrix.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| coverage counts the requirements a profile skill names, and names them | — |
+| a requirement no skill names is not covered: a shared theme is not enough | Matrix: a shared theme is not coverage |
+| the matrix ranks the profiles per offer as a person would | Matrix: a near concept counts half |
+| the matrix is written as CSV and as a Markdown table | — |
 
 ## `test/models.test.js`
 
@@ -691,6 +726,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**452 tests, 382 of them covered by at least one sabotage defence.**
+**472 tests, 395 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

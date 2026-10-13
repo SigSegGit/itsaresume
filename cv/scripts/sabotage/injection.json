@@ -49,7 +49,8 @@
     "test/instructions.test.js",
     "test/pipeline.test.js",
     "test/rules.test.js",
-    "test/split.test.js"
+    "test/split.test.js",
+    "src/links.js"
   ],
   "defences": {
     "Injection: the analysis prompt fences the offer": {

@@ -60,7 +60,12 @@
     "test/redteam.test.js",
     "test/rules.test.js",
     "test/scoring.test.js",
-    "test/stem.test.js"
+    "test/stem.test.js",
+    "src/links.js",
+    "src/matrix.js",
+    "test/compact.test.js",
+    "test/links.test.js",
+    "test/matrix.test.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {
@@ -202,8 +207,8 @@
     },
     "Equivalents: the concept must hold the model's pick to ground it": {
       "file": "src/normalize.js",
-      "live": "members(defaultIndex(), asked(requirement.name), placed()).filter((id) => known.includes(id))",
-      "dead": "members(defaultIndex(), asked(requirement.name), placed())",
+      "live": "placed()), ...ruled.same].filter((id) => known.includes(id))",
+      "dead": "placed()), ...ruled.same]",
       "expect": [
         "\"SQL\" met through Python alone stays \"to verify\": the concept must hold the model's pick"
       ]
@@ -1420,6 +1425,111 @@
       "dead": "  const canaries = new Set(told.flatMap((sentence) => words(sentence)).filter((word) => !known.has(word) && !offerRest.has(word)));",
       "expect": [
         "hostile: requirement names carry nothing private, no link and no instruction to the public page"
+      ]
+    },
+    "Links: a near ruling holds a yes at adjacent": {
+      "file": "src/normalize.js",
+      "live": "known.every((id) => ruled.near.includes(id))",
+      "dead": "false",
+      "expect": [
+        "AD CS ruled near Active Directory: a \"yes\" through AD is adjacent, never yes"
+      ]
+    },
+    "Links: a near ruling lifts a no to adjacent": {
+      "file": "src/normalize.js",
+      "live": "...ruledIn.same, ...ruledIn.near])]",
+      "dead": "...ruledIn.same])]",
+      "expect": [
+        "ADFS ruled near Active Directory: a \"no\" is adjacent through AD, never no"
+      ]
+    },
+    "Links: a no ruling drops the pick": {
+      "file": "src/normalize.js",
+      "live": "known.filter((id) => ruled.no.includes(id))",
+      "dead": "[]",
+      "expect": [
+        "a \"no\" ruling drops that pick; with nothing left the requirement is no"
+      ]
+    },
+    "Links: a mined link needs 3 offers": {
+      "file": "src/links.js",
+      "live": "export const MIN_OFFERS = 3;",
+      "dead": "export const MIN_OFFERS = 1;",
+      "expect": [
+        "a mined link joins the shortlist from 3 offers; below that it waits for a verdict"
+      ]
+    },
+    "Links: a mined pair counts once per offer": {
+      "file": "src/links.js",
+      "live": "for (const pair of seen) counts.set(pair, (counts.get(pair) ?? 0) + 1);",
+      "dead": "for (const pair of seen) counts.set(pair, (counts.get(pair) ?? 0) + 2);",
+      "expect": [
+        "mining pairs each content word of a matched requirement with its skills, counted once per offer"
+      ]
+    },
+    "Shortlist: a no ruling is never offered": {
+      "file": "src/links.js",
+      "live": "ids.has(id) && !linked.no.includes(id)",
+      "dead": "ids.has(id)",
+      "expect": [
+        "the owner\u2019s verdicts rule: same and near join the shortlist whatever the count, no removes a skill from it"
+      ]
+    },
+    "Shortlist: the prompt carries the candidates": {
+      "file": "src/prompt.js",
+      "live": "${candidates.length ? ` \u2014 candidates: ${candidates.join(', ')}` : ''}",
+      "dead": "",
+      "expect": [
+        "the prompt offers each listed requirement its shortlist, and says it is not a limit"
+      ]
+    },
+    "Compact: each alike term once, every term kept": {
+      "file": "src/prompt.js",
+      "live": "!seen.has(key(term)) && seen.add(key(term))",
+      "dead": "seen.size === 0 && seen.add(key(term))",
+      "expect": [
+        "the compact catalogue keeps every skill id, name, alias and term",
+        "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
+      ]
+    },
+    "Compact: levels as one letter, stated once": {
+      "file": "src/prompt.js",
+      "live": "${LEVELS[skill.level] ?? skill.level}",
+      "dead": "${skill.level}",
+      "expect": [
+        "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
+      ]
+    },
+    "Prompt opt-ins: off by default": {
+      "file": "src/prompt.js",
+      "live": "shortlist: asked.includes('shortlist') };",
+      "dead": "shortlist: true };",
+      "expect": [
+        "ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else"
+      ]
+    },
+    "Links: read beside the profile": {
+      "file": "src/run.js",
+      "live": "merged.links = readLinks(join(dirname(path), 'links.json'));",
+      "dead": "merged.links = [];",
+      "expect": [
+        "loadProfile reads links.json beside the profile"
+      ]
+    },
+    "Matrix: a near concept counts half": {
+      "file": "src/matrix.js",
+      "live": "linked.near.length ? 0.5 : 0;",
+      "dead": "linked.near.length ? 1 : 0;",
+      "expect": [
+        "the matrix ranks the profiles per offer as a person would"
+      ]
+    },
+    "Matrix: a shared theme is not coverage": {
+      "file": "src/matrix.js",
+      "live": "relations.includes('same') || linked.same.length) return 1;",
+      "dead": "relations.length || linked.same.length) return 1;",
+      "expect": [
+        "a requirement no skill names is not covered: a shared theme is not enough"
       ]
     }
   }

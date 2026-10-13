@@ -4,6 +4,8 @@
 import { detectLanguage, LANGUAGE_NAMES } from './language.js';
 import { fence, UNTRUSTED } from './guard.js';
 import { kindOf } from './profile.js';
+import { shortlist } from './links.js';
+import { defaultIndex, key, skillConcepts } from './lexicon.js';
 
 const SHAPE = {
   language: 'fr | en',
@@ -39,15 +41,51 @@ Rules:
 
 ${UNTRUSTED}`;
 
-export function buildPrompt(profile, offer, listed = []) {
-  const lines = ['CATALOGUE', '', 'Skill groups (id — title):'];
-  for (const group of profile.skill_groups) lines.push(`- ${group.id} — ${group.title.en}`);
-  lines.push('', 'Skills (id — name, level, group):');
-  for (const skill of profile.skills) {
-    const aliases = skill.aliases?.length ? ` (also: ${skill.aliases.join(', ')})` : '';
-    const terms = skill.terms?.length ? ` [covers: ${skill.terms.join(', ')}]` : '';
-    const level = skill.level === 'lab' ? 'lab (personal R&D only)' : skill.level;
-    lines.push(`- ${skill.id} — ${skill.name}${aliases}${terms}, ${level}, ${skill.group}`);
+/** 2.25b: one letter per level, stated once in the compact catalogue. */
+const LEVELS = { expert: 'E', proficient: 'P', working: 'W', notions: 'N', lab: 'L' };
+
+/**
+ * 2.25b, off by default: the same skills in fewer tokens, grouped under their
+ * group, one letter per level, terms the lexicon keys alike written once.
+ */
+function compactSkills(profile) {
+  const lines = ['Skills by group (id — name / aliases [covers], level). Levels: E expert, P proficient, W working, N notions, L lab (personal R&D only)'];
+  for (const group of profile.skill_groups) {
+    lines.push(`Group ${group.id} (${group.title.en}):`);
+    for (const skill of profile.skills.filter((s) => s.group === group.id)) {
+      const seen = new Set();
+      const terms = (skill.terms ?? []).filter((term) => !seen.has(key(term)) && seen.add(key(term)));
+      const names = [skill.name, ...(skill.aliases ?? [])].join(' / ');
+      lines.push(`- ${skill.id} — ${names}${terms.length ? ` [${terms.join(', ')}]` : ''}, ${LEVELS[skill.level] ?? skill.level}`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * The prompt's opt-ins, off until a real replay shows no run loses a matched
+ * requirement: ITSACV_PROMPT="compact,shortlist" (2.25b, 2.3b-ii).
+ */
+export function promptOptions(env = process.env) {
+  const asked = String(env.ITSACV_PROMPT ?? '').split(',').map((word) => word.trim()).filter(Boolean);
+  const unknown = asked.filter((word) => word !== 'compact' && word !== 'shortlist');
+  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist)`);
+  return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist') };
+}
+
+export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false } = {}) {
+  const lines = ['CATALOGUE', ''];
+  if (compact) lines.push(...compactSkills(profile));
+  else {
+    lines.push('Skill groups (id — title):');
+    for (const group of profile.skill_groups) lines.push(`- ${group.id} — ${group.title.en}`);
+    lines.push('', 'Skills (id — name, level, group):');
+    for (const skill of profile.skills) {
+      const aliases = skill.aliases?.length ? ` (also: ${skill.aliases.join(', ')})` : '';
+      const terms = skill.terms?.length ? ` [covers: ${skill.terms.join(', ')}]` : '';
+      const level = skill.level === 'lab' ? 'lab (personal R&D only)' : skill.level;
+      lines.push(`- ${skill.id} — ${skill.name}${aliases}${terms}, ${level}, ${skill.group}`);
+    }
   }
   const never = (profile.never ?? []).flatMap((entry) => [entry.name, ...(entry.aliases ?? [])]);
   if (never.length) lines.push('', `Never claim, the candidate has confirmed having no experience of: ${never.join(', ')}`);
@@ -69,8 +107,17 @@ export function buildPrompt(profile, offer, listed = []) {
   const language = detectLanguage(offer);
   lines.push('', ...fence(offer), '');
   if (listed.length) {
-    lines.push('Requirements found in the offer (classify every one of them in "requirements"):');
-    for (const item of listed) lines.push(`- ${item.name} (${item.importance})`);
+    // 2.3b-ii: the candidates code finds for each requirement, offered first;
+    // the model may still pick any other skill (not a lock, the owner 2026-10-06).
+    const index = defaultIndex();
+    const placed = offered ? skillConcepts(index, profile.skills) : null;
+    lines.push(offered
+      ? 'Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):'
+      : 'Requirements found in the offer (classify every one of them in "requirements"):');
+    for (const item of listed) {
+      const candidates = offered ? shortlist(profile, item.name, { index, placed }) : [];
+      lines.push(`- ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
+    }
     lines.push('');
   }
   lines.push(`The offer is in ${LANGUAGE_NAMES[language]}: set "language" to "${language}" and write the headline, summary, rationale and notes in ${LANGUAGE_NAMES[language]}.`);
