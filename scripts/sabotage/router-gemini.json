@@ -22,31 +22,66 @@
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "        Some(ACCOUNT_LOGIN) => Ok(()),",
       "dead": "        _ => Ok(()),",
-      "expect": ["only_a_google_account_login_is_accepted", "an_api_key_login_never_starts_the_cli"]
+      "expect": [
+        "only_a_google_account_login_is_accepted",
+        "an_api_key_login_never_starts_the_cli"
+      ]
     },
     "Gemini checks the login before starting the CLI": {
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "        auth_guard(settings.as_deref())?;",
       "dead": "        let _ = settings;",
-      "expect": ["an_api_key_login_never_starts_the_cli"]
+      "expect": [
+        "an_api_key_login_never_starts_the_cli"
+      ]
     },
     "Gemini API key is a metered variable": {
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "    \"GEMINI_API_KEY\",",
       "dead": "",
-      "expect": ["api_keys_and_vertex_switches_are_scrubbed"]
+      "expect": [
+        "api_keys_and_vertex_switches_are_scrubbed"
+      ]
     },
     "Gemini quota falls back": {
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "            BackendError::QuotaExceeded(format!(\"gemini: {detail}\"))",
       "dead": "            BackendError::Other(format!(\"gemini: {detail}\"))",
-      "expect": ["a_quota_error_falls_back"]
+      "expect": [
+        "a_quota_error_falls_back"
+      ]
     },
     "Gemini schema answer must be JSON": {
       "file": "crates/itsaresume-router/src/gemini_cli.rs",
       "live": "        extract_json(answer).map(|v| v.to_string()).ok_or_else(|| {",
       "dead": "        Some(answer.to_owned()).ok_or_else(|| {",
-      "expect": ["a_schema_answer_must_be_json_even_inside_a_fence"]
+      "expect": [
+        "a_schema_answer_must_be_json_even_inside_a_fence"
+      ]
+    },
+    "Gemini account login scrubs the key": {
+      "file": "crates/itsaresume-router/src/gemini_cli.rs",
+      "live": "        && !(login == Login::FreeTierKey && name.eq_ignore_ascii_case(\"GEMINI_API_KEY\"))",
+      "dead": "        && !name.eq_ignore_ascii_case(\"GEMINI_API_KEY\")",
+      "expect": [
+        "a_free_tier_key_passes_only_the_key"
+      ]
+    },
+    "Gemini free-tier needs a key": {
+      "file": "crates/itsaresume-router/src/gemini_cli.rs",
+      "live": "                if !env.iter().any(|(n, v)| {",
+      "dead": "                if false && !env.iter().any(|(n, v)| {",
+      "expect": [
+        "a_free_tier_login_without_a_key_never_starts_the_cli"
+      ]
+    },
+    "Gemini empty response is an error": {
+      "file": "crates/itsaresume-router/src/gemini_cli.rs",
+      "live": "        Some(v) if v[\"response\"].as_str().is_none_or(|r| r.trim().is_empty()) => {",
+      "dead": "        Some(v) if false && v[\"response\"].as_str().is_none_or(|r| r.trim().is_empty()) => {",
+      "expect": [
+        "an_empty_response_is_an_error_read_from_the_report"
+      ]
     }
   }
 }

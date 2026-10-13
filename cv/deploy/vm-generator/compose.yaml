@@ -12,6 +12,7 @@
 #                             ROUTER_URL=http://127.0.0.1:18789 (optional: the
 #                             laptop's router through its tunnel, Claude first,
 #                             until the VM has its own token)
+#   gemini.env                GEMINI_API_KEY=... (owner's free-tier key, no billing)
 #   gemini/                   oauth_creds.json + settings.json of a `gemini`
 #                             "Login with Google" (optional; never a key)
 #   out/ journal/             runs and the router journal
@@ -34,6 +35,9 @@ services:
     network_mode: host
     env_file:
       - path: ${DATA:-~/itsacv-data}/.env
+        required: false
+      # GEMINI_API_KEY (login = "free-tier-key"), for the router only.
+      - path: ${DATA:-~/itsacv-data}/gemini.env
         required: false
     volumes:
       - ${DATA:-~/itsacv-data}/router.toml:/etc/itsaresume/config.toml:ro

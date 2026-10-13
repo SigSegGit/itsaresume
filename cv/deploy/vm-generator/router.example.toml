@@ -12,15 +12,18 @@ program = "claude"
 model = "sonnet"
 timeout_secs = 900
 
-# Gemini on a Google account (free tier or a Google AI subscription), when
-# Claude's plan is spent. Needs $DATA/gemini/ (compose.yaml); its settings
-# must select "oauth-personal" or the router never starts it (an API key
-# would bill per token). Leave it commented out without that login.
+# Gemini when Claude's plan is spent. Two logins, never a key in this file:
+# login = "account" (default): $DATA/gemini/ from a "Login with Google",
+#   settings selecting "oauth-personal", else the router never starts it;
+# login = "free-tier-key": GEMINI_API_KEY from $DATA/gemini.env, a key on a
+#   project WITHOUT billing (enabling billing there would bill per token).
+# Models: 2.5 is retired for new keys (404 observed 2026-10-14).
 # [[backend]]
 # kind = "gemini-cli"
 # name = "gemini"
 # program = "gemini"
-# model = "gemini-2.5-pro"
+# model = "gemini-3.8-flash"
+# login = "free-tier-key"
 # timeout_secs = 900
 
 # The laptop's local model, through the tunnel the laptop opens when it is

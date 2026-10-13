@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.48
-TITLE: gemini-cli backend merged (8.47); first real run needs the owner's Google login copied to the VM, then the codex backend
+TITLE: gemini-cli backend (8.47, free-tier key, real run OK on the laptop); next: enable it on the VM, then codex
 WRITTEN-AT: 2026-10-14
 BASE: 73725c8
 -->
@@ -80,7 +80,12 @@ consequences — before any code. Never a quiet decision.
    Amended by Nicolas 2026-10-14: other **subscription CLIs** may sit
    between Claude and the local model as cloud fallbacks (`gemini-cli` on a
    Google account login; `codex` on a ChatGPT plan next), order set per
-   config; an API key stays forbidden (decision 1).
+   config. Decision 1, amended by Nicolas the same day: **one** key is
+   allowed, his Gemini AI Studio key on a project **without billing**
+   (`login = "free-tier-key"`), read from the router's environment only
+   (`$DATA/gemini.env` on the VM, `~/.itsaresume/gemini.env` on the
+   laptop), never in a repository or a config file. Enabling billing on
+   that project is the line he holds; any other key: ask.
 3. **`Other` never triggers a fallback.** Only `QuotaExceeded` and
    `Unreachable` hand over to the next backend (ARCHITECTURE explains why).
 4. **Rust** for all orchestration and routing logic.
@@ -592,14 +597,18 @@ branch with the local gates of §3 green.
   schema request gets the shared JSON rule (`gemini_cli::schema_rule`) and
   the answer must parse as JSON. Sabotage plan `router-gemini.json` (5).
   Image ships `@google/gemini-cli` 0.11.0; the VM mounts `$DATA/gemini`.
-- [ ] **8.48** **First real Gemini run, then `codex` backend.** Needs the
-  owner: `gemini` once on the laptop, "Login with Google"; copy
-  `~/.gemini/{oauth_creds.json,settings.json}` to the VM's
-  `~/itsacv-data/gemini/` and uncomment its block in `router.toml`. Then:
-  capture a real success/quota output into `tests/fixtures/gemini/`
-  (replace the hypotheses), and the same backend for `codex exec --json`
-  (ChatGPT login only, `~/.codex/auth.json`). Bench across providers
-  later (owner, 2026-10-14: A/B after the capabilities).
+  Then `login = "free-tier-key"` (owner's key, no billing). Real runs on the
+  laptop, 2026-10-14: gemini-3.8-flash answered a schema request in 17 s,
+  valid JSON; gemini-2.5-flash is retired for new keys: the CLI then prints
+  an **empty** `response` and the cause only in a report file (now read:
+  404 → `Other`, 429 → `QuotaExceeded`). Sabotage `router-gemini.json` (8).
+- [ ] **8.48** **Gemini live on the VM, then the `codex` backend.** The key
+  is already in the VM's `~/itsacv-data/gemini.env` (600). After the merge
+  deploys the image: uncomment the gemini block in the VM's private
+  `router.toml` between claude and bionic, restart, one real CV run.
+  Then `codex exec --json` on a ChatGPT login (`~/.codex/auth.json`; codex
+  is not installed on the laptop). Benches across providers later (owner,
+  2026-10-14: capabilities first, A/B after).
 
 ## 9. Deliberately open
 

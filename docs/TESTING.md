@@ -194,6 +194,10 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_schema_request_carries_the_schema_and_the_json_only_rule` | `tests/gemini_cli.rs` | The shared JSON rule and the schema follow the prompt | — |
 | `a_missing_program_is_unreachable` | `tests/gemini_cli.rs` | A missing `gemini` is `Unreachable` (falls back) | — |
 | `an_api_key_login_never_starts_the_cli` | `tests/gemini_cli.rs` | An API-key login is refused before the CLI starts | Gemini accepts only a Google account login; Gemini checks the login before starting the CLI |
+| `a_free_tier_key_passes_only_the_key` | `tests/gemini_cli.rs` | `free-tier-key` keeps `GEMINI_API_KEY`, still scrubs every other switch; `account` scrubs it | Gemini account login scrubs the key |
+| `a_free_tier_login_without_a_key_never_starts_the_cli` | `tests/gemini_cli.rs` | `free-tier-key` with no key in the environment: `Other`, CLI not started | Gemini free-tier needs a key |
+| `an_empty_response_is_an_error_read_from_the_report` | `tests/gemini_cli.rs` | Observed: empty `response` = API error; the report file says quota (429) or `Other` (404) | Gemini empty response is an error |
+| `a_gemini_free_tier_login_is_named_not_given` | `tests/config.rs` | `login = "free-tier-key"` parses; an unknown login is refused | — |
 | `scripts/docker-smoke.sh` (CI job `docker`) | — | The image holds the pinned `claude` CLI and not the test double; `/healthz` answers; a real request through the **real** CLI with a bogus `ANTHROPIC_API_KEY` on the container returns 502 "Not logged in" — proving the key is stripped and the stop does not fall back | — (the script states what each other outcome would mean) |
 | `a_green_pr_is_merged_pinned_to_its_head` | `scripts/test-merge-when-green.sh` | Twelve passing checks: the merge names the head it counted (`--match-head-commit`) | Merge: pinned to the counted head |
 | `a_pending_check_stops_the_merge` | `scripts/test-merge-when-green.sh` | One pending check among passing ones: no merge | Merge: every check must pass |
