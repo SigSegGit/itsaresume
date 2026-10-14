@@ -170,6 +170,14 @@
       "expect": [
         "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
       ]
+    },
+    "Claude never thinks": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "            .env(\"MAX_THINKING_TOKENS\", \"0\")",
+      "dead": "",
+      "expect": [
+        "the_child_never_thinks"
+      ]
     }
   }
 }

@@ -632,6 +632,10 @@ branch with the local gates of §3 green.
   Quality, 3 runs each: same requirements matched except SQL (nice), `yes`
   3/3 before, `adjacent` 3/3 after (the profile has PostgreSQL, no SQL
   line): fit 93 -> 90. Accepted by the owner's "go fast"; see §9.
+- [x] **8.52** **Claude never thinks** (`MAX_THINKING_TOKENS=0` forced on
+  the child). After 8.51 the VM's big call still took 53 s / 3,930 tokens
+  for a ~1,100-token answer: its CLI (2.1.162, the laptop has 2.1.290)
+  thinks by default (observed: a `thinking` block, gone with the variable).
 - [ ] **8.50** **One complete CV on Gemini** once 8.48b is deployed (the VM
   follows `main` within ~6 min): `POST /api/jobs` on the VM's
   127.0.0.1:18790 with `model: gemini` (GET `/` first for the cookie and

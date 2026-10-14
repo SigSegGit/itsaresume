@@ -289,6 +289,26 @@ fn the_system_prompt_file_is_readable_by_its_owner_only() {
     assert_eq!(mode, "600");
 }
 
+/// 8.52: thinking is off whatever the caller's environment says. Measured
+/// 2026-10-14: CLI 2.1.162 (the VM's) thinks by default; a CV's big call
+/// then wrote ~3.5x the tokens of its answer.
+#[test]
+fn the_child_never_thinks() {
+    let scene = scene();
+    let mut env = success_env(&scene);
+    env.push((
+        OsString::from("MAX_THINKING_TOKENS"),
+        OsString::from("32000"),
+    ));
+    backend(&scene)
+        .complete_with_env(&Request::new("p"), env)
+        .expect("the fake answers");
+    assert_eq!(
+        std::fs::read_to_string(scene.record.join("max-thinking-tokens.txt")).expect("recorded"),
+        "0"
+    );
+}
+
 /// Claude Code prefers `ANTHROPIC_API_KEY` over the subscription when it is
 /// set (observed). None of the variables that switch it to metered billing
 /// may reach the child; the subscription token must.

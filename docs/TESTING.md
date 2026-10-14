@@ -92,6 +92,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `the_system_prompt_file_is_removed_when_the_cli_is_killed` | `tests/claude_process.rs` | The system prompt file is gone after a timeout kill too | Claude process: system prompt file removed |
 | `concurrent_requests_each_get_their_own_system_prompt` | `tests/claude_process.rs` | Two overlapping requests in one working directory each get their own file and system prompt | Claude process: one system prompt file per request |
 | `the_system_prompt_file_is_readable_by_its_owner_only` | `tests/claude_process.rs` | Unix only: the file is 0600 | System prompt file: owner only |
+| `the_child_never_thinks` | `tests/claude_process.rs` | 8.52: `MAX_THINKING_TOKENS=0` reaches the child whatever the caller set | Claude never thinks |
 | `metered_credentials_never_reach_the_child` | `tests/claude_process.rs` | None of `METERED_ENV` reaches the child (checked by the child itself); `CLAUDE_CODE_OAUTH_TOKEN` and `PATH` do | Claude process: metered env removed |
 | `the_metered_list_names_the_known_metered_switches` | `tests/claude_process.rs` | `METERED_ENV` names the API-key, auth-token, Bedrock and Vertex switches and not the subscription token | CLAUDE_CONFIG_DIR is scrubbed |
 | `the_child_runs_in_the_dedicated_working_directory` | `tests/claude_process.rs` | The child's working directory is the dedicated one, created if missing | Claude process: dedicated workdir |
