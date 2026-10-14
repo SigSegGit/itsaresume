@@ -775,6 +775,15 @@ Traps met, each cost time once:
     listed apart are merged, met by any), tested on the CLM rows above.
   - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
     configured; measure the same way when the laptop is on.
+- [x] **2.27a** (2026-10-14, #120) Done another way, by the owner's ruling
+  ("collaboration, communication, pédagogie, travail d'équipe … dynamisme,
+  rigueur, sérieux, ponctualité, autonomie … ne peuvent sortir qu'en OK"):
+  collaboration and soft-skill words are qualities, a quality is met (yes)
+  and stays unscored; an all-caps acronym (DBA) is a team, not a product.
+  Replayed on 26 real runs: only the DBA row changes. Open: the page fill
+  and the "Profil expérimenté" line below; the Bionic run of the same offer
+  scored 90 — its report sits on the VM, not read yet (the auto-mode
+  classifier refused the VM read): find which rows cost the 3 more points.
 - [ ] **2.27** (the owner, 2026-10-14: "analyser les 10 % manquants") **A
   collaboration requirement met by a profile fact, not a skill.** Real run
   (offer known to be a near-perfect fit, interview passed): 93/100; the 7
