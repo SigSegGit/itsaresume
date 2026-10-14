@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.50
-TITLE: gemini + openai enabled on the VM (8.48); a real Gemini run hit 503 and stopped, fixed (8.48b); next: one complete CV on Gemini
+TITLE: 8.51 Claude schema in the prompt (CV 2 min -> 24 s, ~4x fewer tokens); Gemini enabled but overloaded by Google today; next: one complete CV on Gemini
 WRITTEN-AT: 2026-10-14
 BASE: 73725c8
 -->
@@ -623,6 +623,15 @@ branch with the local gates of §3 green.
 - [x] **8.48b** Gemini overload (503, UNAVAILABLE, "high demand",
   "overloaded") is `Unreachable`: hands over. Test
   `an_overloaded_model_falls_back`, defence "Gemini overload falls back".
+- [x] **8.51** **Claude: schema in the prompt, never `--json-schema`**
+  (2026-10-14, owner: "5 min on a GAFAM server is waste"). Measured on CLI
+  2.1.290: with `--json-schema` the model writes the answer twice (the
+  `StructuredOutput` tool, then text; 2 turns), up to ~4x the output tokens.
+  Same offer (CAGIP Ansible/DBA), same machine class: big call 64-73 s /
+  5,200-5,800 tokens -> 10-12 s / 1,375-1,576; the whole CV 2 min -> 24 s.
+  Quality, 3 runs each: same requirements matched except SQL (nice), `yes`
+  3/3 before, `adjacent` 3/3 after (the profile has PostgreSQL, no SQL
+  line): fit 93 -> 90. Accepted by the owner's "go fast"; see §9.
 - [ ] **8.50** **One complete CV on Gemini** once 8.48b is deployed (the VM
   follows `main` within ~6 min): `POST /api/jobs` on the VM's
   127.0.0.1:18790 with `model: gemini` (GET `/` first for the cookie and
@@ -637,6 +646,12 @@ branch with the local gates of §3 green.
   (CLI 0.11, key login), and a 503 "high demand" (2026-10-14, now a
   fallback); a real 429 not yet. The env scrub in the child
   process has no process test, only the list.
+- **8.51 cost a little reasoning**: the twice-written answer was partly the
+  model thinking before answering. Without it, SQL from "PostgreSQL expert"
+  went `yes` -> `adjacent` on the CAGIP offer (3/3). If more such drops show
+  up on other offers, the fix belongs in the analysis prompt or in code
+  (an expert sub-skill implies its family), not in returning to
+  `--json-schema`.
 - **The checks spend a little quota**: at most one tiny request per
   backend per 15 min, none when real traffic answered meanwhile (Claude's
   check is a `claude -p` call on the plan). The check thread has no test of

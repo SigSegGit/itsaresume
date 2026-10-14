@@ -574,14 +574,6 @@
         "a_schema_request_sends_response_format_and_needs_json"
       ]
     },
-    "Schema: claude gets --json-schema": {
-      "file": "crates/itsaresume-router/src/claude_code.rs",
-      "live": "if let Some(schema) = schema {",
-      "dead": "if let Some(schema) = schema.filter(|_| false) {",
-      "expect": [
-        "a_schema_reaches_the_cli_as_json_schema"
-      ]
-    },
     "Schema: StructuredOutput only with a schema": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": "|| (schema && tools.is_some_and(|t| t.len() == 1 && t[0] == \"StructuredOutput\"));",

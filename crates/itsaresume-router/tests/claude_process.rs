@@ -588,25 +588,21 @@ mod workdir {
     }
 }
 
-/// 8.24: a schema reaches the CLI as `--json-schema`, and only then.
+/// 8.51: never `--json-schema`. Measured 2026-10-14 (CLI 2.1.290): with it
+/// the model writes the answer twice (the StructuredOutput tool, then the
+/// same as text, 2 turns), up to ~4x the output tokens of the answer. The
+/// schema goes in the prompt; the router extracts the JSON.
 #[test]
-fn a_schema_reaches_the_cli_as_json_schema() {
+fn a_schema_never_reaches_the_cli_as_json_schema() {
     let backend = ClaudeCodeBackend::new(FAKE);
     let schema = serde_json::json!({"type": "object"});
-    let with = backend.arguments_for(Path::new("s.txt"), Some(&schema));
-    let at = with
-        .iter()
-        .position(|a| a == "--json-schema")
-        .expect("--json-schema given");
-    assert_eq!(
-        serde_json::from_str::<serde_json::Value>(&with[at + 1]).expect("json"),
-        schema
-    );
-    assert!(
-        !backend
-            .arguments_for(Path::new("s.txt"), None)
-            .contains(&"--json-schema".to_owned())
-    );
+    for given in [Some(&schema), None] {
+        assert!(
+            !backend
+                .arguments_for(Path::new("s.txt"), given)
+                .contains(&"--json-schema".to_owned())
+        );
+    }
 }
 
 /// Seen on the VM (2026-10-01): the real CLI, writing a 150 KB answer into a

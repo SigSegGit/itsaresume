@@ -4,6 +4,7 @@
 //! written (docs/HANDOVER.md §4; fixtures in `tests/fixtures/claude/`).
 
 use crate::backend::{Backend, BackendError, Completion, Request, Usage, excerpt};
+use crate::gemini_cli::{extract_json, prompt_for};
 use serde_json::Value;
 use std::ffi::{OsStr, OsString};
 use std::io::{ErrorKind, Read, Write};
@@ -285,14 +286,13 @@ impl ClaudeCodeBackend {
         system_file: &Path,
         schema: Option<&serde_json::Value>,
     ) -> Vec<String> {
-        let mut arguments = self.arguments(system_file);
-        if let Some(schema) = schema {
-            // Observed on 2.1.162: the answer then comes in `structured_output`.
-            // The schema is no secret: argv is fine for it.
-            arguments.push("--json-schema".into());
-            arguments.push(schema.to_string());
-        }
-        arguments
+        // 8.51: never `--json-schema`. Measured on 2.1.290 (2026-10-14): the
+        // model then writes the answer twice (the StructuredOutput tool, then
+        // the same as text), up to ~4x the output tokens and time. The schema
+        // goes in the prompt instead ([`prompt_for`]) and the router extracts
+        // the JSON, as for Gemini.
+        let _ = schema;
+        self.arguments(system_file)
     }
 
     /// The arguments without a schema.
@@ -378,7 +378,7 @@ impl ClaudeCodeBackend {
         // Write and read on threads: a large prompt and a large answer would
         // otherwise deadlock on full pipes.
         let stdin = child.stdin.take();
-        let prompt = request.prompt.clone();
+        let prompt = prompt_for(request);
         let writer = thread::spawn(move || {
             if let Some(mut stdin) = stdin {
                 let _ = stdin.write_all(prompt.as_bytes());
@@ -413,7 +413,21 @@ impl ClaudeCodeBackend {
                 excerpt(stderr.trim(), 160)
             )));
         }
-        let outcome = classify_for(&stdout, request.schema.is_some());
+        let outcome = classify_for(&stdout, false).and_then(|completion| {
+            if request.schema.is_none() {
+                return Ok(completion);
+            }
+            match extract_json(&completion.text) {
+                Some(json) => Ok(Completion {
+                    text: json.to_string(),
+                    ..completion
+                }),
+                None => Err(BackendError::Other(format!(
+                    "claude was asked for JSON and answered: {}",
+                    excerpt(completion.text.trim(), 160)
+                ))),
+            }
+        });
         if matches!(&outcome, Err(BackendError::Other(message)) if message.starts_with("billing tripwire"))
         {
             self.tripped.store(true, Ordering::SeqCst);
