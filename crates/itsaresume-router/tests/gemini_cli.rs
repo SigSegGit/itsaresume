@@ -43,6 +43,28 @@ fn a_quota_error_falls_back() {
     }
 }
 
+/// Observed on the VM 2026-10-14: a 503 "high demand" stopped a CV run
+/// instead of handing over; an overloaded model is an outage, not a refusal.
+#[test]
+fn an_overloaded_model_falls_back() {
+    for (stdout, stderr) in [
+        (
+            r#"{"error":{"type":"Error","message":"{\"error\":{\"code\":503,\"message\":\"This model is currently experiencing high demand. Spikes in demand are usually temporary.\",\"status\":\"UNAVAILABLE\"}}","code":503}}"#,
+            "",
+        ),
+        ("", "Error: 503 Service Unavailable"),
+        ("", "The model is overloaded. Please try again later."),
+    ] {
+        assert!(
+            matches!(
+                classify(stdout, stderr, false),
+                Err(BackendError::Unreachable(_))
+            ),
+            "{stdout} {stderr}"
+        );
+    }
+}
+
 #[test]
 fn a_network_failure_falls_back_and_anything_else_stops() {
     assert!(matches!(
