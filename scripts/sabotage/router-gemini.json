@@ -139,6 +139,31 @@
       "expect": [
         "an_overloaded_model_falls_back"
       ]
+    },
+    "Claude schema goes in the prompt": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "        let prompt = prompt_for(request);",
+      "dead": "        let _ = prompt_for;\n        let prompt = request.prompt.clone();",
+      "expect": [
+        "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
+      ]
+    },
+    "Claude never gets --json-schema": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "        let _ = schema;\n        self.arguments(system_file)\n",
+      "dead": "        let mut a = self.arguments(system_file);\n        if let Some(s) = schema {\n            a.push(\"--json-schema\".into());\n            a.push(s.to_string());\n        }\n        a\n",
+      "expect": [
+        "a_schema_never_reaches_the_cli_as_json_schema",
+        "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
+      ]
+    },
+    "Claude schema answer is its extracted JSON": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "                    text: json.to_string(),",
+      "dead": "                    text: {\n                        let _ = json;\n                        completion.text.clone()\n                    },",
+      "expect": [
+        "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
+      ]
     }
   }
 }

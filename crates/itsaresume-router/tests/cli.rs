@@ -454,7 +454,10 @@ fn the_schema_option_goes_in_the_prompt_and_its_json_comes_back() {
     assert!(!args.contains(&"--json-schema".to_owned()), "{args:?}");
     let stdin = std::fs::read_to_string(record.join("stdin.txt")).expect("stdin");
     assert!(stdin.starts_with("a prompt"), "{stdin}");
-    assert!(stdin.contains(r#"{"type":"object"}"#), "the schema is in the prompt: {stdin}");
+    assert!(
+        stdin.contains(r#"{"type":"object"}"#),
+        "the schema is in the prompt: {stdin}"
+    );
     let answer: Value =
         serde_json::from_slice(&output.stdout).expect("the answer is the JSON, out of its fence");
     assert_eq!(answer["requirements"][0]["name"], "Kubernetes");

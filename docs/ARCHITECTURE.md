@@ -110,12 +110,15 @@ call. The init message lists the tools; a non-empty list is refused
 **Structured output (8.24).** A request may carry a JSON Schema (`schema`
 in `POST /v1/complete`). `lm-studio` sends it as a strict `json_schema`
 `response_format` (Bionic honours it: the content is the document alone);
-`claude-code` passes `--json-schema`, and then (observed on 2.1.162) the CLI
-answers through a `StructuredOutput` tool: init lists it, `result` is empty,
-the object is in `structured_output`. That one tool returns data and acts on
-nothing, so the tool tripwire allows it **only** for a schema request and
-**only alone**; any other tool, or `StructuredOutput` unasked, still stops
-the request. Either way a schema answer that is not JSON is `Other`.
+`claude-code` and `gemini-cli` append the schema to the prompt
+(`schema_rule`) and take the first JSON value out of the answer
+(`extract_json`). Claude no longer gets `--json-schema` (8.51): measured on
+2.1.290, the CLI then answers through a `StructuredOutput` tool and the model
+writes the answer twice, up to ~4x the output tokens and time (a CV: 2 min
+down to 24 s). The tripwire still accepts `StructuredOutput` alone for a
+schema request (the classifier keeps that path), but the router no longer
+asks for it, so the tool now stops the request like any other. Either way a
+schema answer that is not JSON is `Other`.
 
 Output classification (observed shapes in
 `crates/itsaresume-router/tests/fixtures/claude/`, HANDOVER §4):

@@ -87,7 +87,7 @@
       "live": "\"--schema\" if command == \"complete\" => options.schema = Some(PathBuf::from(value()?)),",
       "dead": "\"--schema\" if command == \"complete\" => drop(value()?),",
       "expect": [
-        "the_schema_option_reaches_the_cli_as_json_schema"
+        "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
       ]
     },
     "CLI: a schema file must hold an object": {
@@ -103,7 +103,7 @@
       "live": "system,\n            schema,\n            kind,\n        },\n        only,",
       "dead": "system,\n            schema: schema.filter(|_| false),\n            kind,\n        },\n        only,",
       "expect": [
-        "the_schema_option_reaches_the_cli_as_json_schema"
+        "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
       ]
     },
     "Stats: a fallback is an answer after a failed attempt": {
