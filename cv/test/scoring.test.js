@@ -49,12 +49,28 @@ test('a personal quality is not scored nor a must-have of the qualification; the
   assert.deepEqual(analysis.fit.score, 67, 'PostgreSQL and Terraform of three musts');
   assert.deepEqual(analysis.fit.qualification, { level: 'partial', gaps: ['Kafka'] });
   const communication = analysis.requirements.find((r) => r.name === 'Communication claire et structurée');
-  assert.deepEqual([communication.match, communication.skills], ['no', []], 'no profile skill backs a quality');
+  assert.deepEqual([communication.match, communication.skills], ['yes', []], 'a quality is met, backed by no skill');
   assert.match(repairs.join('\n'), /requirement Pédagogie: a personal quality, not scored \(to show in interview\)/);
   const text = report(analysis, v4(), { backend: 'b', attempts: 1 });
   assert.match(text, /## Personal qualities — not scored, to show in interview\n\n[^\n]*\n\n- Communication claire et structurée \(must\)\n- Rigueur/);
   assert.ok(!/^\| Pédagogie/m.test(text), 'not in the scored table');
   assert.ok(!/^- Pédagogie \(must\)$/m.test(text.split('## Personal qualities')[0]), 'not a gap');
+});
+
+/** 2.27, seen 2026-10-14: "Capacité à travailler avec les DBA" (a must) read
+ * adjacent through PostgreSQL cost 7 points and the qualification. The skill
+ * asked is collaboration, not the technology; soft skills are met too. */
+test('collaboration and soft skills are met qualities: never a gap, never adjacent, never scored', () => {
+  const NAMES = ['Capacité à travailler avec les DBA', 'Collaboration avec les équipes réseau', 'Coopération inter-équipes',
+    'Dynamisme', 'Sérieux', 'Ponctualité', 'Motivation', 'Esprit d\'initiative', 'Work with developers'];
+  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), row(NAMES[0], 'adjacent', ['postgresql']), ...NAMES.slice(1).map((name) => row(name))];
+  const offer = `Must have: PostgreSQL. ${NAMES.join(', ')}.`;
+  const { analysis } = normalize(answer({ requirements }), v4(), { offer });
+  const qualities = analysis.requirements.filter((r) => r.kind === 'quality');
+  assert.deepEqual(qualities.map((r) => r.name), NAMES);
+  assert.deepEqual(qualities.map((r) => r.match), NAMES.map(() => 'yes'));
+  assert.equal(analysis.fit.score, 100);
+  assert.equal(analysis.fit.qualification.level, 'qualified');
 });
 
 test('a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says', () => {
