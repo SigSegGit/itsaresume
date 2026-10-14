@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.48
-TITLE: gemini + openai backends and 15-min checks merged (8.47-8.49); next: enable them on the VM and one real CV run on Gemini
+NEXT: 8.50
+TITLE: gemini + openai enabled on the VM (8.48); a real Gemini run hit 503 and stopped, fixed (8.48b); next: one complete CV on Gemini
 WRITTEN-AT: 2026-10-14
 BASE: 73725c8
 -->
@@ -614,17 +614,28 @@ branch with the local gates of §3 green.
   menu shows only what can answer (cv). Real run: claude up, gemini up,
   bionic down -> menu auto/claude/gemini, default gemini (Claude near its
   limit).
-- [ ] **8.48** **Enable on the VM.** Keys already in `~/itsacv-data/
-  {gemini,openai}.env` (600). After the merge deploys the image: in the
-  VM's private `router.toml` add `check_every_secs = 900`, uncomment the
-  gemini block (gemini-3.8-flash, free-tier-key) between claude and
-  bionic, the openai one after it; restart; one real CV run on Gemini
-  (`model: gemini`). Then bench providers (owner: later).
+- [x] **8.48** **Enabled on the VM** (2026-10-14): `check_every_secs =
+  900`, gemini (gemini-3.8-flash, free-tier-key) between claude and bionic,
+  openai after it. Real run, offer `exemple-sre-postgresql-fr`, `model:
+  gemini`: the startup check answered (198 s), the listing answered (169 s),
+  the next step got **503 "high demand"**, classified `Other`: the run
+  STOPPED. Fixed in 8.48b.
+- [x] **8.48b** Gemini overload (503, UNAVAILABLE, "high demand",
+  "overloaded") is `Unreachable`: hands over. Test
+  `an_overloaded_model_falls_back`, defence "Gemini overload falls back".
+- [ ] **8.50** **One complete CV on Gemini** once 8.48b is deployed (the VM
+  follows `main` within ~6 min): `POST /api/jobs` on the VM's
+  127.0.0.1:18790 with `model: gemini` (GET `/` first for the cookie and
+  the CSRF token; a job is visible only with that cookie). If Gemini is
+  overloaded again, `model: auto` must now reach openai/bionic. Gemini is
+  slow (~3 min per call): expect 10-15 min. Then bench providers (owner:
+  later).
 
 ## 9. Deliberately open
 
 - **Gemini output shapes**: success and the empty-response error observed
-  (CLI 0.11, key login); a real 429 not yet. The env scrub in the child
+  (CLI 0.11, key login), and a 503 "high demand" (2026-10-14, now a
+  fallback); a real 429 not yet. The env scrub in the child
   process has no process test, only the list.
 - **The checks spend a little quota**: at most one tiny request per
   backend per 15 min, none when real traffic answered meanwhile (Claude's

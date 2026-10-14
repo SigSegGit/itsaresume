@@ -131,6 +131,14 @@
       "expect": [
         "a_backend_seen_within_the_period_is_not_checked_again"
       ]
+    },
+    "Gemini overload falls back": {
+      "file": "crates/itsaresume-router/src/gemini_cli.rs",
+      "live": "        \"503\",\n        \"unavailable\",\n        \"high demand\",\n        \"overloaded\",\n",
+      "dead": "",
+      "expect": [
+        "an_overloaded_model_falls_back"
+      ]
     }
   }
 }

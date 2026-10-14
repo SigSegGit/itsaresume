@@ -140,6 +140,12 @@ fn looks_like_network(text: &str) -> bool {
         "econnreset",
         "fetch failed",
         "network",
+        // Overloaded (503 UNAVAILABLE, "high demand"): an outage, seen
+        // 2026-10-14 on gemini-3.8-flash.
+        "503",
+        "unavailable",
+        "high demand",
+        "overloaded",
     ]
     .iter()
     .any(|n| text.contains(n))
