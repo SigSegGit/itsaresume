@@ -355,6 +355,9 @@ impl ClaudeCodeBackend {
             .current_dir(&self.workdir)
             .env_clear()
             .envs(env.into_iter().filter(|(name, _)| !is_metered(name)))
+            // 8.52: no hidden thinking. CLI 2.1.162 thinks by default; a CV's
+            // big call wrote ~3.5x its answer's tokens (measured 2026-10-14).
+            .env("MAX_THINKING_TOKENS", "0")
             .stdin(Stdio::piped())
             .stdout(Stdio::from(answer_handle))
             .stderr(Stdio::piped());
