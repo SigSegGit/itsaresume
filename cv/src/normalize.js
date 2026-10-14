@@ -37,13 +37,14 @@ function grounded(name, matched) {
 /**
  * Whether a requirement is a personal quality ("Pédagogie", "Capacité à
  * fédérer"): named with a quality word (text.js), and naming no product (a
- * word with a digit or an inner capital: "GitHub", "ITIL v4"), no profile
+ * word with a digit or a capital after a small letter: "GitHub", "ITIL v4";
+ * an acronym is a team, "travailler avec les DBA", 2.27), no profile
  * skill and nothing never claimed. The code decides, not the model:
  * "Leadership Kubernetes" stays a requirement to score.
  */
 function isQuality(requirement, profile) {
   const name = canonical(requirement.name);
-  return namesQuality(name) && !/\p{N}|[\p{L}\p{N}]\p{Lu}/u.test(name) && unbacked(requirement, profile);
+  return namesQuality(name) && !/\p{N}|\p{Ll}\p{Lu}/u.test(name) && unbacked(requirement, profile);
 }
 
 /** Nothing never claimed, and no profile skill, names the requirement. */
@@ -422,9 +423,12 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // A personal quality is for the interview: no profile skill backs it, and
     // as an unmet must-have it sank the qualification (seen: "Profil
     // polyvalent", "Curieux techniquement", partial became not qualified).
+    // It is met (the owner, 2026-10-14: collaboration and soft skills "ne
+    // peuvent pas sortir autrement qu'en OK"), never adjacent nor a gap.
     if (isQuality(requirement, profile)) {
       requirement.kind = 'quality';
-      requirement.match = 'no';
+      requirement.match = 'yes';
+      delete requirement.judged;
       requirement.skills = [];
       repairs.push(`requirement ${requirement.name}: a personal quality, not scored (to show in interview)`);
     }

@@ -775,6 +775,23 @@ Traps met, each cost time once:
     listed apart are merged, met by any), tested on the CLM rows above.
   - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
     configured; measure the same way when the laptop is on.
+- [ ] **2.27** (the owner, 2026-10-14: "analyser les 10 % manquants") **A
+  collaboration requirement met by a profile fact, not a skill.** Real run
+  (offer known to be a near-perfect fit, interview passed): 93/100; the 7
+  points are one must, "Capacité à travailler avec les DBA", capped to
+  adjacent by `src/normalize.js` (`grounded` finds no skill naming "DBA")
+  although a profile fact says "collaboration directe avec l'équipe DBA"
+  (the model's note and the CV summary quote it). Same cap makes the
+  qualification "partially qualified", which is false. Fix: a requirement
+  of the form "travailler avec / en lien avec X" is met (yes) when a
+  profile fact (bullet or summary fact, by id) contains X's content words;
+  the model picks the fact id, the code checks the words. Red test on a
+  fictional profile; sabotage: drop the fact check → the test stays red.
+  Replay on the real runs (`rules-replay.mjs`) before shipping: list every
+  row that changes. Secondary, same run: content fills 84 % of the page
+  (goal: full page, see 2.24); "Profil expérimenté" (must, yes) is not on
+  the page because no title names it — print the years in the headline or
+  summary when such a must is met.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the

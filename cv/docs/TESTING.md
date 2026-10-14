@@ -570,6 +570,7 @@ property it proves.
 | Property (the test name) | Sabotage defences |
 |---|---|
 | a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview | Score: a quality is not scored; Score: a quality is not a must-have of the qualification; Report: qualities have their own section; Report: a quality is not in the scored table; Report: a quality is not a gap; Quality: a requirement named with a quality word is set apart; Quality: a run of quality words names a quality |
+| collaboration and soft skills are met qualities: never a gap, never adjacent, never scored | Quality: a quality is met; Quality: collaboration words |
 | a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says | Quality: a product name keeps a requirement scored; Quality: a never-claimed item keeps a requirement scored; Quality: a profile skill keeps a requirement scored; Quality: the model's label is not trusted |
 | examples the offer lists in parentheses are one requirement, met by its best example | Examples: an enumeration's rows are united; Examples: the merged row is met as its best example |
 | a never-claimed example is reported as such, not counted as a must-have of its own when another example is met | Examples: an enumeration's rows are united |
@@ -730,6 +731,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**476 tests, 397 of them covered by at least one sabotage defence.**
+**477 tests, 398 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
