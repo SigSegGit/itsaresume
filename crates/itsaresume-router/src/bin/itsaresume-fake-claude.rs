@@ -6,7 +6,8 @@
 //! they are not metered credentials):
 //!
 //! - `FAKE_CLAUDE_RECORD=<dir>`: write `args.json`, `stdin.txt`,
-//!   `env-names.txt` (one name per line) and `cwd.txt` there, and, given
+//!   `env-names.txt` (one name per line), `max-thinking-tokens.txt` (its
+//!   value, or `<unset>`) and `cwd.txt` there, and, given
 //!   `--system-prompt-file`, that file's content in `system.txt` (and, on
 //!   Unix, its permission bits in octal in `system-mode.txt`);
 //! - `FAKE_CLAUDE_SLEEP_MS=<n>`: sleep before answering;
@@ -95,4 +96,6 @@ fn record(dir: &Path, stdin: &str) {
     std::fs::write(dir.join("stdin.txt"), stdin).expect("record stdin");
     std::fs::write(dir.join("env-names.txt"), names.join("\n")).expect("record env");
     std::fs::write(dir.join("cwd.txt"), cwd.to_string_lossy().as_bytes()).expect("record cwd");
+    let thinking = std::env::var("MAX_THINKING_TOKENS").unwrap_or_else(|_| "<unset>".into());
+    std::fs::write(dir.join("max-thinking-tokens.txt"), thinking).expect("record thinking");
 }
