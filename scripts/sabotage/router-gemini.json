@@ -13,6 +13,10 @@
     "openai",
     "--test",
     "router",
+    "--test",
+    "claude_process",
+    "--test",
+    "cli",
     "--no-fail-fast"
   ],
   "files": [
@@ -29,6 +33,8 @@
     "crates/itsaresume-router/src/router.rs",
     "crates/itsaresume-router/src/server.rs",
     "crates/itsaresume-router/src/stats.rs",
+    "crates/itsaresume-router/tests/claude_process.rs",
+    "crates/itsaresume-router/tests/cli.rs",
     "crates/itsaresume-router/tests/config.rs",
     "crates/itsaresume-router/tests/gemini_cli.rs",
     "crates/itsaresume-router/tests/openai.rs",
