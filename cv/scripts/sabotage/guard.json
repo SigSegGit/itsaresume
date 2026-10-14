@@ -1218,7 +1218,7 @@
     },
     "Quality: a product name keeps a requirement scored": {
       "file": "src/normalize.js",
-      "live": "!/\\p{N}|[\\p{L}\\p{N}]\\p{Lu}/u.test(name) && ",
+      "live": "!/\\p{N}|\\p{Ll}\\p{Lu}/u.test(name) && ",
       "dead": "",
       "expect": [
         "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
@@ -1289,6 +1289,22 @@
         "learning fast is a personal quality; machine learning stays a skill"
       ]
     },
+    "Quality: a quality is met": {
+      "file": "src/normalize.js",
+      "live": "      requirement.match = 'yes';\n      delete requirement.judged;",
+      "dead": "      requirement.match = 'no';",
+      "expect": [
+        "collaboration and soft skills are met qualities: never a gap, never adjacent, never scored"
+      ]
+    },
+    "Quality: collaboration words": {
+      "file": "src/text.js",
+      "live": "  .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter équipe']);",
+      "dead": "  ;",
+      "expect": [
+        "collaboration and soft skills are met qualities: never a gap, never adjacent, never scored"
+      ]
+    },
     "Judged: the model's reading keeps half credit": {
       "file": "src/normalize.js",
       "live": "      requirement.match = 'adjacent';\n      requirement.judged = true;",
@@ -1299,8 +1315,8 @@
     },
     "Quality: working in pairs is a quality": {
       "file": "src/text.js",
-      "live": "  .concat(['bin\u00f4m', 'binom', 'pair work']);",
-      "dead": ";",
+      "live": "  .concat(['bin\u00f4m', 'binom', 'pair work'])\n",
+      "dead": "\n",
       "expect": [
         "working in pairs is a personal quality, never a failed requirement"
       ]

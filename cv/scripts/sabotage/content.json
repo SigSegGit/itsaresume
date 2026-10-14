@@ -998,7 +998,7 @@
       "live": "const requirements = scored(all);",
       "dead": "const requirements = all;",
       "expect": [
-        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+        "a quality stored at \"no\" by an older run is still not a gap"
       ]
     },
     "Report: qualities have their own section": {
@@ -1022,7 +1022,7 @@
       "live": "const gaps = scored.filter(",
       "dead": "const gaps = analysis.requirements.filter(",
       "expect": [
-        "a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview"
+        "a quality stored at \"no\" by an older run is still not a gap"
       ]
     },
     "Judged: a gap of the qualification": {

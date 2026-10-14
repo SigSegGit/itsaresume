@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { v4 } from './fixtures/v4.js';
 import { normalize } from '../src/normalize.js';
 import { report } from '../src/report.js';
+import { qualification } from '../src/score.js';
 import { validateAnalysis } from '../src/analysis.js';
 import { listRequirements } from '../src/listing.js';
 
@@ -49,11 +50,38 @@ test('a personal quality is not scored nor a must-have of the qualification; the
   assert.deepEqual(analysis.fit.score, 67, 'PostgreSQL and Terraform of three musts');
   assert.deepEqual(analysis.fit.qualification, { level: 'partial', gaps: ['Kafka'] });
   const communication = analysis.requirements.find((r) => r.name === 'Communication claire et structurée');
-  assert.deepEqual([communication.match, communication.skills], ['no', []], 'no profile skill backs a quality');
+  assert.deepEqual([communication.match, communication.skills], ['yes', []], 'a quality is met, backed by no skill');
   assert.match(repairs.join('\n'), /requirement Pédagogie: a personal quality, not scored \(to show in interview\)/);
   const text = report(analysis, v4(), { backend: 'b', attempts: 1 });
   assert.match(text, /## Personal qualities — not scored, to show in interview\n\n[^\n]*\n\n- Communication claire et structurée \(must\)\n- Rigueur/);
   assert.ok(!/^\| Pédagogie/m.test(text), 'not in the scored table');
+  assert.ok(!/^- Pédagogie \(must\)$/m.test(text.split('## Personal qualities')[0]), 'not a gap');
+});
+
+/** 2.27, seen 2026-10-14: "Capacité à travailler avec les DBA" (a must) read
+ * adjacent through PostgreSQL cost 7 points and the qualification. The skill
+ * asked is collaboration, not the technology; soft skills are met too. */
+test('collaboration and soft skills are met qualities: never a gap, never adjacent, never scored', () => {
+  const NAMES = ['Capacité à travailler avec les DBA', 'Collaboration avec les équipes réseau', 'Coopération inter-équipes',
+    'Dynamisme', 'Sérieux', 'Ponctualité', 'Motivation', 'Esprit d\'initiative', 'Work with developers'];
+  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), row(NAMES[0], 'adjacent', ['postgresql']), ...NAMES.slice(1).map((name) => row(name))];
+  const offer = `Must have: PostgreSQL. ${NAMES.join(', ')}.`;
+  const { analysis } = normalize(answer({ requirements }), v4(), { offer });
+  const qualities = analysis.requirements.filter((r) => r.kind === 'quality');
+  assert.deepEqual(qualities.map((r) => r.name), NAMES);
+  assert.deepEqual(qualities.map((r) => r.match), NAMES.map(() => 'yes'));
+  assert.equal(analysis.fit.score, 100);
+  assert.equal(analysis.fit.qualification.level, 'qualified');
+});
+
+/** Runs stored before 2.27 hold qualities at "no": read again (replays, the
+ * page's history), they are still no gap of the qualification nor the report. */
+test('a quality stored at "no" by an older run is still not a gap', () => {
+  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), { ...row('Pédagogie'), kind: 'quality' }];
+  assert.deepEqual(qualification(requirements), { level: 'qualified', gaps: [] });
+  const { analysis } = normalize(answer(), v4(), { offer: 'Must have: PostgreSQL.' });
+  analysis.requirements.push({ ...row('Pédagogie'), kind: 'quality' });
+  const text = report(analysis, v4(), { backend: 'b', attempts: 1 });
   assert.ok(!/^- Pédagogie \(must\)$/m.test(text.split('## Personal qualities')[0]), 'not a gap');
 });
 

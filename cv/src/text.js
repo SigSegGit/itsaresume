@@ -30,10 +30,13 @@ export const GENERIC = new Set(`expérience expériences experience experiences 
  */
 export const QUALITIES = `communica rigueur rigoureu rigor rigour organis organiz pédagog pedagog écoute écouter listening facilita
   fédérer fédérateur fédératrice leadership polyvalen versatil curios curieu curious autonom adaptab relationnel relational
-  interpersonal posture interagir interact bienveillan empath créativ creativ diplomat teamwork`.split(/\s+/)
+  interpersonal posture interagir interact bienveillan empath créativ creativ diplomat teamwork
+  collabor coopér cooperat dynamis dynamism sérieu ponctu punctual motiv proactiv initiative impliqu enthousias`.split(/\s+/)
   .concat(['esprit équipe', 'travail équipe', 'team player', 'team spirit', 'force proposition',
     'monter rapidement', 'nouveaux sujets', 'montée compétence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact'])
-  .concat(['binôm', 'binom', 'pair work']);
+  .concat(['binôm', 'binom', 'pair work'])
+  // 2.27: working with a team is the collaboration, not its technology.
+  .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter équipe']);
 
 /**
  * Administrative conditions (2026-10-02: "Nationalité française", "Profil
