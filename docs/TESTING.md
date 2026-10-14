@@ -186,6 +186,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_gemini_cli_backend_parses_and_refuses_a_key` | `tests/config.rs` | `kind = "gemini-cli"` parses into a router; an `api_key` line is refused | — |
 | `a_response_is_the_answer_with_its_tokens` | `tests/gemini_cli.rs` | A JSON `response` is the answer; `stats` tokens become usage (cached split out) | — |
 | `a_quota_error_falls_back` | `tests/gemini_cli.rs` | 429, `RESOURCE_EXHAUSTED`, "quota" are `QuotaExceeded` | Gemini quota falls back |
+| `an_overloaded_model_falls_back` | `tests/gemini_cli.rs` | 503, `UNAVAILABLE`, "high demand", "overloaded" are `Unreachable` (seen on the VM 2026-10-14) | Gemini overload falls back |
 | `a_network_failure_falls_back_and_anything_else_stops` | `tests/gemini_cli.rs` | A network failure is `Unreachable`; no auth or garbage is `Other` | — |
 | `a_schema_answer_must_be_json_even_inside_a_fence` | `tests/gemini_cli.rs` | A schema answer is JSON, fenced or not; prose is `Other` | Gemini schema answer must be JSON |
 | `extract_json_takes_the_outermost_object` | `tests/gemini_cli.rs` | The first whole JSON object or array in the text | — |
