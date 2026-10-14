@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { v4 } from './fixtures/v4.js';
 import { normalize } from '../src/normalize.js';
 import { report } from '../src/report.js';
+import { qualification } from '../src/score.js';
 import { validateAnalysis } from '../src/analysis.js';
 import { listRequirements } from '../src/listing.js';
 
@@ -71,6 +72,17 @@ test('collaboration and soft skills are met qualities: never a gap, never adjace
   assert.deepEqual(qualities.map((r) => r.match), NAMES.map(() => 'yes'));
   assert.equal(analysis.fit.score, 100);
   assert.equal(analysis.fit.qualification.level, 'qualified');
+});
+
+/** Runs stored before 2.27 hold qualities at "no": read again (replays, the
+ * page's history), they are still no gap of the qualification nor the report. */
+test('a quality stored at "no" by an older run is still not a gap', () => {
+  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), { ...row('Pédagogie'), kind: 'quality' }];
+  assert.deepEqual(qualification(requirements), { level: 'qualified', gaps: [] });
+  const { analysis } = normalize(answer(), v4(), { offer: 'Must have: PostgreSQL.' });
+  analysis.requirements.push({ ...row('Pédagogie'), kind: 'quality' });
+  const text = report(analysis, v4(), { backend: 'b', attempts: 1 });
+  assert.ok(!/^- Pédagogie \(must\)$/m.test(text.split('## Personal qualities')[0]), 'not a gap');
 });
 
 test('a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says', () => {
