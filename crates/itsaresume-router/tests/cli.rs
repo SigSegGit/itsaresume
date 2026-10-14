@@ -419,7 +419,7 @@ fn the_backend_option_picks_one_backend() {
 /// 8.27: `--schema FILE` asks for structured output from the command line,
 /// as `"schema"` does on the endpoint.
 #[test]
-fn the_schema_option_reaches_the_cli_as_json_schema() {
+fn the_schema_option_goes_in_the_prompt_and_its_json_comes_back() {
     let dir = tempfile::tempdir().expect("temp dir");
     let record = dir.path().join("record");
     std::fs::create_dir(&record).expect("record dir");
@@ -441,7 +441,7 @@ fn the_schema_option_reaches_the_cli_as_json_schema() {
         &[
             (
                 "FAKE_CLAUDE_STDOUT",
-                claude_fixture("synthetic-structured-output.verbose.json"),
+                claude_fixture("synthetic-schema-in-text.verbose.json"),
             ),
             ("FAKE_CLAUDE_RECORD", record.to_string_lossy().into_owned()),
         ],
@@ -451,16 +451,12 @@ fn the_schema_option_reaches_the_cli_as_json_schema() {
     let args: Vec<String> =
         serde_json::from_str(&std::fs::read_to_string(record.join("args.json")).expect("args"))
             .expect("list");
-    let at = args
-        .iter()
-        .position(|a| a == "--json-schema")
-        .expect("--json-schema given");
-    assert_eq!(
-        serde_json::from_str::<Value>(&args[at + 1]).expect("json"),
-        serde_json::json!({"type": "object"})
-    );
+    assert!(!args.contains(&"--json-schema".to_owned()), "{args:?}");
+    let stdin = std::fs::read_to_string(record.join("stdin.txt")).expect("stdin");
+    assert!(stdin.starts_with("a prompt"), "{stdin}");
+    assert!(stdin.contains(r#"{"type":"object"}"#), "the schema is in the prompt: {stdin}");
     let answer: Value =
-        serde_json::from_slice(&output.stdout).expect("the answer is the structured JSON");
+        serde_json::from_slice(&output.stdout).expect("the answer is the JSON, out of its fence");
     assert_eq!(answer["requirements"][0]["name"], "Kubernetes");
 }
 
