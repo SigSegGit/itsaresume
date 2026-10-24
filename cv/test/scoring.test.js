@@ -250,3 +250,20 @@ test('an administrative condition the profile does not state is to confirm: not 
   assert.match(text, /## Conditions — not scored, to confirm\n\n[^\n]*\n\n- Nationalité française \(must\)/);
   assert.ok(!/^\| Permis B/m.test(text), 'not in the scored table');
 });
+
+/** 2.26b: "AWS, Azure ou GCP" listed apart by the model (1 run in 5 on the
+ * CLM offer) is one requirement met by any; "et" keeps rows apart. */
+const CLOUDS = `Cloud engineer wanted.
+Expérience sur un cloud public : AWS, Azure ou GCP.
+Maîtrise de Linux, Terraform et Kubernetes ou OpenShift.`;
+
+test('alternatives the offer joins with "ou" are one requirement, met by any; items joined by "et" stay apart', () => {
+  const requirements = [
+    row('AWS', 'yes', ['aws']), row('Azure'), row('GCP', 'adjacent', ['gcp']),
+    row('Linux'), row('Terraform', 'yes', ['terraform']), row('Kubernetes'), row('OpenShift'),
+  ];
+  const { analysis } = normalize(answer({ requirements }), v4(), { offer: CLOUDS });
+  assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [
+    ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'],
+  ]);
+});
