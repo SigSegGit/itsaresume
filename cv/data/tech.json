@@ -616,6 +616,37 @@
     "tech:databases"
    ],
    "kind": "Tool"
+  },
+  {
+   "id": "tech:operations",
+   "fr": "Exploitation",
+   "en": "IT operations",
+   "alt": {
+    "fr": [
+     "MCO",
+     "maintien en conditions opérationnelles",
+     "run",
+     "astreinte",
+     "gestion des incidents",
+     "incidents de production",
+     "support de production",
+     "support N2",
+     "support N3",
+     "ITIL",
+     "production"
+    ],
+    "en": [
+     "ops",
+     "on-call",
+     "incident management",
+     "production support",
+     "run",
+     "ITIL",
+     "operations"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
   }
  ]
 }

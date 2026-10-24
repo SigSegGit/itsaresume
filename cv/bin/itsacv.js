@@ -48,7 +48,7 @@ const USAGE = `usage:
   --public-host  serve anyone behind a reverse proxy that answers as NAME (e.g. cv.ngas.fr):
              job offers only, one visitor per page load, the owner's notes hidden, no split,
              an offer already answered reused; at most --per-day CVs a day for everyone
-             (default 20), --per-hour per visitor (default 3), --max-queued waiting (default 3),
+             (default 20), --per-hour per visitor (default 10), --max-queued waiting (default 3),
              --ban-after N requests an hour from one IP or visitor ban both (default 10) for
              --ban-hours hours (default 24); with --invite-only, only a page opened
              from a live invitation link may generate
@@ -87,7 +87,7 @@ function parse(argv) {
     publicHost: null,
     profiles: null,
     perDay: '20',
-    perHour: '3',
+    perHour: '10',
     maxQueued: '3',
     banAfter: '10',
     banHours: '24',

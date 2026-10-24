@@ -68,7 +68,9 @@
     "test/schema.test.js",
     "test/scoring.test.js",
     "test/word.test.js",
-    "src/links.js"
+    "src/links.js",
+    "src/compare.js",
+    "test/compare.test.js"
   ],
   "defences": {
     "Profile: bullet skills must exist": {
@@ -1418,6 +1420,22 @@
       "dead": "let listed = null;",
       "expect": [
         "2.26a: a second run of the same offer makes no listing call, its rows read from the cache"
+      ]
+    },
+    "OPS concept (2026-10-24): astreinte grounds through the operations concept": {
+      "file": "data/tech.json",
+      "live": "\"astreinte\",",
+      "dead": "\"astreinte-sabotaged\",",
+      "expect": [
+        "an operations requirement met by a profile skill of the same concept stays yes"
+      ]
+    },
+    "Comparative run (2026-10-24): a demotion reason stays on its requirement": {
+      "file": "src/compare.js",
+      "live": "if (row) (row.why[backend] ??= []).push(found[2]);",
+      "dead": "if (row && false) (row.why[backend] ??= []).push(found[2]);",
+      "expect": [
+        "compare: one row per requirement across backends, disagreements and demotion reasons kept"
       ]
     }
   }

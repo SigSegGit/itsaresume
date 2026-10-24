@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.26b
-TITLE: alternatives ("A, B or C") merged into one row by code, tested on the CLM rows; 2.26a done (listing cached in <out>/.listings); then 2.25c, one real A/B on the 6 runs with offer.txt: ITSACV_PROMPT=compact,shortlist vs off; switch on only if no run loses a matched requirement (owner's go: ~24 Pro calls)
-WRITTEN-AT: 2026-10-14
+NEXT: 2.28b
+TITLE: 2.28a done (per-hour 10, operations concept, scripts/compare.mjs); 2.28b: a comparative run on the laptop on a recent OPS offer, then fix each remaining "proche" and the local breakage from the router journal
+WRITTEN-AT: 2026-10-24
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -771,6 +771,30 @@ Traps met, each cost time once:
     unavailable options are hidden, not just greyed. Default: Claude while
     light, then Gemini, then OpenAI, then the slow local model. Sabotaged
     (billing.json, http.json).
+  - [x] **2.28a** (the owner, 2026-10-24: "OPS work comes out 'proche'
+    instead of OK; 3/h too tight; a comparative run over all models").
+    `--per-hour` default 3 → 10 (bin, VM compose, laptop `public.sh`).
+    `data/tech.json` gains `tech:operations` (exploitation, MCO, run,
+    astreinte, gestion des incidents, support N2/N3, ITIL, on-call…): a
+    "yes" through a profile skill of that concept is no longer demoted by
+    `grounded()` to "adjacent, to verify". `scripts/compare.mjs` (logic in
+    `src/compare.js`): one offer through every backend `/status` says is
+    not down (or `--backends a,b`), one table of verdicts, `DIFF` rows
+    first, each demotion's reason under its row. Sabotaged (content.json).
+    Not verified on a real run: the cloud session had neither the laptop,
+    its `qa-log.jsonl` nor the private profile.
+  - [ ] **2.28b** On the laptop: `node scripts/compare.mjs --url
+    http://127.0.0.1:8789 --profile <profile.json> --offer <a recent OPS
+    offer.txt> --save compare.json`. For each row still "adjacent" with
+    "no profile skill names it, the model's reading only", either add the
+    word to the right `tech.json` concept (a red test in
+    `test/redteam.test.js` naming it, then green) or rule it `same` in
+    `links.json` (owner-only). Also: the owner's "doesn't work locally"
+    was not reproduced (537 cv tests and the router build green in the
+    cloud); first suspects, newest first: #119 `MAX_THINKING_TOKENS=0` on
+    the Windows CLI, #117 the schema in the prompt (`extract_json` refusing
+    a fenced or prose answer: "claude was asked for JSON and answered").
+    Read the router journal's last `failed` lines before guessing.
   - [ ] **2.26b** Alternatives as one row by code ("A, B or C" / "A ou B"
     listed apart are merged, met by any), tested on the CLM rows above.
   - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
