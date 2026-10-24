@@ -30,6 +30,8 @@ pub struct LmStudioBackend {
     pub(crate) schema_as_rule: bool,
     /// The name in errors and the journal.
     pub(crate) label: &'static str,
+    /// Sent as `temperature` when set; else the server's default.
+    temperature: Option<f64>,
 }
 
 /// How many completions may be on the server at once, and how many are.
@@ -91,6 +93,7 @@ impl LmStudioBackend {
             bearer: None,
             schema_as_rule: false,
             label: "lm-studio",
+            temperature: None,
         }
     }
 
@@ -108,6 +111,12 @@ impl LmStudioBackend {
         self
     }
 
+    /// The `temperature` sent with each request; `None` sends none.
+    pub fn with_temperature(mut self, temperature: Option<f64>) -> Self {
+        self.temperature = temperature;
+        self
+    }
+
     fn body(&self, request: &Request) -> String {
         let mut messages = Vec::new();
         if let Some(system) = &request.system {
@@ -120,7 +129,7 @@ impl LmStudioBackend {
             if request.schema.is_some() {
                 body["response_format"] = json!({"type": "json_object"});
             }
-            return body.to_string();
+            return self.finish(body);
         }
         messages.push(json!({"role": "user", "content": request.prompt}));
         let mut body = json!({"model": self.model, "messages": messages, "stream": false});
@@ -131,6 +140,14 @@ impl LmStudioBackend {
                 "type": "json_schema",
                 "json_schema": {"name": "answer", "schema": schema, "strict": true},
             });
+        }
+        self.finish(body)
+    }
+
+    /// The body as sent: with `temperature` when one is set.
+    fn finish(&self, mut body: serde_json::Value) -> String {
+        if let Some(temperature) = self.temperature {
+            body["temperature"] = json!(temperature);
         }
         body.to_string()
     }

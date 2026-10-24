@@ -258,3 +258,28 @@ fn an_empty_response_is_an_error_read_from_the_report() {
         Err(BackendError::Other(_))
     ));
 }
+
+/// A status code is a whole number: the report's own file name holding
+/// "4297" or "5031" (a process id, seen flaking CI on 2026-10-24) is
+/// neither a quota nor an outage.
+#[test]
+fn a_status_code_inside_a_longer_number_is_not_that_status() {
+    for digits in ["4297", "5031"] {
+        let report = std::env::temp_dir().join(format!("gemini-client-error-t{digits}-x.json"));
+        let stderr = format!(
+            "Error when talking to Gemini API Full report available at: {}",
+            report.display()
+        );
+        std::fs::write(
+            &report,
+            r#"{"error":{"message":"{\"error\":{\"code\":404,\"message\":\"no longer available\"}}"}}"#,
+        )
+        .expect("report");
+        let outcome = classify(OBSERVED_EMPTY, &stderr, false);
+        let _ = std::fs::remove_file(&report);
+        assert!(
+            matches!(outcome, Err(BackendError::Other(_))),
+            "{digits}: {outcome:?}"
+        );
+    }
+}

@@ -463,8 +463,8 @@
     },
     "Config: the slot limit reaches the backend": {
       "file": "crates/itsaresume-router/src/config.rs",
-      "live": ".with_max_concurrent(self.max_concurrent().unwrap_or(1)),",
-      "dead": ".with_max_concurrent(8),",
+      "live": ".with_max_concurrent(self.max_concurrent().unwrap_or(1))",
+      "dead": ".with_max_concurrent(8)",
       "expect": [
         "a_configured_lm_studio_backend_keeps_one_slot"
       ]
@@ -869,6 +869,22 @@
       "dead": ".and_then(|limit| limit[\"rateLimitType\"].as_str())",
       "expect": [
         "the_status_carries_the_usage_level_of_the_last_answer"
+      ]
+    },
+    "Config: the temperature reaches the backend": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": ".with_temperature(*temperature),",
+      "dead": ".with_temperature(temperature.and(None)),",
+      "expect": [
+        "a_configured_temperature_is_sent_and_none_is_sent_without_one"
+      ]
+    },
+    "LM Studio: a temperature is sent as set": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "body[\"temperature\"] = json!(temperature);",
+      "dead": "body[\"temperature\"] = json!(temperature + 1.0);",
+      "expect": [
+        "a_configured_temperature_is_sent_and_none_is_sent_without_one"
       ]
     }
   }

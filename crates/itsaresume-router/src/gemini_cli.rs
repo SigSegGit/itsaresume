@@ -118,17 +118,21 @@ pub fn prompt_for(request: &Request) -> String {
     }
 }
 
+/// Whether `text` holds `code` as a whole number: "t4297" is no 429.
+fn has_status(text: &str, code: &str) -> bool {
+    text.match_indices(code).any(|(at, _)| {
+        let digit_before = text[..at].ends_with(|c: char| c.is_ascii_digit());
+        let digit_after = text[at + code.len()..].starts_with(|c: char| c.is_ascii_digit());
+        !digit_before && !digit_after
+    })
+}
+
 fn looks_like_quota(text: &str) -> bool {
     let text = text.to_lowercase();
-    [
-        "429",
-        "resource_exhausted",
-        "quota",
-        "rate limit",
-        "ratelimit",
-    ]
-    .iter()
-    .any(|n| text.contains(n))
+    has_status(&text, "429")
+        || ["resource_exhausted", "quota", "rate limit", "ratelimit"]
+            .iter()
+            .any(|n| text.contains(n))
 }
 
 fn looks_like_network(text: &str) -> bool {
@@ -141,14 +145,14 @@ fn looks_like_network(text: &str) -> bool {
         "fetch failed",
         "network",
         // Overloaded (503 UNAVAILABLE, "high demand"): an outage, seen
-        // 2026-10-14 on gemini-3.8-flash.
-        "503",
+        // 2026-10-14 on gemini-3.8-flash; 503 below, as a whole number.
         "unavailable",
         "high demand",
         "overloaded",
     ]
     .iter()
     .any(|n| text.contains(n))
+        || has_status(&text, "503")
 }
 
 /// The tokens of every model the run used, summed.

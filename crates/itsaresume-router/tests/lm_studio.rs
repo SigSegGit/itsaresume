@@ -418,3 +418,29 @@ fn the_probe_says_down_and_why() {
     drop(free);
     assert!(matches!(backend(&base).probe(), Some(Probe::Down(_))));
 }
+
+/// 2.26c (cv): a configured `temperature` goes to the server (Bionic takes
+/// it; 0 for the same reading run to run); none configured, none sent, the
+/// server's own default.
+#[test]
+fn a_configured_temperature_is_sent_and_none_is_sent_without_one() {
+    for (line, expected) in [("temperature = 0\n", Some(0.0)), ("", None)] {
+        let (base_url, received) = serve(200, SUCCESS);
+        let dir = tempfile::tempdir().expect("temp dir");
+        let text = format!(
+            "journal = {:?}\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"{base_url}\"\nmodel = \"m\"\ntimeout_secs = 10\n{line}",
+            dir.path().join("journal.jsonl")
+        );
+        let router = match itsaresume_router::config::Config::parse(&text) {
+            Ok(config) => config.router().expect("builds"),
+            Err(error) => panic!("{line:?} refused: {error}"),
+        };
+        let _ = router.complete(&Request::new("p"));
+        let body = received.recv().expect("seen").body;
+        assert_eq!(
+            body.get("temperature").and_then(|t| t.as_f64()),
+            expected,
+            "{line:?}: {body}"
+        );
+    }
+}

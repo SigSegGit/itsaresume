@@ -101,6 +101,9 @@ pub enum BackendConfig {
         timeout_secs: Option<u64>,
         /// Completions on the server at once; 1 when absent (Bionic has one slot).
         max_concurrent: Option<usize>,
+        /// Sent as the request's `temperature` when set (cv 2.26c: 0 for
+        /// the same reading run to run); absent, the server's default.
+        temperature: Option<f64>,
     },
 }
 
@@ -206,11 +209,15 @@ impl BackendConfig {
                 .with_timeout(self.timeout()),
             ),
             Self::LmStudio {
-                base_url, model, ..
+                base_url,
+                model,
+                temperature,
+                ..
             } => Box::new(
                 LmStudioBackend::new(base_url, model)
                     .with_timeout(self.timeout())
-                    .with_max_concurrent(self.max_concurrent().unwrap_or(1)),
+                    .with_max_concurrent(self.max_concurrent().unwrap_or(1))
+                    .with_temperature(*temperature),
             ),
         }
     }
