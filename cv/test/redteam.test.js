@@ -227,3 +227,18 @@ test('an offer that instructs the AI changes nothing on the CV: the model holds 
   const refused = validateAnalysis(obeyed, v4(), { offer: INJECTED_OFFER }).errors.join(', ');
   assert.match(refused, /pilotage-avion|VACHE|summary/, 'an obedient answer is refused');
 });
+
+/** The owner, 2026-10-24: OPS requirements came out "proche" where the
+ * profile names the work under another of its words ("Astreinte" met by a
+ * skill named "MCO / Run"). One operations concept grounds them. */
+test('an operations requirement met by a profile skill of the same concept stays yes', () => {
+  const p = v4();
+  p.skills.push({ id: 'mco', name: 'MCO', level: 'expert', category: 'ops' });
+  const offer = 'Senior SRE wanted. Must have: astreinte, gestion des incidents.';
+  const requirements = [
+    { name: 'Astreinte', importance: 'must', match: 'yes', skills: ['mco'], note: '' },
+    { name: 'Gestion des incidents', importance: 'must', match: 'yes', skills: ['mco'], note: '' },
+  ];
+  const { analysis } = normalize(answer({ requirements }), p, { offer });
+  assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [['Astreinte', 'yes'], ['Gestion des incidents', 'yes']]);
+});
