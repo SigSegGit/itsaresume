@@ -128,6 +128,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `waiting_for_the_slot_past_the_timeout_is_unreachable` | `tests/lm_studio.rs` | A request still waiting for the slot at its timeout is `Unreachable` (falls back) and never reaches the server | LM Studio: one completion at a time on the server; LM Studio: waiting for the slot counts against the timeout |
 | `a_two_slot_backend_lets_two_requests_overlap` | `tests/lm_studio.rs` | `max_concurrent = 2` lets two completions overlap | LM Studio: max_concurrent sets the slots |
 | `a_configured_lm_studio_backend_keeps_one_slot` | `tests/lm_studio.rs` | A router built from a file without `max_concurrent` keeps one completion on the server | LM Studio: one completion at a time on the server; Config: lm-studio defaults to one slot; Config: the slot limit reaches the backend |
+| `a_configured_temperature_is_sent_and_none_is_sent_without_one` | `tests/lm_studio.rs` | A configured `temperature` reaches the server's request; without one, none is sent | Config: the temperature reaches the backend; LM Studio: a temperature is sent as set |
 | `the_committed_example_parses` | `tests/config.rs` | `config.example.toml` stays a valid configuration | — |
 | `backends_keep_their_order_and_settings` | `tests/config.rs` | Backends keep file order; settings and the 300 s default timeout are applied | — |
 | `an_unknown_backend_kind_is_refused` | `tests/config.rs` | A kind outside `claude-code`/`lm-studio` (e.g. `anthropic-api`) is refused, naming it | — (closed enum: nothing to remove) |

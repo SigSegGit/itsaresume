@@ -43,6 +43,9 @@ timeout_secs = 300
 # Completions on the server at once (1 when absent: a local server usually
 # has one slot, and a request queued there outlives the caller's timeout).
 # max_concurrent = 1
+# Sent as the request's temperature when set (0: the same reading run to
+# run); absent, the server's default.
+# temperature = 0
 # The request kinds it takes: "generate" and "classify" when absent. A small
 # model that should only classify (M2) says serves = ["classify"]: the router
 # then never sends it a generation.
