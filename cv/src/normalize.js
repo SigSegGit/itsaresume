@@ -14,7 +14,7 @@ import { cleanName, LIMITS } from './guard.js';
 import { alike, defaultIndex, members, skillConcepts } from './lexicon.js';
 import { importanceIn } from './importance.js';
 import { linkedSkills } from './links.js';
-import { canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
+import { alternatives, canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
 
 /** Lower is stricter: of two rows for one requirement, the stricter match is kept. */
 const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
@@ -200,7 +200,7 @@ function mergeExamples(requirements, offer, profile, repairs, lang) {
   const lab = new Set(profile.skills.filter((skill) => skill.level === 'lab').map((skill) => skill.id));
   const parent = requirements.map((_, index) => index);
   const root = (index) => (parent[index] === index ? index : (parent[index] = root(parent[index])));
-  for (const inside of enumerations(offer)) {
+  for (const inside of [...enumerations(offer), ...alternatives(offer)]) {
     // A language the profile names is settled on its own, level included,
     // never merged (seen 2026-09-30: "English, Spanish, and French or
     // Italian" became one row no longer read as a language, and the run was

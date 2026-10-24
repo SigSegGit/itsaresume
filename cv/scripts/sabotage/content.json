@@ -1437,6 +1437,30 @@
       "expect": [
         "compare: one row per requirement across backends, disagreements and demotion reasons kept"
       ]
+    },
+    "Alternatives (2.26b): rows an \"ou\" joins are merged": {
+      "file": "src/normalize.js",
+      "live": "...alternatives(offer)]) {",
+      "dead": "...alternatives(offer).slice(0, 0)]) {",
+      "expect": [
+        "alternatives the offer joins with \"ou\" are one requirement, met by any; items joined by \"et\" stay apart"
+      ]
+    },
+    "Alternatives (2.26b): \"et\" ends a run": {
+      "file": "src/text.js",
+      "live": "if (before === 'et' || before",
+      "dead": "if (before === 'et-sabotaged' || before",
+      "expect": [
+        "alternatives the offer joins with \"ou\" are one requirement, met by any; items joined by \"et\" stay apart"
+      ]
+    },
+    "Alternatives (2.26b): a comma after \"ou\" ends a run": {
+      "file": "src/text.js",
+      "live": "(either && before === ',')",
+      "dead": "(either && before === ',' && false)",
+      "expect": [
+        "alternatives the offer joins with \"ou\" are one requirement, met by any; items joined by \"et\" stay apart"
+      ]
     }
   }
 }
