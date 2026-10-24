@@ -27,7 +27,7 @@ PUBLIC_PORT=${PUBLIC_PORT:-8791}
 
 node "$here/bin/itsacv.js" serve --port "$PUBLIC_PORT" --url "$ROUTER_URL" --timeout 1800 \
   --out "$HOME/.itsaresume/out" --public-host "$CV_HOST" \
-  --per-day "${PER_DAY:-20}" --per-hour "${PER_HOUR:-3}" --max-queued "${MAX_QUEUED:-3}" &
+  --per-day "${PER_DAY:-20}" --per-hour "${PER_HOUR:-10}" --max-queued "${MAX_QUEUED:-3}" &
 server=$!
 trap 'kill $server 2>/dev/null; exit 0' INT TERM EXIT
 
