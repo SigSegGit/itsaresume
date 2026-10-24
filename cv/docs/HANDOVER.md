@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b
-TITLE: 2.26b done (alternatives "A, B ou C" one row); 2.28b on the laptop: a comparative run on a recent OPS offer, fix each remaining "proche", and the local breakage from the router journal; cloud-doable meanwhile: 2.26c (temperature 0 to Bionic)
+TITLE: 2.26b done (alternatives "A, B ou C" one row); 2.28b on the laptop: a comparative run on a recent OPS offer, fix each remaining "proche", and the local breakage from the router journal; 2.26c done (temperature on lm-studio)
 WRITTEN-AT: 2026-10-24
 -->
 
@@ -802,8 +802,15 @@ Traps met, each cost time once:
     merges them like parenthesised examples, met by the best. Synthetic
     test only (scoring.test.js); the CLM offer itself is private, so its
     rows were not replayed. Sabotaged (content.json, 3 defences).
-  - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
-    configured; measure the same way when the laptop is on.
+  - [x] **2.26c** (2026-10-24, router) `temperature` on an `lm-studio`
+    backend (`config.rs`, `LmStudioBackend::with_temperature`): sent as
+    set, none sent when absent. Sabotaged (router-billing.json). Left for
+    the owner: `temperature = 0` in `bionic.local.toml` /
+    `sonnet-qwen.local.toml`, then the variance measure (2.26) on Bionic.
+    Same PR: the gemini classifier read "429"/"503" inside any number (a
+    report file `t4297.json`) as quota/outage; now whole numbers only
+    (`has_status`, router-gemini.json). It flaked CI and could have put a
+    working Gemini or Claude-relayed error in the wrong bucket.
 - [x] **2.27a** (2026-10-14, #120) Done another way, by the owner's ruling
   ("collaboration, communication, pédagogie, travail d'équipe … dynamisme,
   rigueur, sérieux, ponctualité, autonomie … ne peuvent sortir qu'en OK"):

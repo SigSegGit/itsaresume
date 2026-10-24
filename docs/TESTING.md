@@ -200,6 +200,7 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_free_tier_key_passes_only_the_key` | `tests/gemini_cli.rs` | `free-tier-key` keeps `GEMINI_API_KEY`, still scrubs every other switch; `account` scrubs it | Gemini account login scrubs the key |
 | `a_free_tier_login_without_a_key_never_starts_the_cli` | `tests/gemini_cli.rs` | `free-tier-key` with no key in the environment: `Other`, CLI not started | Gemini free-tier needs a key |
 | `an_empty_response_is_an_error_read_from_the_report` | `tests/gemini_cli.rs` | Observed: empty `response` = API error; the report file says quota (429) or `Other` (404) | Gemini empty response is an error |
+| `a_status_code_inside_a_longer_number_is_not_that_status` | `tests/gemini_cli.rs` | "4297" or "5031" in a report's file name is neither a quota (429) nor an outage (503) | Gemini: a status code is a whole number; Gemini: 503 is read as a whole number |
 | `a_gemini_free_tier_login_is_named_not_given` | `tests/config.rs` | `login = "free-tier-key"` parses; an unknown login is refused | — |
 | `the_key_goes_as_a_bearer_and_never_in_the_body` | `tests/openai.rs` | The key travels as `Authorization: Bearer`, never in the body | OpenAI key goes as a bearer |
 | `no_key_is_other_and_sends_nothing` | `tests/openai.rs` | No `OPENAI_API_KEY`: `Other`, nothing sent | OpenAI never sends without a key |
