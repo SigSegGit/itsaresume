@@ -117,6 +117,42 @@ export function enumerations(offer) {
   });
 }
 
+/**
+ * The offer's alternatives outside parentheses (2.26b): short items one
+ * clause joins by commas and at least one "ou" / "or" ("AWS, Azure ou
+ * GCP"). "et" / "and" ends a run: "Linux, Terraform et Kubernetes ou
+ * OpenShift" gives "Kubernetes ou OpenShift" only, and a comma after the
+ * "ou" ends it too ("Docker ou Podman, Ansible"). A run's first item keeps
+ * its last EXAMPLE_WORDS words ("Maîtrise de Python ou Go"); a longer later
+ * item is prose and ends the run.
+ */
+export function alternatives(offer) {
+  const found = [];
+  for (const clause of canonical(offer).split(/[\n;:()]|\.(?=\s|$)/)) {
+    const pieces = clause.split(/(,|\s(?:ou|or|et|and)\s)/i);
+    let run = [];
+    let either = false;
+    const close = () => {
+      if (either && run.length >= 2) found.push(run.join(', '));
+      run = [];
+      either = false;
+    };
+    for (let i = 0; i < pieces.length; i += 2) {
+      const words = pieces[i].trim().split(/\s+/).filter(Boolean);
+      const before = (pieces[i - 1] ?? '').trim().toLowerCase();
+      if (before === 'et' || before === 'and' || (either && before === ',')) close();
+      if (words.length === 0 || (run.length > 0 && words.length > EXAMPLE_WORDS)) {
+        close();
+        if (words.length === 0) continue;
+      }
+      run.push(words.slice(-EXAMPLE_WORDS).join(' '));
+      if (before === 'ou' || before === 'or') either = true;
+    }
+    close();
+  }
+  return found;
+}
+
 /** Whether `text` mentions `term` as a whole word, ignoring case. */
 export function mentions(text, term) {
   const escaped = canonical(term).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

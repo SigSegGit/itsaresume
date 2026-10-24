@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b
-TITLE: 2.28a done (per-hour 10, operations concept, scripts/compare.mjs); 2.28b: a comparative run on the laptop on a recent OPS offer, then fix each remaining "proche" and the local breakage from the router journal
+TITLE: 2.26b done (alternatives "A, B ou C" one row); 2.28b on the laptop: a comparative run on a recent OPS offer, fix each remaining "proche", and the local breakage from the router journal; cloud-doable meanwhile: 2.26c (temperature 0 to Bionic)
 WRITTEN-AT: 2026-10-24
 -->
 
@@ -795,8 +795,13 @@ Traps met, each cost time once:
     the Windows CLI, #117 the schema in the prompt (`extract_json` refusing
     a fenced or prose answer: "claude was asked for JSON and answered").
     Read the router journal's last `failed` lines before guessing.
-  - [ ] **2.26b** Alternatives as one row by code ("A, B or C" / "A ou B"
-    listed apart are merged, met by any), tested on the CLM rows above.
+  - [x] **2.26b** (2026-10-24) Alternatives as one row by code:
+    `alternatives()` in `src/text.js` finds, per clause, short items joined
+    by commas and at least one "ou"/"or" ("AWS, Azure ou GCP"); "et"/"and"
+    and a comma after the "ou" end a run. `mergeExamples` (normalize.js)
+    merges them like parenthesised examples, met by the best. Synthetic
+    test only (scoring.test.js); the CLM offer itself is private, so its
+    rows were not replayed. Sabotaged (content.json, 3 defences).
   - [ ] **2.26c** Bionic: send `temperature` (0) from the router when
     configured; measure the same way when the laptop is on.
 - [x] **2.27a** (2026-10-14, #120) Done another way, by the owner's ruling

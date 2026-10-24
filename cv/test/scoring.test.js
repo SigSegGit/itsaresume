@@ -255,15 +255,16 @@ test('an administrative condition the profile does not state is to confirm: not 
  * CLM offer) is one requirement met by any; "et" keeps rows apart. */
 const CLOUDS = `Cloud engineer wanted.
 Expérience sur un cloud public : AWS, Azure ou GCP.
-Maîtrise de Linux, Terraform et Kubernetes ou OpenShift.`;
+Maîtrise de Linux, Terraform et Kubernetes ou OpenShift.
+Docker ou Podman, Ansible.`;
 
 test('alternatives the offer joins with "ou" are one requirement, met by any; items joined by "et" stay apart', () => {
   const requirements = [
     row('AWS', 'yes', ['aws']), row('Azure'), row('GCP', 'adjacent', ['gcp']),
-    row('Linux'), row('Terraform', 'yes', ['terraform']), row('Kubernetes'), row('OpenShift'),
+    row('Linux'), row('Terraform', 'yes', ['terraform']), row('Kubernetes'), row('OpenShift'), row('Podman'), row('Ansible'),
   ];
   const { analysis } = normalize(answer({ requirements }), v4(), { offer: CLOUDS });
   assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [
-    ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'],
+    ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'], ['Podman', 'no'], ['Ansible', 'no'],
   ]);
 });
