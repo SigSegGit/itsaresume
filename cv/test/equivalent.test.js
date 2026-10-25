@@ -243,3 +243,17 @@ test('a row that names a member and something more stays its own', () => {
   const names = normalize(analysis(rows), withGerman(), { offer }).analysis.requirements.map((row) => row.name);
   assert.ok(names.includes('Apache Kafka'), names.join(' | '));
 });
+
+// 2.28b, seen on the laptop (2026-10-25): normalize settles a personal
+// quality as yes with no skill (owner, 2026-10-14), then validateAnalysis
+// refused it ("marked yes but names no profile skill") and the run failed
+// twice on claude-code. A quality row is valid without a skill.
+test('a personal quality settled yes by code passes validation', () => {
+  const offer = 'Ansible requis. Travail avec les DBA au quotidien.';
+  const rows = [{ name: 'Travail avec les DBA', importance: 'must', match: 'yes', skills: [], note: '' }];
+  const p = withGerman();
+  const judged = normalize(analysis(rows), p, { offer }).analysis;
+  const row = judged.requirements.find((r) => r.name === 'Travail avec les DBA');
+  assert.equal(row?.kind, 'quality', JSON.stringify(row));
+  assert.deepEqual(validateAnalysis(judged, p).errors.filter((error) => /DBA/.test(error)), []);
+});
