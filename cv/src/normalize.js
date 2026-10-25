@@ -18,6 +18,10 @@ import { alternatives, canonical, enumerations, GENERIC, mentions, namesConditio
 
 /** Lower is stricter: of two rows for one requirement, the stricter match is kept. */
 const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
+/** A requirement asking for experience or seniority (2.27). */
+const ASKS_EXPERIENCE = /(?<![\p{L}])(?:exp[ée]riment[ée]e?s?|experienced|s[ée]niors?|s[ée]niorit[ée]|seniority|\d+\s*\+?\s*(?:ans|years))(?![\p{L}])/iu;
+/** A text stating a number of years ("15 ans", "10 years"). */
+const STATES_YEARS = /\d+\s*\+?\s*(?:ans|years)(?![\p{L}])/iu;
 /** Levels at which a skill the requirement's concept holds meets it. */
 const STRONG_LEVELS = new Set(['expert', 'proficient', 'working']);
 /** The skills column: at most this many groups shown, and skills in each (the prompt says so; the model does not always listen). */
@@ -641,7 +645,18 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       const kind = facts.get(id).kind;
       repairs.push(kind === 'note' ? `summary: ${id} is a note (context only), not printed` : `summary: ${id} left out, ${kind === 'hook' ? 'one hook only' : 'one supporting fact at most'}`);
     }
-    analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];
+    // 2.27: a met must asking for experience ("Profil expérimenté") is shown
+    // by the years: when the hook states none, the profile's fact stating
+    // them takes the supporting place.
+    const seasoned = (analysis.requirements ?? []).find((requirement) =>
+      requirement.importance === 'must' && requirement.match !== 'no' && ASKS_EXPERIENCE.test(canonical(requirement.name)));
+    const years = [...facts.values()].find((entry) => entry.kind === 'fact' && STATES_YEARS.test(entry[lang] ?? ''));
+    let support = fact;
+    if (hook && seasoned && years && !STATES_YEARS.test(facts.get(hook)[lang] ?? '') && support !== years.id) {
+      repairs.push(`summary: ${years.id} in place of ${support ?? 'nothing'}, it states the years ${seasoned.name} asks for`);
+      support = years.id;
+    }
+    analysis.summary = hook ? [hook, support].filter(Boolean).map((id) => facts.get(id)[lang]) : [];
     const headed = pick(analysis.headline_ids, titles, 2);
     // A must met only through skills the CV never shows (a hidden group) and
     // named by none of the text picked (summary, bullets, skills column) is

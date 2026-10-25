@@ -1177,15 +1177,15 @@
     },
     "Summary: no hook, no summary": {
       "file": "src/normalize.js",
-      "live": "analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
-      "dead": "analysis.summary = [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]);",
+      "live": "analysis.summary = hook ? [hook, support].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
+      "dead": "analysis.summary = [hook, support].filter(Boolean).map((id) => facts.get(id)[lang]);",
       "expect": [
         "an answer whose summary names no hook is refused, so the model gets its one retry"
       ]
     },
     "Summary: notes, extra hooks and extra facts never print": {
       "file": "src/normalize.js",
-      "live": "analysis.summary = hook ? [hook, fact].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
+      "live": "analysis.summary = hook ? [hook, support].filter(Boolean).map((id) => facts.get(id)[lang]) : [];",
       "dead": "analysis.summary = hook ? listed.map((id) => facts.get(id)[lang]) : [];",
       "expect": [
         "the summary is one hook, the first one listed, and at most one supporting fact; a note never prints"
@@ -1299,7 +1299,7 @@
     },
     "Quality: collaboration words": {
       "file": "src/text.js",
-      "live": "  .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter équipe']);",
+      "live": "  .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter \u00e9quipe']);",
       "dead": "  ;",
       "expect": [
         "collaboration and soft skills are met qualities: never a gap, never adjacent, never scored"
@@ -1546,6 +1546,30 @@
       "dead": "relations.length || linked.same.length) return 1;",
       "expect": [
         "a requirement no skill names is not covered: a shared theme is not enough"
+      ]
+    },
+    "Summary (2.27): an experience must brings the years": {
+      "file": "src/normalize.js",
+      "live": "if (hook && seasoned && years && !STATES_YEARS.test(facts.get(hook)[lang] ?? '') && support !== years.id) {",
+      "dead": "if (hook && seasoned && years && !STATES_YEARS.test(facts.get(hook)[lang] ?? '') && support !== years.id && false) {",
+      "expect": [
+        "a met must asking for experience brings the profile fact stating the years into the summary"
+      ]
+    },
+    "Summary (2.27): a hook stating years is enough": {
+      "file": "src/normalize.js",
+      "live": "!STATES_YEARS.test(facts.get(hook)[lang] ?? '')",
+      "dead": "(!STATES_YEARS.test(facts.get(hook)[lang] ?? '') || true)",
+      "expect": [
+        "a met must asking for experience brings the profile fact stating the years into the summary"
+      ]
+    },
+    "Summary (2.27): only a must asking for experience": {
+      "file": "src/normalize.js",
+      "live": "requirement.match !== 'no' && ASKS_EXPERIENCE.test(canonical(requirement.name)));",
+      "dead": "requirement.match !== 'no' && (ASKS_EXPERIENCE.test(canonical(requirement.name)) || true));",
+      "expect": [
+        "a met must asking for experience brings the profile fact stating the years into the summary"
       ]
     }
   }
