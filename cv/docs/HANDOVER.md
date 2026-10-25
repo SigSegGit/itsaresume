@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.28b
-TITLE: 2.28b-i done (scripts/replay.mjs); 2.28b needs a session ON the laptop (Desktop or remote-control): 2.27b done (an experience must brings the years into the summary); 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.27b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
+NEXT: 2.28b-iii
+TITLE: 2.28b-ii done: local breakage found (Windows reserves ports 8773-8872, use 18789/18790; a quality row refused by validateAnalysis, fixed); 2.28b-iii on the laptop: deeptech "AI" adjacent, SQL not lifted on Bionic, full compare
 WRITTEN-AT: 2026-10-25
 -->
 
@@ -798,7 +798,26 @@ Traps met, each cost time once:
     current code, no model call; prints each verdict that changes and the
     score before -> after. Public replacement for the private
     `rules-replay.mjs`. Sabotaged (content.json).
-  - [ ] **2.28b** Needs a session running ON the laptop (Claude Desktop
+  - [x] **2.28b-ii** (2026-10-25, laptop) The local breakage, found:
+    (1) Windows reserves TCP 8773-8872 on the laptop (`netsh interface
+    ipv4 show excludedportrange protocol=tcp`, Hyper-V/WSL), so the router
+    on 8789 and the page on 8790 fail with os error 10013; use 18789 and
+    18790 there. (2) every claude-code run of an offer with a personal
+    quality ("Travail avec les DBA") failed: normalize settles a quality
+    yes with no skill, `validateAnalysis` refused it. Fixed (analysis.js,
+    test in equivalent.test.js, sabotaged in guard.json); the real offer
+    now passes on Claude through the local router. Replay: 6 runs, 2
+    changed (SRE Paris 69 -> 78, Python / Go merged; deeptech AI 70 -> 67,
+    "AI" now adjacent); the two CLM runs are not replayable (the current
+    code asks more calls).
+  - [ ] **2.28b-iii** On the laptop, router on 127.0.0.1:18789: (a) the
+    deeptech run's new "AI: adjacent" (70 -> 67): honest or a missing
+    `tech.json` word? (b) Bionic marked "SQL" no on the 2026-10-14 offer,
+    code made it adjacent, not yes, although 2.28c should lift an expert
+    PostgreSQL: check the profile's PostgreSQL level and the `judged`
+    flag; (c) a full `compare.mjs` with claude-code + lm-studio (Gemini
+    needs `GEMINI_API_KEY` in the router's environment, router 8.50).
+  - [ ] **2.28b** (remaining parts above) Needs a session running ON the laptop (Claude Desktop
     on `D:\GitHub\itsaresume`, or `claude remote-control` there): a cloud
     session sees neither the router, Bionic, the runs nor the profile.
     First `node scripts/replay.mjs --profile <profile.json> --out <runs
