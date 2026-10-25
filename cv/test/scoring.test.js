@@ -95,8 +95,9 @@ communication DevOps, organisation des sauvegardes PostgreSQL.`;
   const { analysis } = normalize(answer({ requirements }), v4(), { offer });
   assert.deepEqual(analysis.requirements.filter((r) => r.kind === 'quality').map((r) => r.name), [], 'the model\'s label is not trusted');
   assert.equal(analysis.requirements.length, names.length);
-  assert.equal(analysis.fit.score, 29, 'every one counts: two musts met of seven');
-  assert.equal(analysis.fit.qualification.gaps.length, 5);
+  // "Communication DevOps": DevOps held through Terraform, "communication" a word it may lack: adjacent (2.28b).
+  assert.equal(analysis.fit.score, 36, 'every one counts: two musts met, one adjacent, of seven');
+  assert.equal(analysis.fit.qualification.gaps.length, 4);
 });
 
 /** The AI tech lead offer, in synthetic wording with its real shapes: each
@@ -265,6 +266,7 @@ test('alternatives the offer joins with "ou" are one requirement, met by any; it
   ];
   const { analysis } = normalize(answer({ requirements }), v4(), { offer: CLOUDS });
   assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [
-    ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'], ['Podman', 'no'], ['Ansible', 'no'],
+    // Ansible: same family as the expert Terraform, to verify (2.28b); Podman beside a lab Docker stays no.
+    ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'], ['Podman', 'no'], ['Ansible', 'adjacent'],
   ]);
 });

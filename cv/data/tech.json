@@ -1,5 +1,5 @@
 {
- "source": "Technology concepts curated by hand for the categories offers name loosely (tools ESCO lacks); see docs/HANDOVER.md 2.7",
+ "source": "Technology concepts curated by hand for the categories offers name loosely (tools ESCO lacks); see docs/HANDOVER.md 2.7 and 2.28b-iii",
  "concepts": [
   {
    "id": "tech:public-cloud",
@@ -9,12 +9,14 @@
     "fr": [
      "fournisseurs cloud",
      "cloud computing",
-     "hyperscalers"
+     "hyperscalers",
+     "cloud"
     ],
     "en": [
      "cloud providers",
      "cloud computing",
-     "hyperscalers"
+     "hyperscalers",
+     "cloud"
     ]
    },
    "broader": [],
@@ -36,7 +38,9 @@
      "container orchestration"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:devops"
+   ],
    "kind": "Category"
   },
   {
@@ -53,7 +57,10 @@
      "IaC"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:devops",
+    "tech:automation"
+   ],
    "kind": "Category"
   },
   {
@@ -88,7 +95,9 @@
      "scripts"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:automation"
+   ],
    "kind": "Category"
   },
   {
@@ -110,7 +119,9 @@
      "CI/CD pipelines"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:devops"
+   ],
    "kind": "Category"
   },
   {
@@ -133,6 +144,32 @@
    "kind": "Category"
   },
   {
+   "id": "tech:sql",
+   "fr": "SQL",
+   "en": "SQL",
+   "alt": {
+    "fr": [
+     "langage SQL",
+     "requêtes SQL",
+     "bases de données relationnelles",
+     "base de données relationnelle",
+     "bases relationnelles",
+     "SGBDR"
+    ],
+    "en": [
+     "SQL language",
+     "SQL queries",
+     "relational databases",
+     "relational database",
+     "RDBMS"
+    ]
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Category"
+  },
+  {
    "id": "tech:nosql",
    "fr": "Bases de données NoSQL",
    "en": "NoSQL databases",
@@ -150,6 +187,107 @@
     "tech:databases"
    ],
    "kind": "Category"
+  },
+  {
+   "id": "tech:devops",
+   "fr": "DevOps",
+   "en": "DevOps",
+   "alt": {
+    "fr": [
+     "pratiques DevOps",
+     "culture DevOps",
+     "démarche DevOps"
+    ],
+    "en": [
+     "DevOps practices",
+     "DevOps culture"
+    ]
+   },
+   "broader": [],
+   "kind": "Umbrella"
+  },
+  {
+   "id": "tech:automation",
+   "fr": "Automatisation",
+   "en": "Automation",
+   "alt": {
+    "fr": [
+     "automatisation d'exploitation",
+     "automatisation des déploiements",
+     "automatisation de l'infrastructure"
+    ],
+    "en": [
+     "IT automation",
+     "infrastructure automation"
+    ]
+   },
+   "broader": [],
+   "kind": "Umbrella"
+  },
+  {
+   "id": "tech:ai",
+   "fr": "Intelligence artificielle",
+   "en": "Artificial intelligence",
+   "alt": {
+    "fr": [
+     "IA",
+     "IA générative",
+     "apprentissage automatique",
+     "LLM",
+     "modèles de langage",
+     "grands modèles de langage"
+    ],
+    "en": [
+     "AI",
+     "generative AI",
+     "GenAI",
+     "machine learning",
+     "ML",
+     "LLM",
+     "large language models"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:unix",
+   "fr": "Unix",
+   "en": "Unix",
+   "alt": {
+    "fr": [
+     "systèmes Unix",
+     "environnement Unix"
+    ],
+    "en": [
+     "Unix systems"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:linux",
+   "fr": "Linux",
+   "en": "Linux",
+   "alt": {
+    "fr": [
+     "systèmes Linux",
+     "GNU/Linux",
+     "RHEL",
+     "Red Hat",
+     "Debian",
+     "Ubuntu",
+     "CentOS"
+    ],
+    "en": [
+     "Linux systems"
+    ]
+   },
+   "broader": [
+    "tech:unix"
+   ],
+   "kind": "Tool"
   },
   {
    "id": "tech:aws",
@@ -544,7 +682,8 @@
     ]
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -559,7 +698,8 @@
     ]
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -572,7 +712,8 @@
     "en": []
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -585,7 +726,8 @@
     "en": []
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -613,7 +755,8 @@
     ]
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },

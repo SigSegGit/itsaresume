@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { v4 } from './fixtures/v4.js';
 import { normalize } from '../src/normalize.js';
 import { validateAnalysis } from '../src/analysis.js';
+import { defaultIndex, relate, skillConcepts } from '../src/lexicon.js';
 
 const answer = (requirements) => ({
   language: 'fr',
@@ -19,8 +20,8 @@ const answer = (requirements) => ({
 });
 
 /** One requirement as the model answered it, normalised against `profile`. */
-function judge(name, { match = 'no', skills = [], profile = v4() } = {}) {
-  const { analysis, repairs } = normalize(answer([{ name, importance: 'must', match, skills, note: '' }]), profile);
+function judge(name, { match = 'no', skills = [], profile = v4(), assessment } = {}) {
+  const { analysis, repairs } = normalize(answer([{ name, importance: 'must', match, skills, note: '' }]), profile, { assessment });
   return { row: analysis.requirements[0], repairs, analysis, profile };
 }
 
@@ -126,6 +127,61 @@ test('a tool of the same family as a held one ("Puppet" beside Terraform) is adj
   assert.match(row.note, /Terraform/);
 });
 
+test('a sibling held at lab level brings nothing near ("OpenShift" beside a lab Docker)', () => {
+  assert.equal(judge('OpenShift').row.match, 'no');
+});
+
+test('a short term ("AI" on an alerting skill) does not place the skill on a concept', () => {
+  const { row } = judge('IA', { profile: withSkill({ id: 'alerting', name: 'Alerting intelligent', group: 'obs', level: 'proficient', terms: ['AI', 'IA'] }) });
+  assert.equal(row.match, 'no', JSON.stringify(row));
+});
+
+// Seen on the owner's real profile (2026-10-25 replay): "intelligence
+// artificielle" is a term of an alerting skill, and "AI" became yes through it.
+// A term is broader than a name (2026-10-06): it may bring a requirement
+// near, never meet it.
+test('a long term ("intelligence artificielle" on an alerting skill) brings it near, never meets it', () => {
+  const p = withSkill({ id: 'alerting', name: 'Alerting intelligent', group: 'obs', level: 'proficient', terms: ['intelligence artificielle'] });
+  const { row } = judge('AI', { profile: p });
+  assert.equal(row.match, 'adjacent', JSON.stringify(row));
+  assert.deepEqual(row.skills, ['alerting']);
+  assert.equal(row.judged, true, 'through a term only: to verify');
+  assert.equal(judge('AI', { profile: p, match: 'adjacent', skills: ['alerting'] }).row.match, 'adjacent', 'the model adjacent is not lifted through a term');
+});
+
+test('a skill placed by a term only is no sibling ("Prometheus" beside a skill whose term is Grafana)', () => {
+  const p = withSkill({ id: 'obs', name: 'Supervision maison', group: 'obs', level: 'proficient', terms: ['Grafana'] });
+  assert.equal(judge('Prometheus', { profile: p }).row.match, 'no');
+});
+
+// Seen in the same replay: "GenAI" met by the model through a lab LLM skill
+// gained the alerting skill as "another name" of it, through its term, and
+// lost its lab-only half credit.
+test('a skill placed by a term only does not join the model\'s yes as another name of its concept', () => {
+  const p = withSkill({ id: 'alerting', name: 'Alerting intelligent', group: 'obs', level: 'proficient', terms: ['intelligence artificielle'] });
+  p.skills.push({ id: 'local-llm', name: 'LLM locaux', group: 'ai', level: 'lab', aliases: [] });
+  const { row } = judge('IA générative', { profile: p, match: 'yes', skills: ['local-llm'] });
+  assert.deepEqual(row.skills, ['local-llm']);
+});
+
+// Seen in the same replay: "Gouvernance des usages IA" adjacent through the
+// lab LLM skills and the alerting skill's term; the proficient alerting skill
+// hid the lab-only gap.
+test('beside skills a name places, a skill a term places is not named, and the lab-only gap shows', () => {
+  const p = withSkill({ id: 'alerting', name: 'Alerting intelligent', group: 'obs', level: 'proficient', terms: ['intelligence artificielle'] });
+  p.skills.push({ id: 'local-llm', name: 'LLM locaux', group: 'ai', level: 'lab', aliases: [] });
+  const { row, analysis } = judge('Gouvernance IA', { profile: p });
+  assert.equal(row.match, 'adjacent');
+  assert.deepEqual(row.skills, ['local-llm']);
+  assert.ok(analysis.fit.qualification.gaps.some((gap) => /lab only/.test(gap)), analysis.fit.qualification.gaps.join());
+});
+
+test('a notions-level skill is not shown as an equivalent beside a better one', () => {
+  const { row } = judge('Cloud privé');
+  assert.equal(row.match, 'adjacent');
+  assert.deepEqual(row.skills, ['aws']);
+});
+
 test('a sibling database ("MySQL") is adjacent to verify, not yes through an ESCO synonym', () => {
   const { row } = judge('MySQL');
   assert.equal(row.match, 'adjacent', JSON.stringify(row));
@@ -152,9 +208,79 @@ test("the owner's near ruling holds the profile's verdict at adjacent", () => {
   assert.equal(judge('SQL', { profile: p }).row.match, 'adjacent');
 });
 
+test("the profile's answer never lowers the model's verdict", () => {
+  const { row } = judge('Oracle tuning', { match: 'yes', skills: ['oracle'] });
+  assert.equal(row.match, 'yes', 'the model met it through Oracle, named in it');
+});
+
 test('every verdict the profile gives passes validation', () => {
   const names = ['Requêtage SQL', 'Puppet', 'MySQL', 'Optimisation de requêtes', 'Oracle tuning', 'Cloud', 'COBOL'];
   const p = v4();
   const { analysis } = normalize(answer(names.map((name) => ({ name, importance: 'must', match: 'no', skills: [], note: '' }))), p);
   assert.deepEqual(validateAnalysis(analysis, p).errors.filter((error) => /requirement/.test(error)), []);
+});
+
+test('an evidence-blocked skill meets nothing through the profile, an owner link or a bullet', () => {
+  const assessment = [{ id: 'postgresql', verdict: 'contradicted' }, { id: 'oracle', verdict: 'contradicted' }];
+  assert.equal(judge('SQL', { assessment }).row.match, 'no');
+  assert.equal(judge('Optimisation de requêtes', { assessment }).row.match, 'no', 'the bullet names Oracle, blocked');
+  const p = v4();
+  p.links = [{ words: 'sgbd maison', skill: 'postgresql', verdict: 'same' }];
+  assert.equal(judge('SGBD maison', { profile: p, assessment }).row.match, 'no', 'the owner linked PostgreSQL, blocked');
+});
+
+test("the model's yes through a lab skill the concept holds, no word of it named, stays yes (not to verify)", () => {
+  const p = v4();
+  p.skills.push({ id: 'podman', name: 'Podman', group: 'iac', level: 'lab', aliases: [] });
+  const { row } = judge('Conteneurisation', { match: 'yes', skills: ['podman'], profile: p });
+  assert.equal(row.match, 'yes');
+  assert.deepEqual(row.skills, ['podman']);
+  assert.equal(row.judged, undefined);
+});
+
+test("the model's yes through a notions-level skill gives way to the profile's well-held one", () => {
+  const { row } = judge('Cloud public', { match: 'yes', skills: ['gcp'] });
+  assert.equal(row.match, 'yes');
+  assert.deepEqual(row.skills, ['aws']);
+});
+
+test('an evidence-blocked skill does not join a met requirement as another name of its concept', () => {
+  const p = v4();
+  p.skills.push(
+    { id: 'ksh', name: 'KSH', group: 'iac', level: 'working', aliases: ['Shell'] },
+    { id: 'bash', name: 'Bash', group: 'iac', level: 'expert', aliases: [] },
+  );
+  const { row } = judge('Shell', { match: 'yes', skills: ['ksh'], profile: p, assessment: [{ id: 'bash', verdict: 'contradicted' }] });
+  assert.deepEqual(row.skills, ['ksh']);
+});
+
+test("the model's yes through a lab skill its concept holds stays yes, its lab level said by the score", () => {
+  const { row, analysis } = judge('Conteneurisation', { match: 'yes', skills: ['docker'] });
+  assert.equal(row.match, 'yes');
+  assert.equal(row.judged, undefined);
+  assert.ok(analysis.fit.qualification.gaps.some((gap) => /lab only/.test(gap)), analysis.fit.qualification.gaps.join());
+});
+
+test('a quality word beside a product name the lexicon lacks keeps the requirement scored', () => {
+  assert.equal(judge('Pédagogie GitHub Copilot').row.kind, undefined);
+});
+
+test('a quality word beside a never-claimed item the lexicon lacks keeps the requirement scored', () => {
+  const p = v4();
+  p.never.push({ name: 'Kafka', aliases: [] });
+  const { row } = judge('Leadership Kafka', { profile: p });
+  assert.equal(row.kind, undefined);
+  assert.equal(row.match, 'no');
+});
+
+test('a quality word beside a profile skill the lexicon lacks keeps the requirement scored', () => {
+  const p = v4();
+  p.skills.push({ id: 'jira', name: 'Jira', group: 'tools', level: 'proficient', aliases: [] });
+  assert.equal(judge('Rigueur Jira', { profile: p }).row.kind, undefined);
+});
+
+test('two categories under one umbrella are not related: CI/CD is not near infrastructure as code', () => {
+  const index = defaultIndex();
+  const placed = skillConcepts(index, [{ id: 'iac', name: 'Infrastructure as Code', aliases: [], terms: [] }]);
+  assert.deepEqual(relate(index, 'Intégration continue', placed), []);
 });

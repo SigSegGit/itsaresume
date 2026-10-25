@@ -139,6 +139,47 @@ property it proves.
 | recall does not take a stem for a name | Recall: whole words, not stems |
 | a label the code contradicts is measured wrong, one it agrees with right | Corpus: the wrong list is the code's disagreement |
 
+## `test/coverage.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a practice word ("Requêtage SQL") is met by an expert or proficient skill | — |
+| a practice word asks more than a working level: adjacent | Coverage (2.28b): a practice word asks an expert or proficient skill |
+| the model adjacent with the right pick is lifted when the name has generic words | Coverage (2.28b): the model's wrong pick does not hide the profile |
+| a wrong pick of the model does not hide the profile: "SQL" through Python is met through PostgreSQL | Coverage (2.28b): the model's wrong pick does not hide the profile; Equivalents: the concept must hold the model's pick to ground it |
+| "Bases de données relationnelles" is a technology, not a personal quality | Quality (2.28b): a technology is not a quality |
+| a quality word without a technology is still a personal quality | — |
+| "Cloud" alone is met through AWS (proficient) | — |
+| "DevOps" is met through infrastructure as code held at expert | — |
+| "Automatisation" is met through Terraform or Python | — |
+| "Intelligence artificielle" with a lab LLM skill is adjacent, not no | Coverage (8.51, 2.28b): a lab skill does not meet it; Lexicon (2.28b): a name with a version is placed word by word |
+| a skill whose name carries a version or a qualifier is placed on its concept ("PostgreSQL 16") | Lexicon (2.28b): a name with a version is placed word by word |
+| a depth word the skill may lack ("Oracle tuning") stays adjacent | Coverage (2.28b): a word the skill may lack holds at adjacent |
+| a requirement naming a concept the profile lacks beside one it holds ("SQL / NoSQL") is adjacent | Coverage (2.28b): every concept named must be held |
+| a tool of the same family as a held one ("Puppet" beside Terraform) is adjacent, to verify | Coverage (2.28b): a sibling is to verify |
+| a sibling held at lab level brings nothing near ("OpenShift" beside a lab Docker) | Coverage (2.28b): a lab sibling brings nothing near |
+| a short term ("AI" on an alerting skill) does not place the skill on a concept | Lexicon (2.28b): a short term places nothing |
+| a long term ("intelligence artificielle" on an alerting skill) brings it near, never meets it | Coverage (2.28b): a term brings near, only a name or an alias meets; Lexicon (2.28b): without terms, only names and aliases place |
+| a skill placed by a term only is no sibling ("Prometheus" beside a skill whose term is Grafana) | Coverage (2.28b): a sibling is placed by its name |
+| a skill placed by a term only does not join the model's yes as another name of its concept | Equivalents (2.28b): only a name or an alias makes another name |
+| beside skills a name places, a skill a term places is not named, and the lab-only gap shows | Coverage (2.28b): held through a term only is to verify |
+| a notions-level skill is not shown as an equivalent beside a better one | Coverage (2.28b): notions are not an equivalent beside better |
+| a sibling database ("MySQL") is adjacent to verify, not yes through an ESCO synonym | Coverage (2.28b): a curated concept hides ESCO synonyms |
+| what an experience bullet states ("Optimisation de requêtes") is adjacent, to verify, through its skills | Coverage (2.28b): a bullet that states it is evidence |
+| what the whole profile lacks stays no | — |
+| the owner's near ruling holds the profile's verdict at adjacent | — |
+| the profile's answer never lowers the model's verdict | Coverage (2.28b): it never lowers a verdict |
+| every verdict the profile gives passes validation | — |
+| an evidence-blocked skill meets nothing through the profile, an owner link or a bullet | Coverage (2.28b): an evidence-blocked skill meets nothing |
+| the model's yes through a lab skill the concept holds, no word of it named, stays yes (not to verify) | Equivalents: a concept holding the model's skills grounds its yes |
+| the model's yes through a notions-level skill gives way to the profile's well-held one | Coverage (2.28b): a yes through lab or notions skills gives way |
+| an evidence-blocked skill does not join a met requirement as another name of its concept | Equivalents: evidence-blocked skills are not equivalents |
+| the model's yes through a lab skill its concept holds stays yes, its lab level said by the score | — |
+| a quality word beside a product name the lexicon lacks keeps the requirement scored | Quality: a product name keeps a requirement scored |
+| a quality word beside a never-claimed item the lexicon lacks keeps the requirement scored | Quality: a never-claimed item keeps a requirement scored |
+| a quality word beside a profile skill the lexicon lacks keeps the requirement scored | Quality: a profile skill keeps a requirement scored |
+| two categories under one umbrella are not related: CI/CD is not near infrastructure as code | Lexicon (2.28b): an umbrella is no shared theme; Lexicon (2.28b): an umbrella makes no neighbours |
+
 ## `test/deploy.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -149,17 +190,18 @@ property it proves.
 
 | Property (the test name) | Sabotage defences |
 |---|---|
-| a sibling tool is not an equivalent: Puppet stays no beside Terraform | Equivalents: a sibling tool is not a member |
+| a category whose only member is a lab skill stays adjacent | — |
+| a sibling tool is not an equivalent: Puppet beside Terraform is adjacent, to verify | Equivalents: a sibling tool is not a member |
 | a never-claimed requirement stays no, whatever its category holds | Equivalents: never-claimed stays no |
 | a met language row passes validation without a profile skill (the run goes on) | Languages: a met language row validates without a skill |
 | a language the profile holds at notions level only stays no, its level said | Languages: notions do not meet a language requirement |
 | a language the profile does not name stays no | — |
 | a task done in a language is not a language requirement | Languages: a task in a language is not a language row |
 | the report says "equivalent: X" rather than a bare no | — |
-| "SQL" met through PostgreSQL and Oracle stays yes, not "to verify" | Equivalents: a concept holding the model's skills grounds its yes |
-| "SQL" marked no by the model comes out adjacent through PostgreSQL, Oracle | — |
+| "SQL" met through PostgreSQL and Oracle stays yes, not "to verify" | — |
+| "SQL" marked no by the model comes out yes through PostgreSQL, Oracle | — |
 | "Shell" named like the profile's KSH also holds its Bash, the model's extra pick dropped | Equivalents: the concept's other profile skills join the model's pick |
-| "SQL" met through Python alone stays "to verify": the concept must hold the model's pick | Equivalents: the concept must hold the model's pick to ground it |
+| "SQL" met through Python alone, no database in the profile, stays "to verify": the concept must hold the model's pick | — |
 | a model reading no concept holds stays "to verify" | — |
 | "Python scripting" met through Python does not add the profile's Bash | Equivalents: a shared category is not another name |
 | a word inside a skill's label does not place it: "Microsoft Access" stays no beside Bastion | Equivalents: a skill is placed on the labels it names whole |
@@ -183,7 +225,7 @@ property it proves.
 | a level stated by the sources is compared with the profile and with each other | Evidence: sources disagreeing on a level are flagged; Evidence: a profile level above its sources is flagged; Evidence: an evidence level must be a level |
 | a broader term a skill covers is not evidence for it, but still matches an offer | Evidence: a broader term is not another name; Matching: a broader term still matches an offer |
 | a ruled-out skill is known by its name and aliases, not by the broader terms it covers | Evidence: a broader term is not another name |
-| contradicted and unsupported skills are removed from the analysis and reported | Evidence: A or B against outweighs any CV claim; Equivalents: evidence-blocked skills are not equivalents; Evidence: the answer may not select a ruled-out skill |
+| contradicted and unsupported skills are removed from the analysis and reported | Evidence: A or B against outweighs any CV claim; Evidence: the answer may not select a ruled-out skill |
 | the summary may not name a contradicted skill, even one the profile lists | Evidence: the free text may not name a ruled-out skill |
 | the report verifies every skill the CV shows or matches, with its sources | Evidence: A or B for makes a skill verified; Evidence: the report has its Verification section |
 | a self-assessment or an artefact that names a skill is not evidence for it: only CVs are scanned | Evidence: only CVs are scanned, never a self-assessment |
@@ -519,7 +561,7 @@ property it proves.
 | a skill may not be tied in the free text to a mission that never used it | Red team: a skill stays with its missions in the free text; Red team: the longer organisation name is the one meant |
 | a lab skill is labelled in the document keywords too | Red team: lab keywords are labelled |
 | repeated requirement rows count once | Red team: repeated rows count once |
-| of two rows for one requirement, the stricter match is kept | Concept-held skill (8.51): only a whole concept name; Red team: repeated rows count once; Red team: the stricter row is kept |
+| of two rows for one requirement, the stricter match is kept | Red team: repeated rows count once; Red team: the stricter row is kept |
 | the skills column holds at most six groups of six skills, those meeting a requirement first | Layout: at most six shown groups; Layout: at most six skills per group; Layout: skills meeting a requirement come first |
 | a requirement the offer never states is dropped, and brings nothing onto the CV | Red team: a requirement must be stated in the offer; Red team: an inflected word of the offer states it |
 | a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item | Red team: a composed line has quotes; Red team: a composed line is made of its quotes; Red team: the English names no skill the French lacks; Red team: no profile line names a never-claimed item |
@@ -530,7 +572,8 @@ property it proves.
 | summary sentences are strings and importance is must or nice | Red team: summary sentences are strings; Red team: importance is must or nice |
 | an offer that instructs the AI changes nothing on the CV: the model holds profile text only | — |
 | an operations requirement met by a profile skill of the same concept stays yes | OPS concept (2026-10-24): astreinte grounds through the operations concept |
-| a requirement the concept of a well-held picked skill names is met, whatever the model said | Concept-held skill (8.51): adjacent is raised to yes; Concept-held skill (8.51): a lab skill does not raise |
+| a requirement the concept of a well-held picked skill names is met, whatever the model said | Coverage (8.51, 2.28b): a concept held at a working level meets it; Coverage (8.51, 2.28b): a lab skill does not meet it |
+| a requirement marked no that the concept of a well-held skill names is met | Coverage (8.51, 2.28b): a concept held at a working level meets it |
 
 ## `test/render.test.js`
 
@@ -588,7 +631,7 @@ property it proves.
 | a personal quality is not scored nor a must-have of the qualification; the report lists it apart, for the interview | Score: a quality is not scored; Report: qualities have their own section; Report: a quality is not in the scored table; Quality: a requirement named with a quality word is set apart; Quality: a run of quality words names a quality |
 | collaboration and soft skills are met qualities: never a gap, never adjacent, never scored | Quality: a quality is met; Quality: collaboration words |
 | a quality stored at "no" by an older run is still not a gap | Score: a quality is not a must-have of the qualification; Report: a quality is not a gap |
-| a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says | Quality: a product name keeps a requirement scored; Quality: a never-claimed item keeps a requirement scored; Quality: a profile skill keeps a requirement scored; Quality: the model's label is not trusted |
+| a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says | Quality: the model's label is not trusted |
 | examples the offer lists in parentheses are one requirement, met by its best example | Examples: an enumeration's rows are united; Examples: the merged row is met as its best example |
 | a never-claimed example is reported as such, not counted as a must-have of its own when another example is met | Examples: an enumeration's rows are united |
 | a row the model marks as merged is not trusted | — |
@@ -749,6 +792,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**485 tests, 406 of them covered by at least one sabotage defence.**
+**523 tests, 432 of them covered by at least one sabotage defence.**
 
-Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
+Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -11,7 +11,8 @@ import { identityNames, kindOf, LANGUAGES, skillNames } from './profile.js';
 import { blocked } from './evidence.js';
 import { backsRequirement } from './tailor.js';
 import { cleanName, LIMITS } from './guard.js';
-import { alike, defaultIndex, key, members, skillConcepts } from './lexicon.js';
+import { alike, defaultIndex, lookup, members, skillConcepts } from './lexicon.js';
+import { coverage, STRONG_LEVELS } from './coverage.js';
 import { importanceIn } from './importance.js';
 import { linkedSkills } from './links.js';
 import { alternatives, canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
@@ -22,8 +23,6 @@ const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
 const ASKS_EXPERIENCE = /(?<![\p{L}])(?:exp[ée]riment[ée]e?s?|experienced|s[ée]niors?|s[ée]niorit[ée]|seniority|\d+\s*\+?\s*(?:ans|years))(?![\p{L}])/iu;
 /** A text stating a number of years ("15 ans", "10 years"). */
 const STATES_YEARS = /\d+\s*\+?\s*(?:ans|years)(?![\p{L}])/iu;
-/** Levels at which a skill the requirement's concept holds meets it. */
-const STRONG_LEVELS = new Set(['expert', 'proficient', 'working']);
 /** The skills column: at most this many groups shown, and skills in each (the prompt says so; the model does not always listen). */
 export const MAX_GROUPS = 6;
 export const MAX_GROUP_SKILLS = 6;
@@ -31,7 +30,10 @@ export const MAX_GROUP_SKILLS = 6;
 /**
  * Whether one of the requirement's content words is among the words of the
  * skills' names, aliases or terms. A name with no content word left ("QA")
- * cannot be judged this way and is left to the model.
+ * cannot be judged this way and is left to the model. Terms count here: they
+ * are the owner's words for what a skill covers, and leaving them out turned
+ * honest readings ("Diagnostic d'incidents complexes" through N3 support)
+ * into "to verify" (2.28b, measured on the real runs).
  */
 function grounded(name, matched) {
   const wanted = wordsOf(name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
@@ -50,7 +52,15 @@ function grounded(name, matched) {
  */
 function isQuality(requirement, profile) {
   const name = canonical(requirement.name);
-  return namesQuality(name) && !/\p{N}|\p{Ll}\p{Lu}/u.test(name) && unbacked(requirement, profile);
+  return namesQuality(name) && !/\p{N}|\p{Ll}\p{Lu}/u.test(name) && !namesTechnology(name) && unbacked(requirement, profile);
+}
+
+/**
+ * Whether a name names a curated technology concept: "Bases de données
+ * relationnelles" is a technology, not the quality "relationnel" (2.28b).
+ */
+function namesTechnology(name) {
+  return lookup(defaultIndex(), name).some((id) => id.startsWith('tech:'));
 }
 
 /** Nothing never claimed, and no profile skill, names the requirement. */
@@ -265,7 +275,10 @@ export function normalize(input, profile, { assessment, offer } = {}) {
   const bulletIds = new Set(profile.experiences.flatMap((experience) => experience.bullets.map((bullet) => bullet.id)));
   const skillIds = new Set(profile.skills.map((skill) => skill.id));
   let placement = null;
-  const placed = () => (placement ??= skillConcepts(defaultIndex(), profile.skills.filter((skill) => !out.has(skill.id))));
+  const usable = () => profile.skills.filter((skill) => !out.has(skill.id));
+  const placed = () => (placement ??= skillConcepts(defaultIndex(), usable()));
+  let naming = null;
+  const placedByName = () => (naming ??= skillConcepts(defaultIndex(), usable(), { terms: false }));
   for (const choice of analysis.experiences ?? []) {
     choice.bullets = (choice.bullets ?? []).map((bullet) => idOf(bullet, bulletIds, repairs));
   }
@@ -398,8 +411,11 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       repairs.push(`requirement ${requirement.name}: the owner ruled ${skills.get(id).name} unrelated, dropped`);
     }
     const met = (requirement.match === 'yes' || requirement.match === 'adjacent') && known.length > 0 && !requirement.never;
-    const held = met ? [...members(defaultIndex(), asked(requirement.name), placed()), ...ruled.same].filter((id) => known.includes(id)) : [];
-    for (const id of (met ? alike(defaultIndex(), asked(requirement.name), placed(), known) : []).filter((id) => !known.includes(id))) {
+    // Names and aliases only: a term is broader than a name (2026-10-06), and
+    // "intelligence artificielle", a term of an alerting skill, is no other
+    // name of an LLM skill (2.28b).
+    const held = met ? [...members(defaultIndex(), asked(requirement.name), placedByName()), ...ruled.same].filter((id) => known.includes(id)) : [];
+    for (const id of (met ? alike(defaultIndex(), asked(requirement.name), placedByName(), known) : []).filter((id) => !known.includes(id))) {
       known.push(id);
       repairs.push(`requirement ${requirement.name}: the profile's ${skills.get(id).name} meets it too`);
     }
@@ -414,19 +430,6 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       repairs.push(`requirement ${requirement.name}: no profile skill names it, the model's reading only: adjacent, to verify`);
       requirement.match = 'adjacent';
       requirement.judged = true;
-    }
-    // Router HANDOVER §9 (8.51): without its hidden thinking the model reads
-    // "SQL" through an expert PostgreSQL as adjacent. A skill held at a
-    // working level that the requirement's own concept holds meets it, when
-    // the requirement's whole name is that concept ("SQL", not "Oracle
-    // tuning": the extra word is depth the skill may lack); a lab or notions
-    // skill, or one the owner ruled near, does not.
-    const whole = defaultIndex().byKey.has(key(asked(requirement.name)));
-    const strong = whole ? held.filter((id) => STRONG_LEVELS.has(skills.get(id).level) && !ruled.near.includes(id)) : [];
-    if (requirement.match === 'adjacent' && !requirement.judged && strong.length > 0) {
-      const skill = skills.get(strong[0]);
-      repairs.push(`requirement ${requirement.name}: marked adjacent, the profile's ${skill.name} (${skill.level}) is one: yes`);
-      requirement.match = 'yes';
     }
     if (requirement.match === 'yes' && known.length > 0 && known.every((id) => ruled.near.includes(id))) {
       repairs.push(`requirement ${requirement.name}: the owner ruled it near ${known.map((id) => skills.get(id).name).join(', ')}: adjacent, never yes`);
@@ -485,19 +488,45 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       requirement.note = certified.stated.length ? `profile: ${certified.stated.join(', ')}` : 'no such certification in the profile';
       delete requirement.judged;
     }
-    // A category the offer names loosely ("Conteneurisation", "Cloud public")
-    // that holds skills of the profile is not a gap: adjacent, by code, with
-    // the equivalent named for the owner (seen: false "non" on generic rows).
-    if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {
-      const ruledIn = linkedSkills(profile.links, asked(requirement.name));
-      const found = [...new Set([...members(defaultIndex(), asked(requirement.name), placed()), ...ruledIn.same, ...ruledIn.near])].filter((id) => skills.has(id) && !ruledIn.no.includes(id));
-      if (found.length) {
-        const names = found.map((id) => skills.get(id).name);
-        requirement.match = 'adjacent';
-        requirement.skills = found;
-        requirement.equivalent = names;
-        requirement.note = [requirement.note, `equivalent: ${names.join(', ')}`].filter(Boolean).join('; ');
-        repairs.push(`requirement ${requirement.name}: marked no, the profile holds ${names.join(', ')}: adjacent`);
+    // The profile's own answer (2.28b-iii, coverage.js): what the whole
+    // profile holds for this requirement, whatever the model picked or said.
+    // It only raises a verdict: "SQL" read through Python, "Maîtrise du SQL"
+    // left adjacent, "Conteneurisation" marked no (seen: false "non" on
+    // generic rows) are met through the skills that hold them; a tool of a
+    // held family or a bullet that states it is adjacent, to verify. Never
+    // claimed, a quality, a condition, a language or a certification is
+    // settled above.
+    if (!requirement.never && requirement.kind === undefined) {
+      const found = coverage(asked(requirement.name), {
+        index: defaultIndex(),
+        placed: placed(),
+        named: placedByName(),
+        skills,
+        ruled,
+        experiences: profile.experiences,
+        usable: (id) => !out.has(id),
+      });
+      // A yes through lab or notions skills only is weaker than one through a
+      // well-held skill: "Cloud public" through GCP (notions) gives way to AWS.
+      const weak = (row) => row.match === 'yes' && row.skills.length > 0 && row.skills.every((id) => !STRONG_LEVELS.has(skills.get(id)?.level));
+      const rank = (row) => 2 * STRICTNESS[row.match] - (row.judged || weak(row) ? 1 : 0);
+      if (found && rank(found) > rank(requirement)) {
+        const before = requirement.match;
+        const names = found.skills.map((id) => skills.get(id).name);
+        if (found.match === 'yes') {
+          const skill = skills.get(found.skills[0]);
+          repairs.push(`requirement ${requirement.name}: marked ${before}, the profile's ${skill.name} (${skill.level}) is one: yes`);
+        } else if (found.via === 'concept') {
+          repairs.push(`requirement ${requirement.name}: marked ${before}, the profile holds ${names.join(', ')}: adjacent`);
+        } else {
+          repairs.push(`requirement ${requirement.name}: marked ${before}, ${found.note}`);
+        }
+        requirement.match = found.match;
+        requirement.skills = found.skills;
+        if (found.judged) requirement.judged = true;
+        else delete requirement.judged;
+        if (found.via === 'concept') requirement.equivalent = names;
+        requirement.note = [requirement.note, found.note].filter(Boolean).join('; ');
       }
     }
   }

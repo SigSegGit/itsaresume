@@ -32,7 +32,8 @@ const analysis = (requirements) => ({
 const judge = (name) => normalize(analysis([{ name, importance: 'must', match: 'no', skills: [], note: '' }]), profile()).analysis.requirements[0];
 
 const PAIRS = [
-  ['Cloud public', ['AWS', 'GCP']],
+  // GCP is held at notions only: AWS (proficient) meets it, GCP is not shown as meeting it.
+  ['Cloud public', ['AWS']],
   ['Conteneurisation', ['Docker']],
   ['Infrastructure as Code', ['Terraform']],
   ['Observabilité', ['Prometheus']],
@@ -62,8 +63,14 @@ test('a category whose only member is a lab skill stays adjacent', () => {
   assert.equal(row.match, 'adjacent');
 });
 
-test('a sibling tool is not an equivalent: Puppet stays no beside Terraform', () => {
-  assert.equal(judge('Puppet').match, 'no');
+// The owner (2026-10-25): a tool of a family the profile practises is not
+// missing, it is near, to verify; it is not met either.
+test('a sibling tool is not an equivalent: Puppet beside Terraform is adjacent, to verify', () => {
+  const row = judge('Puppet');
+  assert.equal(row.match, 'adjacent');
+  assert.equal(row.judged, true);
+  assert.deepEqual(row.skills, ['terraform']);
+  assert.equal(row.equivalent, undefined);
 });
 
 test('a never-claimed requirement stays no, whatever its category holds', () => {
@@ -152,8 +159,10 @@ test('"Shell" named like the profile\'s KSH also holds its Bash, the model\'s ex
   assert.deepEqual([...row.skills].sort(), ['bash', 'ksh']);
 });
 
-test('"SQL" met through Python alone stays "to verify": the concept must hold the model\'s pick', () => {
-  const row = judgeMet('SQL', ['python']);
+test('"SQL" met through Python alone, no database in the profile, stays "to verify": the concept must hold the model\'s pick', () => {
+  const p = profile();
+  p.skills = p.skills.filter((skill) => skill.group !== 'db');
+  const row = normalize(analysis([{ name: 'SQL', importance: 'must', match: 'yes', skills: ['python'], note: '' }]), p).analysis.requirements[0];
   assert.equal(row.match, 'adjacent');
   assert.equal(row.judged, true);
 });
@@ -167,7 +176,11 @@ test('a model reading no concept holds stays "to verify"', () => {
 // Seen replaying the real runs: the union above added Bash to "Python
 // scripting" (a category word beside the tool) and Bastion to "SQL".
 test('"Python scripting" met through Python does not add the profile\'s Bash', () => {
-  const row = judgeMet('Python scripting', ['python'], [{ id: 'bash', name: 'Bash', group: 'iac', level: 'expert', aliases: [], terms: ['scripting'] }]);
+  // A skill the category's own name places ("Langages de script") is no other name of Python either.
+  const row = judgeMet('Python scripting', ['python'], [
+    { id: 'bash', name: 'Bash', group: 'iac', level: 'expert', aliases: [], terms: ['scripting'] },
+    { id: 'scripts', name: 'Langages de script', group: 'iac', level: 'expert', aliases: [] },
+  ]);
   assert.deepEqual(row.skills, ['python']);
 });
 
