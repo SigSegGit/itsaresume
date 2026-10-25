@@ -46,13 +46,21 @@ const PAIRS = [
 ];
 
 for (const [requirement, names] of PAIRS) {
-  test(`"${requirement}" marked no by the model comes out adjacent through ${names.join(', ')}`, () => {
+  // The owner (2026-10-25): a member held at working or better meets the category.
+  test(`"${requirement}" marked no by the model comes out yes through ${names.join(', ')}`, () => {
     const judged = judge(requirement);
-    assert.equal(judged.match, 'adjacent');
+    assert.equal(judged.match, 'yes');
     assert.deepEqual([...judged.equivalent].sort(), [...names].sort());
     assert.match(judged.note, new RegExp(`equivalent: ${names[0]}`));
   });
 }
+
+test('a category whose only member is a lab skill stays adjacent', () => {
+  const p = profile();
+  for (const skill of p.skills) if (skill.id === 'docker') skill.level = 'lab';
+  const row = normalize(analysis([{ name: 'Conteneurisation', importance: 'must', match: 'no', skills: [], note: '' }]), p).analysis.requirements[0];
+  assert.equal(row.match, 'adjacent');
+});
 
 test('a sibling tool is not an equivalent: Puppet stays no beside Terraform', () => {
   assert.equal(judge('Puppet').match, 'no');
@@ -110,7 +118,7 @@ test('a task done in a language is not a language requirement', () => {
 
 test('the report says "equivalent: X" rather than a bare no', () => {
   const { analysis: normalised } = normalize(analysis([{ name: 'Conteneurisation', importance: 'must', match: 'no', skills: [], note: '' }]), profile());
-  assert.match(report(normalised, profile(), {}), /\| Conteneurisation \| must \| adjacent \|.*equivalent: Docker/);
+  assert.match(report(normalised, profile(), {}), /\| Conteneurisation \| must \| yes \|.*equivalent: Docker/);
 });
 
 // 2.7c, seen on a real run (2026-09-29): the model met "SQL" through
@@ -129,9 +137,9 @@ test('"SQL" met through PostgreSQL and Oracle stays yes, not "to verify"', () =>
   assert.equal(row.judged, undefined);
 });
 
-test('"SQL" marked no by the model comes out adjacent through PostgreSQL, Oracle', () => {
+test('"SQL" marked no by the model comes out yes through PostgreSQL, Oracle', () => {
   const row = judge('SQL');
-  assert.equal(row.match, 'adjacent');
+  assert.equal(row.match, 'yes');
   assert.deepEqual([...row.equivalent].sort(), ['Oracle', 'PostgreSQL']);
 });
 

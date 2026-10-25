@@ -70,7 +70,7 @@ test('a migration to a tool the profile lacks is not met by the tool it leaves',
 
 test('a migration to a tool the profile holds is met through that tool only', () => {
   const row = judge('Migration de Puppet vers Ansible', profile([PUPPET, ANSIBLE]));
-  assert.equal(row.match, 'adjacent');
+  assert.equal(row.match, 'yes');
   assert.deepEqual(row.equivalent, ['Ansible']);
 });
 
@@ -80,7 +80,7 @@ test('"Base de données NoSQL" is not met through PostgreSQL and Oracle', () => 
 
 test('"Bases de données NoSQL" is met through MongoDB when the profile holds it', () => {
   const row = judge('Bases de données NoSQL', profile([{ id: 'mongodb', name: 'MongoDB', group: 'db', level: 'working', aliases: [] }]));
-  assert.equal(row.match, 'adjacent');
+  assert.equal(row.match, 'yes');
   assert.deepEqual(row.equivalent, ['MongoDB']);
 });
 
