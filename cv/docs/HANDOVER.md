@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b-iii
-TITLE: 2.28b-ii done: local breakage found (Windows reserves ports 8773-8872, use 18789/18790; a quality row refused by validateAnalysis, fixed); 2.28b-iii on the laptop: deeptech "AI" adjacent, SQL not lifted on Bionic, full compare
+TITLE: 2.28b-ii done (ports 8773-8872 reserved, use 18789/18790; quality rows validate); 2.28b-iii (a) honest, (b) waits for the owner: lift categories marked no to yes or SQL only; then (c) full compare
 WRITTEN-AT: 2026-10-25
 -->
 
@@ -810,6 +810,16 @@ Traps met, each cost time once:
     changed (SRE Paris 69 -> 78, Python / Go merged; deeptech AI 70 -> 67,
     "AI" now adjacent); the two CLM runs are not replayable (the current
     code asks more calls).
+  - [x] **2.28b-iii (a)** (2026-10-25) deeptech "AI: adjacent" is honest:
+    the profile's AI skills are all `lab`. **(b) waits for the owner**: a
+    "SQL" the model marks no goes through the category rule (normalize.js,
+    "marked no, the profile holds ...: adjacent"), which runs after the
+    2.28c lift, so an expert PostgreSQL never makes it yes. Extending the
+    lift to that rule turned 11 tests red: "Cloud public" via AWS, "CI/CD"
+    via Jenkins, "IaC" via Terraform, "Observabilité" via Prometheus... all
+    would become yes. Owner's call (§10): lift for every category whose
+    member is held at working+, or keep categories adjacent and lift only
+    when the requirement's name is the skill's own concept (SQL).
   - [ ] **2.28b-iii** On the laptop, router on 127.0.0.1:18789: (a) the
     deeptech run's new "AI: adjacent" (70 -> 67): honest or a missing
     `tech.json` word? (b) Bionic marked "SQL" no on the 2026-10-14 offer,
