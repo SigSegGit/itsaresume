@@ -517,7 +517,7 @@ property it proves.
 | a skill may not be tied in the free text to a mission that never used it | Red team: a skill stays with its missions in the free text; Red team: the longer organisation name is the one meant |
 | a lab skill is labelled in the document keywords too | Red team: lab keywords are labelled |
 | repeated requirement rows count once | Red team: repeated rows count once |
-| of two rows for one requirement, the stricter match is kept | Red team: repeated rows count once; Red team: the stricter row is kept |
+| of two rows for one requirement, the stricter match is kept | Concept-held skill (8.51): only a whole concept name; Red team: repeated rows count once; Red team: the stricter row is kept |
 | the skills column holds at most six groups of six skills, those meeting a requirement first | Layout: at most six shown groups; Layout: at most six skills per group; Layout: skills meeting a requirement come first |
 | a requirement the offer never states is dropped, and brings nothing onto the CV | Red team: a requirement must be stated in the offer; Red team: an inflected word of the offer states it |
 | a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item | Red team: a composed line has quotes; Red team: a composed line is made of its quotes; Red team: the English names no skill the French lacks; Red team: no profile line names a never-claimed item |
@@ -528,6 +528,7 @@ property it proves.
 | summary sentences are strings and importance is must or nice | Red team: summary sentences are strings; Red team: importance is must or nice |
 | an offer that instructs the AI changes nothing on the CV: the model holds profile text only | — |
 | an operations requirement met by a profile skill of the same concept stays yes | OPS concept (2026-10-24): astreinte grounds through the operations concept |
+| a requirement the concept of a well-held picked skill names is met, whatever the model said | Concept-held skill (8.51): adjacent is raised to yes; Concept-held skill (8.51): a lab skill does not raise |
 
 ## `test/render.test.js`
 
@@ -740,6 +741,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**481 tests, 402 of them covered by at least one sabotage defence.**
+**482 tests, 403 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out adjacent through Docker, "Cycle de delivery" marked no by the model comes out adjacent through Jenkins, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
