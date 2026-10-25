@@ -4,7 +4,7 @@
 NEXT: 8.50
 TITLE: 8.51 Claude schema in the prompt (CV 2 min -> 24 s, ~4x fewer tokens); Gemini enabled but overloaded by Google today; next: one complete CV on Gemini
 WRITTEN-AT: 2026-10-25
-BASE: 962d5ff
+BASE: b5b8fa1
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.

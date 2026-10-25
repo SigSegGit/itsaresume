@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b
-TITLE: 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
+TITLE: 2.27b done (an experience must brings the years into the summary); 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.27b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
 WRITTEN-AT: 2026-10-25
 -->
 
@@ -846,6 +846,15 @@ Traps met, each cost time once:
   (goal: full page, see 2.24); "Profil expérimenté" (must, yes) is not on
   the page because no title names it — print the years in the headline or
   summary when such a must is met.
+  - [x] **2.27b** (2026-10-25) The secondary point, by code: a must met
+    (`yes` or `adjacent`) whose name asks for experience or seniority
+    (`ASKS_EXPERIENCE` in `normalize.js`: expérimenté, senior, séniorité,
+    "N ans", "N years") puts the profile's first `fact` stating years
+    (`STATES_YEARS`) in the summary's supporting place, unless the hook
+    already states years; said in the repairs. Verbatim profile text
+    only. Sabotaged (guard.json). Owner: a `fact` like "15 ans en
+    production." must exist in `profile_facts` for it to act. The page
+    fill (84 %) is left to 2.24's measure.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the
