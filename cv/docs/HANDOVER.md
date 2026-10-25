@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b
-TITLE: 2.27b done (an experience must brings the years into the summary); 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.27b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
+TITLE: 2.28b-i done (scripts/replay.mjs); 2.28b needs a session ON the laptop (Desktop or remote-control): 2.27b done (an experience must brings the years into the summary); 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.27b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
 WRITTEN-AT: 2026-10-25
 -->
 
@@ -792,7 +792,19 @@ Traps met, each cost time once:
     "Oracle tuning" through Oracle stays adjacent (an extra word is
     depth); a lab skill stays adjacent. Synthetic tests only; replay on
     the real runs (`rules-replay.mjs`) in 2.28b. Sabotaged (content.json).
-  - [ ] **2.28b** On the laptop: `node scripts/compare.mjs --url
+  - [x] **2.28b-i** (2026-10-25, cloud) `scripts/replay.mjs --profile
+    <profile.json> --out <runs dir>` (logic `src/replay.js`): each stored
+    run's own model answers (`raw.json`) fed again to `analyse` with the
+    current code, no model call; prints each verdict that changes and the
+    score before -> after. Public replacement for the private
+    `rules-replay.mjs`. Sabotaged (content.json).
+  - [ ] **2.28b** Needs a session running ON the laptop (Claude Desktop
+    on `D:\GitHub\itsaresume`, or `claude remote-control` there): a cloud
+    session sees neither the router, Bionic, the runs nor the profile.
+    First `node scripts/replay.mjs --profile <profile.json> --out <runs
+    dir>` (2.26b, 2.27b, 2.28a, 2.28c on the real runs), then
+    `node scripts/compare.mjs` on a recent OPS offer, then the router
+    journal's last `failed` lines. On the laptop: `node scripts/compare.mjs --url
     http://127.0.0.1:8789 --profile <profile.json> --offer <a recent OPS
     offer.txt> --save compare.json`. For each row still "adjacent" with
     "no profile skill names it, the model's reading only", either add the
