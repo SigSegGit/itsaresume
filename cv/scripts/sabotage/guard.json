@@ -181,6 +181,14 @@
         "a task done in a language is not a language requirement"
       ]
     },
+    "Qualities: a quality row settled yes validates without a skill": {
+      "file": "src/analysis.js",
+      "live": "&& requirement.kind !== 'quality' && requirement.kind !== 'language'",
+      "dead": "&& requirement.kind !== 'language'",
+      "expect": [
+        "a personal quality settled yes by code passes validation"
+      ]
+    },
     "Languages: a met language row validates without a skill": {
       "file": "src/analysis.js",
       "live": "&& requirement.kind !== 'language' && requirement.kind !== 'certification') {",
