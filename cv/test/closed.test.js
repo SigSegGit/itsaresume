@@ -214,3 +214,26 @@ test('a must met through a visible skill never takes the headline: the skills co
   const { analysis } = normalize(model, p, { offer: 'Must have: PostgreSQL, Oracle. Nice: etcd, consul, vault, nats, minio.' });
   assert.equal(analysis.headline, 'Senior SRE engineer · PostgreSQL administrator');
 });
+
+/** 2.27 (secondary, real run 2026-10-14): "Profil expérimenté", a must met,
+ * and nothing on the page says how experienced. When the summary states no
+ * years, the profile's own fact that does takes the supporting place. */
+test('a met must asking for experience brings the profile fact stating the years into the summary', () => {
+  const p = withTitles();
+  p.profile_facts.push(
+    { id: 'hook-dba', kind: 'hook', fr: 'Administrateur PostgreSQL.', en: 'PostgreSQL administrator.' },
+    { id: 'xp', kind: 'fact', fr: '15 ans en production.', en: '15 years in production.' },
+  );
+  const requirements = [
+    { name: 'PostgreSQL', importance: 'must', match: 'yes', skills: ['postgresql'], note: '' },
+    { name: 'Profil expérimenté', importance: 'must', match: 'yes', skills: ['postgresql'], note: '' },
+  ];
+  const offer = 'Must have: PostgreSQL. Profil expérimenté.';
+  const { analysis, repairs } = normalize(answer({ summary_ids: ['hook-dba', 'pg'], requirements }), p, { offer });
+  assert.deepEqual(analysis.summary, ['PostgreSQL administrator.', '15 years in production.']);
+  assert.match(repairs.join('\n'), /summary: xp in place of pg, it states the years Profil expérimenté asks for/);
+  const plain = normalize(answer({ summary_ids: ['hook-dba', 'pg'] }), p, { offer: OFFER }).analysis;
+  assert.deepEqual(plain.summary, ['PostgreSQL administrator.', 'Runs high-volume PostgreSQL fleets.'], 'no such must: the choice stands');
+  const told = normalize(answer({ summary_ids: ['years', 'pg'], requirements }), p, { offer }).analysis;
+  assert.deepEqual(told.summary, ['SRE engineer with 10 years in critical production.', 'Runs high-volume PostgreSQL fleets.'], 'the hook already says it');
+});
