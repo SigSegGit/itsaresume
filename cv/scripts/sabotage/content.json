@@ -70,7 +70,9 @@
     "test/word.test.js",
     "src/links.js",
     "src/compare.js",
-    "test/compare.test.js"
+    "test/compare.test.js",
+    "src/replay.js",
+    "test/replay.test.js"
   ],
   "defences": {
     "Profile: bullet skills must exist": {
@@ -1484,6 +1486,14 @@
       "dead": "(STRONG_LEVELS.has(skills.get(id).level) || true) &&",
       "expect": [
         "a requirement the concept of a well-held picked skill names is met, whatever the model said"
+      ]
+    },
+    "Replay (2.28b): a changed verdict is listed": {
+      "file": "src/replay.js",
+      "live": "if (old !== now) changed.push(",
+      "dead": "if (old !== now && false) changed.push(",
+      "expect": [
+        "replay: a stored run fed again to the current code lists each verdict it changes, with no model call"
       ]
     }
   }
