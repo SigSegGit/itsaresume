@@ -3,8 +3,8 @@
 <!-- ITSARESUME-STATE
 NEXT: 8.50
 TITLE: 8.51 Claude schema in the prompt (CV 2 min -> 24 s, ~4x fewer tokens); Gemini enabled but overloaded by Google today; next: one complete CV on Gemini
-WRITTEN-AT: 2026-10-14
-BASE: 73725c8
+WRITTEN-AT: 2026-10-25
+BASE: 962d5ff
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -656,6 +656,8 @@ branch with the local gates of §3 green.
   up on other offers, the fix belongs in the analysis prompt or in code
   (an expert sub-skill implies its family), not in returning to
   `--json-schema`.
+  The code half is done (cv 2.28c, 2026-10-25): a working-level skill that
+  the requirement's whole concept holds makes it `yes`.
 - **The checks spend a little quota**: at most one tiny request per
   backend per 15 min, none when real traffic answered meanwhile (Claude's
   check is a `claude -p` call on the plan). The check thread has no test of

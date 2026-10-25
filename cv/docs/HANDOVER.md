@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b
-TITLE: 2.26b done (alternatives "A, B ou C" one row); 2.28b on the laptop: a comparative run on a recent OPS offer, fix each remaining "proche", and the local breakage from the router journal; 2.26c done (temperature on lm-studio)
-WRITTEN-AT: 2026-10-24
+TITLE: 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
+WRITTEN-AT: 2026-10-25
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -783,6 +783,15 @@ Traps met, each cost time once:
     first, each demotion's reason under its row. Sabotaged (content.json).
     Not verified on a real run: the cloud session had neither the laptop,
     its `qa-log.jsonl` nor the private profile.
+  - [x] **2.28c** (2026-10-25) A well-held skill the requirement's own
+    concept holds meets it, by code: the model's "adjacent" becomes "yes"
+    when the requirement's whole name is a concept label (ESCO or
+    `tech.json`) that holds a picked skill at expert, proficient or
+    working level, not ruled `near` (`normalize.js`, `STRONG_LEVELS`).
+    "SQL" through an expert PostgreSQL: yes (router §9, 8.51 drop);
+    "Oracle tuning" through Oracle stays adjacent (an extra word is
+    depth); a lab skill stays adjacent. Synthetic tests only; replay on
+    the real runs (`rules-replay.mjs`) in 2.28b. Sabotaged (content.json).
   - [ ] **2.28b** On the laptop: `node scripts/compare.mjs --url
     http://127.0.0.1:8789 --profile <profile.json> --offer <a recent OPS
     offer.txt> --save compare.json`. For each row still "adjacent" with

@@ -126,6 +126,8 @@ async function throughThePage(t, offer, obey, list = []) {
   return { detail, seen: `${JSON.stringify(detail)}\n${status}`, cv };
 }
 
+// The phone "7946" is matched as a whole number: a random job id holds it
+// at times ("…bd727946a2eb", seen failing CI on 2026-10-25).
 const absent = (where, text, pattern) => assert.doesNotMatch(text, pattern, `${where} carries ${pattern}`);
 
 test('hostile: an honest offer and answer give a CV the checks can read', async (t) => {
@@ -191,7 +193,7 @@ test('hostile: contact data the offer asks to carry reaches neither the CV nor t
     email: inSummary('Contact : rh@evil.example.'),
     phone: inSummary('Joignable au +44 20 7946 0000.'),
     note: inNote('joindre rh@evil.example au +44 20 7946 0000'),
-  }, /rh@evil|7946/);
+  }, /rh@evil|(?<!\w)7946(?!\w)/);
 });
 
 test('hostile: an instruction the offer gives is not followed into the CV or the public page', async (t) => {
@@ -224,7 +226,7 @@ test('hostile: requirement names carry nothing private, no link and no instructi
     prompt: [echo],
     notes: ['verified by the CV for another company'],
   };
-  const pattern = /Kubernetes|Kafka|evil\.example|rh@evil|7946|mirror the offer|another company/i;
+  const pattern = /Kubernetes|Kafka|evil\.example|rh@evil|(?<!\w)7946(?!\w)|mirror the offer|another company/i;
   // Not a vacuous pass: the honest answer to this offer gives a CV (a canary
   // rule once refused every answer here over "et").
   const control = await throughThePage(t, offer, (answer) => answer);

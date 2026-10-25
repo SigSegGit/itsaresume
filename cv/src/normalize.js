@@ -11,13 +11,15 @@ import { identityNames, kindOf, LANGUAGES, skillNames } from './profile.js';
 import { blocked } from './evidence.js';
 import { backsRequirement } from './tailor.js';
 import { cleanName, LIMITS } from './guard.js';
-import { alike, defaultIndex, members, skillConcepts } from './lexicon.js';
+import { alike, defaultIndex, key, members, skillConcepts } from './lexicon.js';
 import { importanceIn } from './importance.js';
 import { linkedSkills } from './links.js';
 import { alternatives, canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
 
 /** Lower is stricter: of two rows for one requirement, the stricter match is kept. */
 const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
+/** Levels at which a skill the requirement's concept holds meets it. */
+const STRONG_LEVELS = new Set(['expert', 'proficient', 'working']);
 /** The skills column: at most this many groups shown, and skills in each (the prompt says so; the model does not always listen). */
 export const MAX_GROUPS = 6;
 export const MAX_GROUP_SKILLS = 6;
@@ -408,6 +410,19 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       repairs.push(`requirement ${requirement.name}: no profile skill names it, the model's reading only: adjacent, to verify`);
       requirement.match = 'adjacent';
       requirement.judged = true;
+    }
+    // Router HANDOVER §9 (8.51): without its hidden thinking the model reads
+    // "SQL" through an expert PostgreSQL as adjacent. A skill held at a
+    // working level that the requirement's own concept holds meets it, when
+    // the requirement's whole name is that concept ("SQL", not "Oracle
+    // tuning": the extra word is depth the skill may lack); a lab or notions
+    // skill, or one the owner ruled near, does not.
+    const whole = defaultIndex().byKey.has(key(asked(requirement.name)));
+    const strong = whole ? held.filter((id) => STRONG_LEVELS.has(skills.get(id).level) && !ruled.near.includes(id)) : [];
+    if (requirement.match === 'adjacent' && !requirement.judged && strong.length > 0) {
+      const skill = skills.get(strong[0]);
+      repairs.push(`requirement ${requirement.name}: marked adjacent, the profile's ${skill.name} (${skill.level}) is one: yes`);
+      requirement.match = 'yes';
     }
     if (requirement.match === 'yes' && known.length > 0 && known.every((id) => ruled.near.includes(id))) {
       repairs.push(`requirement ${requirement.name}: the owner ruled it near ${known.map((id) => skills.get(id).name).join(', ')}: adjacent, never yes`);

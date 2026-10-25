@@ -1461,6 +1461,30 @@
       "expect": [
         "alternatives the offer joins with \"ou\" are one requirement, met by any; items joined by \"et\" stay apart"
       ]
+    },
+    "Concept-held skill (8.51): adjacent is raised to yes": {
+      "file": "src/normalize.js",
+      "live": "requirement.match === 'adjacent' && !requirement.judged && strong.length > 0",
+      "dead": "requirement.match === 'adjacent' && !requirement.judged && strong.length > 0 && false",
+      "expect": [
+        "a requirement the concept of a well-held picked skill names is met, whatever the model said"
+      ]
+    },
+    "Concept-held skill (8.51): only a whole concept name": {
+      "file": "src/normalize.js",
+      "live": "const whole = defaultIndex().byKey.has(key(asked(requirement.name)));",
+      "dead": "const whole = defaultIndex().byKey.has(key(asked(requirement.name))) || true;",
+      "expect": [
+        "of two rows for one requirement, the stricter match is kept"
+      ]
+    },
+    "Concept-held skill (8.51): a lab skill does not raise": {
+      "file": "src/normalize.js",
+      "live": "STRONG_LEVELS.has(skills.get(id).level) &&",
+      "dead": "(STRONG_LEVELS.has(skills.get(id).level) || true) &&",
+      "expect": [
+        "a requirement the concept of a well-held picked skill names is met, whatever the model said"
+      ]
     }
   }
 }

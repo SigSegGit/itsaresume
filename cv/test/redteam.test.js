@@ -242,3 +242,18 @@ test('an operations requirement met by a profile skill of the same concept stays
   const { analysis } = normalize(answer({ requirements }), p, { offer });
   assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [['Astreinte', 'yes'], ['Gestion des incidents', 'yes']]);
 });
+
+/** HANDOVER (router) §9, 8.51: without its hidden thinking, the model reads
+ * "SQL" through an expert PostgreSQL as adjacent (CAGIP offer, 3 runs of 3).
+ * A skill held at a working level that the requirement's own concept holds
+ * meets it: yes, by code. A lab skill stays adjacent. */
+test('a requirement the concept of a well-held picked skill names is met, whatever the model said', () => {
+  const offer = 'Senior SRE wanted. Must have: SQL, conteneurs.';
+  const requirements = [
+    { name: 'SQL', importance: 'must', match: 'adjacent', skills: ['postgresql'], note: 'PostgreSQL, no SQL line' },
+    { name: 'Conteneurs', importance: 'must', match: 'adjacent', skills: ['docker'], note: '' },
+  ];
+  const { analysis, repairs } = normalize(answer({ requirements }), v4(), { offer });
+  assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [['SQL', 'yes'], ['Conteneurs', 'adjacent']]);
+  assert.match(repairs.join('\n'), /requirement SQL: marked adjacent, the profile's PostgreSQL \(expert\) is one: yes/);
+});
