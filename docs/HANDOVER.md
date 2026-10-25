@@ -2,9 +2,9 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.50
-TITLE: 8.51 Claude schema in the prompt (CV 2 min -> 24 s, ~4x fewer tokens); Gemini enabled but overloaded by Google today; next: one complete CV on Gemini
+TITLE: 8.50 blocked 2026-10-25: Gemini free-tier key 429 quota on the VM, openai no credits; retry one complete CV on Gemini after the daily reset
 WRITTEN-AT: 2026-10-25
-BASE: b5b8fa1
+BASE: edc32d8
 -->
 
 Where to resume itsaresume without asking Nicolas anything. Read §0, then §8.
@@ -642,13 +642,24 @@ branch with the local gates of §3 green.
   the CSRF token; a job is visible only with that cookie). If Gemini is
   overloaded again, `model: auto` must now reach openai/bionic. Gemini is
   slow (~3 min per call): expect 10-15 min. Then bench providers (owner:
-  later).
+  later). **Tried 2026-10-25 18:34 CET: not possible.** VM router
+  `/status` (host 127.0.0.1:8789): gemini `limited`, real 429 "You exceeded
+  your current quota" on the free-tier key; openai `limited` (no credits).
+  Retry after the free tier's daily reset (midnight Pacific, ~09:00 CET);
+  first check `curl -s 127.0.0.1:8789/status` on the VM shows gemini `up`.
+- [ ] **8.53** **The openai backend's errors say "LM Studio"**: observed on
+  the VM, openai's 429 reads `LM Studio HTTP 429: You have no credits…`
+  (`lm_studio.rs:316`, `format!("LM Studio HTTP {status}…")`, shared by
+  both kinds). Test first: an openai 4xx detail names the backend (`openai`
+  or the configured name), never "LM Studio"; sabotage: the label back to
+  the constant.
 
 ## 9. Deliberately open
 
 - **Gemini output shapes**: success and the empty-response error observed
   (CLI 0.11, key login), and a 503 "high demand" (2026-10-14, now a
-  fallback); a real 429 not yet. The env scrub in the child
+  fallback); a real 429 seen on the VM 2026-10-25 (free-tier quota),
+  classified `quota_exceeded`, state `limited`: right, no fixture yet. The env scrub in the child
   process has no process test, only the list.
 - **8.51 cost a little reasoning**: the twice-written answer was partly the
   model thinking before answering. Without it, SQL from "PostgreSQL expert"
