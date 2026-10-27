@@ -1716,7 +1716,7 @@
       "live": "return firmer({ match: 'adjacent', skills: held,",
       "dead": "return ((found) => found)({ match: 'adjacent', skills: held,",
       "expect": [
-        "the skill's own words lift what its concept leaves near (\"Mont\u00e9es de version PostgreSQL\")"
+        "a skill name and term lift what its concept leaves near: Mont\u00e9es de version PostgreSQL"
       ]
     },
     "Vocabulary (2.28b): the words answer where no concept does": {

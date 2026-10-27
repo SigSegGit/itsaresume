@@ -390,7 +390,7 @@ test('one word of a long skill name says nothing on its own ("Critique")', () =>
   assert.equal(judge('Critique', { profile: withVocabulary() }).row.match, 'no');
 });
 
-test("the skill's own words lift what its concept leaves near (\"Montées de version PostgreSQL\")", () => {
+test('a skill name and term lift what its concept leaves near: Montées de version PostgreSQL', () => {
   const p = v4();
   p.skills.find((skill) => skill.id === 'postgresql').terms = ['montées de version'];
   const { row } = judge('Montées de version PostgreSQL', { profile: p });

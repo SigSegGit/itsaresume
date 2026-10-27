@@ -31,7 +31,8 @@
     "test/qa.test.js",
     "test/server.test.js",
     "web/cv.js",
-    "src/links.js"
+    "src/links.js",
+    "src/coverage.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {

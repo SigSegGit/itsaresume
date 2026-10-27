@@ -188,7 +188,7 @@ property it proves.
 | a yes names the skills placed on the concept itself before those of its members | Coverage (2.28b): a yes names the concept's own skills first |
 | a lab skill whose name says the whole requirement brings it near, never meets it | Vocabulary (2.28b): only a practised skill meets it |
 | one word of a long skill name says nothing on its own ("Critique") | Vocabulary (2.28b): the requirement within a label must be half of it |
-| the skill's own words lift what its concept leaves near ("Montées de version PostgreSQL") | Vocabulary (2.28b): the firmer of the concept and the words |
+| a skill name and term lift what its concept leaves near: Montées de version PostgreSQL | Vocabulary (2.28b): the firmer of the concept and the words |
 
 ## `test/deploy.test.js`
 
