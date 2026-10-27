@@ -51,10 +51,12 @@
     "fr": [
      "IaC",
      "infrastructure en tant que code",
-     "infrastructure as code"
+     "infrastructure as code",
+     "infra as code"
     ],
     "en": [
-     "IaC"
+     "IaC",
+     "infra as code"
     ]
    },
    "broader": [
@@ -154,14 +156,20 @@
      "bases de données relationnelles",
      "base de données relationnelle",
      "bases relationnelles",
-     "SGBDR"
+     "SGBDR",
+     "optimisation de requêtes",
+     "optimisation des requêtes",
+     "tuning SQL"
     ],
     "en": [
      "SQL language",
      "SQL queries",
      "relational databases",
      "relational database",
-     "RDBMS"
+     "RDBMS",
+     "query optimization",
+     "query tuning",
+     "SQL tuning"
     ]
    },
    "broader": [
@@ -790,7 +798,11 @@
      "support N2",
      "support N3",
      "ITIL",
-     "production"
+     "production",
+     "gestion des changements",
+     "gestion des problèmes",
+     "ITSM",
+     "exploitation informatique"
     ],
     "en": [
      "ops",
@@ -799,11 +811,238 @@
      "production support",
      "run",
      "ITIL",
-     "operations"
+     "operations",
+     "change management",
+     "problem management",
+     "ITSM"
     ]
    },
    "broader": [],
    "kind": "Category"
+  },
+  {
+   "id": "tech:scheduling",
+   "fr": "Ordonnancement",
+   "en": "Job scheduling",
+   "alt": {
+    "fr": [
+     "ordonnanceur",
+     "ordonnanceurs",
+     "ordonnancement des traitements",
+     "planification des traitements",
+     "scheduling"
+    ],
+    "en": [
+     "scheduling",
+     "job scheduler",
+     "workload automation"
+    ]
+   },
+   "broader": [
+    "tech:operations"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:control-m",
+   "fr": "Control-M",
+   "en": "Control-M",
+   "alt": {
+    "fr": [],
+    "en": [
+     "BMC Control-M"
+    ]
+   },
+   "broader": [
+    "tech:scheduling"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:autosys",
+   "fr": "Autosys",
+   "en": "Autosys",
+   "alt": {
+    "fr": [],
+    "en": [
+     "AutoSys"
+    ]
+   },
+   "broader": [
+    "tech:scheduling"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:l3-support",
+   "fr": "Support N3",
+   "en": "L3 support",
+   "alt": {
+    "fr": [
+     "support niveau 3",
+     "support de niveau 3",
+     "support N3",
+     "référent N3"
+    ],
+    "en": [
+     "level 3 support",
+     "L3 support",
+     "third-level support"
+    ]
+   },
+   "broader": [
+    "tech:operations"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:disaster-recovery",
+   "fr": "Plan de reprise d'activité",
+   "en": "Disaster recovery",
+   "alt": {
+    "fr": [
+     "PRA",
+     "PCA",
+     "plan de continuité d'activité",
+     "continuité d'activité",
+     "reprise après sinistre"
+    ],
+    "en": [
+     "DRP",
+     "BCP",
+     "disaster recovery",
+     "business continuity"
+    ]
+   },
+   "broader": [
+    "tech:operations"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:firewall",
+   "fr": "Pare-feu",
+   "en": "Firewall",
+   "alt": {
+    "fr": [
+     "pare-feux",
+     "firewall",
+     "firewalls",
+     "filtrage réseau"
+    ],
+    "en": [
+     "firewalls",
+     "firewalling"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:fortinet",
+   "fr": "Fortinet",
+   "en": "Fortinet",
+   "alt": {
+    "fr": [
+     "FortiGate"
+    ],
+    "en": [
+     "FortiGate"
+    ]
+   },
+   "broader": [
+    "tech:firewall"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:directory",
+   "fr": "Annuaire",
+   "en": "Directory services",
+   "alt": {
+    "fr": [
+     "annuaires",
+     "LDAP",
+     "services d'annuaire"
+    ],
+    "en": [
+     "LDAP",
+     "directory"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:active-directory",
+   "fr": "Active Directory",
+   "en": "Active Directory",
+   "alt": {
+    "fr": [
+     "AD"
+    ],
+    "en": [
+     "AD"
+    ]
+   },
+   "broader": [
+    "tech:directory"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:security",
+   "fr": "Sécurité informatique",
+   "en": "IT security",
+   "alt": {
+    "fr": [
+     "cybersécurité",
+     "sécurité des systèmes",
+     "sécurité des systèmes d'information",
+     "sécurité",
+     "SecOps",
+     "sécurité opérationnelle"
+    ],
+    "en": [
+     "cybersecurity",
+     "security",
+     "information security",
+     "SecOps",
+     "security operations"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:aix",
+   "fr": "AIX",
+   "en": "AIX",
+   "alt": {
+    "fr": [],
+    "en": [
+     "IBM AIX"
+    ]
+   },
+   "broader": [
+    "tech:unix"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:solaris",
+   "fr": "Solaris",
+   "en": "Solaris",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Oracle Solaris"
+    ]
+   },
+   "broader": [
+    "tech:unix"
+   ],
+   "kind": "Tool"
   }
  ]
 }

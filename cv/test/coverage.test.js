@@ -159,9 +159,9 @@ test('a skill placed by a term only is no sibling ("Prometheus" beside a skill w
 // lost its lab-only half credit.
 test('a skill placed by a term only does not join the model\'s yes as another name of its concept', () => {
   const p = withSkill({ id: 'alerting', name: 'Alerting intelligent', group: 'obs', level: 'proficient', terms: ['intelligence artificielle'] });
-  p.skills.push({ id: 'local-llm', name: 'LLM locaux', group: 'ai', level: 'lab', aliases: [] });
-  const { row } = judge('IA générative', { profile: p, match: 'yes', skills: ['local-llm'] });
-  assert.deepEqual(row.skills, ['local-llm']);
+  p.skills.push({ id: 'local-ai', name: 'IA locale', group: 'ai', level: 'lab', aliases: [] });
+  const { row } = judge('Intelligence artificielle', { profile: p, match: 'yes', skills: ['local-ai'] });
+  assert.deepEqual(row.skills, ['local-ai']);
 });
 
 // Seen in the same replay: "Gouvernance des usages IA" adjacent through the
@@ -217,7 +217,7 @@ test("a skill's name that says part of the requirement brings it near", () => {
 
 test("a skill's terms alone bring a requirement near, to verify, never meet it", () => {
   const p = withVocabulary();
-  for (const [name, id] of [['PRA / PCA', 'ops'], ['Troubleshooting', 'n3'], ['Ordonnancement', 'sched'], ['Stockage', 'p2p']]) {
+  for (const [name, id] of [['PRA / PCA', 'ops'], ['Troubleshooting', 'n3'], ['Stockage', 'p2p']]) {
     const { row } = judge(name, { profile: p });
     assert.equal(row.match, 'adjacent', `${name}: ${JSON.stringify(row)}`);
     assert.equal(row.judged, true, name);
@@ -369,7 +369,30 @@ test('the lexicon knows the families an operations profile is asked for', () => 
   const expected = {
     Ordonnanceurs: 'yes', 'Job scheduling': 'yes', 'Infra as code': 'yes', 'Support niveau 3': 'yes', Firewall: 'yes', LDAP: 'yes',
     'Gestion des changements': 'yes', 'Optimisation de requêtes': 'yes', 'Disaster recovery': 'adjacent?', AIX: 'adjacent?',
-    Cybersécurité: 'adjacent?', Tomcat: 'no', 'Mainframe z/OS': 'no',
+    Cybersécurité: 'yes', Tomcat: 'no', 'Mainframe z/OS': 'no',
   };
   assert.deepEqual(Object.fromEntries(Object.keys(expected).map((name) => [name, verdict(name)])), expected);
+});
+
+test('a yes names the skills placed on the concept itself before those of its members', () => {
+  const { row } = judge('Exploitation informatique', { profile: withVocabulary() });
+  assert.equal(row.match, 'yes', JSON.stringify(row));
+  assert.ok(row.skills.includes('ops'), row.skills.join());
+  assert.ok(!row.skills.includes('sched'), 'Control-M (scheduling, a member) is not named for IT operations');
+});
+
+test("a lab skill whose name says the whole requirement brings it near, never meets it", () => {
+  const { row } = judge('Stockage distribué', { profile: withVocabulary() });
+  assert.deepEqual([row.match, row.skills, row.judged], ['adjacent', ['p2p'], undefined]);
+});
+
+test('one word of a long skill name says nothing on its own ("Critique")', () => {
+  assert.equal(judge('Critique', { profile: withVocabulary() }).row.match, 'no');
+});
+
+test("the skill's own words lift what its concept leaves near (\"Montées de version PostgreSQL\")", () => {
+  const p = v4();
+  p.skills.find((skill) => skill.id === 'postgresql').terms = ['montées de version'];
+  const { row } = judge('Montées de version PostgreSQL', { profile: p });
+  assert.deepEqual([row.match, row.skills], ['yes', ['postgresql']]);
 });

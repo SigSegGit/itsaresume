@@ -149,7 +149,14 @@ export function coverage(name, { index, placed, named = placed, skills, ruled = 
   if (held.length) {
     const names = (ids) => ids.map((id) => skills.get(id).name);
     // The owner's "same" ruling covers the words it names.
-    const covering = byName.map((ids) => [...ids, ...same].filter(strong));
+    // The skills placed on the concept itself come before its members': IT
+    // operations met through the operations skill, not also the scheduler.
+    const direct = (ids, at) => ids.filter((id) => [...(named.get(id) ?? [])].some((concept) => parts[at].includes(concept)));
+    const covering = byName.map((ids, at) => {
+      const met = ids.filter(strong);
+      const own = direct(met, at);
+      return [...(own.length ? own : met), ...same.filter(strong)];
+    });
     const met = covering.length ? covering.every((ids) => ids.length > 0) : same.some(strong);
     const deep = covering.flat().some((id) => DEEP_LEVELS.has(skills.get(id).level)) || same.some((id) => strong(id) && DEEP_LEVELS.has(skills.get(id).level));
     const extra = rest.filter((word) => !IGNORED.has(word) && !(deep && PRACTICE.has(word)));

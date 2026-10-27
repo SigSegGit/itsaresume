@@ -158,14 +158,19 @@ property it proves.
 | a requirement naming a concept the profile lacks beside one it holds ("SQL / NoSQL") is adjacent | Coverage (2.28b): every concept named must be held |
 | a tool of the same family as a held one ("Puppet" beside Terraform) is adjacent, to verify | Coverage (2.28b): a sibling is to verify |
 | a sibling held at lab level brings nothing near ("OpenShift" beside a lab Docker) | Coverage (2.28b): a lab sibling brings nothing near |
-| a short term ("AI" on an alerting skill) does not place the skill on a concept | Lexicon (2.28b): a short term places nothing |
+| a short term ("AI" on an alerting skill) does not place the skill on a concept | Lexicon (2.28b): a short term places nothing; Vocabulary (2.28b): a two-character term says nothing |
 | a long term ("intelligence artificielle" on an alerting skill) brings it near, never meets it | Coverage (2.28b): a term brings near, only a name or an alias meets; Lexicon (2.28b): without terms, only names and aliases place |
 | a skill placed by a term only is no sibling ("Prometheus" beside a skill whose term is Grafana) | Coverage (2.28b): a sibling is placed by its name |
 | a skill placed by a term only does not join the model's yes as another name of its concept | Equivalents (2.28b): only a name or an alias makes another name |
 | beside skills a name places, a skill a term places is not named, and the lab-only gap shows | Coverage (2.28b): held through a term only is to verify |
 | a notions-level skill is not shown as an equivalent beside a better one | Coverage (2.28b): notions are not an equivalent beside better |
+| a skill's name and alias that say the whole requirement meet it | Vocabulary (2.28b): a name or an alias saying it all meets it; Vocabulary (2.28b): the words answer where no concept does |
+| a skill's name that says part of the requirement brings it near | Vocabulary (2.28b): a name saying part of it brings it near |
+| a skill's terms alone bring a requirement near, to verify, never meet it | Vocabulary (2.28b): terms alone are to verify |
+| the profile's vocabulary says nothing of what no skill names | — |
+| the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill | Links (2.28b): the owner's same ruling places its skill on the concept; Links (2.28b): a placing ruling does not meet every requirement holding its words |
 | a sibling database ("MySQL") is adjacent to verify, not yes through an ESCO synonym | Coverage (2.28b): a curated concept hides ESCO synonyms |
-| what an experience bullet states ("Optimisation de requêtes") is adjacent, to verify, through its skills | Coverage (2.28b): a bullet that states it is evidence |
+| what an experience bullet states ("Industrialisation") is adjacent, to verify, through its skills | Coverage (2.28b): a bullet that states it is evidence |
 | what the whole profile lacks stays no | — |
 | the owner's near ruling holds the profile's verdict at adjacent | — |
 | the profile's answer never lowers the model's verdict | Coverage (2.28b): it never lowers a verdict |
@@ -179,6 +184,11 @@ property it proves.
 | a quality word beside a never-claimed item the lexicon lacks keeps the requirement scored | Quality: a never-claimed item keeps a requirement scored |
 | a quality word beside a profile skill the lexicon lacks keeps the requirement scored | Quality: a profile skill keeps a requirement scored |
 | two categories under one umbrella are not related: CI/CD is not near infrastructure as code | Lexicon (2.28b): an umbrella is no shared theme; Lexicon (2.28b): an umbrella makes no neighbours |
+| the lexicon knows the families an operations profile is asked for | — |
+| a yes names the skills placed on the concept itself before those of its members | Coverage (2.28b): a yes names the concept's own skills first |
+| a lab skill whose name says the whole requirement brings it near, never meets it | Vocabulary (2.28b): only a practised skill meets it |
+| one word of a long skill name says nothing on its own ("Critique") | Vocabulary (2.28b): the requirement within a label must be half of it |
+| the skill's own words lift what its concept leaves near ("Montées de version PostgreSQL") | Vocabulary (2.28b): the firmer of the concept and the words |
 
 ## `test/deploy.test.js`
 
@@ -792,6 +802,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**523 tests, 432 of them covered by at least one sabotage defence.**
+**533 tests, 440 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

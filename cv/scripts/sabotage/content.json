@@ -1554,7 +1554,7 @@
       "live": "if (!wanted.every((word) => said.has(word))) continue;",
       "dead": "if (true) continue;",
       "expect": [
-        "what an experience bullet states (\"Optimisation de requ\u00eates\") is adjacent, to verify, through its skills"
+        "what an experience bullet states (\"Industrialisation\") is adjacent, to verify, through its skills"
       ]
     },
     "Coverage (2.28b): the model's wrong pick does not hide the profile": {
@@ -1661,6 +1661,94 @@
       "dead": "let held = [...new Set([...byPart.flat(), ...firm])];",
       "expect": [
         "beside skills a name places, a skill a term places is not named, and the lab-only gap shows"
+      ]
+    },
+    "Vocabulary (2.28b): a name or an alias saying it all meets it": {
+      "file": "src/coverage.js",
+      "live": "if ((whole && inside.some((label) => label.name)) || within.some((label) => label.name)) return 3;",
+      "dead": "if (false) return 3;",
+      "expect": [
+        "a skill's name and alias that say the whole requirement meet it"
+      ]
+    },
+    "Vocabulary (2.28b): only a practised skill meets it": {
+      "file": "src/coverage.js",
+      "live": "grade: grade === 3 && !strong(skill.id) ? 2 : grade",
+      "dead": "grade",
+      "expect": [
+        "a lab skill whose name says the whole requirement brings it near, never meets it"
+      ]
+    },
+    "Vocabulary (2.28b): a name saying part of it brings it near": {
+      "file": "src/coverage.js",
+      "live": "if (inside.some((label) => label.name)) return 2;",
+      "dead": "if (false) return 2;",
+      "expect": [
+        "a skill's name that says part of the requirement brings it near"
+      ]
+    },
+    "Vocabulary (2.28b): terms alone are to verify": {
+      "file": "src/coverage.js",
+      "live": "return { match: 'adjacent', skills: ids, judged: true, via: 'vocabulary'",
+      "dead": "return { match: 'adjacent', skills: ids, judged: false, via: 'vocabulary'",
+      "expect": [
+        "a skill's terms alone bring a requirement near, to verify, never meet it"
+      ]
+    },
+    "Vocabulary (2.28b): a two-character term says nothing": {
+      "file": "src/coverage.js",
+      "live": ".filter((term) => key(term).replace(/ /g, '').length > 2)",
+      "dead": ".filter(() => true)",
+      "expect": [
+        "a short term (\"AI\" on an alerting skill) does not place the skill on a concept"
+      ]
+    },
+    "Vocabulary (2.28b): the requirement within a label must be half of it": {
+      "file": "src/coverage.js",
+      "live": "&& 2 * asked.size >= label.stems.length);",
+      "dead": ");",
+      "expect": [
+        "one word of a long skill name says nothing on its own (\"Critique\")"
+      ]
+    },
+    "Vocabulary (2.28b): the firmer of the concept and the words": {
+      "file": "src/coverage.js",
+      "live": "return firmer({ match: 'adjacent', skills: held,",
+      "dead": "return ((found) => found)({ match: 'adjacent', skills: held,",
+      "expect": [
+        "the skill's own words lift what its concept leaves near (\"Mont\u00e9es de version PostgreSQL\")"
+      ]
+    },
+    "Vocabulary (2.28b): the words answer where no concept does": {
+      "file": "src/coverage.js",
+      "live": "  if (fromWords) return fromWords;\n",
+      "dead": "",
+      "expect": [
+        "a skill's name and alias that say the whole requirement meet it"
+      ]
+    },
+    "Coverage (2.28b): a yes names the concept's own skills first": {
+      "file": "src/coverage.js",
+      "live": "return [...(own.length ? own : met), ...same.filter(strong)];",
+      "dead": "return [...met, ...same.filter(strong)];",
+      "expect": [
+        "a yes names the skills placed on the concept itself before those of its members"
+      ]
+    },
+    "Links (2.28b): the owner's same ruling places its skill on the concept": {
+      "file": "src/normalize.js",
+      "live": "if (profile.skills.some((skill) => skill.id === id) && !out.has(id)) map.set(id,",
+      "dead": "if (false) map.set(id,",
+      "expect": [
+        "the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill"
+      ]
+    },
+    "Links (2.28b): a placing ruling does not meet every requirement holding its words": {
+      "file": "src/normalize.js",
+      "live": "linkedSkills((profile.links ?? []).filter((link) => !placesOnConcept(link)), asked(requirement.name)).same",
+      "dead": "linkedSkills(profile.links ?? [], asked(requirement.name)).same",
+      "expect": [
+        "the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill"
       ]
     }
   }
