@@ -231,6 +231,24 @@ test("the profile's vocabulary says nothing of what no skill names", () => {
   assert.equal(judge('Mainframe z/OS', { profile: p }).row.match, 'no');
 });
 
+// The owner, 2026-10-27: "si je sais faire de l'alerting via IA, alors je
+// suis proficient en IA". His same ruling places the skill on the concept
+// its words name: that concept is met, not its sub-fields, and words the
+// skill does not cover still hold it near.
+test("the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill", () => {
+  const p = withSkill({ id: 'alerting', name: 'Alerting intelligent', group: 'obs', level: 'proficient', terms: ['IA', 'AI'] });
+  p.skills.push({ id: 'local-llm', name: 'LLM locaux', group: 'ai', level: 'lab', aliases: [] });
+  p.links = [{ words: 'ia', skill: 'alerting', verdict: 'same' }];
+  for (const name of ['IA', 'AI', 'Intelligence artificielle', 'Expérience en IA']) {
+    const { row } = judge(name, { profile: p });
+    assert.equal(row.match, 'yes', `${name}: ${JSON.stringify(row)}`);
+    assert.ok(row.skills.includes('alerting'), `${name}: ${row.skills.join()}`);
+  }
+  const genai = judge('IA générative', { profile: p }).row;
+  assert.deepEqual([genai.match, genai.skills], ['adjacent', ['local-llm']], 'generative AI is a sub-field the ruling does not name');
+  assert.equal(judge('Gouvernance IA', { profile: p }).row.match, 'adjacent', '"gouvernance" is a word the skill may lack');
+});
+
 test('a sibling database ("MySQL") is adjacent to verify, not yes through an ESCO synonym', () => {
   const { row } = judge('MySQL');
   assert.equal(row.match, 'adjacent', JSON.stringify(row));
