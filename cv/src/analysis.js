@@ -49,8 +49,9 @@ export function validateAnalysis(analysis, profile, { language, assessment, offe
     for (const id of requirement.skills ?? []) {
       need(skills.has(id), `requirement ${name}: unknown skill ${id}`);
     }
-    // A language or certification row is met by the profile's own lines, not a skill (normalize.js).
-    if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.kind !== 'language' && requirement.kind !== 'certification') {
+    // A language or certification row is met by the profile's own lines, a
+    // personal quality by code with no skill (normalize.js).
+    if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.kind !== 'quality' && requirement.kind !== 'language' && requirement.kind !== 'certification') {
       need((requirement.skills ?? []).length > 0, `requirement ${name} is marked ${requirement.match} but names no profile skill`);
     } else {
       need((requirement.skills ?? []).length === 0, `requirement ${name} is marked no but names profile skills`);

@@ -1,5 +1,5 @@
 {
- "source": "Technology concepts curated by hand for the categories offers name loosely (tools ESCO lacks); see docs/HANDOVER.md 2.7",
+ "source": "Technology concepts curated by hand for the categories offers name loosely (tools ESCO lacks); see docs/HANDOVER.md 2.7 and 2.28b-iii",
  "concepts": [
   {
    "id": "tech:public-cloud",
@@ -9,12 +9,14 @@
     "fr": [
      "fournisseurs cloud",
      "cloud computing",
-     "hyperscalers"
+     "hyperscalers",
+     "cloud"
     ],
     "en": [
      "cloud providers",
      "cloud computing",
-     "hyperscalers"
+     "hyperscalers",
+     "cloud"
     ]
    },
    "broader": [],
@@ -36,7 +38,9 @@
      "container orchestration"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:devops"
+   ],
    "kind": "Category"
   },
   {
@@ -47,13 +51,18 @@
     "fr": [
      "IaC",
      "infrastructure en tant que code",
-     "infrastructure as code"
+     "infrastructure as code",
+     "infra as code"
     ],
     "en": [
-     "IaC"
+     "IaC",
+     "infra as code"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:devops",
+    "tech:automation"
+   ],
    "kind": "Category"
   },
   {
@@ -88,7 +97,9 @@
      "scripts"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:automation"
+   ],
    "kind": "Category"
   },
   {
@@ -110,7 +121,9 @@
      "CI/CD pipelines"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:devops"
+   ],
    "kind": "Category"
   },
   {
@@ -133,6 +146,38 @@
    "kind": "Category"
   },
   {
+   "id": "tech:sql",
+   "fr": "SQL",
+   "en": "SQL",
+   "alt": {
+    "fr": [
+     "langage SQL",
+     "requêtes SQL",
+     "bases de données relationnelles",
+     "base de données relationnelle",
+     "bases relationnelles",
+     "SGBDR",
+     "optimisation de requêtes",
+     "optimisation des requêtes",
+     "tuning SQL"
+    ],
+    "en": [
+     "SQL language",
+     "SQL queries",
+     "relational databases",
+     "relational database",
+     "RDBMS",
+     "query optimization",
+     "query tuning",
+     "SQL tuning"
+    ]
+   },
+   "broader": [
+    "tech:databases"
+   ],
+   "kind": "Category"
+  },
+  {
    "id": "tech:nosql",
    "fr": "Bases de données NoSQL",
    "en": "NoSQL databases",
@@ -150,6 +195,121 @@
     "tech:databases"
    ],
    "kind": "Category"
+  },
+  {
+   "id": "tech:devops",
+   "fr": "DevOps",
+   "en": "DevOps",
+   "alt": {
+    "fr": [
+     "pratiques DevOps",
+     "culture DevOps",
+     "démarche DevOps"
+    ],
+    "en": [
+     "DevOps practices",
+     "DevOps culture"
+    ]
+   },
+   "broader": [],
+   "kind": "Umbrella"
+  },
+  {
+   "id": "tech:automation",
+   "fr": "Automatisation",
+   "en": "Automation",
+   "alt": {
+    "fr": [
+     "automatisation d'exploitation",
+     "automatisation des déploiements",
+     "automatisation de l'infrastructure"
+    ],
+    "en": [
+     "IT automation",
+     "infrastructure automation"
+    ]
+   },
+   "broader": [],
+   "kind": "Umbrella"
+  },
+  {
+   "id": "tech:ai",
+   "fr": "Intelligence artificielle",
+   "en": "Artificial intelligence",
+   "alt": {
+    "fr": [
+     "IA",
+     "apprentissage automatique"
+    ],
+    "en": [
+     "AI",
+     "machine learning",
+     "ML"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:genai",
+   "fr": "IA générative",
+   "en": "Generative AI",
+   "alt": {
+    "fr": [
+     "GenAI",
+     "LLM",
+     "modèles de langage",
+     "grands modèles de langage"
+    ],
+    "en": [
+     "GenAI",
+     "LLM",
+     "large language models"
+    ]
+   },
+   "broader": [
+    "tech:ai"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:unix",
+   "fr": "Unix",
+   "en": "Unix",
+   "alt": {
+    "fr": [
+     "systèmes Unix",
+     "environnement Unix"
+    ],
+    "en": [
+     "Unix systems"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:linux",
+   "fr": "Linux",
+   "en": "Linux",
+   "alt": {
+    "fr": [
+     "systèmes Linux",
+     "GNU/Linux",
+     "RHEL",
+     "Red Hat",
+     "Debian",
+     "Ubuntu",
+     "CentOS"
+    ],
+    "en": [
+     "Linux systems"
+    ]
+   },
+   "broader": [
+    "tech:unix"
+   ],
+   "kind": "Tool"
   },
   {
    "id": "tech:aws",
@@ -544,7 +704,8 @@
     ]
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -559,7 +720,8 @@
     ]
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -572,7 +734,8 @@
     "en": []
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -585,7 +748,8 @@
     "en": []
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -613,7 +777,8 @@
     ]
    },
    "broader": [
-    "tech:databases"
+    "tech:databases",
+    "tech:sql"
    ],
    "kind": "Tool"
   },
@@ -633,7 +798,11 @@
      "support N2",
      "support N3",
      "ITIL",
-     "production"
+     "production",
+     "gestion des changements",
+     "gestion des problèmes",
+     "ITSM",
+     "exploitation informatique"
     ],
     "en": [
      "ops",
@@ -642,11 +811,238 @@
      "production support",
      "run",
      "ITIL",
-     "operations"
+     "operations",
+     "change management",
+     "problem management",
+     "ITSM"
     ]
    },
    "broader": [],
    "kind": "Category"
+  },
+  {
+   "id": "tech:scheduling",
+   "fr": "Ordonnancement",
+   "en": "Job scheduling",
+   "alt": {
+    "fr": [
+     "ordonnanceur",
+     "ordonnanceurs",
+     "ordonnancement des traitements",
+     "planification des traitements",
+     "scheduling"
+    ],
+    "en": [
+     "scheduling",
+     "job scheduler",
+     "workload automation"
+    ]
+   },
+   "broader": [
+    "tech:operations"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:control-m",
+   "fr": "Control-M",
+   "en": "Control-M",
+   "alt": {
+    "fr": [],
+    "en": [
+     "BMC Control-M"
+    ]
+   },
+   "broader": [
+    "tech:scheduling"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:autosys",
+   "fr": "Autosys",
+   "en": "Autosys",
+   "alt": {
+    "fr": [],
+    "en": [
+     "AutoSys"
+    ]
+   },
+   "broader": [
+    "tech:scheduling"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:l3-support",
+   "fr": "Support N3",
+   "en": "L3 support",
+   "alt": {
+    "fr": [
+     "support niveau 3",
+     "support de niveau 3",
+     "support N3",
+     "référent N3"
+    ],
+    "en": [
+     "level 3 support",
+     "L3 support",
+     "third-level support"
+    ]
+   },
+   "broader": [
+    "tech:operations"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:disaster-recovery",
+   "fr": "Plan de reprise d'activité",
+   "en": "Disaster recovery",
+   "alt": {
+    "fr": [
+     "PRA",
+     "PCA",
+     "plan de continuité d'activité",
+     "continuité d'activité",
+     "reprise après sinistre"
+    ],
+    "en": [
+     "DRP",
+     "BCP",
+     "disaster recovery",
+     "business continuity"
+    ]
+   },
+   "broader": [
+    "tech:operations"
+   ],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:firewall",
+   "fr": "Pare-feu",
+   "en": "Firewall",
+   "alt": {
+    "fr": [
+     "pare-feux",
+     "firewall",
+     "firewalls",
+     "filtrage réseau"
+    ],
+    "en": [
+     "firewalls",
+     "firewalling"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:fortinet",
+   "fr": "Fortinet",
+   "en": "Fortinet",
+   "alt": {
+    "fr": [
+     "FortiGate"
+    ],
+    "en": [
+     "FortiGate"
+    ]
+   },
+   "broader": [
+    "tech:firewall"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:directory",
+   "fr": "Annuaire",
+   "en": "Directory services",
+   "alt": {
+    "fr": [
+     "annuaires",
+     "LDAP",
+     "services d'annuaire"
+    ],
+    "en": [
+     "LDAP",
+     "directory"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:active-directory",
+   "fr": "Active Directory",
+   "en": "Active Directory",
+   "alt": {
+    "fr": [
+     "AD"
+    ],
+    "en": [
+     "AD"
+    ]
+   },
+   "broader": [
+    "tech:directory"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:security",
+   "fr": "Sécurité informatique",
+   "en": "IT security",
+   "alt": {
+    "fr": [
+     "cybersécurité",
+     "sécurité des systèmes",
+     "sécurité des systèmes d'information",
+     "sécurité",
+     "SecOps",
+     "sécurité opérationnelle"
+    ],
+    "en": [
+     "cybersecurity",
+     "security",
+     "information security",
+     "SecOps",
+     "security operations"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:aix",
+   "fr": "AIX",
+   "en": "AIX",
+   "alt": {
+    "fr": [],
+    "en": [
+     "IBM AIX"
+    ]
+   },
+   "broader": [
+    "tech:unix"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:solaris",
+   "fr": "Solaris",
+   "en": "Solaris",
+   "alt": {
+    "fr": [],
+    "en": [
+     "Oracle Solaris"
+    ]
+   },
+   "broader": [
+    "tech:unix"
+   ],
+   "kind": "Tool"
   }
  ]
 }

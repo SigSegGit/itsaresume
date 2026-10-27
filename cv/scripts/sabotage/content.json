@@ -72,7 +72,9 @@
     "src/compare.js",
     "test/compare.test.js",
     "src/replay.js",
-    "test/replay.test.js"
+    "test/replay.test.js",
+    "src/coverage.js",
+    "test/coverage.test.js"
   ],
   "defences": {
     "Profile: bullet skills must exist": {
@@ -165,10 +167,10 @@
     },
     "Equivalents: a sibling tool is not a member": {
       "file": "src/lexicon.js",
-      "live": "concepts.has(mine) || [...ancestors(index, mine, 2)].some((a) => concepts.has(a))",
-      "dead": "concepts.has(mine) || [...ancestors(index, mine, 2)].some((a) => concepts.has(a)) || [...concepts].some((c) => ancestors(index, c, 1).size && [...ancestors(index, c, 1)].some((a) => ancestors(index, mine, 1).has(a)))",
+      "live": "wanted.has(mine) || [...ancestors(index, mine, 2)].some((a) => wanted.has(a))",
+      "dead": "wanted.has(mine) || [...ancestors(index, mine, 2)].some((a) => wanted.has(a)) || [...wanted].some((c) => [...ancestors(index, c, 1)].some((a) => ancestors(index, mine, 1).has(a)))",
       "expect": [
-        "a sibling tool is not an equivalent: Puppet stays no beside Terraform"
+        "a sibling tool is not an equivalent: Puppet beside Terraform is adjacent, to verify"
       ]
     },
     "Equivalents: a singular name finds the plural label": {
@@ -176,7 +178,7 @@
       "live": ".map(singular)",
       "dead": ".map((word) => word)",
       "expect": [
-        "\"Cycle de delivery\" marked no by the model comes out adjacent through Jenkins"
+        "\"Cycle de delivery\" marked no by the model comes out yes through Jenkins"
       ]
     },
     "Equivalents: a shared category is not another name": {
@@ -565,15 +567,15 @@
     },
     "Lexicon: aliases and terms place a skill": {
       "file": "src/lexicon.js",
-      "live": "[skill.name, ...(skill.aliases ?? []), ...(skill.terms ?? [])]",
-      "dead": "[skill.name]",
+      "live": "[skill.name, ...(skill.aliases ?? []), ...terms].flatMap",
+      "dead": "[skill.name].flatMap",
       "expect": [
         "the owner\u2019s skills are placed on concepts by their names, aliases and terms, in either language"
       ]
     },
     "Lexicon: siblings are near": {
       "file": "src/lexicon.js",
-      "live": " || pa.some((parent) => pb.includes(parent));",
+      "live": " || kinParents(index, a).some((parent) => kinParents(index, b).includes(parent));",
       "dead": ";",
       "expect": [
         "a requirement relates to a skill as the same concept, a near one (parent, child, sibling), a shared theme, or not at all"
@@ -589,7 +591,7 @@
     },
     "Lexicon: a shared ancestor is a theme": {
       "file": "src/lexicon.js",
-      "live": ": [...ancestors(index, concept, 2)].some((a) => ancestors(index, mine, 2).has(a)) ? 'theme' : null;",
+      "live": ": [...ancestors(index, concept, 2)].some((a) => !umbrella(index, a) && ancestors(index, mine, 2).has(a)) ? 'theme' : null;",
       "dead": ": null;",
       "expect": [
         "a shared theme is a hint, never better than a nearer relation"
@@ -1464,28 +1466,30 @@
         "alternatives the offer joins with \"ou\" are one requirement, met by any; items joined by \"et\" stay apart"
       ]
     },
-    "Concept-held skill (8.51): adjacent is raised to yes": {
-      "file": "src/normalize.js",
-      "live": "requirement.match === 'adjacent' && !requirement.judged && strong.length > 0",
-      "dead": "requirement.match === 'adjacent' && !requirement.judged && strong.length > 0 && false",
+    "Coverage (8.51, 2.28b): a concept held at a working level meets it": {
+      "file": "src/coverage.js",
+      "live": "if (met && (extra.length === 0 || same.some(strong))) {",
+      "dead": "if (false) {",
       "expect": [
-        "a requirement the concept of a well-held picked skill names is met, whatever the model said"
+        "a requirement the concept of a well-held picked skill names is met, whatever the model said",
+        "a requirement marked no that the concept of a well-held skill names is met"
       ]
     },
-    "Concept-held skill (8.51): only a whole concept name": {
-      "file": "src/normalize.js",
-      "live": "const whole = defaultIndex().byKey.has(key(asked(requirement.name)));",
-      "dead": "const whole = defaultIndex().byKey.has(key(asked(requirement.name))) || true;",
+    "Coverage (2.28b): a word the skill may lack holds at adjacent": {
+      "file": "src/coverage.js",
+      "live": "const extra = rest.filter((word) => !IGNORED.has(word) && !(deep && PRACTICE.has(word)));",
+      "dead": "const extra = [];",
       "expect": [
-        "of two rows for one requirement, the stricter match is kept"
+        "a depth word the skill may lack (\"Oracle tuning\") stays adjacent"
       ]
     },
-    "Concept-held skill (8.51): a lab skill does not raise": {
-      "file": "src/normalize.js",
-      "live": "STRONG_LEVELS.has(skills.get(id).level) &&",
-      "dead": "(STRONG_LEVELS.has(skills.get(id).level) || true) &&",
+    "Coverage (8.51, 2.28b): a lab skill does not meet it": {
+      "file": "src/coverage.js",
+      "live": "const strong = (id) => STRONG_LEVELS.has(skills.get(id).level) && !near(id);",
+      "dead": "const strong = (id) => !near(id);",
       "expect": [
-        "a requirement the concept of a well-held picked skill names is met, whatever the model said"
+        "a requirement the concept of a well-held picked skill names is met, whatever the model said",
+        "\"Intelligence artificielle\" with a lab LLM skill is adjacent, not no"
       ]
     },
     "Replay (2.28b): a changed verdict is listed": {
@@ -1494,6 +1498,257 @@
       "dead": "if (old !== now && false) changed.push(",
       "expect": [
         "replay: a stored run fed again to the current code lists each verdict it changes, with no model call"
+      ]
+    },
+    "Coverage (2.28b): a practice word asks an expert or proficient skill": {
+      "file": "src/coverage.js",
+      "live": "const deep = covering.flat().some((id) => DEEP_LEVELS.has(skills.get(id).level))",
+      "dead": "const deep = true || covering.flat().some((id) => DEEP_LEVELS.has(skills.get(id).level))",
+      "expect": [
+        "a practice word asks more than a working level: adjacent"
+      ]
+    },
+    "Coverage (2.28b): generic words are not depth": {
+      "file": "src/coverage.js",
+      "live": "const extra = rest.filter((word) => !IGNORED.has(word) &&",
+      "dead": "const extra = rest.filter((word) => true &&",
+      "expect": [
+        "\"Exp\u00e9rience SQL\" marked no is met through the profile's expert PostgreSQL",
+        "\"Ma\u00eetrise du SQL\" marked no is met through the profile's expert PostgreSQL"
+      ]
+    },
+    "Coverage (2.28b): every concept named must be held": {
+      "file": "src/coverage.js",
+      "live": "covering.every((ids) => ids.length > 0)",
+      "dead": "covering.some((ids) => ids.length > 0)",
+      "expect": [
+        "a requirement naming a concept the profile lacks beside one it holds (\"SQL / NoSQL\") is adjacent"
+      ]
+    },
+    "Coverage (2.28b): a curated concept hides ESCO synonyms": {
+      "file": "src/coverage.js",
+      "live": "part.ids.some(tech) ? part.ids.filter(tech) : part.ids",
+      "dead": "part.ids",
+      "expect": [
+        "a sibling database (\"MySQL\") is adjacent to verify, not yes through an ESCO synonym"
+      ]
+    },
+    "Coverage (2.28b): a lab sibling brings nothing near": {
+      "file": "src/coverage.js",
+      "live": ".filter(({ skill }) => ok(skill) && strong(skill));",
+      "dead": ".filter(({ skill }) => ok(skill));",
+      "expect": [
+        "a sibling held at lab level brings nothing near (\"OpenShift\" beside a lab Docker)"
+      ]
+    },
+    "Coverage (2.28b): a sibling is to verify": {
+      "file": "src/coverage.js",
+      "live": "      judged: true,\n      via: 'sibling',",
+      "dead": "      judged: false,\n      via: 'sibling',",
+      "expect": [
+        "a tool of the same family as a held one (\"Puppet\" beside Terraform) is adjacent, to verify"
+      ]
+    },
+    "Coverage (2.28b): a bullet that states it is evidence": {
+      "file": "src/coverage.js",
+      "live": "if (!wanted.every((word) => said.has(word))) continue;",
+      "dead": "if (true) continue;",
+      "expect": [
+        "what an experience bullet states (\"Industrialisation\") is adjacent, to verify, through its skills"
+      ]
+    },
+    "Coverage (2.28b): the model's wrong pick does not hide the profile": {
+      "file": "src/normalize.js",
+      "live": "if (!requirement.never && requirement.kind === undefined) {",
+      "dead": "if (!requirement.never && requirement.kind === undefined && requirement.match === 'no') {",
+      "expect": [
+        "a wrong pick of the model does not hide the profile: \"SQL\" through Python is met through PostgreSQL",
+        "the model adjacent with the right pick is lifted when the name has generic words"
+      ]
+    },
+    "Coverage (2.28b): it never lowers a verdict": {
+      "file": "src/normalize.js",
+      "live": "if (found && rank(found) > rank(requirement)) {",
+      "dead": "if (found) {",
+      "expect": [
+        "the profile's answer never lowers the model's verdict"
+      ]
+    },
+    "Lexicon (2.28b): a short term places nothing": {
+      "file": "src/lexicon.js",
+      "live": ".filter((term) => key(term).replace(/ /g, '').length > 3) : [];",
+      "dead": ".filter(() => true) : [];",
+      "expect": [
+        "a short term (\"AI\" on an alerting skill) does not place the skill on a concept"
+      ]
+    },
+    "Lexicon (2.28b): a name with a version is placed word by word": {
+      "file": "src/lexicon.js",
+      "live": "if (!ids.length) ids = [skill.name",
+      "dead": "if (false) ids = [skill.name",
+      "expect": [
+        "a skill whose name carries a version or a qualifier is placed on its concept (\"PostgreSQL 16\")",
+        "\"Intelligence artificielle\" with a lab LLM skill is adjacent, not no"
+      ]
+    },
+    "Quality (2.28b): a technology is not a quality": {
+      "file": "src/normalize.js",
+      "live": "&& !namesTechnology(name) &&",
+      "dead": "&&",
+      "expect": [
+        "\"Bases de donn\u00e9es relationnelles\" is a technology, not a personal quality"
+      ]
+    },
+    "Coverage (2.28b): an evidence-blocked skill meets nothing": {
+      "file": "src/normalize.js",
+      "live": "usable: (id) => !out.has(id),",
+      "dead": "usable: () => true,",
+      "expect": [
+        "an evidence-blocked skill meets nothing through the profile, an owner link or a bullet"
+      ]
+    },
+    "Lexicon (2.28b): an umbrella is no shared theme": {
+      "file": "src/lexicon.js",
+      "live": "some((a) => !umbrella(index, a) && ancestors(index, mine, 2).has(a))",
+      "dead": "some((a) => ancestors(index, mine, 2).has(a))",
+      "expect": [
+        "two categories under one umbrella are not related: CI/CD is not near infrastructure as code"
+      ]
+    },
+    "Coverage (2.28b): a yes through lab or notions skills gives way": {
+      "file": "src/normalize.js",
+      "live": "(row.judged || weak(row) ? 1 : 0)",
+      "dead": "(row.judged ? 1 : 0)",
+      "expect": [
+        "the model's yes through a notions-level skill gives way to the profile's well-held one"
+      ]
+    },
+    "Coverage (2.28b): a term brings near, only a name or an alias meets": {
+      "file": "src/coverage.js",
+      "live": "const byName = parts.map((ids) => holders(index, ids, named).filter(ok));",
+      "dead": "const byName = byPart;",
+      "expect": [
+        "a long term (\"intelligence artificielle\" on an alerting skill) brings it near, never meets it"
+      ]
+    },
+    "Coverage (2.28b): a sibling is placed by its name": {
+      "file": "src/coverage.js",
+      "live": "siblings(index, parts.flat(), named)",
+      "dead": "siblings(index, parts.flat(), placed)",
+      "expect": [
+        "a skill placed by a term only is no sibling (\"Prometheus\" beside a skill whose term is Grafana)"
+      ]
+    },
+    "Coverage (2.28b): notions are not an equivalent beside better": {
+      "file": "src/coverage.js",
+      "live": "if (held.some((id) => !TOO_LOW.has(skills.get(id).level))) held =",
+      "dead": "if (false) held =",
+      "expect": [
+        "a notions-level skill is not shown as an equivalent beside a better one"
+      ]
+    },
+    "Lexicon (2.28b): without terms, only names and aliases place": {
+      "file": "src/lexicon.js",
+      "live": "const terms = byTerms ? ",
+      "dead": "const terms = true ? ",
+      "expect": [
+        "a long term (\"intelligence artificielle\" on an alerting skill) brings it near, never meets it"
+      ]
+    },
+    "Coverage (2.28b): held through a term only is to verify": {
+      "file": "src/coverage.js",
+      "live": "let held = loose ? [...new Set(byPart.flat())] : firm;",
+      "dead": "let held = [...new Set([...byPart.flat(), ...firm])];",
+      "expect": [
+        "beside skills a name places, a skill a term places is not named, and the lab-only gap shows"
+      ]
+    },
+    "Vocabulary (2.28b): a name or an alias saying it all meets it": {
+      "file": "src/coverage.js",
+      "live": "if ((whole && inside.some((label) => label.name)) || within.some((label) => label.name)) return 3;",
+      "dead": "if (false) return 3;",
+      "expect": [
+        "a skill's name and alias that say the whole requirement meet it"
+      ]
+    },
+    "Vocabulary (2.28b): only a practised skill meets it": {
+      "file": "src/coverage.js",
+      "live": "grade: grade === 3 && !strong(skill.id) ? 2 : grade",
+      "dead": "grade",
+      "expect": [
+        "a lab skill whose name says the whole requirement brings it near, never meets it"
+      ]
+    },
+    "Vocabulary (2.28b): a name saying part of it brings it near": {
+      "file": "src/coverage.js",
+      "live": "if (inside.some((label) => label.name)) return 2;",
+      "dead": "if (false) return 2;",
+      "expect": [
+        "a skill's name that says part of the requirement brings it near"
+      ]
+    },
+    "Vocabulary (2.28b): terms alone are to verify": {
+      "file": "src/coverage.js",
+      "live": "return { match: 'adjacent', skills: ids, judged: true, via: 'vocabulary'",
+      "dead": "return { match: 'adjacent', skills: ids, judged: false, via: 'vocabulary'",
+      "expect": [
+        "a skill's terms alone bring a requirement near, to verify, never meet it"
+      ]
+    },
+    "Vocabulary (2.28b): a two-character term says nothing": {
+      "file": "src/coverage.js",
+      "live": ".filter((term) => key(term).replace(/ /g, '').length > 2)",
+      "dead": ".filter(() => true)",
+      "expect": [
+        "a short term (\"AI\" on an alerting skill) does not place the skill on a concept"
+      ]
+    },
+    "Vocabulary (2.28b): the requirement within a label must be half of it": {
+      "file": "src/coverage.js",
+      "live": "&& 2 * asked.size >= label.stems.length);",
+      "dead": ");",
+      "expect": [
+        "one word of a long skill name says nothing on its own (\"Critique\")"
+      ]
+    },
+    "Vocabulary (2.28b): the firmer of the concept and the words": {
+      "file": "src/coverage.js",
+      "live": "return firmer({ match: 'adjacent', skills: held,",
+      "dead": "return ((found) => found)({ match: 'adjacent', skills: held,",
+      "expect": [
+        "a skill name and term lift what its concept leaves near: Mont\u00e9es de version PostgreSQL"
+      ]
+    },
+    "Vocabulary (2.28b): the words answer where no concept does": {
+      "file": "src/coverage.js",
+      "live": "  if (fromWords) return fromWords;\n",
+      "dead": "",
+      "expect": [
+        "a skill's name and alias that say the whole requirement meet it"
+      ]
+    },
+    "Coverage (2.28b): a yes names the concept's own skills first": {
+      "file": "src/coverage.js",
+      "live": "return [...(own.length ? own : met), ...same.filter(strong)];",
+      "dead": "return [...met, ...same.filter(strong)];",
+      "expect": [
+        "a yes names the skills placed on the concept itself before those of its members"
+      ]
+    },
+    "Links (2.28b): the owner's same ruling places its skill on the concept": {
+      "file": "src/normalize.js",
+      "live": "if (profile.skills.some((skill) => skill.id === id) && !out.has(id)) map.set(id,",
+      "dead": "if (false) map.set(id,",
+      "expect": [
+        "the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill"
+      ]
+    },
+    "Links (2.28b): a placing ruling does not meet every requirement holding its words": {
+      "file": "src/normalize.js",
+      "live": "linkedSkills((profile.links ?? []).filter((link) => !placesOnConcept(link)), asked(requirement.name)).same",
+      "dead": "linkedSkills(profile.links ?? [], asked(requirement.name)).same",
+      "expect": [
+        "the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill"
       ]
     }
   }

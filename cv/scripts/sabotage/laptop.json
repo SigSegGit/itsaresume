@@ -52,7 +52,8 @@
     "test/wake.test.js",
     "test/watcher.test.js",
     "test/word.test.js",
-    "src/links.js"
+    "src/links.js",
+    "src/coverage.js"
   ],
   "defences": {
     "Evidence: the CLI refuses a quote its source lacks": {

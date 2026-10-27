@@ -43,7 +43,7 @@ test('a bullet listed under the wrong experience moves to its own', () => {
 
 test('a requirement marked matched without any profile skill becomes unmatched', () => {
   const a = answer();
-  a.requirements.push({ name: 'Kubernetes', importance: 'nice', match: 'adjacent', skills: [], note: '' });
+  a.requirements.push({ name: 'COBOL', importance: 'nice', match: 'adjacent', skills: [], note: '' });
   a.requirements.push({ name: 'Kafka', importance: 'nice', match: 'no', skills: ['docker'], note: '' });
   const { analysis, repairs } = normalize(a, profile());
   assert.equal(analysis.requirements[1].match, 'no');

@@ -257,3 +257,14 @@ test('a requirement the concept of a well-held picked skill names is met, whatev
   assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [['SQL', 'yes'], ['Conteneurs', 'adjacent']]);
   assert.match(repairs.join('\n'), /requirement SQL: marked adjacent, the profile's PostgreSQL \(expert\) is one: yes/);
 });
+
+// 2.28b-iii, seen on the laptop (2026-10-25, Bionic): the model marked "SQL"
+// no; the category rule made it adjacent after the lift above had run, so an
+// expert PostgreSQL never met it. The owner (2026-10-25): any category marked
+// no whose member the profile holds at working or better is yes.
+test('a requirement marked no that the concept of a well-held skill names is met', () => {
+  const offer = 'Senior SRE wanted. Must have: SQL.';
+  const requirements = [{ name: 'SQL', importance: 'must', match: 'no', skills: [], note: '' }];
+  const { analysis } = normalize(answer({ requirements }), v4(), { offer });
+  assert.deepEqual(analysis.requirements.map((r) => [r.name, r.match]), [['SQL', 'yes']]);
+});

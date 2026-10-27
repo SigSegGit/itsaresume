@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.28b
-TITLE: 2.28b-i done (scripts/replay.mjs); 2.28b needs a session ON the laptop (Desktop or remote-control): 2.27b done (an experience must brings the years into the summary); 2.28c done (SQL through an expert PostgreSQL is yes, by code); 2.28b on the laptop: a comparative run on a recent OPS offer plus rules-replay of 2.26b/2.27b/2.28a/2.28c on the real runs, fix each remaining "proche", and the local breakage from the router journal
-WRITTEN-AT: 2026-10-25
+NEXT: 2.28b-iv
+TITLE: 2.28b-iii done: the profile decides each requirement (coverage.js: concepts, the skills' own words, siblings, bullets; only raises); 2.28b-iv on the laptop: a full compare (claude + lm-studio) on router 127.0.0.1:18789, then real runs of the two newest offers
+WRITTEN-AT: 2026-10-27
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,8 +11,18 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-10-06)
+## 0. Where things stand (2026-10-27)
 
+- **The profile decides, not the model's first verdict (2.28b-iii,
+  2026-10-27, the owner's ask)**: `src/coverage.js` answers each skill
+  requirement from the whole profile and only raises the model's verdict:
+  concepts held by a name or an alias (yes at working+, generic words
+  aside), the skills' own names/aliases/terms, a practised sibling tool or
+  a bullet (adjacent, to verify). "no" is left for what the profile lacks
+  and the never list. Measured: on 229 distinct real rows 26 raised, none
+  lowered; on 267 offer phrasings with the real profile, 84 "no" became 16
+  (the rest absent from the v4). The owner's `same` rulings place their
+  skill on a concept (alerting = AI, his decision of 2026-10-27).
 - **MVP works end to end**: an offer pasted in the local page → the router
   (Claude on the owner's subscription, a local model as fallback; never
   billed per token, ADR-8) → a one-page CV (docx + PDF, ATS-checked) and a
@@ -798,14 +808,71 @@ Traps met, each cost time once:
     current code, no model call; prints each verdict that changes and the
     score before -> after. Public replacement for the private
     `rules-replay.mjs`. Sabotaged (content.json).
-  - [ ] **2.28b** Needs a session running ON the laptop (Claude Desktop
+  - [x] **2.28b-ii** (2026-10-25, laptop) The local breakage, found:
+    (1) Windows reserves TCP 8773-8872 on the laptop (`netsh interface
+    ipv4 show excludedportrange protocol=tcp`, Hyper-V/WSL), so the router
+    on 8789 and the page on 8790 fail with os error 10013; use 18789 and
+    18790 there. (2) every claude-code run of an offer with a personal
+    quality ("Travail avec les DBA") failed: normalize settles a quality
+    yes with no skill, `validateAnalysis` refused it. Fixed (analysis.js,
+    test in equivalent.test.js, sabotaged in guard.json); the real offer
+    now passes on Claude through the local router. Replay: 6 runs, 2
+    changed (SRE Paris 69 -> 78, Python / Go merged; deeptech AI 70 -> 67,
+    "AI" now adjacent); the two CLM runs are not replayable (the current
+    code asks more calls).
+  - [x] **2.28b-iii** (2026-10-25..27, laptop) The profile decides each
+    requirement (the owner: "no" only when the job's need is really absent
+    from the whole profile, not because exact words are). `src/coverage.js`,
+    called by normalize after the kinds (never, quality, condition, language,
+    certification) are settled; it only raises (rank no < adjacent to
+    verify < adjacent < yes through lab/notions only < yes):
+    concepts named by the requirement (`spans`, curated `tech:` concepts
+    hiding ESCO synonyms) held by a skill placed by its name or alias → yes
+    at working+ when the other words are generic, practice words
+    (administration, requêtage, avancé...) only with expert/proficient,
+    else adjacent; the skills' own vocabulary (name/alias saying it all →
+    yes, part → adjacent, terms only → adjacent to verify; two-character
+    terms say nothing); a practised sibling tool (tech.json `Tool` sharing a
+    non-umbrella parent) → adjacent to verify; a bullet stating every
+    content word → adjacent to verify through its skills. A term never
+    meets a requirement (2026-10-06) and no longer joins a met one as
+    "another name" (alike/held use names and aliases); a technology is never
+    a personal quality ("Bases de données relationnelles"). Lexicon:
+    SQL, DevOps and Automation (umbrellas), AI and generative AI, Linux/Unix
+    (AIX, Solaris), scheduling (Control-M, Autosys), L3 support, disaster
+    recovery, firewall (Fortinet), directory (LDAP, AD), security (SecOps),
+    plain cloud, infra as code, query optimisation; skills placed word by
+    word when no whole label places them ("PostgreSQL 16", "LLM locaux").
+    The owner's `same` rulings place their skill on the concept their words
+    name (links.js `sameConcepts`) instead of meeting every requirement that
+    contains the words. Decision of the owner (2026-10-27): his alerting
+    skill, through AI, makes him proficient in AI (private links.json).
+    Measured with the private profile: 229 distinct stored rows, 26 raised,
+    none lowered (the first version lowered honest yes rows by leaving terms
+    out of `grounded`; reverted); 267 phrasings
+    (`~/.itsaresume/migrations/phrasings-replay.mjs`), 84 "no" → 16, each
+    remaining absent from the v4. 590 tests; sabotage 207 + 187 defences.
+    Note: commit d4b8a19's message says "all remaining checked"; at that
+    commit they were not (ten were still false no, fixed in 2233178).
+  - [ ] **2.28b-iv** On the laptop, router on 127.0.0.1:18789 (not 8789,
+    reserved by Windows): `node scripts/compare.mjs --url
+    http://127.0.0.1:18789 --profile ~/.itsaresume/profile.json --offer
+    ~/.itsaresume/offers/2026-10-14-ansible-dba-sqy.txt --backends
+    claude-code,lm-studio --save <out>/compare.json` (Gemini needs
+    `GEMINI_API_KEY` in the router's environment, router 8.50); then one real
+    run each of the two newest offers through the page (port 18790) and read
+    the report's adjacent / to verify rows. For a row that is wrong, a red
+    test in `test/coverage.test.js` first; knowledge goes to
+    `data/tech.json`, an owner's ruling to his private links.json.
+  - [ ] **2.28b** (what is left is 2.28b-iv; the replay and the router
+    journal were done on 2026-10-25, 2.28b-ii/iii) Needs a session running ON the laptop (Claude Desktop
     on `D:\GitHub\itsaresume`, or `claude remote-control` there): a cloud
     session sees neither the router, Bionic, the runs nor the profile.
     First `node scripts/replay.mjs --profile <profile.json> --out <runs
     dir>` (2.26b, 2.27b, 2.28a, 2.28c on the real runs), then
     `node scripts/compare.mjs` on a recent OPS offer, then the router
     journal's last `failed` lines. On the laptop: `node scripts/compare.mjs --url
-    http://127.0.0.1:8789 --profile <profile.json> --offer <a recent OPS
+    http://127.0.0.1:18789 --profile <profile.json> --offer <a recent OPS
     offer.txt> --save compare.json`. For each row still "adjacent" with
     "no profile skill names it, the model's reading only", either add the
     word to the right `tech.json` concept (a red test in
@@ -941,6 +1008,17 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   history and address bar and in the VM's Caddy access log. 96 random
   bits, revocable at once (2.16); not hidden further on purpose.
 
+- **From 2.28b-iii (2026-10-27), left open on purpose:** a yes through a
+  notions-level skill still counts in full when the profile has nothing
+  better (score.js caps lab only; coverage only replaces it when a
+  well-held skill exists); a name "X (Y)" is read as both concepts, so
+  "Sécurité (IA)" is yes through SecOps and the alerting skill although it
+  means the security of AI; a model's yes grounded only by a skill's term
+  stays yes (leaving terms out of `grounded` lowered honest readings, 13
+  real rows); stemming is not derivation ("ordonnanceur" vs
+  "ordonnancement" needed explicit labels; prefix matching refused, it
+  would make "product" "production"); siblings and bullets are "to verify"
+  by design (half weight, a gap when a must).
 - The honesty checks cannot judge a plausible sentence made of the profile's
   own words; the owner reads the report, and the tool sends nothing.
 - A judged match ("à vérifier") trusts the model at half weight; an injected

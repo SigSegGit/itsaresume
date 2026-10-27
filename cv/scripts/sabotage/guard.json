@@ -65,7 +65,10 @@
     "src/matrix.js",
     "test/compact.test.js",
     "test/links.test.js",
-    "test/matrix.test.js"
+    "test/matrix.test.js",
+    "src/coverage.js",
+    "data/tech.json",
+    "test/coverage.test.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {
@@ -134,17 +137,17 @@
       ]
     },
     "Equivalents: a loose category holding profile skills is not a gap": {
-      "file": "src/normalize.js",
-      "live": "      if (found.length) {",
-      "dead": "      if (false) {",
+      "file": "src/coverage.js",
+      "live": "  if (held.length) {",
+      "dead": "  if (false) {",
       "expect": [
-        "\"Conteneurisation\" marked no by the model comes out adjacent through Docker"
+        "\"Conteneurisation\" marked no by the model comes out yes through Docker"
       ]
     },
     "Equivalents: never-claimed stays no": {
       "file": "src/normalize.js",
-      "live": "if (requirement.match === 'no' && !requirement.never && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
-      "dead": "if (requirement.match === 'no' && requirement.kind !== 'quality' && requirement.kind !== 'condition' && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
+      "live": "if (!requirement.never && requirement.kind === undefined) {",
+      "dead": "if (requirement.kind === undefined) {",
       "expect": [
         "a never-claimed requirement stays no, whatever its category holds"
       ]
@@ -154,7 +157,7 @@
       "live": "profile.skills.filter((skill) => !out.has(skill.id))",
       "dead": "profile.skills",
       "expect": [
-        "contradicted and unsupported skills are removed from the analysis and reported"
+        "an evidence-blocked skill does not join a met requirement as another name of its concept"
       ]
     },
     "Languages: a language requirement is judged by the profile": {
@@ -181,6 +184,14 @@
         "a task done in a language is not a language requirement"
       ]
     },
+    "Qualities: a quality row settled yes validates without a skill": {
+      "file": "src/analysis.js",
+      "live": "&& requirement.kind !== 'quality' && requirement.kind !== 'language'",
+      "dead": "&& requirement.kind !== 'language'",
+      "expect": [
+        "a personal quality settled yes by code passes validation"
+      ]
+    },
     "Languages: a met language row validates without a skill": {
       "file": "src/analysis.js",
       "live": "&& requirement.kind !== 'language' && requirement.kind !== 'certification') {",
@@ -194,12 +205,12 @@
       "live": "known.length > 0 && held.length === 0 && !grounded(",
       "dead": "known.length > 0 && !grounded(",
       "expect": [
-        "\"SQL\" met through PostgreSQL and Oracle stays yes, not \"to verify\""
+        "the model's yes through a lab skill the concept holds, no word of it named, stays yes (not to verify)"
       ]
     },
     "Equivalents: the concept's other profile skills join the model's pick": {
       "file": "src/normalize.js",
-      "live": "(met ? alike(defaultIndex(), asked(requirement.name), placed(), known) : [])",
+      "live": "(met ? alike(defaultIndex(), asked(requirement.name), placedByName(), known) : [])",
       "dead": "([])",
       "expect": [
         "\"Shell\" named like the profile's KSH also holds its Bash, the model's extra pick dropped"
@@ -207,10 +218,10 @@
     },
     "Equivalents: the concept must hold the model's pick to ground it": {
       "file": "src/normalize.js",
-      "live": "placed()), ...ruled.same].filter((id) => known.includes(id))",
-      "dead": "placed()), ...ruled.same]",
+      "live": "placedByName()), ...ruled.same].filter((id) => known.includes(id))",
+      "dead": "placedByName()), ...ruled.same]",
       "expect": [
-        "\"SQL\" met through Python alone stays \"to verify\": the concept must hold the model's pick"
+        "a wrong pick of the model does not hide the profile: \"SQL\" through Python is met through PostgreSQL"
       ]
     },
     "Languages: a level asked above the profile's is not met": {
@@ -754,8 +765,8 @@
     },
     "Must stay no: a certification row is not rescued through a skill": {
       "file": "src/normalize.js",
-      "live": " && requirement.kind !== 'language' && requirement.kind !== 'certification') {",
-      "dead": " && requirement.kind !== 'language') {",
+      "live": "if (!requirement.never && requirement.kind === undefined) {",
+      "dead": "if (!requirement.never && (requirement.kind === undefined || requirement.kind === 'certification')) {",
       "expect": [
         "a certification the profile does not hold stays no, though the skill is owned"
       ]
@@ -1221,7 +1232,7 @@
       "live": "!/\\p{N}|\\p{Ll}\\p{Lu}/u.test(name) && ",
       "dead": "",
       "expect": [
-        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+        "a quality word beside a product name the lexicon lacks keeps the requirement scored"
       ]
     },
     "Quality: a never-claimed item keeps a requirement scored": {
@@ -1229,7 +1240,7 @@
       "live": "if (isNever(requirement, profile.never)) return false;",
       "dead": "if (false) return false;",
       "expect": [
-        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+        "a quality word beside a never-claimed item the lexicon lacks keeps the requirement scored"
       ]
     },
     "Quality: a profile skill keeps a requirement scored": {
@@ -1237,7 +1248,7 @@
       "live": "return !profile.skills.some((skill) => skillNames(skill).some((named) => mentions(name, named)));",
       "dead": "return true;",
       "expect": [
-        "a requirement naming a product, a profile skill or a never-claimed item is not a quality, whatever the model says"
+        "a quality word beside a profile skill the lexicon lacks keeps the requirement scored"
       ]
     },
     "Quality: the model's label is not trusted": {
@@ -1452,9 +1463,9 @@
       ]
     },
     "Links: a near ruling lifts a no to adjacent": {
-      "file": "src/normalize.js",
-      "live": "...ruledIn.same, ...ruledIn.near])]",
-      "dead": "...ruledIn.same])]",
+      "file": "src/coverage.js",
+      "live": "const firm = [...new Set([...byName.flat(), ...same, ...ruled.near.filter(ok)])];",
+      "dead": "const firm = [...new Set([...byName.flat(), ...same])];",
       "expect": [
         "ADFS ruled near Active Directory: a \"no\" is adjacent through AD, never no"
       ]
@@ -1570,6 +1581,22 @@
       "dead": "requirement.match !== 'no' && (ASKS_EXPERIENCE.test(canonical(requirement.name)) || true));",
       "expect": [
         "a met must asking for experience brings the profile fact stating the years into the summary"
+      ]
+    },
+    "Lexicon (2.28b): an umbrella makes no neighbours": {
+      "file": "src/lexicon.js",
+      "live": "const kinParents = (index, id) => parentsOf(index, id).filter((parent) => !umbrella(index, parent));",
+      "dead": "const kinParents = (index, id) => parentsOf(index, id);",
+      "expect": [
+        "two categories under one umbrella are not related: CI/CD is not near infrastructure as code"
+      ]
+    },
+    "Equivalents (2.28b): only a name or an alias makes another name": {
+      "file": "src/normalize.js",
+      "live": "alike(defaultIndex(), asked(requirement.name), placedByName(), known)",
+      "dead": "alike(defaultIndex(), asked(requirement.name), placed(), known)",
+      "expect": [
+        "a skill placed by a term only does not join the model's yes as another name of its concept"
       ]
     }
   }

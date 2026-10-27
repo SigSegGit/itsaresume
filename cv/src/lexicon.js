@@ -54,38 +54,63 @@ export function buildIndex(concepts) {
   return { byKey, byId, children };
 }
 
-/** The concepts a phrase names, the longest labels first, each word used once. */
-export function lookup(index, phrase) {
+/**
+ * The parts of a phrase that name concepts, the longest labels first, each
+ * word used once (`parts`: the words and the concepts they name), and the
+ * words no label takes (`rest`: "maîtrise", "tuning").
+ */
+export function spans(index, phrase) {
   const words = key(phrase).split(' ').filter(Boolean);
   const used = new Array(words.length).fill(false);
-  const found = [];
+  const parts = [];
   for (let size = Math.min(MAX_WORDS, words.length); size >= 1; size -= 1) {
     for (let start = 0; start + size <= words.length; start += 1) {
       if (used.slice(start, start + size).some(Boolean)) continue;
       const ids = index.byKey.get(words.slice(start, start + size).join(' '));
       if (!ids) continue;
-      found.push(...ids);
+      parts.push({ words: words.slice(start, start + size), ids });
       used.fill(true, start, start + size);
     }
   }
-  return [...new Set(found)];
+  return { parts, rest: words.filter((_, at) => !used[at]) };
+}
+
+/** The concepts a phrase names, the longest labels first, each word used once. */
+export function lookup(index, phrase) {
+  return [...new Set(spans(index, phrase).parts.flatMap((part) => part.ids))];
 }
 
 /**
  * Each skill of the profile placed on the concepts its name, aliases and terms
  * name whole: a word inside a label is not the label (seen: ESCO's "Access",
- * Microsoft Access, inside Bastion's "privileged access").
+ * Microsoft Access, inside Bastion's "privileged access"). A skill no whole
+ * label places is placed on the technology concepts its name or an alias
+ * names word by word ("PostgreSQL 16", "LLM locaux", "ELK / Kibana", 2.28b):
+ * those concepts are curated, ESCO's verb phrases are not.
  */
-export function skillConcepts(index, skills) {
+export function skillConcepts(index, skills, { terms: byTerms = true } = {}) {
   const placed = new Map();
   for (const skill of skills) {
-    const ids = [skill.name, ...(skill.aliases ?? []), ...(skill.terms ?? [])].flatMap((label) => index.byKey.get(key(label)) ?? []);
+    // A term of three characters or fewer places nothing: "AI" is a term of
+    // an alerting skill, "API" of REST (seen 2026-10-06, cv §9); its name
+    // and aliases still place it. Without `terms`, only the name and the
+    // aliases place a skill: what may meet a requirement (coverage.js).
+    const terms = byTerms ? (skill.terms ?? []).filter((term) => key(term).replace(/ /g, '').length > 3) : [];
+    let ids = [skill.name, ...(skill.aliases ?? []), ...terms].flatMap((label) => index.byKey.get(key(label)) ?? []);
+    if (!ids.length) ids = [skill.name, ...(skill.aliases ?? [])].flatMap((label) => lookup(index, label)).filter((id) => id.startsWith('tech:'));
     if (ids.length) placed.set(skill.id, new Set(ids));
   }
   return placed;
 }
 
 const parentsOf = (index, id) => index.byId.get(id)?.broader ?? [];
+/**
+ * An umbrella ("DevOps", "Automatisation") holds categories as members, but
+ * two categories under one umbrella are not near each other: CI/CD is not
+ * Terraform's neighbour (2.28b).
+ */
+const umbrella = (index, id) => index.byId.get(id)?.kind === 'Umbrella';
+const kinParents = (index, id) => parentsOf(index, id).filter((parent) => !umbrella(index, parent));
 
 /** The concepts within `steps` of `id`, up the hierarchy. */
 function ancestors(index, id, steps) {
@@ -102,7 +127,7 @@ function ancestors(index, id, steps) {
 function near(index, a, b) {
   const pa = parentsOf(index, a);
   const pb = parentsOf(index, b);
-  return pa.includes(b) || pb.includes(a) || pa.some((parent) => pb.includes(parent));
+  return pa.includes(b) || pb.includes(a) || kinParents(index, a).some((parent) => kinParents(index, b).includes(parent));
 }
 
 const RANK = { same: 0, near: 1, theme: 2 };
@@ -120,7 +145,7 @@ export function relate(index, requirement, skills) {
       for (const mine of owned) {
         const relation = concept === mine ? 'same'
           : near(index, concept, mine) ? 'near'
-            : [...ancestors(index, concept, 2)].some((a) => ancestors(index, mine, 2).has(a)) ? 'theme' : null;
+            : [...ancestors(index, concept, 2)].some((a) => !umbrella(index, a) && ancestors(index, mine, 2).has(a)) ? 'theme' : null;
         if (relation && (!best || RANK[relation] < RANK[best.relation])) best = { skill, relation, concept };
       }
     }
@@ -137,10 +162,36 @@ export function relate(index, requirement, skills) {
  * A sibling is not a member: Puppet asked is not Terraform owned.
  */
 export function members(index, requirement, skills) {
-  const concepts = new Set(lookup(index, requirement));
+  return holders(index, lookup(index, requirement), skills);
+}
+
+/** The owner's skills placed on one of `concepts` or on one of their members, two steps down at most. */
+export function holders(index, concepts, skills) {
+  const wanted = new Set(concepts);
   const found = [];
   for (const [skill, owned] of skills) {
-    if ([...owned].some((mine) => concepts.has(mine) || [...ancestors(index, mine, 2)].some((a) => concepts.has(a)))) found.push(skill);
+    if ([...owned].some((mine) => wanted.has(mine) || [...ancestors(index, mine, 2)].some((a) => wanted.has(a)))) found.push(skill);
+  }
+  return found;
+}
+
+/**
+ * The owner's skills that are tools of the same family as a tool asked
+ * ("Puppet" asked, Terraform held: both Infrastructure as Code): not the tool,
+ * a transferable one. `family` is the shared parent concept. Tools only: two
+ * categories under one umbrella are not siblings.
+ */
+export function siblings(index, concepts, skills) {
+  const isTool = (id) => index.byId.get(id)?.kind === 'Tool';
+  const tools = concepts.filter(isTool);
+  const found = [];
+  for (const [skill, owned] of skills) {
+    for (const mine of [...owned].filter(isTool)) {
+      const tool = tools.find((asked) => asked !== mine && kinParents(index, asked).some((parent) => kinParents(index, mine).includes(parent)));
+      if (!tool) continue;
+      found.push({ skill, family: kinParents(index, tool).find((parent) => kinParents(index, mine).includes(parent)) });
+      break;
+    }
   }
   return found;
 }

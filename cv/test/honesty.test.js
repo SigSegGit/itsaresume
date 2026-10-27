@@ -21,7 +21,7 @@ const answer = (language = 'fr') => ({
   fit: { score: 97, verdict: 'strong', rationale: 'Great fit.' },
   requirements: [
     { name: 'PostgreSQL', importance: 'must', match: 'yes', skills: ['postgresql'], note: '' },
-    { name: 'Kubernetes', importance: 'must', match: 'no', skills: [], note: '' },
+    { name: 'COBOL', importance: 'must', match: 'no', skills: [], note: '' },
     { name: 'Terraform modules', importance: 'nice', match: 'adjacent', skills: ['terraform'], note: '' },
   ],
   headline: 'SRE',

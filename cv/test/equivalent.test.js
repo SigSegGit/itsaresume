@@ -32,7 +32,8 @@ const analysis = (requirements) => ({
 const judge = (name) => normalize(analysis([{ name, importance: 'must', match: 'no', skills: [], note: '' }]), profile()).analysis.requirements[0];
 
 const PAIRS = [
-  ['Cloud public', ['AWS', 'GCP']],
+  // GCP is held at notions only: AWS (proficient) meets it, GCP is not shown as meeting it.
+  ['Cloud public', ['AWS']],
   ['Conteneurisation', ['Docker']],
   ['Infrastructure as Code', ['Terraform']],
   ['Observabilité', ['Prometheus']],
@@ -46,16 +47,30 @@ const PAIRS = [
 ];
 
 for (const [requirement, names] of PAIRS) {
-  test(`"${requirement}" marked no by the model comes out adjacent through ${names.join(', ')}`, () => {
+  // The owner (2026-10-25): a member held at working or better meets the category.
+  test(`"${requirement}" marked no by the model comes out yes through ${names.join(', ')}`, () => {
     const judged = judge(requirement);
-    assert.equal(judged.match, 'adjacent');
+    assert.equal(judged.match, 'yes');
     assert.deepEqual([...judged.equivalent].sort(), [...names].sort());
     assert.match(judged.note, new RegExp(`equivalent: ${names[0]}`));
   });
 }
 
-test('a sibling tool is not an equivalent: Puppet stays no beside Terraform', () => {
-  assert.equal(judge('Puppet').match, 'no');
+test('a category whose only member is a lab skill stays adjacent', () => {
+  const p = profile();
+  for (const skill of p.skills) if (skill.id === 'docker') skill.level = 'lab';
+  const row = normalize(analysis([{ name: 'Conteneurisation', importance: 'must', match: 'no', skills: [], note: '' }]), p).analysis.requirements[0];
+  assert.equal(row.match, 'adjacent');
+});
+
+// The owner (2026-10-25): a tool of a family the profile practises is not
+// missing, it is near, to verify; it is not met either.
+test('a sibling tool is not an equivalent: Puppet beside Terraform is adjacent, to verify', () => {
+  const row = judge('Puppet');
+  assert.equal(row.match, 'adjacent');
+  assert.equal(row.judged, true);
+  assert.deepEqual(row.skills, ['terraform']);
+  assert.equal(row.equivalent, undefined);
 });
 
 test('a never-claimed requirement stays no, whatever its category holds', () => {
@@ -110,7 +125,7 @@ test('a task done in a language is not a language requirement', () => {
 
 test('the report says "equivalent: X" rather than a bare no', () => {
   const { analysis: normalised } = normalize(analysis([{ name: 'Conteneurisation', importance: 'must', match: 'no', skills: [], note: '' }]), profile());
-  assert.match(report(normalised, profile(), {}), /\| Conteneurisation \| must \| adjacent \|.*equivalent: Docker/);
+  assert.match(report(normalised, profile(), {}), /\| Conteneurisation \| must \| yes \|.*equivalent: Docker/);
 });
 
 // 2.7c, seen on a real run (2026-09-29): the model met "SQL" through
@@ -129,9 +144,9 @@ test('"SQL" met through PostgreSQL and Oracle stays yes, not "to verify"', () =>
   assert.equal(row.judged, undefined);
 });
 
-test('"SQL" marked no by the model comes out adjacent through PostgreSQL, Oracle', () => {
+test('"SQL" marked no by the model comes out yes through PostgreSQL, Oracle', () => {
   const row = judge('SQL');
-  assert.equal(row.match, 'adjacent');
+  assert.equal(row.match, 'yes');
   assert.deepEqual([...row.equivalent].sort(), ['Oracle', 'PostgreSQL']);
 });
 
@@ -144,8 +159,10 @@ test('"Shell" named like the profile\'s KSH also holds its Bash, the model\'s ex
   assert.deepEqual([...row.skills].sort(), ['bash', 'ksh']);
 });
 
-test('"SQL" met through Python alone stays "to verify": the concept must hold the model\'s pick', () => {
-  const row = judgeMet('SQL', ['python']);
+test('"SQL" met through Python alone, no database in the profile, stays "to verify": the concept must hold the model\'s pick', () => {
+  const p = profile();
+  p.skills = p.skills.filter((skill) => skill.group !== 'db');
+  const row = normalize(analysis([{ name: 'SQL', importance: 'must', match: 'yes', skills: ['python'], note: '' }]), p).analysis.requirements[0];
   assert.equal(row.match, 'adjacent');
   assert.equal(row.judged, true);
 });
@@ -159,7 +176,11 @@ test('a model reading no concept holds stays "to verify"', () => {
 // Seen replaying the real runs: the union above added Bash to "Python
 // scripting" (a category word beside the tool) and Bastion to "SQL".
 test('"Python scripting" met through Python does not add the profile\'s Bash', () => {
-  const row = judgeMet('Python scripting', ['python'], [{ id: 'bash', name: 'Bash', group: 'iac', level: 'expert', aliases: [], terms: ['scripting'] }]);
+  // A skill the category's own name places ("Langages de script") is no other name of Python either.
+  const row = judgeMet('Python scripting', ['python'], [
+    { id: 'bash', name: 'Bash', group: 'iac', level: 'expert', aliases: [], terms: ['scripting'] },
+    { id: 'scripts', name: 'Langages de script', group: 'iac', level: 'expert', aliases: [] },
+  ]);
   assert.deepEqual(row.skills, ['python']);
 });
 
@@ -242,4 +263,18 @@ test('a row that names a member and something more stays its own', () => {
   const rows = ['NGINX', 'Tomcat', 'IIS', 'Apache', 'Apache Kafka'].map(no);
   const names = normalize(analysis(rows), withGerman(), { offer }).analysis.requirements.map((row) => row.name);
   assert.ok(names.includes('Apache Kafka'), names.join(' | '));
+});
+
+// 2.28b, seen on the laptop (2026-10-25): normalize settles a personal
+// quality as yes with no skill (owner, 2026-10-14), then validateAnalysis
+// refused it ("marked yes but names no profile skill") and the run failed
+// twice on claude-code. A quality row is valid without a skill.
+test('a personal quality settled yes by code passes validation', () => {
+  const offer = 'Ansible requis. Travail avec les DBA au quotidien.';
+  const rows = [{ name: 'Travail avec les DBA', importance: 'must', match: 'yes', skills: [], note: '' }];
+  const p = withGerman();
+  const judged = normalize(analysis(rows), p, { offer }).analysis;
+  const row = judged.requirements.find((r) => r.name === 'Travail avec les DBA');
+  assert.equal(row?.kind, 'quality', JSON.stringify(row));
+  assert.deepEqual(validateAnalysis(judged, p).errors.filter((error) => /DBA/.test(error)), []);
 });
