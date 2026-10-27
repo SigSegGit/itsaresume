@@ -182,6 +182,55 @@ test('a notions-level skill is not shown as an equivalent beside a better one', 
   assert.deepEqual(row.skills, ['aws']);
 });
 
+// The profile's own vocabulary (2.28b-iii, red team on the real profile):
+// requirements no lexicon concept names ("Ordonnancement", "Transferts de
+// fichiers", "PRA") were no although a skill's name, alias or term says them.
+function withVocabulary() {
+  const p = v4();
+  p.skills.push(
+    { id: 'sched', name: 'Control-M', group: 'prod', level: 'proficient', aliases: ['BMC Control-M'], terms: ['ordonnancement', 'scheduling'] },
+    { id: 'transfer', name: 'Axway CFT', group: 'prod', level: 'proficient', aliases: ['CFT'], terms: ['transferts de fichiers', 'file transfer'] },
+    { id: 'virt', name: 'Virtualisation', group: 'sys', level: 'working', aliases: [], terms: ['VMware', 'ESX'] },
+    { id: 'ha', name: 'Haute disponibilité (HAProxy)', group: 'sys', level: 'expert', aliases: ['HAProxy'], terms: ['load-balancing'] },
+    { id: 'n3', name: 'Support applicatif N3', group: 'prod', level: 'expert', aliases: ['support N3'], terms: ['troubleshooting'] },
+    { id: 'ops', name: 'Exploitation de production critique', group: 'prod', level: 'expert', aliases: ['MCO'], terms: ['PRA', 'PCA'] },
+    { id: 'p2p', name: 'Stockage distribué P2P', group: 'sys', level: 'lab', aliases: ['P2P'], terms: ['stockage'] },
+  );
+  return p;
+}
+
+test("a skill's name and alias that say the whole requirement meet it", () => {
+  const p = withVocabulary();
+  const met = (name) => judge(name, { profile: p }).row;
+  assert.deepEqual([met('Transferts de fichiers (CFT)').match, met('Transferts de fichiers (CFT)').skills], ['yes', ['transfer']]);
+  assert.deepEqual([met('Virtualisation VMware').match, met('Virtualisation VMware').skills], ['yes', ['virt']]);
+  assert.equal(met('Support applicatif').match, 'yes', 'the skill says more than the requirement asks');
+  assert.equal(met('Ordonnancement Control-M').match, 'yes');
+});
+
+test("a skill's name that says part of the requirement brings it near", () => {
+  const { row } = judge('Haute dispo (HAProxy)', { profile: withVocabulary() });
+  assert.equal(row.match, 'adjacent', JSON.stringify(row));
+  assert.deepEqual(row.skills, ['ha']);
+  assert.equal(row.judged, undefined);
+});
+
+test("a skill's terms alone bring a requirement near, to verify, never meet it", () => {
+  const p = withVocabulary();
+  for (const [name, id] of [['PRA / PCA', 'ops'], ['Troubleshooting', 'n3'], ['Ordonnancement', 'sched'], ['Stockage', 'p2p']]) {
+    const { row } = judge(name, { profile: p });
+    assert.equal(row.match, 'adjacent', `${name}: ${JSON.stringify(row)}`);
+    assert.equal(row.judged, true, name);
+    assert.ok(row.skills.includes(id), `${name}: ${row.skills.join()}`);
+  }
+});
+
+test("the profile's vocabulary says nothing of what no skill names", () => {
+  const p = withVocabulary();
+  assert.equal(judge('COBOL', { profile: p }).row.match, 'no');
+  assert.equal(judge('Mainframe z/OS', { profile: p }).row.match, 'no');
+});
+
 test('a sibling database ("MySQL") is adjacent to verify, not yes through an ESCO synonym', () => {
   const { row } = judge('MySQL');
   assert.equal(row.match, 'adjacent', JSON.stringify(row));
