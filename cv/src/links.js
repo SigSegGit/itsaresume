@@ -10,7 +10,7 @@
 // ground a match. Only the owner's verdicts change a match, in normalize().
 
 import { existsSync, readFileSync } from 'node:fs';
-import { defaultIndex, key, relate, skillConcepts } from './lexicon.js';
+import { defaultIndex, key, lookup, relate, skillConcepts } from './lexicon.js';
 
 /** Distinct offers a mined link needs before the code accepts it. */
 export const MIN_OFFERS = 3;
@@ -63,6 +63,30 @@ export function readLinks(path) {
     if (!VERDICTS.has(link.verdict ?? null)) throw new Error(`${path}: link ${index + 1} (${link.words}): verdict must be same, near, no or null, not ${link.verdict}`);
   });
   return links.map((link) => ({ ...link, words: key(link.words), verdict: link.verdict ?? null }));
+}
+
+/**
+ * The concepts the owner's "same" rulings place skills on: the skill is one
+ * of what the ruling's words name, as its own name would say (the owner,
+ * 2026-10-27: the alerting skill, through AI, is AI). Curated concepts first,
+ * as for a requirement. A ruling whose words name no concept places nothing
+ * and keeps acting on the requirements that contain its words.
+ */
+export function sameConcepts(links = [], index = defaultIndex()) {
+  const placed = new Map();
+  for (const link of links) {
+    if (link.verdict !== 'same') continue;
+    const found = lookup(index, link.words);
+    const ids = found.some((id) => id.startsWith('tech:')) ? found.filter((id) => id.startsWith('tech:')) : found;
+    if (!ids.length) continue;
+    placed.set(link.skill, new Set([...(placed.get(link.skill) ?? []), ...ids]));
+  }
+  return placed;
+}
+
+/** Whether a link is a "same" ruling that places its skill on a concept (sameConcepts). */
+export function placesOnConcept(link, index = defaultIndex()) {
+  return link.verdict === 'same' && lookup(index, link.words).length > 0;
 }
 
 /** The links a requirement's words name, by kind: the owner's same / near / no, and the mined ones accepted. */

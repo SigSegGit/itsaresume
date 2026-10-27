@@ -231,23 +231,37 @@
    "alt": {
     "fr": [
      "IA",
-     "IA générative",
-     "apprentissage automatique",
+     "apprentissage automatique"
+    ],
+    "en": [
+     "AI",
+     "machine learning",
+     "ML"
+    ]
+   },
+   "broader": [],
+   "kind": "Category"
+  },
+  {
+   "id": "tech:genai",
+   "fr": "IA générative",
+   "en": "Generative AI",
+   "alt": {
+    "fr": [
+     "GenAI",
      "LLM",
      "modèles de langage",
      "grands modèles de langage"
     ],
     "en": [
-     "AI",
-     "generative AI",
      "GenAI",
-     "machine learning",
-     "ML",
      "LLM",
      "large language models"
     ]
    },
-   "broader": [],
+   "broader": [
+    "tech:ai"
+   ],
    "kind": "Category"
   },
   {

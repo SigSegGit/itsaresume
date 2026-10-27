@@ -14,7 +14,7 @@ import { cleanName, LIMITS } from './guard.js';
 import { alike, defaultIndex, lookup, members, skillConcepts } from './lexicon.js';
 import { coverage, STRONG_LEVELS } from './coverage.js';
 import { importanceIn } from './importance.js';
-import { linkedSkills } from './links.js';
+import { linkedSkills, placesOnConcept, sameConcepts } from './links.js';
 import { alternatives, canonical, enumerations, GENERIC, mentions, namesCondition, namesQuality, statedIn, stem, STOP, wordsOf } from './text.js';
 
 /** Lower is stricter: of two rows for one requirement, the stricter match is kept. */
@@ -276,9 +276,17 @@ export function normalize(input, profile, { assessment, offer } = {}) {
   const skillIds = new Set(profile.skills.map((skill) => skill.id));
   let placement = null;
   const usable = () => profile.skills.filter((skill) => !out.has(skill.id));
-  const placed = () => (placement ??= skillConcepts(defaultIndex(), usable()));
+  // The owner's "same" rulings place their skill on the concept their words
+  // name, as its name would (links.js, the owner 2026-10-27).
+  const ruledPlaces = (map) => {
+    for (const [id, ids] of sameConcepts(profile.links)) {
+      if (profile.skills.some((skill) => skill.id === id) && !out.has(id)) map.set(id, new Set([...(map.get(id) ?? []), ...ids]));
+    }
+    return map;
+  };
+  const placed = () => (placement ??= ruledPlaces(skillConcepts(defaultIndex(), usable())));
   let naming = null;
-  const placedByName = () => (naming ??= skillConcepts(defaultIndex(), usable(), { terms: false }));
+  const placedByName = () => (naming ??= ruledPlaces(skillConcepts(defaultIndex(), usable(), { terms: false })));
   for (const choice of analysis.experiences ?? []) {
     choice.bullets = (choice.bullets ?? []).map((bullet) => idOf(bullet, bulletIds, repairs));
   }
@@ -502,7 +510,10 @@ export function normalize(input, profile, { assessment, offer } = {}) {
         placed: placed(),
         named: placedByName(),
         skills,
-        ruled,
+        // A ruling that places its skill on a concept acts through that
+        // concept, not on every requirement containing its words ("IA
+        // générative" is not met by the ruling on "IA").
+        ruled: { ...ruled, same: linkedSkills((profile.links ?? []).filter((link) => !placesOnConcept(link)), asked(requirement.name)).same },
         experiences: profile.experiences,
         usable: (id) => !out.has(id),
       });
