@@ -18,6 +18,7 @@
 // - nothing (null): the profile is silent; the model's verdict stands.
 
 import { holders, key, siblings, spans } from './lexicon.js';
+import { identityNames } from './profile.js';
 import { GENERIC, STOP, stem, wordsOf } from './text.js';
 
 /** Levels at which a held skill meets the concept it is placed on. */
@@ -52,6 +53,64 @@ function partsOf(index, name) {
   return { parts: parts.map((part) => (part.ids.some(tech) ? part.ids.filter(tech) : part.ids)), rest };
 }
 
+/** A phrase's words as the profile's vocabulary is compared: folded, two letters or more ("MQ", "N3"), generic words aside. */
+const folded = (text) => key(text).split(' ').filter((word) => word.length >= 2 && !IGNORED.has(word));
+
+/** How firmly a skill's own words say a requirement: 3 met, 2 near, 1 near through its terms only, 0 not at all. */
+function said(words, skill, deep) {
+  const asked = new Set(words.filter((word) => !(deep && PRACTICE.has(word))).map(stem));
+  if (asked.size === 0) return 0;
+  const labels = [
+    ...identityNames(skill).map((label) => ({ stems: folded(label).map(stem), name: true })),
+    // A two-character term ("AI" on an alerting skill, 2026-10-06) is too
+    // ambiguous to say anything; "PRA" or "TLS" may bring a requirement near.
+    ...(skill.terms ?? []).filter((term) => key(term).replace(/ /g, '').length > 2).map((label) => ({ stems: folded(label).map(stem), name: false })),
+  ].filter((label) => label.stems.length > 0);
+  // Labels said whole in the requirement, and the requirement said whole in
+  // one label when it is at least half of it ("Support applicatif" in
+  // "Support applicatif N3", not "Production" in a four-word name).
+  const inside = labels.filter((label) => label.stems.every((word) => asked.has(word)));
+  const covered = new Set(inside.flatMap((label) => label.stems));
+  const whole = [...asked].every((word) => covered.has(word));
+  const within = labels.filter((label) => [...asked].every((word) => label.stems.includes(word)) && 2 * asked.size >= label.stems.length);
+  if ((whole && inside.some((label) => label.name)) || within.some((label) => label.name)) return 3;
+  if (inside.some((label) => label.name)) return 2;
+  if (inside.length || within.length) return 1;
+  return 0;
+}
+
+/**
+ * What the skills' own names, aliases and terms say of a requirement no
+ * concept answers ("Transferts de fichiers (CFT)", "Ordonnancement",
+ * "PRA"): met when a name or an alias says it all and the skill is
+ * practised; near when a name says part of it; near, to verify, when only
+ * terms say it (a term is broader than a name, 2026-10-06).
+ */
+function vocabulary(name, { skills, ok, strong }) {
+  const words = folded(name);
+  if (words.length === 0) return null;
+  const graded = [...skills.values()]
+    .filter((skill) => ok(skill.id) && !TOO_LOW.has(skill.level))
+    .map((skill) => {
+      const grade = said(words, skill, strong(skill.id) && DEEP_LEVELS.has(skill.level));
+      return { id: skill.id, grade: grade === 3 && !strong(skill.id) ? 2 : grade };
+    })
+    .filter(({ grade }) => grade > 0);
+  if (!graded.length) return null;
+  const top = Math.max(...graded.map(({ grade }) => grade));
+  const ids = graded.filter(({ grade }) => grade === top).map(({ id }) => id);
+  const names = ids.map((id) => skills.get(id).name).join(', ');
+  if (top === 3) return { match: 'yes', skills: ids, judged: false, via: 'vocabulary', note: `named by the profile's ${names}` };
+  if (top === 2) return { match: 'adjacent', skills: ids, judged: false, via: 'vocabulary', note: `partly named by the profile's ${names}` };
+  return { match: 'adjacent', skills: ids, judged: true, via: 'vocabulary', note: `said by the terms of the profile's ${names}: to verify` };
+}
+
+/** Of two answers, the firmer: yes, then adjacent, then adjacent to verify. */
+const firmer = (a, b) => {
+  const rank = (found) => (found ? (found.match === 'yes' ? 4 : found.judged ? 1 : 2) : 0);
+  return rank(b) > rank(a) ? b : a;
+};
+
 /** A requirement's content words, stemmed: what an experience bullet must state, every one. */
 function contentStems(name) {
   return [...new Set(wordsOf(name).filter((word) => !IGNORED.has(key(word)) && !PRACTICE.has(key(word))).map(stem))];
@@ -68,7 +127,7 @@ function contentStems(name) {
  * @param ctx  { index, placed: Map(skill id → concepts, terms included), named: the same by
  *              names and aliases only, skills: Map(id → skill), ruled: { same, near, no },
  *              experiences, usable(id) → whether a skill may be used }
- * @returns {{ match: 'yes'|'adjacent', skills: string[], judged: boolean, via: 'concept'|'sibling'|'experience', note: string } | null}
+ * @returns {{ match: 'yes'|'adjacent', skills: string[], judged: boolean, via: 'concept'|'vocabulary'|'sibling'|'experience', note: string } | null}
  */
 export function coverage(name, { index, placed, named = placed, skills, ruled = { same: [], near: [], no: [] }, experiences = [], usable = () => true }) {
   const ok = (id) => skills.has(id) && usable(id) && !ruled.no.includes(id);
@@ -86,6 +145,7 @@ export function coverage(name, { index, placed, named = placed, skills, ruled = 
   let held = loose ? [...new Set(byPart.flat())] : firm;
   // A notions-level skill is not named as an equivalent beside a better one.
   if (held.some((id) => !TOO_LOW.has(skills.get(id).level))) held = held.filter((id) => !TOO_LOW.has(skills.get(id).level));
+  const fromWords = vocabulary(name, { skills, ok, strong });
   if (held.length) {
     const names = (ids) => ids.map((id) => skills.get(id).name);
     // The owner's "same" ruling covers the words it names.
@@ -97,8 +157,9 @@ export function coverage(name, { index, placed, named = placed, skills, ruled = 
       const ids = [...new Set([...covering.flat(), ...same.filter(strong)])];
       return { match: 'yes', skills: ids, judged: false, via: 'concept', note: `equivalent: ${names(ids).join(', ')}` };
     }
-    return { match: 'adjacent', skills: held, judged: loose, via: 'concept', note: `equivalent: ${names(held).join(', ')}${loose ? ' (through a term): to verify' : ''}` };
+    return firmer({ match: 'adjacent', skills: held, judged: loose, via: 'concept', note: `equivalent: ${names(held).join(', ')}${loose ? ' (through a term): to verify' : ''}` }, fromWords);
   }
+  if (fromWords) return fromWords;
 
   // A sibling is transferable when it is practised: a lab Docker does not
   // bring OpenShift near.
