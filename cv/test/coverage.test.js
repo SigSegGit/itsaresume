@@ -193,7 +193,7 @@ function withVocabulary() {
     { id: 'virt', name: 'Virtualisation', group: 'sys', level: 'working', aliases: [], terms: ['VMware', 'ESX'] },
     { id: 'ha', name: 'Haute disponibilité (HAProxy)', group: 'sys', level: 'expert', aliases: ['HAProxy'], terms: ['load-balancing'] },
     { id: 'n3', name: 'Support applicatif N3', group: 'prod', level: 'expert', aliases: ['support N3'], terms: ['troubleshooting'] },
-    { id: 'ops', name: 'Exploitation de production critique', group: 'prod', level: 'expert', aliases: ['MCO'], terms: ['PRA', 'PCA'] },
+    { id: 'ops', name: 'Exploitation de production critique', group: 'prod', level: 'expert', aliases: ['MCO'], terms: ['PRA', 'PCA', "plan de reprise d'activité"] },
     { id: 'p2p', name: 'Stockage distribué P2P', group: 'sys', level: 'lab', aliases: ['P2P'], terms: ['stockage'] },
   );
   return p;
@@ -255,12 +255,12 @@ test('a sibling database ("MySQL") is adjacent to verify, not yes through an ESC
   assert.equal(row.judged, true);
 });
 
-test('what an experience bullet states ("Optimisation de requêtes") is adjacent, to verify, through its skills', () => {
-  const { row } = judge('Optimisation de requêtes');
+test('what an experience bullet states ("Industrialisation") is adjacent, to verify, through its skills', () => {
+  const { row } = judge('Industrialisation');
   assert.equal(row.match, 'adjacent', JSON.stringify(row));
   assert.equal(row.judged, true);
-  assert.deepEqual(row.skills, ['oracle']);
-  assert.match(row.note, /bank/);
+  assert.deepEqual(row.skills, ['terraform']);
+  assert.match(row.note, /acme/);
 });
 
 test('what the whole profile lacks stays no', () => {
@@ -281,7 +281,7 @@ test("the profile's answer never lowers the model's verdict", () => {
 });
 
 test('every verdict the profile gives passes validation', () => {
-  const names = ['Requêtage SQL', 'Puppet', 'MySQL', 'Optimisation de requêtes', 'Oracle tuning', 'Cloud', 'COBOL'];
+  const names = ['Requêtage SQL', 'Puppet', 'MySQL', 'Industrialisation', 'Oracle tuning', 'Cloud', 'COBOL'];
   const p = v4();
   const { analysis } = normalize(answer(names.map((name) => ({ name, importance: 'must', match: 'no', skills: [], note: '' }))), p);
   assert.deepEqual(validateAnalysis(analysis, p).errors.filter((error) => /requirement/.test(error)), []);
@@ -350,4 +350,26 @@ test('two categories under one umbrella are not related: CI/CD is not near infra
   const index = defaultIndex();
   const placed = skillConcepts(index, [{ id: 'iac', name: 'Infrastructure as Code', aliases: [], terms: [] }]);
   assert.deepEqual(relate(index, 'Intégration continue', placed), []);
+});
+
+// Red team on the real profile (2026-10-27): what still ended no although a
+// skill holds it, for want of knowledge in the lexicon.
+test('the lexicon knows the families an operations profile is asked for', () => {
+  const p = withVocabulary();
+  p.skills.push(
+    { id: 'fw', name: 'Fortinet', group: 'sec', level: 'working', aliases: ['FortiGate'] },
+    { id: 'ad', name: 'Active Directory', group: 'sys', level: 'working', aliases: ['AD'] },
+    { id: 'linux', name: 'Linux', group: 'sys', level: 'expert', aliases: [] },
+    { id: 'secops', name: 'SecOps opérationnel', group: 'sec', level: 'proficient', aliases: ['SecOps'], terms: ['sécurité'] },
+  );
+  const verdict = (name) => {
+    const { row } = judge(name, { profile: p });
+    return `${row.match}${row.judged ? '?' : ''}`;
+  };
+  const expected = {
+    Ordonnanceurs: 'yes', 'Job scheduling': 'yes', 'Infra as code': 'yes', 'Support niveau 3': 'yes', Firewall: 'yes', LDAP: 'yes',
+    'Gestion des changements': 'yes', 'Optimisation de requêtes': 'yes', 'Disaster recovery': 'adjacent?', AIX: 'adjacent?',
+    Cybersécurité: 'adjacent?', Tomcat: 'no', 'Mainframe z/OS': 'no',
+  };
+  assert.deepEqual(Object.fromEntries(Object.keys(expected).map((name) => [name, verdict(name)])), expected);
 });
