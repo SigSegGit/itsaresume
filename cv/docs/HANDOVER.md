@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b-v
-TITLE: 2.28b-iv done with Claude (Bionic was off): compare + two real runs read, one wrong row fixed (deploying applications is CI/CD); 2.28b-v: the same compare with lm-studio when Bionic is on, and why the Ansible run filled 0.87 page
+TITLE: 2.28b-iv done with Claude, one wrong row fixed; 2.28b-v: the 0.87 page is the Word PDF (no full-page promise since 2.24; the browser page fills 0.95-0.99), left: the compare with lm-studio once Bionic is on
 WRITTEN-AT: 2026-10-29
 -->
 
@@ -873,10 +873,11 @@ Traps met, each cost time once:
     (HA/load balancing, no container orchestration: honest).
   - [ ] **2.28b-v** When Bionic answers on 127.0.0.1:54321: the same
     compare with `--backends claude-code,lm-studio` and read where the
-    local model's rows differ. Then why the Ansible DBA run filled only
-    0.87 page (CLI, Word measure) while the rule is one full page: replay
-    its `raw.json` through the layout, and if the page is short because
-    the offer is narrow, say so in the report rather than pad.
+    local model's rows differ. (Its second half is done, 2026-10-29: the
+    Ansible run's 0.87 is the Word PDF of the CLI, which has had no
+    full-page promise since 2.24, the owner's decision of 2026-10-06; the
+    A4 page in the browser, `a4-fill-bench.mjs`, fills 0.954 at spacing
+    1.2 for that run and 0.992 for Safran's. No code.)
   - [x] **2.28b-iv (the original brief, kept for its commands)** On the laptop, router on 127.0.0.1:18789 (not 8789,
     reserved by Windows): `node scripts/compare.mjs --url
     http://127.0.0.1:18789 --profile ~/.itsaresume/profile.json --offer
