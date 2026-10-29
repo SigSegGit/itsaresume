@@ -112,13 +112,16 @@
      "déploiement continu",
      "pipelines CI/CD",
      "chaîne CI/CD",
-     "cycles de delivery"
+     "cycles de delivery",
+     "déploiement des applications",
+     "déploiement d'applications"
     ],
     "en": [
      "continuous integration",
      "continuous delivery",
      "continuous deployment",
-     "CI/CD pipelines"
+     "CI/CD pipelines",
+     "application deployment"
     ]
    },
    "broader": [

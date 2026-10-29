@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.28b-iv
-TITLE: 2.28b-iii done: the profile decides each requirement (coverage.js: concepts, the skills' own words, siblings, bullets; only raises); 2.28b-iv on the laptop: a full compare (claude + lm-studio) on router 127.0.0.1:18789, then real runs of the two newest offers
-WRITTEN-AT: 2026-10-27
+NEXT: 2.28b-v
+TITLE: 2.28b-iv done with Claude (Bionic was off): compare + two real runs read, one wrong row fixed (deploying applications is CI/CD); 2.28b-v: the same compare with lm-studio when Bionic is on, and why the Ansible run filled 0.87 page
+WRITTEN-AT: 2026-10-29
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,7 +11,14 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-10-27)
+## 0. Where things stand (2026-10-29)
+
+- **2.28b-iv (2026-10-29), with Claude only** (Bionic off that evening):
+  the compare on the Ansible DBA offer and one real run each of the two
+  newest offers (Ansible DBA 100/100, 0.87 page; Safran AI SRE 70/100).
+  One wrong row: "déploiement des applications" was adjacent against GitLab
+  CI and Jenkins; now a `tech:cicd` phrasing (test + defence). Replayed on
+  every real run: only the two Safran runs change (70 → 80), nothing else.
 
 - **The profile decides, not the model's first verdict (2.28b-iii,
   2026-10-27, the owner's ask)**: `src/coverage.js` answers each skill
@@ -854,7 +861,23 @@ Traps met, each cost time once:
     remaining absent from the v4. 590 tests; sabotage 207 + 187 defences.
     Note: commit d4b8a19's message says "all remaining checked"; at that
     commit they were not (ten were still false no, fixed in 2233178).
-  - [ ] **2.28b-iv** On the laptop, router on 127.0.0.1:18789 (not 8789,
+  - [x] **2.28b-iv** (done 2026-10-29 with `--backends claude-code` only:
+    Bionic was off; the lm-studio half is 2.28b-v). Compare: every row
+    honest ("collaboration avec les DBA" a personal quality, to verify).
+    Real runs (CLI, same pipeline as the page): Safran's "Déploiement des
+    applications" adjacent although GitLab CI/Jenkins are held → red test
+    `deploying applications is CI/CD: a pipeline skill meets it`, three
+    phrasings added to `tech:cicd`, defence in `content.json`;
+    `runs-replay.mjs` before/after: 4 lines, the two Safran runs only.
+    "Scalabilité des applications" and "Stockage" stay adjacent, to verify
+    (HA/load balancing, no container orchestration: honest).
+  - [ ] **2.28b-v** When Bionic answers on 127.0.0.1:54321: the same
+    compare with `--backends claude-code,lm-studio` and read where the
+    local model's rows differ. Then why the Ansible DBA run filled only
+    0.87 page (CLI, Word measure) while the rule is one full page: replay
+    its `raw.json` through the layout, and if the page is short because
+    the offer is narrow, say so in the report rather than pad.
+  - [x] **2.28b-iv (the original brief, kept for its commands)** On the laptop, router on 127.0.0.1:18789 (not 8789,
     reserved by Windows): `node scripts/compare.mjs --url
     http://127.0.0.1:18789 --profile ~/.itsaresume/profile.json --offer
     ~/.itsaresume/offers/2026-10-14-ansible-dba-sqy.txt --backends
@@ -864,7 +887,7 @@ Traps met, each cost time once:
     the report's adjacent / to verify rows. For a row that is wrong, a red
     test in `test/coverage.test.js` first; knowledge goes to
     `data/tech.json`, an owner's ruling to his private links.json.
-  - [ ] **2.28b** (what is left is 2.28b-iv; the replay and the router
+  - [ ] **2.28b** (what is left is 2.28b-v; the replay and the router
     journal were done on 2026-10-25, 2.28b-ii/iii) Needs a session running ON the laptop (Claude Desktop
     on `D:\GitHub\itsaresume`, or `claude remote-control` there): a cloud
     session sees neither the router, Bionic, the runs nor the profile.
@@ -1013,7 +1036,8 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   better (score.js caps lab only; coverage only replaces it when a
   well-held skill exists); a name "X (Y)" is read as both concepts, so
   "Sécurité (IA)" is yes through SecOps and the alerting skill although it
-  means the security of AI; a model's yes grounded only by a skill's term
+  means the security of AI (accepted by the owner on 2026-10-27: nothing
+  to change); a model's yes grounded only by a skill's term
   stays yes (leaving terms out of `grounded` lowered honest readings, 13
   real rows); stemming is not derivation ("ordonnanceur" vs
   "ordonnancement" needed explicit labels; prefix matching refused, it
