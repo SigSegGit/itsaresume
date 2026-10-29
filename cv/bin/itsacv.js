@@ -13,6 +13,8 @@ import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/i
 import { QA_LOG } from '../src/qa.js';
 import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
+import { matrix, offersFromRuns, toCsv, toMarkdown } from '../src/matrix.js';
+import { listProfiles } from '../src/profiles.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -23,6 +25,7 @@ const USAGE = `usage:
   itsacv invite <label> [--out DIR] [--public-host NAME]
   itsacv invite --list | --usage | --revoke <label|code> [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
+  itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -35,6 +38,10 @@ const USAGE = `usage:
   questions  what the offers ask that no profile skill meets, most asked first, minus
              what answers.json (beside the profile) already answers: of every run in
              --out, or of the run directories named
+  matrix     no model call: for each offer run in --out (or each run named; an offer run
+             twice is its latest run) and each profile (--profile, then --profiles DIR),
+             the share of its requirements the profile's skills name; a Markdown table,
+             or CSV with --csv
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
   --profiles serve: other profiles a job may be tailored to, each DIR/<id>.json (id: lower
@@ -64,7 +71,7 @@ else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
 const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true] };
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -73,7 +80,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite', 'questions'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -94,6 +101,7 @@ function parse(argv) {
     inviteOnly: false,
     list: false,
     usage: false,
+    csv: false,
     revoke: null,
   };
   for (let i = 0; i < rest.length; i += 1) {
@@ -109,7 +117,7 @@ function parse(argv) {
     if (!options.list && !options.usage && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
-  if (command !== 'serve' && command !== 'questions' && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
+  if (!['serve', 'questions', 'matrix'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
   if (!/^\d+(\.\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {
     fail(2, `--timeout (or ITSACV_TIMEOUT) needs a number of seconds above 0, not "${options.timeout}"\n\n${USAGE}`);
@@ -184,6 +192,23 @@ async function main() {
     }
     for (const entry of found.unreadable) process.stderr.write(`itsacv: ${entry.name} skipped: ${entry.error}\n`);
     process.stdout.write(formatQuestions(gatherQuestions(found.runs, { profile: loaded.profile, answers }), found.runs.length));
+    return;
+  }
+
+  if (options.command === 'matrix') {
+    let found;
+    let profiles;
+    try {
+      found = options.files.length === 0 ? readRuns(options.out) : readRunDirs(options.files);
+      profiles = [...listProfiles({ profile: options.profile, profilesDir: options.profiles })].map(([id, path]) => ({ id, profile: loadProfile(path).profile }));
+    } catch (error) {
+      fail(2, error.message);
+    }
+    for (const entry of found.unreadable) process.stderr.write(`itsacv: ${entry.name} skipped: ${entry.error}
+`);
+    if (!found.runs.length) fail(2, `no run with an analysis.json in ${options.files.length ? 'the directories named' : options.out}`);
+    const rows = matrix(offersFromRuns(found.runs), profiles);
+    process.stdout.write(options.csv ? toCsv(rows) : toMarkdown(rows));
     return;
   }
 

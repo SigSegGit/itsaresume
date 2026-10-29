@@ -1002,6 +1002,17 @@ Traps met, each cost time once:
     No CLI yet. **Measured** (`matrix-agree.mjs`): Spearman 0.62 between
     coverage and the pipeline's score on the 26 runs; the pipeline itself
     scored one offer 5 to 100 across runs. A pre-filter, not a verdict.
+  - [x] **5.1b** (2026-10-29) `itsacv matrix [<run-dir>...] [--out DIR]
+    [--profile FILE] [--profiles DIR] [--csv]`: the matrix from the runs
+    already made, no model call. One offer per distinct offer text (the
+    latest run of it; the same offer run twice is one row, as `questions`
+    counts them), its requirements the run's table; the profiles are the
+    page's (`listProfiles`: `default` then `DIR/<id>.json`). Markdown by
+    default, CSV with `--csv`; no run found is exit 2. Red test: two runs
+    of one offer and one of another, two profiles, the expected shares.
+    Done: test `5.1b: itsacv matrix reads the runs made…`, 2 defences
+    (guard.json); on the owner's 26 runs, 9 distinct offers, one column
+    (no --profiles there). Next for 5.x: 5.2 (the model on the top K).
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,

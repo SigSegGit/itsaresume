@@ -31,7 +31,7 @@ const slugOf = (name) => name.replace(/^\d{8}-\d{6}-/, '');
  * name's slug, joined to the one text runs of that slug kept (runs older
  * than offer.txt are the same offer run again, seen seven times).
  */
-function offers(runs) {
+export function offers(runs) {
   const text = (run) => run.offer?.replace(/\s+/g, ' ').trim() || null;
   const kept = new Map();
   for (const run of runs.filter(text)) kept.set(slugOf(run.name), new Set([...(kept.get(slugOf(run.name)) ?? []), text(run)]));

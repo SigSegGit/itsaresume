@@ -7,6 +7,7 @@
   ],
   "files": [
     "bin/itsacv.js",
+    "src/matrix.js",
     "data/tech.json",
     "src/analysis.js",
     "src/answers.js",

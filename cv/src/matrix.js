@@ -7,6 +7,7 @@
 
 import { defaultIndex, key, relate, skillConcepts } from './lexicon.js';
 import { linkedSkills } from './links.js';
+import { offers } from './questions.js';
 
 /** The requirements a profile covers, of those listed. */
 export function coverage(profile, requirements, { index = defaultIndex(), placed = skillConcepts(index, profile.skills) } = {}) {
@@ -33,6 +34,21 @@ export function matrix(offers, profiles) {
   return offers.flatMap((offer) => profiles.map(({ id, profile }) => {
     const { covered, total, share } = coverage(profile, offer.requirements, { index, placed: placedOf.get(id) });
     return { offer: offer.name, profile: id, covered: covered.length, total, share };
+  }));
+}
+
+/**
+ * 5.1b: the offers of the runs made (`runs` in time order, as readRuns
+ * gives them): one per distinct offer, its latest run's table, named by
+ * the run's name without its time.
+ */
+export function offersFromRuns(runs) {
+  const offerOf = offers(runs);
+  const latest = new Map();
+  for (const run of runs) latest.set(offerOf(run), run);
+  return [...latest.values()].map((run) => ({
+    name: run.name.replace(/^\d{8}-\d{6}-/, ''),
+    requirements: (run.analysis.requirements ?? []).map((requirement) => String(requirement.name ?? '').trim()).filter(Boolean),
   }));
 }
 
