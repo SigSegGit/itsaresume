@@ -1,9 +1,9 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.50
-TITLE: 8.50 blocked 2026-10-25: Gemini free-tier key 429 quota on the VM, openai no credits; retry one complete CV on Gemini after the daily reset
-WRITTEN-AT: 2026-10-25
+NEXT: 8.54
+TITLE: 8.50 done 2026-10-29: a complete CV on Gemini 3.6-flash (151 s; 3.7/3.8-flash have no free quota); 8.53 done; next 8.54, bench the three providers on one offer
+WRITTEN-AT: 2026-10-29
 BASE: edc32d8
 -->
 
@@ -636,7 +636,7 @@ branch with the local gates of §3 green.
   the child). After 8.51 the VM's big call still took 53 s / 3,930 tokens
   for a ~1,100-token answer: its CLI (2.1.162, the laptop has 2.1.290)
   thinks by default (observed: a `thinking` block, gone with the variable).
-- [ ] **8.50** **One complete CV on Gemini** once 8.48b is deployed (the VM
+- [x] **8.50** **One complete CV on Gemini** once 8.48b is deployed (the VM
   follows `main` within ~6 min): `POST /api/jobs` on the VM's
   127.0.0.1:18790 with `model: gemini` (GET `/` first for the cookie and
   the CSRF token; a job is visible only with that cookie). If Gemini is
@@ -647,12 +647,33 @@ branch with the local gates of §3 green.
   your current quota" on the free-tier key; openai `limited` (no credits).
   Retry after the free tier's daily reset (midnight Pacific, ~09:00 CET);
   first check `curl -s 127.0.0.1:8789/status` on the VM shows gemini `up`.
-- [ ] **8.53** **The openai backend's errors say "LM Studio"**: observed on
-  the VM, openai's 429 reads `LM Studio HTTP 429: You have no credits…`
-  (`lm_studio.rs:316`, `format!("LM Studio HTTP {status}…")`, shared by
-  both kinds). Test first: an openai 4xx detail names the backend (`openai`
-  or the configured name), never "LM Studio"; sabotage: the label back to
-  the constant.
+  **Checked again 2026-10-29 19:20 CET, after the reset: still `limited`**
+  (429 "You exceeded your current quota" since 18:17 CET). The free-tier
+  key itself has no quota for the configured model: the owner must choose
+  (another model on the free tier, or another key); not retried until then.
+  **Done 2026-10-29 (the owner chose another model).** Probed on the VM
+  with one tiny `generateContent` per model: 200 for 3.6-flash, 3.5-flash
+  and 3.5-flash-lite; 429 for 3.7-flash, 3.8-flash, flash-latest; 404 for
+  2.5. The VM's `router.toml` now says `gemini-3.6-flash` (backup
+  `router.toml.bak-20261029`); `router.example.toml` follows. One job
+  through the page, `model: gemini`, the Safran SRE offer: done in 151 s,
+  backend gemini, 78/100, 0.95 page, docx + PDF written.
+- [ ] **8.54** **Bench the providers on one offer** (the owner's "later",
+  now possible: claude, gemini 3.6-flash and bionic all answer): on the
+  laptop, router with `gemini.local.toml`'s backend added to
+  `sonnet-qwen.local.toml` (port 18789), Bionic on, then from `cv/`
+  `node scripts/compare.mjs --url http://127.0.0.1:18789 --profile
+  ~/.itsaresume/profile.json --offer <the Safran offer> --backends
+  claude-code,gemini,lm-studio --save <out>/bench.json`; record time,
+  attempts and the rows where they differ, in §9. No code unless a row
+  shows a bug (then a red test first).
+- [x] **8.53** **The openai backend's errors say "LM Studio"** (done
+  2026-10-29): every message of the shared OpenAI-compatible client
+  (`lm_studio.rs`: slot, transport, HTTP status, truncated, empty, not
+  JSON) uses the backend's label (`lm-studio` or `openai`). Test
+  `an_openai_error_names_openai_never_lm_studio` (HTTP 429 and an
+  unreachable port); two defences in `router-gemini.json` put the
+  constant back.
 
 ## 9. Deliberately open
 
