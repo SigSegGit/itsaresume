@@ -757,11 +757,25 @@ Traps met, each cost time once:
     -2.1k chars (~525 tokens, 13 %) on the real profile. Every id, name,
     alias and term kept (tested). Not on by default: the gate needs the
     model (rules-replay cannot see a prompt change) -> 2.25c.
-  - [ ] **2.25c** The real A/B: `ITSACV_PROMPT=compact,shortlist` vs off on
+  - [x] **2.25c** The real A/B: `ITSACV_PROMPT=compact,shortlist` vs off on
     the 6 runs that kept offer.txt and raw.json (~24 calls on the Pro
     quota, the owner's go first); compare matched requirements row by row
     (2.3b-ii's rule: no yes -> no without a named reason); switch the
     default on only if none is lost.
+    **Done 2026-10-29 (the owner's go): not switched on.** Six real
+    offers, Claude, `--no-layout`, each arm in its own out dir sharing the
+    same cached listings (`~/.itsaresume/out/ab-2.25c/{off,on}`, compared
+    by `~/.itsaresume/migrations/ab-2.25c.py`): 4 offers identical
+    (100, 100, 59, 80 both arms); the infrastructure architect gains
+    (64 -> 71, not-qualified -> partial: Industrialisation yes, POC
+    adjacent); the AI tech lead loses (60 -> 47): with the compact prompt
+    the model answered 30 rows for a 14-row listing, the English names
+    and their French translations, and 5 of the English rows went down
+    (4 adjacent -> no, 1 yes -> adjacent). The gate (none lost) fails;
+    `ITSACV_PROMPT` stays off. Open: the duplicated rows mean the compact
+    prompt lets the model re-list in the offer's language; if 2.25 is
+    retried, a red test first that the analysis keeps the listing's rows
+    and names (count and names), then one more A/B of that offer only.
 - [ ] **2.26** (the owner, 2026-10-13) **Run-to-run variance, framed.**
   Temperature: `claude -p` takes none (router `claude_code.rs`), Bionic's
   API would (not sent today). **Measured 2026-10-13 on Sonnet**
