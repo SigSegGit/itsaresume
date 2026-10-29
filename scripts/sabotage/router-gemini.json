@@ -122,6 +122,22 @@
         "the_key_goes_as_a_bearer_and_never_in_the_body"
       ]
     },
+    "openai: an HTTP error names its backend": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "let detail = format!(\"{label} HTTP {status}: {message}\");",
+      "dead": "let detail = format!(\"LM Studio HTTP {status}: {message}\");",
+      "expect": [
+        "an_openai_error_names_openai_never_lm_studio"
+      ]
+    },
+    "openai: a transport error names its backend": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "let detail = format!(\"{label} at {url}: {error}\");",
+      "dead": "let detail = format!(\"LM Studio at {url}: {error}\");",
+      "expect": [
+        "an_openai_error_names_openai_never_lm_studio"
+      ]
+    },
     "OpenAI schema through the shared rule": {
       "file": "crates/itsaresume-router/src/openai.rs",
       "live": "        inner.schema_as_rule = true;",

@@ -801,8 +801,8 @@
     },
     "Journal: a 2xx without content is counted, not quoted": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
-      "live": "\"LM Studio answered {status} without choices[0].message.content ({} characters)\",",
-      "dead": "\"LM Studio answered {status} without choices[0].message.content ({0} characters: {body})\",",
+      "live": "\"{label} answered {status} without choices[0].message.content ({} characters)\",",
+      "dead": "\"{label} answered {status} without choices[0].message.content ({0} characters: {body})\",",
       "expect": [
         "a_success_without_an_answer_is_counted_not_quoted"
       ]

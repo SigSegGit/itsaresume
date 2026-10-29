@@ -2,8 +2,8 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.50
-TITLE: 8.50 blocked 2026-10-25: Gemini free-tier key 429 quota on the VM, openai no credits; retry one complete CV on Gemini after the daily reset
-WRITTEN-AT: 2026-10-25
+TITLE: 8.53 done (errors name their backend); 8.50 still blocked 2026-10-29 after the reset: the Gemini free-tier key has no quota, waits for the owner (another model or key)
+WRITTEN-AT: 2026-10-29
 BASE: edc32d8
 -->
 
@@ -647,12 +647,17 @@ branch with the local gates of §3 green.
   your current quota" on the free-tier key; openai `limited` (no credits).
   Retry after the free tier's daily reset (midnight Pacific, ~09:00 CET);
   first check `curl -s 127.0.0.1:8789/status` on the VM shows gemini `up`.
-- [ ] **8.53** **The openai backend's errors say "LM Studio"**: observed on
-  the VM, openai's 429 reads `LM Studio HTTP 429: You have no credits…`
-  (`lm_studio.rs:316`, `format!("LM Studio HTTP {status}…")`, shared by
-  both kinds). Test first: an openai 4xx detail names the backend (`openai`
-  or the configured name), never "LM Studio"; sabotage: the label back to
-  the constant.
+  **Checked again 2026-10-29 19:20 CET, after the reset: still `limited`**
+  (429 "You exceeded your current quota" since 18:17 CET). The free-tier
+  key itself has no quota for the configured model: the owner must choose
+  (another model on the free tier, or another key); not retried until then.
+- [x] **8.53** **The openai backend's errors say "LM Studio"** (done
+  2026-10-29): every message of the shared OpenAI-compatible client
+  (`lm_studio.rs`: slot, transport, HTTP status, truncated, empty, not
+  JSON) uses the backend's label (`lm-studio` or `openai`). Test
+  `an_openai_error_names_openai_never_lm_studio` (HTTP 429 and an
+  unreachable port); two defences in `router-gemini.json` put the
+  constant back.
 
 ## 9. Deliberately open
 
