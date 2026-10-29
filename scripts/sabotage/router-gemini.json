@@ -133,7 +133,7 @@
     "openai: a transport error names its backend": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
       "live": "let detail = format!(\"{label} at {url}: {error}\");",
-      "dead": "let detail = format!(\"LM Studio at {url}: {error}\");",
+      "dead": "let _ = label; let detail = format!(\"LM Studio at {url}: {error}\");",
       "expect": [
         "an_openai_error_names_openai_never_lm_studio"
       ]
