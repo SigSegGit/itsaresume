@@ -1426,6 +1426,14 @@
         "2.26a: a second run of the same offer makes no listing call, its rows read from the cache"
       ]
     },
+    "OPS concept (2026-10-29): deploying applications is CI/CD": {
+      "file": "data/tech.json",
+      "live": "\"déploiement des applications\",",
+      "dead": "\"déploiement des applications-sabotaged\",",
+      "expect": [
+        "deploying applications is CI/CD: a pipeline skill meets it"
+      ]
+    },
     "OPS concept (2026-10-24): astreinte grounds through the operations concept": {
       "file": "data/tech.json",
       "live": "\"astreinte\",",

@@ -185,6 +185,7 @@ property it proves.
 | a quality word beside a profile skill the lexicon lacks keeps the requirement scored | Quality: a profile skill keeps a requirement scored |
 | two categories under one umbrella are not related: CI/CD is not near infrastructure as code | Lexicon (2.28b): an umbrella is no shared theme; Lexicon (2.28b): an umbrella makes no neighbours |
 | the lexicon knows the families an operations profile is asked for | — |
+| deploying applications is CI/CD: a pipeline skill meets it | OPS concept (2026-10-29): deploying applications is CI/CD |
 | a yes names the skills placed on the concept itself before those of its members | Coverage (2.28b): a yes names the concept's own skills first |
 | a lab skill whose name says the whole requirement brings it near, never meets it | Vocabulary (2.28b): only a practised skill meets it |
 | one word of a long skill name says nothing on its own ("Critique") | Vocabulary (2.28b): the requirement within a label must be half of it |
@@ -802,6 +803,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**533 tests, 440 of them covered by at least one sabotage defence.**
+**534 tests, 441 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
