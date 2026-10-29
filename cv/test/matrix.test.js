@@ -4,7 +4,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { coverage, matrix, toCsv, toMarkdown } from '../src/matrix.js';
 import { buildIndex, relate, skillConcepts } from '../src/lexicon.js';
 
@@ -62,4 +65,41 @@ test('the matrix is written as CSV and as a Markdown table', () => {
   const rows = matrix(OFFERS.slice(0, 1), [{ id: 'synthetic', profile: synthetic() }]);
   assert.equal(toCsv(rows), 'offer,profile,covered,total,share\ndba,synthetic,3,4,0.75\n');
   assert.match(toMarkdown(rows), /\| dba \| 75 % \|/);
+});
+
+const CLI = new URL('../bin/itsacv.js', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
+
+test('5.1b: itsacv matrix reads the runs made, one row per offer (its latest run), one column per profile', () => {
+  const home = mkdtempSync(join(tmpdir(), 'itsacv-matrix-'));
+  try {
+    const out = join(home, 'out');
+    writeFileSync(join(home, 'profile.json'), JSON.stringify(synthetic()));
+    mkdirSync(join(home, 'profiles'));
+    writeFileSync(join(home, 'profiles', 'cloud.json'), JSON.stringify(cloudOnly()));
+    const runs = [
+      ['20261001-100000-dba', 'the dba offer', ['PostgreSQL']],
+      ['20261002-100000-dba', 'the dba offer', OFFERS[0].requirements],
+      ['20261001-110000-k8s', 'the k8s offer', OFFERS[1].requirements],
+    ];
+    for (const [name, offer, names] of runs) {
+      mkdirSync(join(out, name), { recursive: true });
+      writeFileSync(join(out, name, 'analysis.json'), JSON.stringify({ requirements: names.map((entry) => ({ name: entry, importance: 'must', match: 'no', skills: [], note: '' })) }));
+      writeFileSync(join(out, name, 'offer.txt'), offer);
+    }
+    const args = ['matrix', '--out', out, '--profile', join(home, 'profile.json'), '--profiles', join(home, 'profiles')];
+    const table = spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8' });
+    assert.equal(table.status, 0, table.stderr);
+    assert.match(table.stdout, /\| offer \| default \| cloud \|/);
+    assert.match(table.stdout, /\| dba \| 75 % \| 0 % \|/, 'the latest run of the dba offer, not the first');
+    assert.match(table.stdout, /\| k8s \| \d+ % \| 100 % \|/);
+    assert.equal(table.stdout.split('\n').filter((line) => line.startsWith('| dba')).length, 1, table.stdout);
+    const csv = spawnSync(process.execPath, [CLI, ...args, '--csv'], { encoding: 'utf8' });
+    assert.equal(csv.status, 0, csv.stderr);
+    assert.equal(csv.stdout.trim().split('\n').length, 5, csv.stdout);
+    assert.match(csv.stdout, /^dba,default,3,4,0\.75$/m);
+    const none = spawnSync(process.execPath, [CLI, 'matrix', '--out', join(home, 'empty'), '--profile', join(home, 'profile.json')], { encoding: 'utf8' });
+    assert.equal(none.status, 2, none.stdout);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });
