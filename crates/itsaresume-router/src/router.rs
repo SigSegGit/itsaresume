@@ -117,6 +117,9 @@ pub struct Router {
     /// Each backend's last answer, by name: what `status` says of a backend
     /// that has no probe (8.43). In memory: a restart forgets it.
     seen: Mutex<HashMap<String, Seen>>,
+    /// A backend's own check period, longer than the server's (a free-tier
+    /// key allows fewer requests a day than 96 checks).
+    check_periods: HashMap<String, Duration>,
 }
 
 /// A backend's last answer: when (Unix seconds), and its error if it failed.
@@ -161,7 +164,15 @@ impl Router {
             backends,
             journal,
             seen: Mutex::new(HashMap::new()),
+            check_periods: HashMap::new(),
         })
+    }
+
+    /// Check `backend` every `period` instead of the server's period.
+    #[must_use]
+    pub fn with_check_period(mut self, backend: &str, period: Duration) -> Self {
+        self.check_periods.insert(backend.to_owned(), period);
+        self
     }
 
     /// Each backend's state, from its probe when it has one, else from its
@@ -227,11 +238,12 @@ impl Router {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_or(0, |elapsed| elapsed.as_secs());
+        let period_of = |name: &str| self.check_periods.get(name).copied().unwrap_or(period);
         let recent: Vec<String> = self.seen.lock().map_or_else(
             |_| Vec::new(),
             |seen| {
                 seen.iter()
-                    .filter(|(_, s)| now.saturating_sub(s.at) < period.as_secs())
+                    .filter(|(name, s)| now.saturating_sub(s.at) < period_of(name).as_secs())
                     .map(|(name, _)| name.clone())
                     .collect()
             },

@@ -31,6 +31,10 @@ pub struct Config {
     /// `serve` checks each backend that cannot probe itself this often
     /// (8.49; 900 = 15 min); absent, never.
     pub check_every_secs: Option<u64>,
+    /// A longer period for some backends, by name (`gemini = 21600`): a
+    /// free-tier key allows fewer requests a day than the checks would spend.
+    #[serde(default)]
+    pub check_every_backend_secs: std::collections::BTreeMap<String, u64>,
 }
 
 /// One backend. The list of kinds is closed, and no kind has a credential.
@@ -285,6 +289,15 @@ impl Config {
                 )));
             }
         }
+        if let Some(name) = self
+            .check_every_backend_secs
+            .keys()
+            .find(|name| !self.backends.iter().any(|b| &b.name() == *name))
+        {
+            return Err(ConfigError(format!(
+                "invalid configuration: check_every_backend_secs names \"{name}\", which is not a backend"
+            )));
+        }
         let backends = self
             .backends
             .iter()
@@ -296,8 +309,14 @@ impl Config {
                 })
             })
             .collect();
-        Router::new(backends, Journal::new(&self.journal))
-            .map_err(|error| ConfigError(format!("invalid configuration: {error}")))
+        let router = Router::new(backends, Journal::new(&self.journal))
+            .map_err(|error| ConfigError(format!("invalid configuration: {error}")))?;
+        Ok(self
+            .check_every_backend_secs
+            .iter()
+            .fold(router, |router, (name, secs)| {
+                router.with_check_period(name, Duration::from_secs(*secs))
+            }))
     }
 }
 
