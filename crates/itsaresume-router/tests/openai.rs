@@ -54,6 +54,20 @@ fn insufficient_quota_falls_back() {
     );
 }
 
+/// Observed on the VM (8.53): openai's 429 read "LM Studio HTTP 429: …".
+#[test]
+fn an_openai_error_names_openai_never_lm_studio() {
+    let body = r#"{"error":{"message":"You have no credits remaining."}}"#;
+    let (base_url, _) = serve(429, body);
+    let http = backend(&base_url, Some("k")).complete(&Request::new("hi"));
+    let unreachable = backend("http://127.0.0.1:9/v1", Some("k")).complete(&Request::new("hi"));
+    for outcome in [http, unreachable] {
+        let detail = format!("{outcome:?}");
+        assert!(detail.contains("openai"), "{detail}");
+        assert!(!detail.contains("LM Studio"), "{detail}");
+    }
+}
+
 #[test]
 fn a_schema_uses_the_shared_rule_and_json_object_mode() {
     let (base_url, received) = serve(200, SUCCESS);
