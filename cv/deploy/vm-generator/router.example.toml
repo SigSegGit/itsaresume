@@ -7,6 +7,10 @@ journal = "/home/node/journal/journal.jsonl"
 # 8.49: every 15 min, one tiny request to each backend that has not answered
 # real traffic meanwhile, so the page offers only what can answer.
 check_every_secs = 900
+# 8.55: 96 checks a day exhaust a free-tier Gemini key (seen 2026-10-29:
+# 429 after one real CV); check it every 6 h instead. Names a backend.
+# [check_every_backend_secs]
+# gemini = 21600
 
 [[backend]]
 kind = "claude-code"
