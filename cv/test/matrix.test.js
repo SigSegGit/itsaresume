@@ -75,7 +75,10 @@ test('5.1b: itsacv matrix reads the runs made, one row per offer (its latest run
     const out = join(home, 'out');
     writeFileSync(join(home, 'profile.json'), JSON.stringify(synthetic()));
     mkdirSync(join(home, 'profiles'));
-    writeFileSync(join(home, 'profiles', 'cloud.json'), JSON.stringify(cloudOnly()));
+    // A profile the CLI loads must be valid: no bullet citing a skill cloudOnly() dropped.
+    const cloud = cloudOnly();
+    for (const experience of cloud.experiences) experience.bullets = experience.bullets.filter((bullet) => bullet.skills.every((id) => cloud.skills.some((skill) => skill.id === id)));
+    writeFileSync(join(home, 'profiles', 'cloud.json'), JSON.stringify(cloud));
     const runs = [
       ['20261001-100000-dba', 'the dba offer', ['PostgreSQL']],
       ['20261002-100000-dba', 'the dba offer', OFFERS[0].requirements],

@@ -68,7 +68,8 @@
     "test/matrix.test.js",
     "src/coverage.js",
     "data/tech.json",
-    "test/coverage.test.js"
+    "test/coverage.test.js",
+    "bin/itsacv.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {
@@ -1541,6 +1542,22 @@
       "dead": "merged.links = [];",
       "expect": [
         "loadProfile reads links.json beside the profile"
+      ]
+    },
+    "Matrix CLI (5.1b): an offer run twice is its latest run": {
+      "file": "src/matrix.js",
+      "live": "for (const run of runs) latest.set(offerOf(run), run);",
+      "dead": "for (const run of runs) if (!latest.has(offerOf(run))) latest.set(offerOf(run), run);",
+      "expect": [
+        "5.1b: itsacv matrix reads the runs made, one row per offer (its latest run), one column per profile"
+      ]
+    },
+    "Matrix CLI (5.1b): --profiles adds a column per profile": {
+      "file": "bin/itsacv.js",
+      "live": "profiles = [...listProfiles({ profile: options.profile, profilesDir: options.profiles })]",
+      "dead": "profiles = [...listProfiles({ profile: options.profile, profilesDir: null })]",
+      "expect": [
+        "5.1b: itsacv matrix reads the runs made, one row per offer (its latest run), one column per profile"
       ]
     },
     "Matrix: a near concept counts half": {
