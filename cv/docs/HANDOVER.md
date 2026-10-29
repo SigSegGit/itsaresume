@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b-v
-TITLE: 2.28b-iv done with Claude (Bionic was off): compare + two real runs read, one wrong row fixed (deploying applications is CI/CD); 2.28b-v: the same compare with lm-studio when Bionic is on, and why the Ansible run filled 0.87 page
+TITLE: 2.28b-iv done with Claude, one wrong row fixed; 2.28b-v: the 0.87 page is the Word PDF (no full-page promise since 2.24; the browser page fills 0.95-0.99), left: the compare with lm-studio once Bionic is on
 WRITTEN-AT: 2026-10-29
 -->
 
@@ -757,11 +757,29 @@ Traps met, each cost time once:
     -2.1k chars (~525 tokens, 13 %) on the real profile. Every id, name,
     alias and term kept (tested). Not on by default: the gate needs the
     model (rules-replay cannot see a prompt change) -> 2.25c.
-  - [ ] **2.25c** The real A/B: `ITSACV_PROMPT=compact,shortlist` vs off on
+  - [x] **2.25c** The real A/B: `ITSACV_PROMPT=compact,shortlist` vs off on
     the 6 runs that kept offer.txt and raw.json (~24 calls on the Pro
     quota, the owner's go first); compare matched requirements row by row
     (2.3b-ii's rule: no yes -> no without a named reason); switch the
     default on only if none is lost.
+    **Done 2026-10-29 (the owner's go): not switched on.** Six real
+    offers, Claude, `--no-layout`, each arm in its own out dir sharing the
+    same cached listings (`~/.itsaresume/out/ab-2.25c/{off,on}`, compared
+    by `~/.itsaresume/migrations/ab-2.25c.py`): 4 offers identical
+    (100, 100, 59, 80 both arms); the infrastructure architect gains
+    (64 -> 71, not-qualified -> partial: Industrialisation yes, POC
+    adjacent); the AI tech lead loses (60 -> 47): with the compact prompt
+    the model answered 30 rows for a 14-row listing, the English names
+    and their French translations, and 5 of the English rows went down
+    (4 adjacent -> no, 1 yes -> adjacent). The gate (none lost) fails;
+    `ITSACV_PROMPT` stays off. Mechanism: the cached listing named that
+    offer's rows in English; with the compact prompt the model answered
+    them translated into French, and `mergeListed` (src/listing.js), which
+    matches names by words, saw the 14 English rows as left out and added
+    them back as "no" (then coverage raised some): every requirement
+    counted twice. If 2.25 is retried: a red test first that a translated
+    row is not added twice (or that the analysis must keep the listing's
+    names, checked by code), then one more A/B of that offer only.
 - [ ] **2.26** (the owner, 2026-10-13) **Run-to-run variance, framed.**
   Temperature: `claude -p` takes none (router `claude_code.rs`), Bionic's
   API would (not sent today). **Measured 2026-10-13 on Sonnet**
@@ -873,10 +891,11 @@ Traps met, each cost time once:
     (HA/load balancing, no container orchestration: honest).
   - [ ] **2.28b-v** When Bionic answers on 127.0.0.1:54321: the same
     compare with `--backends claude-code,lm-studio` and read where the
-    local model's rows differ. Then why the Ansible DBA run filled only
-    0.87 page (CLI, Word measure) while the rule is one full page: replay
-    its `raw.json` through the layout, and if the page is short because
-    the offer is narrow, say so in the report rather than pad.
+    local model's rows differ. (Its second half is done, 2026-10-29: the
+    Ansible run's 0.87 is the Word PDF of the CLI, which has had no
+    full-page promise since 2.24, the owner's decision of 2026-10-06; the
+    A4 page in the browser, `a4-fill-bench.mjs`, fills 0.954 at spacing
+    1.2 for that run and 0.992 for Safran's. No code.)
   - [x] **2.28b-iv (the original brief, kept for its commands)** On the laptop, router on 127.0.0.1:18789 (not 8789,
     reserved by Windows): `node scripts/compare.mjs --url
     http://127.0.0.1:18789 --profile ~/.itsaresume/profile.json --offer
@@ -931,8 +950,14 @@ Traps met, each cost time once:
   and the "Profil expérimenté" line below; the Bionic run of the same offer
   scored 90 — its report sits on the VM, not read yet (the auto-mode
   classifier refused the VM read): find which rows cost the 3 more points.
-- [ ] **2.27** (the owner, 2026-10-14: "analyser les 10 % manquants") **A
-  collaboration requirement met by a profile fact, not a skill.** Real run
+- [x] **2.27** (the owner, 2026-10-14: "analyser les 10 % manquants") **A
+  collaboration requirement met by a profile fact, not a skill.**
+  **Closed 2026-10-29 by 2.28b-ii, measured on a real run of the same
+  offer**: "Travail avec les DBA" is now a personal quality, counted
+  neither in the score nor in the qualification (listed under "the offer
+  asks for these" for the interview): 100/100, "qualified"; the summary
+  quotes the profile's "en lien direct avec l'équipe DBA". The fact-id
+  check below was not built: nothing it would change remains. Real run
   (offer known to be a near-perfect fit, interview passed): 93/100; the 7
   points are one must, "Capacité à travailler avec les DBA", capped to
   adjacent by `src/normalize.js` (`grounded` finds no skill naming "DBA")
