@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.54
-TITLE: 8.50 done 2026-10-29: a complete CV on Gemini 3.6-flash (151 s; 3.7/3.8-flash have no free quota); 8.53 done; next 8.54, bench the three providers on one offer
+TITLE: 8.55 done (a backend's own check period: the 15-min checks spent the Gemini free tier); after its merge, gemini = 21600 on the VM, then 8.54's bench the next day
 WRITTEN-AT: 2026-10-29
 BASE: edc32d8
 -->
@@ -658,6 +658,20 @@ branch with the local gates of §3 green.
   `router.toml.bak-20261029`); `router.example.toml` follows. One job
   through the page, `model: gemini`, the Safran SRE offer: done in 151 s,
   backend gemini, 78/100, 0.95 page, docx + PDF written.
+- [x] **8.55** **The checks spent the Gemini free tier** (2026-10-29).
+  After 8.50's complete CV on `gemini-3.6-flash`, the same evening's bench
+  (`compare.mjs` in the VM's generator container, Safran offer) got 429
+  from Gemini again: the VM journal shows 70-90 gemini lines a day, almost
+  all 15-min checks (8.49), more than a free-tier key allows. Fix:
+  `[check_every_backend_secs]` (by backend name, refused if no such
+  backend) gives a backend its own, longer period. Tests
+  `a_backend_with_its_own_period_is_checked_less_often`,
+  `one_backend_can_be_checked_less_often_and_only_a_named_one`; two
+  defences in `router-gemini.json`. **On the VM after the merge** (the
+  router follows `main`): add `[check_every_backend_secs]` with
+  `gemini = 21600` to `~/itsacv-data/router.toml` (private, not in git),
+  restart the router, and see the next day's journal count fall to ~4
+  checks.
 - [ ] **8.54** **Bench the providers on one offer** (the owner's "later",
   now possible: claude, gemini 3.6-flash and bionic all answer): on the
   laptop, router with `gemini.local.toml`'s backend added to
@@ -666,7 +680,12 @@ branch with the local gates of §3 green.
   ~/.itsaresume/profile.json --offer <the Safran offer> --backends
   claude-code,gemini,lm-studio --save <out>/bench.json`; record time,
   attempts and the rows where they differ, in §9. No code unless a row
-  shows a bug (then a red test first).
+  shows a bug (then a red test first). **Tried 2026-10-29 on the VM**
+  (`docker exec -i vm-generator-generator-1 node scripts/compare.mjs --url
+  http://127.0.0.1:8789 --profile /data/profile.json --offer <stdin file>
+  --backends claude,gemini`; the laptop has no Gemini key, the VM does):
+  claude 23 s, every row honest; gemini 429 (8.55). Retry the day after
+  8.55 is live on the VM; Bionic's row when the laptop is on.
 - [x] **8.53** **The openai backend's errors say "LM Studio"** (done
   2026-10-29): every message of the shared OpenAI-compatible client
   (`lm_studio.rs`: slot, transport, HTTP status, truncated, empty, not

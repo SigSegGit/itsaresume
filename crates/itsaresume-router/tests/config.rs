@@ -378,3 +378,19 @@ fn checks_are_off_unless_a_period_is_given() {
         Some(900)
     );
 }
+
+#[test]
+fn one_backend_can_be_checked_less_often_and_only_a_named_one() {
+    let base = "journal = \"j\"\ncheck_every_secs = 900\n[check_every_backend_secs]\nopenai = 21600\n[[backend]]\nkind = \"openai\"\nmodel = \"m\"\n";
+    let config = Config::parse(base).expect("valid");
+    assert_eq!(
+        config.check_every_backend_secs.get("openai").copied(),
+        Some(21_600)
+    );
+    config.router().expect("a router");
+    let unknown = base.replace("openai = 21600", "gemini = 21600");
+    let Err(error) = Config::parse(&unknown).expect("parses").router() else {
+        panic!("gemini is not a backend here");
+    };
+    assert!(error.to_string().contains("gemini"), "{error}");
+}

@@ -146,6 +146,22 @@
         "a_schema_uses_the_shared_rule_and_json_object_mode"
       ]
     },
+    "A backend's own check period is used": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "let period_of = |name: &str| self.check_periods.get(name).copied().unwrap_or(period);",
+      "dead": "let period_of = |_name: &str| self.check_periods.get(\"\").copied().unwrap_or(period);",
+      "expect": [
+        "a_backend_with_its_own_period_is_checked_less_often"
+      ]
+    },
+    "A check period names a backend": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": ".find(|name| !self.backends.iter().any(|b| &b.name() == *name))",
+      "dead": ".find(|name| name.is_empty())",
+      "expect": [
+        "one_backend_can_be_checked_less_often_and_only_a_named_one"
+      ]
+    },
     "Check skips a backend seen within the period": {
       "file": "crates/itsaresume-router/src/router.rs",
       "live": "            if backend.probe().is_some() || recent.iter().any(|r| r == name) {",

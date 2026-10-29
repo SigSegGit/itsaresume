@@ -294,3 +294,26 @@ fn a_backend_seen_within_the_period_is_not_checked_again() {
     );
     assert_eq!(router.check(std::time::Duration::ZERO), vec!["ok"]);
 }
+
+/// 2026-10-29: a check every 15 min is ~96 requests a day, more than a
+/// free-tier Gemini key allows (seen on the VM: 429 after one real CV). A
+/// backend can be given its own, longer period.
+#[test]
+fn a_backend_with_its_own_period_is_checked_less_often() {
+    let (fast, fast_calls) = scripted("fast", Ok("ok"));
+    let (slow, slow_calls) = scripted("slow", Ok("ok"));
+    let (router, _dir) = router(vec![fast, slow]);
+    let router = router.with_check_period("slow", std::time::Duration::from_secs(21_600));
+    assert_eq!(
+        router.check(std::time::Duration::ZERO),
+        vec!["fast", "slow"]
+    );
+    assert_eq!(router.check(std::time::Duration::ZERO), vec!["fast"]);
+    assert_eq!(
+        (
+            fast_calls.load(Ordering::SeqCst),
+            slow_calls.load(Ordering::SeqCst)
+        ),
+        (2, 1)
+    );
+}
