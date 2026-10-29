@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.54
-TITLE: 8.55 done (a backend's own check period: the 15-min checks spent the Gemini free tier); after its merge, gemini = 21600 on the VM, then 8.54's bench the next day
+TITLE: 8.55 live on the VM (gemini checked every 6 h) and 8.56 (a prompt file left by a restart stopped gemini); 8.54's bench on 2026-10-30, once the journal shows ~4 gemini checks a day
 WRITTEN-AT: 2026-10-29
 BASE: edc32d8
 -->
