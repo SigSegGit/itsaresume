@@ -374,6 +374,17 @@ test('the lexicon knows the families an operations profile is asked for', () => 
   assert.deepEqual(Object.fromEntries(Object.keys(expected).map((name) => [name, verdict(name)])), expected);
 });
 
+// Seen on a real SRE offer (2.28b-iv): "accompagner le déploiement des
+// applications" came out adjacent against GitLab CI and Jenkins.
+test('deploying applications is CI/CD: a pipeline skill meets it', () => {
+  const p = withVocabulary();
+  p.skills.push({ id: 'gitlab', name: 'GitLab CI', group: 'devops', level: 'proficient', aliases: [] });
+  for (const name of ['Déploiement des applications', "Déploiement d'applications", 'Application deployment']) {
+    const { row } = judge(name, { profile: p });
+    assert.deepEqual([name, row.match, row.judged], [name, 'yes', undefined], JSON.stringify(row));
+  }
+});
+
 test('a yes names the skills placed on the concept itself before those of its members', () => {
   const { row } = judge('Exploitation informatique', { profile: withVocabulary() });
   assert.equal(row.match, 'yes', JSON.stringify(row));
