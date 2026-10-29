@@ -538,28 +538,41 @@ impl SystemFile {
         workdir: &Path,
         stem: &str,
     ) -> Result<(Self, std::fs::File), BackendError> {
-        let name = format!(
-            "{stem}-{}-{}.txt",
-            std::process::id(),
-            SYSTEM_FILES.fetch_add(1, Ordering::Relaxed)
-        );
-        // Absolute: the child runs in `workdir`, so a relative path would be
-        // resolved twice.
-        let path = std::path::absolute(workdir.join(name)).map_err(|error| {
-            BackendError::Other(format!(
-                "cannot resolve the claude working directory: {error}"
-            ))
-        })?;
-        let mut options = std::fs::OpenOptions::new();
-        // A new file: never one someone put there first.
-        options.write(true).create_new(true);
-        #[cfg(unix)]
-        std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
-        let handle = options.open(&path).map_err(|error| {
-            BackendError::Other(format!("cannot create {}: {error}", path.display()))
-        })?;
-        // Ours from here on, so removed on drop even if a write fails.
-        Ok((Self { path }, handle))
+        // A name taken (a run before a restart with the same pid, 8.56) is
+        // skipped, never reopened nor removed: it may not be ours.
+        let mut tries = 0;
+        loop {
+            let name = format!(
+                "{stem}-{}-{}.txt",
+                std::process::id(),
+                SYSTEM_FILES.fetch_add(1, Ordering::Relaxed)
+            );
+            // Absolute: the child runs in `workdir`, so a relative path would be
+            // resolved twice.
+            let path = std::path::absolute(workdir.join(name)).map_err(|error| {
+                BackendError::Other(format!(
+                    "cannot resolve the claude working directory: {error}"
+                ))
+            })?;
+            let mut options = std::fs::OpenOptions::new();
+            // A new file: never one someone put there first.
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            std::os::unix::fs::OpenOptionsExt::mode(&mut options, 0o600);
+            match options.open(&path) {
+                // Ours from here on, so removed on drop even if a write fails.
+                Ok(handle) => return Ok((Self { path }, handle)),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && tries < 64 => {
+                    tries += 1;
+                }
+                Err(error) => {
+                    return Err(BackendError::Other(format!(
+                        "cannot create {}: {error}",
+                        path.display()
+                    )));
+                }
+            }
+        }
     }
 }
 

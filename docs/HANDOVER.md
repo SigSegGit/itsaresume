@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: 8.54
-TITLE: 8.55 done (a backend's own check period: the 15-min checks spent the Gemini free tier); after its merge, gemini = 21600 on the VM, then 8.54's bench the next day
+TITLE: 8.55 live on the VM (gemini checked every 6 h) and 8.56 (a prompt file left by a restart stopped gemini); 8.54's bench on 2026-10-30, once the journal shows ~4 gemini checks a day
 WRITTEN-AT: 2026-10-29
 BASE: edc32d8
 -->
@@ -671,7 +671,19 @@ branch with the local gates of §3 green.
   router follows `main`): add `[check_every_backend_secs]` with
   `gemini = 21600` to `~/itsacv-data/router.toml` (private, not in git),
   restart the router, and see the next day's journal count fall to ~4
-  checks.
+  checks. **Done 2026-10-29 23:3x**: `gemini = 21600` in the VM's
+  router.toml (backup `router.toml.bak-20261029-855`), router restarted
+  healthy on the 8.55 image; the journal count is to read the next day.
+- [x] **8.56** **A system prompt file left by an earlier run stopped
+  gemini** (2026-10-29, seen at 8.55's restart on the VM): `docker
+  restart` keeps the container's `/tmp`, the new router got the same pid
+  (7) and met `system-7-2.txt`, left by the run before (8.15: a stop
+  mid-request leaves it); `create_new` refused it, "File exists", and
+  gemini went `stopped`, for 6 h with 8.55's period. Fix: a taken name is
+  skipped (the next number, 64 tries at most), never reopened nor removed
+  (it may not be ours). Test `a_name_left_by_an_earlier_run_is_skipped_and_left_alone`
+  (its own binary, so the counter starts at 0); defence in
+  `router-billing.json`.
 - [ ] **8.54** **Bench the providers on one offer** (the owner's "later",
   now possible: claude, gemini 3.6-flash and bionic all answer): on the
   laptop, router with `gemini.local.toml`'s backend added to
@@ -749,7 +761,7 @@ branch with the local gates of §3 green.
   never checked (fixed in 8.20). Fixed since: the truncated answer (2026-09-27),
   userinfo in `base_url` (8.18), the unpinned merge (8.19).
 - **The system prompt file on disk** (8.15): a crash mid-request leaves it
-  in the working directory; its 0600 test runs on Unix only (its
+  in the working directory (since 8.56 its name is skipped, not fatal); its 0600 test runs on Unix only (its
   defence is `unix_only`, verified under WSL and in CI). It sharpens the item above:
   on a shared Unix `/tmp`, another user could own `itsaresume-claude` and swap
   the file before `claude` reads it: closed by 8.20 (the working directory

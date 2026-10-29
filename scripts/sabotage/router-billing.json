@@ -28,7 +28,8 @@
     "crates/itsaresume-router/tests/journal.rs",
     "crates/itsaresume-router/tests/lm_studio.rs",
     "crates/itsaresume-router/tests/router.rs",
-    "crates/itsaresume-router/tests/server.rs"
+    "crates/itsaresume-router/tests/server.rs",
+    "crates/itsaresume-router/tests/system_file_collision.rs"
   ],
   "defences": {
     "Other never allows fallback": {
@@ -885,6 +886,14 @@
       "dead": "body[\"temperature\"] = json!(temperature + 1.0);",
       "expect": [
         "a_configured_temperature_is_sent_and_none_is_sent_without_one"
+      ]
+    },
+    "System file (8.56): a name left by an earlier run is skipped": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && tries < 64 => {",
+      "dead": "Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && tries < 1 => {",
+      "expect": [
+        "a_name_left_by_an_earlier_run_is_skipped_and_left_alone"
       ]
     }
   }
