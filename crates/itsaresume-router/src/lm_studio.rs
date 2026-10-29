@@ -194,8 +194,8 @@ impl Backend for LmStudioBackend {
         let deadline = Instant::now() + self.timeout;
         let Some(_slot) = self.slots.take(deadline) else {
             return Err(BackendError::Unreachable(format!(
-                "LM Studio at {url}: no free slot within {:?} (another completion holds it)",
-                self.timeout
+                "{} at {url}: no free slot within {:?} (another completion holds it)",
+                self.label, self.timeout
             )));
         };
         let left = deadline.saturating_duration_since(Instant::now());
@@ -215,16 +215,17 @@ impl Backend for LmStudioBackend {
         }
         let mut response = post
             .send(self.body(request))
-            .map_err(|error| transport(&url, error))?;
+            .map_err(|error| transport(self.label, &url, error))?;
         let status = response.status().as_u16();
         let body = response
             .body_mut()
             .read_to_string()
-            .map_err(|error| transport(&url, error))?;
-        let completion = classify(status, &body)?;
+            .map_err(|error| transport(self.label, &url, error))?;
+        let completion = classify(self.label, status, &body)?;
         if request.schema.is_some() && serde_json::from_str::<Value>(&completion.text).is_err() {
             return Err(BackendError::Other(format!(
-                "LM Studio answered a schema request with text that is not JSON ({} characters)",
+                "{} answered a schema request with text that is not JSON ({} characters)",
+                self.label,
                 completion.text.chars().count()
             )));
         }
@@ -260,8 +261,8 @@ fn get_json(url: &str) -> Result<Value, String> {
 const PROBE_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// A request that got no HTTP answer at all.
-fn transport(url: &str, error: ureq::Error) -> BackendError {
-    let detail = format!("LM Studio at {url}: {error}");
+fn transport(label: &str, url: &str, error: ureq::Error) -> BackendError {
+    let detail = format!("{label} at {url}: {error}");
     match error {
         ureq::Error::Timeout(_)
         | ureq::Error::HostNotFound
@@ -283,19 +284,19 @@ fn usage_of(parsed: &Value) -> Option<Usage> {
 }
 
 /// An HTTP answer, by status first (docs/ARCHITECTURE.md, LM Studio table).
-fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
+fn classify(label: &str, status: u16, body: &str) -> Result<Completion, BackendError> {
     let parsed: Value = serde_json::from_str(body).unwrap_or(Value::Null);
     if (200..300).contains(&status) {
         // Cut at the token or context limit, the answer is half a document;
         // empty, it is none. Both would pass for a success otherwise.
         if parsed["choices"][0]["finish_reason"] == "length" {
             return Err(BackendError::Other(format!(
-                "LM Studio answer truncated at the token or context limit (finish_reason length, {status})"
+                "{label} answer truncated at the token or context limit (finish_reason length, {status})"
             )));
         }
         return match parsed["choices"][0]["message"]["content"].as_str() {
             Some("") => Err(BackendError::Other(format!(
-                "LM Studio answered {status} with an empty answer"
+                "{label} answered {status} with an empty answer"
             ))),
             Some(text) => Ok(Completion {
                 text: text.to_owned(),
@@ -303,7 +304,7 @@ fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
                 usage: usage_of(&parsed),
             }),
             None => Err(BackendError::Other(format!(
-                "LM Studio answered {status} without choices[0].message.content ({} characters)",
+                "{label} answered {status} without choices[0].message.content ({} characters)",
                 body.chars().count()
             ))),
         };
@@ -313,7 +314,7 @@ fn classify(status: u16, body: &str) -> Result<Completion, BackendError> {
         || format!("{} characters", body.chars().count()),
         str::to_owned,
     );
-    let detail = format!("LM Studio HTTP {status}: {message}");
+    let detail = format!("{label} HTTP {status}: {message}");
     // Observed: nothing loaded is a 400. It is the server's state, not the
     // request's, so the next backend may answer.
     if status == 400 && message.contains("No models loaded") {
