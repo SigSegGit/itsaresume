@@ -932,8 +932,14 @@ Traps met, each cost time once:
   and the "Profil expérimenté" line below; the Bionic run of the same offer
   scored 90 — its report sits on the VM, not read yet (the auto-mode
   classifier refused the VM read): find which rows cost the 3 more points.
-- [ ] **2.27** (the owner, 2026-10-14: "analyser les 10 % manquants") **A
-  collaboration requirement met by a profile fact, not a skill.** Real run
+- [x] **2.27** (the owner, 2026-10-14: "analyser les 10 % manquants") **A
+  collaboration requirement met by a profile fact, not a skill.**
+  **Closed 2026-10-29 by 2.28b-ii, measured on a real run of the same
+  offer**: "Travail avec les DBA" is now a personal quality, counted
+  neither in the score nor in the qualification (listed under "the offer
+  asks for these" for the interview): 100/100, "qualified"; the summary
+  quotes the profile's "en lien direct avec l'équipe DBA". The fact-id
+  check below was not built: nothing it would change remains. Real run
   (offer known to be a near-perfect fit, interview passed): 93/100; the 7
   points are one must, "Capacité à travailler avec les DBA", capped to
   adjacent by `src/normalize.js` (`grounded` finds no skill naming "DBA")
