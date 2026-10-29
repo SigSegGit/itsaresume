@@ -227,10 +227,12 @@ fn the_system_prompt_file_is_removed_once_the_cli_has_answered() {
 fn the_system_prompt_file_is_removed_when_the_cli_is_killed() {
     let scene = scene();
     let mut env = success_env(&scene);
-    env.push(("FAKE_CLAUDE_SLEEP_MS".into(), "5000".into()));
+    env.push(("FAKE_CLAUDE_SLEEP_MS".into(), "20000".into()));
 
+    // 3 s, not 500 ms: the fake records its arguments as it starts, and a
+    // Windows runner once took longer than 500 ms to start it (PR #134).
     let outcome = backend(&scene)
-        .with_timeout(Duration::from_millis(500))
+        .with_timeout(Duration::from_secs(3))
         .complete_with_env(&Request::new("p"), env);
 
     assert!(
