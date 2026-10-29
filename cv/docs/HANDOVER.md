@@ -772,10 +772,14 @@ Traps met, each cost time once:
     the model answered 30 rows for a 14-row listing, the English names
     and their French translations, and 5 of the English rows went down
     (4 adjacent -> no, 1 yes -> adjacent). The gate (none lost) fails;
-    `ITSACV_PROMPT` stays off. Open: the duplicated rows mean the compact
-    prompt lets the model re-list in the offer's language; if 2.25 is
-    retried, a red test first that the analysis keeps the listing's rows
-    and names (count and names), then one more A/B of that offer only.
+    `ITSACV_PROMPT` stays off. Mechanism: the cached listing named that
+    offer's rows in English; with the compact prompt the model answered
+    them translated into French, and `mergeListed` (src/listing.js), which
+    matches names by words, saw the 14 English rows as left out and added
+    them back as "no" (then coverage raised some): every requirement
+    counted twice. If 2.25 is retried: a red test first that a translated
+    row is not added twice (or that the analysis must keep the listing's
+    names, checked by code), then one more A/B of that offer only.
 - [ ] **2.26** (the owner, 2026-10-13) **Run-to-run variance, framed.**
   Temperature: `claude -p` takes none (router `claude_code.rs`), Bionic's
   API would (not sent today). **Measured 2026-10-13 on Sonnet**
