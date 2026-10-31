@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.28b-v
-TITLE: 2.29 a session wakes Bionic (bionic-up.sh), on 54321 at last; 2.28b-v: the compare with lm-studio, Bionic woken first; 2.30 OpenJev spike written
+NEXT: 2.30
+TITLE: 2.28b-v done (claude 16 s, Bionic 196 s, same verdicts, no bug); 2.30 OpenJev spike: (b) Bionic gives logprobs, next (a) the repo's licence then (c) the private measure
 WRITTEN-AT: 2026-10-31
 -->
 
@@ -889,7 +889,7 @@ Traps met, each cost time once:
     `runs-replay.mjs` before/after: 4 lines, the two Safran runs only.
     "Scalabilité des applications" and "Stockage" stay adjacent, to verify
     (HA/load balancing, no container orchestration: honest).
-  - [ ] **2.28b-v** Wake Bionic first: `bash deploy/laptop/bionic-up.sh`
+  - [x] **2.28b-v** Wake Bionic first: `bash deploy/laptop/bionic-up.sh`
     (2.29; exit 0 once it answers on 127.0.0.1:54321). Then the same
     compare with `--backends claude-code,lm-studio` and read where the
     local model's rows differ. (Its second half is done, 2026-10-29: the
@@ -897,6 +897,14 @@ Traps met, each cost time once:
     full-page promise since 2.24, the owner's decision of 2026-10-06; the
     A4 page in the browser, `a4-fill-bench.mjs`, fills 0.954 at spacing
     1.2 for that run and 0.992 for Safran's. No code.)
+    **Done 2026-10-31** (Bionic woken by `bionic-up.sh`, router from
+    `target/release` on 18789, Ansible offer): claude-code 16 s, lm-studio
+    196 s, one attempt each. The six technical rows both listed end with
+    the same verdicts (Ansible, IaC, Python, shell, SQL: yes); Bionic said
+    SQL `no`, the code made it `yes` through PostgreSQL (expert), as for
+    Claude's `adjacent`. Claude listed three more, none technical
+    (reliable automation, working with DBAs, "profil expérimenté"); the
+    code put the last off the page. No bug: no code.
   - [x] **2.28b-iv (the original brief, kept for its commands)** On the laptop, router on 127.0.0.1:18789 (not 8789,
     reserved by Windows): `node scripts/compare.mjs --url
     http://127.0.0.1:18789 --profile ~/.itsaresume/profile.json --offer
@@ -907,7 +915,7 @@ Traps met, each cost time once:
     the report's adjacent / to verify rows. For a row that is wrong, a red
     test in `test/coverage.test.js` first; knowledge goes to
     `data/tech.json`, an owner's ruling to his private links.json.
-  - [ ] **2.28b** (what is left is 2.28b-v; the replay and the router
+  - [x] **2.28b** (closed 2026-10-31 with 2.28b-v; the replay and the router
     journal were done on 2026-10-25, 2.28b-ii/iii) Needs a session running ON the laptop (Claude Desktop
     on `D:\GitHub\itsaresume`, or `claude remote-control` there): a cloud
     session sees neither the router, Bionic, the runs nor the profile.
@@ -1011,8 +1019,10 @@ Traps met, each cost time once:
   read the chosen README and LICENSE; nothing unlicensed is vendored, an
   idea re-implemented in `src/` is fine. (b) Bionic: after `bionic-up.sh`,
   one `curl /v1/chat/completions` with `max_tokens: 1, logprobs: true,
-  top_logprobs: 5` on a small loaded model: are logprobs returned? If
-  not, one sampled token per question (no probabilities). (c) a private
+  top_logprobs: 5`: **done 2026-10-31, yes** (qwen3-coder-next: `yes`
+  -0.11, `Yes` -2.65, `no` -3.49; `adjacent` not in the top 5, likely
+  split into several tokens: score the options by their first token, or
+  ask with one-token labels such as A/B/C). (c) a private
   measure (`~/.itsaresume/migrations/qa-replay.mjs`, never in the
   repository: real runs) over the real runs: each row's closed question,
   agreement with the run's final verdict and total time against the

@@ -1,8 +1,8 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.57
-TITLE: 8.54 bench done on the VM (claude 22 s, gemini 151 s, no bug); 8.57: Bionic's row once the laptop runs Bionic
+NEXT: done
+TITLE: 8.57 done, Bionic benched (197 s against Claude's 18 s, same verdicts); no router step open: the next is cv's 2.30 (OpenJev spike)
 WRITTEN-AT: 2026-10-31
 BASE: edc32d8
 -->
@@ -684,10 +684,17 @@ branch with the local gates of §3 green.
   (it may not be ours). Test `a_name_left_by_an_earlier_run_is_skipped_and_left_alone`
   (its own binary, so the counter starts at 0); defence in
   `router-billing.json`.
-- [ ] **8.57** **Bionic's row of the bench** (laptop on, Bionic on):
+- [x] **8.57** **Bionic's row of the bench** (laptop on, Bionic on):
   the command below with `--backends claude-code,gemini,lm-studio` on the
   laptop router; record Bionic's time and the rows where it differs, in §9.
   No code unless a row shows a bug (then a red test first).
+  **Done 2026-10-31** (Bionic woken by cv's `bionic-up.sh`, cv 2.29;
+  claude-code and lm-studio, the laptop has no Gemini key): claude-code
+  18 s, lm-studio 197 s, one attempt each. Same verdicts where both name
+  a requirement alike (scalability and architecture adjacent, monitoring
+  yes); the rest differ by name only (Bionic keeps the offer's "SRE
+  senior", adds "stacks techniques", adjacent). No bug: no code. On the
+  Ansible offer the same day (cv 2.28b-v): 16 s against 196 s.
 - [x] **8.54** **Bench the providers on one offer** (the owner's "later",
   now possible: claude, gemini 3.6-flash and bionic all answer): on the
   laptop, router with `gemini.local.toml`'s backend added to
