@@ -848,6 +848,7 @@ test('past the job cap the oldest finished job is dropped, from memory and from 
     ids.push(job.id);
   }
   assert.equal(app.jobs.size, 2, 'two jobs kept');
+  assert.equal(app.visitors.get(alice.token).size, 2, 'her own list dropped it too');
   assert.equal((await alice.get(`/api/jobs/${ids[0]}`)).status, 404, 'the oldest is gone');
   assert.deepEqual(JSON.parse((await alice.get('/api/jobs')).text).map((job) => job.id).sort(), ids.slice(1).sort());
 });
