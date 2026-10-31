@@ -271,6 +271,22 @@
       "expect": [
         "the spacing widens within bounds until the page is 95 % full, never past the page"
       ]
+    },
+    "Jobs: the oldest finished job goes past the cap": {
+      "file": "src/server.js",
+      "live": "          jobs.delete(id);\n          visitors.get(old.visitor)?.delete(id);",
+      "dead": "",
+      "expect": [
+        "past the job cap the oldest finished job is dropped, from memory and from its visitor"
+      ]
+    },
+    "Jobs: its visitor no longer lists a dropped job": {
+      "file": "src/server.js",
+      "live": "          visitors.get(old.visitor)?.delete(id);\n        }",
+      "dead": "        }",
+      "expect": [
+        "past the job cap the oldest finished job is dropped, from memory and from its visitor"
+      ]
     }
   }
 }
