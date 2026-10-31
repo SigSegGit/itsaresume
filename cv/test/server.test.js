@@ -279,7 +279,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
@@ -308,7 +308,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
         return result;
       },
     },
-    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), now: () => clock.now },
+    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), ...(maxJobs ? { maxJobs } : {}), now: () => clock.now },
   });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   t.after(() => { app.server.closeAllConnections(); app.server.close(); });
@@ -834,6 +834,22 @@ test('a flood of page loads evicts empty visitors first, never one with jobs whi
   for (let i = 0; i < 12; i += 1) await call(app.port, { headers: { ...app.host, 'X-Forwarded-For': '198.51.100.9' } });
   assert.equal(JSON.parse((await alice.get('/api/jobs')).text).length, 1, 'alice still sees her job');
   assert.equal((await alice.get(`/api/jobs/${job.id}`)).status, 200);
+});
+
+// redteam 2026-10-05, left open until 2026-10-31: finished jobs were never
+// dropped, so the server's memory grew with every reused offer. Past the
+// cap the oldest finished job goes, and its visitor no longer lists it.
+test('past the job cap the oldest finished job is dropped, from memory and from its visitor', async (t) => {
+  const app = await startPublic(t, { maxJobs: 2 });
+  const alice = await app.visit('203.0.113.7');
+  const ids = [];
+  for (const n of [1, 2, 3]) {
+    const [job] = JSON.parse((await alice.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER(`Déjà vue ${n} : Senior SRE`) }] })).text);
+    ids.push(job.id);
+  }
+  assert.equal(app.jobs.size, 2, 'two jobs kept');
+  assert.equal((await alice.get(`/api/jobs/${ids[0]}`)).status, 404, 'the oldest is gone');
+  assert.deepEqual(JSON.parse((await alice.get('/api/jobs')).text).map((job) => job.id).sort(), ids.slice(1).sort());
 });
 
 // redteam: an unreadable or corrupt invites.json made every invited page and
