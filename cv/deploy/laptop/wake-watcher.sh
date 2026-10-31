@@ -30,7 +30,7 @@ while [ "$rounds" -eq 0 ] || [ "$round" -lt "$rounds" ]; do
     2>/dev/null || true)
   if grep -qx wake <<< "$said"; then
     if [ -n "${BIONIC_LMS:-}" ]; then
-      "$BIONIC_LMS" server start >/dev/null 2>&1 \
+      "$BIONIC_LMS" server start --port 54321 >/dev/null 2>&1 \
         || echo "Bionic's server did not start ($(date +%H:%M:%S))" >&2
     fi
     # A tunnel already open (by hand, by a session) is left alone: a second

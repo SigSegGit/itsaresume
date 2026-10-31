@@ -28,6 +28,8 @@ test('the tunnel starts Bionic\'s server before each round', { skip: process.pla
   assert.equal(run.status, 0, run.stderr);
   const lines = readFileSync(calls, 'utf8').trim().split('\n').map((line) => line.split(' ')[0]);
   assert.deepEqual(lines, ['lms', 'ssh', 'ssh', 'lms', 'ssh', 'ssh']);
+  // Never the port lms last ran on (1235, seen 2026-10-31): the tunnel's own.
+  assert.ok(readFileSync(calls, 'utf8').includes('lms server start --port 54321'));
 });
 
 // 2026-10-05: four tunnels ran at once (session tasks whose shells were

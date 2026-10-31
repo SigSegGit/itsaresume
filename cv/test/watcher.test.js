@@ -30,6 +30,9 @@ function run(sshSays) {
   return existsSync(calls) ? readFileSync(calls, 'utf8').trim().split('\n') : [];
 }
 
+// 2026-10-31: `lms server start` alone reuses the port it last ran on (1235
+// that day), where neither the tunnel nor the router looks: the port is given.
+const BIONIC_PORT = 54321;
 const posix = { skip: process.platform === 'win32' && 'POSIX shell fakes' };
 
 test('a quiet round marks the laptop seen and starts nothing', posix, () => {
@@ -39,7 +42,7 @@ test('a quiet round marks the laptop seen and starts nothing', posix, () => {
 test('a wake request starts the server of Bionic and the tunnel', posix, () => {
   const calls = run('wake');
   assert.equal(calls[0], 'ssh');
-  assert.ok(calls.includes('lms server start'), calls.join('|'));
+  assert.ok(calls.includes(`lms server start --port ${BIONIC_PORT}`), calls.join('|'));
   assert.ok(calls.includes('tunnel'), calls.join('|'));
 });
 
@@ -47,6 +50,6 @@ test('a wake request starts the server of Bionic and the tunnel', posix, () => {
 // a second one would free the VM's ports at each round and cut the first.
 test('a wake request with a tunnel already open starts Bionic, not a second tunnel', posix, () => {
   const calls = run('wake\ntunnel-up');
-  assert.ok(calls.includes('lms server start'), calls.join('|'));
+  assert.ok(calls.includes(`lms server start --port ${BIONIC_PORT}`), calls.join('|'));
   assert.ok(!calls.includes('tunnel'), calls.join('|'));
 });
