@@ -1,9 +1,9 @@
 # Handover
 
 <!-- ITSARESUME-STATE
-NEXT: 8.54
-TITLE: 8.55 live on the VM (gemini checked every 6 h) and 8.56 (a prompt file left by a restart stopped gemini); 8.54's bench on 2026-10-30, once the journal shows ~4 gemini checks a day
-WRITTEN-AT: 2026-10-29
+NEXT: 8.57
+TITLE: 8.54 bench done on the VM (claude 22 s, gemini 151 s, no bug); 8.57: Bionic's row once the laptop runs Bionic
+WRITTEN-AT: 2026-10-31
 BASE: edc32d8
 -->
 
@@ -684,7 +684,11 @@ branch with the local gates of §3 green.
   (it may not be ours). Test `a_name_left_by_an_earlier_run_is_skipped_and_left_alone`
   (its own binary, so the counter starts at 0); defence in
   `router-billing.json`.
-- [ ] **8.54** **Bench the providers on one offer** (the owner's "later",
+- [ ] **8.57** **Bionic's row of the bench** (laptop on, Bionic on):
+  the command below with `--backends claude-code,gemini,lm-studio` on the
+  laptop router; record Bionic's time and the rows where it differs, in §9.
+  No code unless a row shows a bug (then a red test first).
+- [x] **8.54** **Bench the providers on one offer** (the owner's "later",
   now possible: claude, gemini 3.6-flash and bionic all answer): on the
   laptop, router with `gemini.local.toml`'s backend added to
   `sonnet-qwen.local.toml` (port 18789), Bionic on, then from `cv/`
@@ -698,6 +702,16 @@ branch with the local gates of §3 green.
   --backends claude,gemini`; the laptop has no Gemini key, the VM does):
   claude 23 s, every row honest; gemini 429 (8.55). Retry the day after
   8.55 is live on the VM; Bionic's row when the laptop is on.
+  **Done 2026-10-31 on the VM** (claude, gemini; Bionic off: 8.57):
+  claude 22 s, gemini 151 s, one attempt each, no 429 since 8.55. Same
+  verdicts on the three rows both named alike (deployment, monitoring:
+  yes; satellite images: no). The others differ by the requirement's name
+  first (gemini keeps the offer's wording: "SRE senior", "solutions
+  d'AI"). Where verdicts differ, gemini says `yes` twice where claude says
+  `adjacent` (architecture, AI); each cites profile skills, and the code
+  still puts the architecture must "not on the page" for both. Gemini
+  added one requirement claude did not ("proximité clients", adjacent).
+  No bug: no code.
 - [x] **8.53** **The openai backend's errors say "LM Studio"** (done
   2026-10-29): every message of the shared OpenAI-compatible client
   (`lm_studio.rs`: slot, transport, HTTP status, truncated, empty, not
