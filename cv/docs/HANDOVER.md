@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.30
-TITLE: 2.28b-v done (claude 16 s, Bionic 196 s, same verdicts, no bug); 2.30 OpenJev spike: (b) Bionic gives logprobs, next (a) the repo's licence then (c) the private measure
+TITLE: 2.30 (a) and (b) done: OpenJev repos read (nothing vendored), Bionic gives logprobs; next 2.30 (c), the private measure on the real runs, Bionic woken by bionic-up.sh
 WRITTEN-AT: 2026-10-31
 -->
 
@@ -1017,7 +1017,21 @@ Traps met, each cost time once:
   (a) the code: several unrelated repos share the name (SiliconLabAI,
   TypeScript, no licence seen; a Python one said MIT, on Qwen3.5-4B);
   read the chosen README and LICENSE; nothing unlicensed is vendored, an
-  idea re-implemented in `src/` is fine. (b) Bionic: after `bionic-up.sh`,
+  idea re-implemented in `src/` is fine.
+  **Done 2026-10-31** (GitHub API, READMEs read): `alanhuangyoo/OpenJev`
+  (Apache-2.0, Python) answers typed questions with its own fine-tuned
+  models (1.7B/4B/8B, Hugging Face), one forward pass, calibrated
+  probabilities; trained on agent and browser decisions, not on job
+  offers; it runs in its own Python/torch stack, not through Bionic.
+  `SiliconLabAI/OpenJev` (MIT, TypeScript) has a `oneshot` backend (one
+  JSON call to any OpenAI-compatible server) and a `decider` one (Qwen3.5
+  fine-tunes, needs a CUDA server). `nico-martin/open-jev` (MIT, TS,
+  browser), `IamBusy/OpenJev-Vision` (Apache-2.0, images), `zhihz/openjev`
+  (no licence stated). **Reading**: none brings what (c) needs that
+  Bionic's logprobs (b) do not already give; adding one is a second model
+  stack on the laptop. So (c) re-implements the idea in a private script
+  against Bionic, nothing vendored; one of these models is tried only if
+  (c) shows Bionic's probabilities badly calibrated. (b) Bionic: after `bionic-up.sh`,
   one `curl /v1/chat/completions` with `max_tokens: 1, logprobs: true,
   top_logprobs: 5`: **done 2026-10-31, yes** (qwen3-coder-next: `yes`
   -0.11, `Yes` -2.65, `no` -3.49; `adjacent` not in the top 5, likely
