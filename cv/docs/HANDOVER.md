@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.28b-v
-TITLE: 2.28b-iv done with Claude, one wrong row fixed; 2.28b-v: the 0.87 page is the Word PDF (no full-page promise since 2.24; the browser page fills 0.95-0.99), left: the compare with lm-studio once Bionic is on
-WRITTEN-AT: 2026-10-29
+TITLE: 2.29 a session wakes Bionic (bionic-up.sh), on 54321 at last; 2.28b-v: the compare with lm-studio, Bionic woken first; 2.30 OpenJev spike written
+WRITTEN-AT: 2026-10-31
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -889,7 +889,8 @@ Traps met, each cost time once:
     `runs-replay.mjs` before/after: 4 lines, the two Safran runs only.
     "Scalabilité des applications" and "Stockage" stay adjacent, to verify
     (HA/load balancing, no container orchestration: honest).
-  - [ ] **2.28b-v** When Bionic answers on 127.0.0.1:54321: the same
+  - [ ] **2.28b-v** Wake Bionic first: `bash deploy/laptop/bionic-up.sh`
+    (2.29; exit 0 once it answers on 127.0.0.1:54321). Then the same
     compare with `--backends claude-code,lm-studio` and read where the
     local model's rows differ. (Its second half is done, 2026-10-29: the
     Ansible run's 0.87 is the Word PDF of the CLI, which has had no
@@ -982,6 +983,42 @@ Traps met, each cost time once:
     only. Sabotaged (guard.json). Owner: a `fact` like "15 ans en
     production." must exist in `profile_facts` for it to act. The page
     fill (84 %) is left to 2.24's measure.
+- [x] **2.29** (the owner, 2026-10-31: "je veux que tu sois capable
+  d'allumer Bionic pour les tests") **A session wakes Bionic; Bionic on
+  the router's port.** Seen that day: `lms server start` without a port
+  reuses the one it last ran on (1235), where neither the tunnel nor the
+  router looks, so a remote wake (2.19) started a Bionic nobody reached.
+  The watcher and the tunnel now pass `--port 54321`;
+  `deploy/laptop/bionic-up.sh` (BIONIC_LMS from `~/.itsaresume/public.env`)
+  starts it on 54321 and waits until `/v1/models` answers (exit 1 naming
+  the port otherwise). Run for real 2026-10-31: the server moved from 1235
+  to 54321, exit 0. 5 tests (WSL and CI; POSIX fakes), 6 defences
+  (`laptop.json`). The laptop runs copies: after a merge, copy the three
+  scripts to `~/.itsaresume/bin/` and restart the watcher
+  (`wake-watcher.vbs`).
+- [ ] **2.30** (the owner, 2026-10-31) **OpenJev: a question-answer
+  structure on the local model, a spike, measure first.** The idea read
+  that day (secondhand: blogs, not the READMEs): split one decision into
+  small closed questions, each option scored by one tiny constrained call,
+  the scores normalised into probabilities, instead of one large JSON
+  answer. Here: per requirement of a run's table, "does the profile meet
+  R: yes / adjacent / no?" asked of Bionic, verdict from the option
+  probabilities. Hoped for: steadier verdicts (2.26: ~6 points of spread,
+  mostly the listing) and less time per offer than one 14k-token analysis.
+  Steps, in order, each one stops the step if it fails:
+  (a) the code: several unrelated repos share the name (SiliconLabAI,
+  TypeScript, no licence seen; a Python one said MIT, on Qwen3.5-4B);
+  read the chosen README and LICENSE; nothing unlicensed is vendored, an
+  idea re-implemented in `src/` is fine. (b) Bionic: after `bionic-up.sh`,
+  one `curl /v1/chat/completions` with `max_tokens: 1, logprobs: true,
+  top_logprobs: 5` on a small loaded model: are logprobs returned? If
+  not, one sampled token per question (no probabilities). (c) a private
+  measure (`~/.itsaresume/migrations/qa-replay.mjs`, never in the
+  repository: real runs) over the real runs: each row's closed question,
+  agreement with the run's final verdict and total time against the
+  run's analysis time. Ship nothing unless agreement holds and time
+  drops; then a red test first, and the code still decides (the answer is
+  one more selection, settled by `normalize.js`'s rules).
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the

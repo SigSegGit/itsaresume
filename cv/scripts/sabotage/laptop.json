@@ -54,7 +54,9 @@
     "test/watcher.test.js",
     "test/word.test.js",
     "src/links.js",
-    "src/coverage.js"
+    "src/coverage.js",
+    "deploy/laptop/bionic-up.sh",
+    "test/bionic-up.test.js"
   ],
   "defences": {
     "Evidence: the CLI refuses a quote its source lacks": {
@@ -286,7 +288,7 @@
     },
     "Tunnel: Bionic's server is started before each round": {
       "file": "deploy/laptop/bionic-tunnel.sh",
-      "live": "\"$BIONIC_LMS\" server start >/dev/null 2>&1 \\",
+      "live": "\"$BIONIC_LMS\" server start --port 54321 >/dev/null 2>&1 \\",
       "dead": "true \"$BIONIC_LMS\" >/dev/null 2>&1 \\",
       "expect": [
         "the tunnel starts Bionic's server before each round"
@@ -294,7 +296,7 @@
     },
     "Watcher: a wake request starts Bionic's server": {
       "file": "deploy/laptop/wake-watcher.sh",
-      "live": "\"$BIONIC_LMS\" server start >/dev/null 2>&1 \\",
+      "live": "\"$BIONIC_LMS\" server start --port 54321 >/dev/null 2>&1 \\",
       "dead": "true \"$BIONIC_LMS\" >/dev/null 2>&1 \\",
       "expect": [
         "a wake request starts the server of Bionic and the tunnel"
@@ -362,6 +364,41 @@
       "dead": "const older = [];",
       "expect": [
         "itsacv tailor weighs the evidence next to the profile: the model never sees a ruled-out skill, the report says why"
+      ]
+    },
+    "Tunnel: Bionic's server on the router's port": {
+      "file": "deploy/laptop/bionic-tunnel.sh",
+      "live": "server start --port 54321 >",
+      "dead": "server start >",
+      "expect": [
+        "the tunnel starts Bionic's server before each round"
+      ]
+    },
+    "Watcher: Bionic's server on the router's port": {
+      "file": "deploy/laptop/wake-watcher.sh",
+      "live": "server start --port 54321 >",
+      "dead": "server start >",
+      "expect": [
+        "a wake request starts the server of Bionic and the tunnel",
+        "a wake request with a tunnel already open starts Bionic, not a second tunnel"
+      ]
+    },
+    "bionic-up: Bionic's server on the router's port": {
+      "file": "deploy/laptop/bionic-up.sh",
+      "live": "port=54321",
+      "dead": "port=1235",
+      "expect": [
+        "bionic-up starts Bionic on 54321 and returns once its models answer",
+        "bionic-up fails, naming the port, when Bionic never answers"
+      ]
+    },
+    "bionic-up: it waits for the models to answer": {
+      "file": "deploy/laptop/bionic-up.sh",
+      "live": "  if curl -sf -m 5 \"http://127.0.0.1:$port/v1/models\" >/dev/null; then exit 0; fi",
+      "dead": "  exit 0",
+      "expect": [
+        "bionic-up starts Bionic on 54321 and returns once its models answer",
+        "bionic-up fails, naming the port, when Bionic never answers"
       ]
     }
   }
