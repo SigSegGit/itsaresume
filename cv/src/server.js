@@ -155,6 +155,8 @@ const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 /** Page loads remembered in public mode (each is a visitor with its own jobs). */
 const MAX_VISITORS = 10_000;
+// Finished jobs kept in memory (each holds its offer text and its result).
+const MAX_JOBS = 1_000;
 /** How long a public visitor keeps their jobs across reloads. */
 const VISITOR_DAYS = 7;
 
@@ -491,6 +493,15 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
             queues[laneOf(job)].push(job);
           }
         });
+        // Past the cap the oldest finished job goes (redteam 2026-10-05:
+        // `jobs` grew with every reused offer); queued and running ones stay.
+        const maxJobs = publicMode?.maxJobs ?? MAX_JOBS;
+        for (const [id, old] of jobs) {
+          if (jobs.size <= maxJobs) break;
+          if (old.status !== 'done' && old.status !== 'failed') continue;
+          jobs.delete(id);
+          visitors.get(old.visitor)?.delete(id);
+        }
         work('claude');
         work('local');
         return send(response, 202, created.map((job) => view(job)));
@@ -503,5 +514,5 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (status === 500) process.stderr.write(`itsacv serve: ${error.stack ?? error}\n`);
     }
   });
-  return { server, token, jobs };
+  return { server, token, jobs, visitors };
 }

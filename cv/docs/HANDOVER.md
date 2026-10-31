@@ -1089,12 +1089,16 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   unreadable `invites.json` was a 500 (fails closed now); two live
   invitations could share a label; a backend named `constructor` reached
   a prototype in the token sums. **Left open:** a failed build is retried
-  every 5 minutes with no backoff and no image prune (disk); finished
-  jobs are never dropped from memory (`jobs` grows with reused offers);
-  the visitors, caps and bans live in memory, so every deploy resets the
+  every 5 minutes with no backoff and no image prune (disk); the
+  visitors, caps and bans live in memory, so every deploy resets the
   daily cap and loses visitors' lists; `createInvite`/`revokeInvite` run
   at the same time can lose one update (no lock: the owner runs one at a
   time); calls that fail before an answer count no tokens.
+  Fixed 2026-10-31: finished jobs were never dropped from memory (`jobs`
+  grew with reused offers); past `MAX_JOBS` (1000, `publicMode.maxJobs`)
+  the oldest finished job goes, from `jobs` and its visitor's list.
+  Test `past the job cap the oldest finished job is dropped…`, 2 defences
+  (`public.json`).
 
 - The VM deploys whatever `main` holds (3.5): the gate is the CI that a
   merge needs, nothing after it. No rollback but a revert on `main`; a
