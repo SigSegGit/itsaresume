@@ -75,7 +75,8 @@
     "src/replay.js",
     "test/replay.test.js",
     "src/coverage.js",
-    "test/coverage.test.js"
+    "test/coverage.test.js",
+    "test/degree.test.js"
   ],
   "defences": {
     "Profile: bullet skills must exist": {
@@ -1429,8 +1430,8 @@
     },
     "OPS concept (2026-10-29): deploying applications is CI/CD": {
       "file": "data/tech.json",
-      "live": "\"déploiement des applications\",",
-      "dead": "\"déploiement des applications-sabotaged\",",
+      "live": "\"d\u00e9ploiement des applications\",",
+      "dead": "\"d\u00e9ploiement des applications-sabotaged\",",
       "expect": [
         "deploying applications is CI/CD: a pipeline skill meets it"
       ]
@@ -1758,6 +1759,38 @@
       "dead": "linkedSkills(profile.links ?? [], asked(requirement.name)).same",
       "expect": [
         "the owner's same ruling places a skill on the concept its words name: IA met through the alerting skill"
+      ]
+    },
+    "Degree: the education answers, not the model": {
+      "file": "src/normalize.js",
+      "live": "      const match = degree.met ? 'yes' : 'no';",
+      "dead": "      const match = 'yes';",
+      "expect": [
+        "a degree below the one asked stays no, whatever the model read"
+      ]
+    },
+    "Degree: a degree row is read as one": {
+      "file": "src/normalize.js",
+      "live": "    const degree = requirement.never || requirement.kind === 'quality'",
+      "dead": "    const degree = true ? null : requirement.never || requirement.kind === 'quality'",
+      "expect": [
+        "a Bac+5 in the education meets \"Dipl\u00f4me ing\u00e9nieur ou Master informatique\""
+      ]
+    },
+    "Degree: Scrum Master is no degree": {
+      "file": "src/normalize.js",
+      "live": "master(?:'?s)?\\s+(?:\\d|en|in|of|informatique|computer)|",
+      "dead": "master|",
+      "expect": [
+        "\"Scrum Master\" asks for no degree"
+      ]
+    },
+    "Degree: the lowest level asked is the bar": {
+      "file": "src/normalize.js",
+      "live": "    return held.length ? Math.max(...held) >= needed : needed === 0;",
+      "dead": "    return true;",
+      "expect": [
+        "a degree below the one asked stays no, whatever the model read"
       ]
     }
   }

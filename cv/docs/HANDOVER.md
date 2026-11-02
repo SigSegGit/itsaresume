@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.30
 TITLE: 2.30 (a) and (b) done: OpenJev repos read (nothing vendored), Bionic gives logprobs; next 2.30 (c), the private measure on the real runs, Bionic woken by bionic-up.sh
-WRITTEN-AT: 2026-10-31
+WRITTEN-AT: 2026-11-02
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1004,6 +1004,7 @@ Traps met, each cost time once:
   (`laptop.json`). The laptop runs copies: after a merge, copy the three
   scripts to `~/.itsaresume/bin/` and restart the watcher
   (`wake-watcher.vbs`).
+- [x] **2.29b** (the owner, 2026-11-02) A degree requirement is answered by the profile's education at the level asked, never by a skill (`degreeOf`, kind `degree`, `test/degree.test.js`, 5 defences). Seen: "no" beside a Master's level diploma, the model reading only the skill catalogue. The profile corrections of that session are private.
 - [ ] **2.30** (the owner, 2026-10-31) **OpenJev: a question-answer
   structure on the local model, a spike, measure first.** The idea read
   that day (secondhand: blogs, not the READMEs): split one decision into

@@ -69,7 +69,8 @@
     "src/coverage.js",
     "data/tech.json",
     "test/coverage.test.js",
-    "bin/itsacv.js"
+    "bin/itsacv.js",
+    "test/degree.test.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {
@@ -195,8 +196,8 @@
     },
     "Languages: a met language row validates without a skill": {
       "file": "src/analysis.js",
-      "live": "&& requirement.kind !== 'language' && requirement.kind !== 'certification') {",
-      "dead": "&& requirement.kind !== 'certification') {",
+      "live": "&& requirement.kind !== 'language' && requirement.kind !== 'certification' && requirement.kind !== 'degree') {",
+      "dead": "&& requirement.kind !== 'certification' && requirement.kind !== 'degree') {",
       "expect": [
         "a met language row passes validation without a profile skill (the run goes on)"
       ]
@@ -798,7 +799,7 @@
     },
     "Must stay no: a met certification row validates without a skill": {
       "file": "src/analysis.js",
-      "live": " && requirement.kind !== 'certification') {",
+      "live": " && requirement.kind !== 'certification' && requirement.kind !== 'degree') {",
       "dead": ") {",
       "expect": [
         "a met certification row passes validation without a profile skill"
@@ -1614,6 +1615,14 @@
       "dead": "alike(defaultIndex(), asked(requirement.name), placed(), known)",
       "expect": [
         "a skill placed by a term only does not join the model's yes as another name of its concept"
+      ]
+    },
+    "Degree: a met degree row validates without a skill": {
+      "file": "src/analysis.js",
+      "live": " && requirement.kind !== 'degree') {",
+      "dead": ") {",
+      "expect": [
+        "a degree row met with no skill passes the validation"
       ]
     }
   }

@@ -135,8 +135,42 @@ function certificationOf(requirement, profile, lang) {
 }
 
 /**
+ * A degree an offer asks for: its word, a Bac+N, or a Master of something
+ * ("Scrum Master", "Master Data" are not degrees). The model reads the skill
+ * catalogue and has no education in it: "Diplôme non renseigné" beside a
+ * Master's level diploma (seen 2026-11-02).
+ */
+const DEGREE = /(?<![\p{L}\p{N}])(dipl[oô]m[ée]?e?s?|degrees?|bac\s*\+\s*\d|master(?:'?s)?\s+(?:\d|en|in|of|informatique|computer)|(?:ou|or)\s+master)(?![\p{L}\p{N}])/iu;
+/** The study levels a text names, in years after the baccalauréat. */
+const STUDY_YEARS = [
+  [/doctorat|doctorate|\bph\.?d\b/iu, 8],
+  [/master|ing[ée]nieur|engineer/iu, 5],
+  [/licence|bachelor/iu, 3],
+];
+const studyYears = (text) => [
+  ...[...String(text ?? '').matchAll(/bac\s*\+\s*(\d)/giu)].map((found) => Number(found[1])),
+  ...STUDY_YEARS.flatMap(([pattern, years]) => (pattern.test(String(text ?? '')) ? [years] : [])),
+];
+
+/**
+ * The profile's answer to a degree requirement: met when a school reaches the
+ * lowest level asked (any school when none is named). null when it asks for none.
+ */
+function degreeOf(requirement, profile, lang) {
+  const name = String(requirement.name ?? '');
+  if (!DEGREE.test(name)) return null;
+  const asked = studyYears(name);
+  const needed = asked.length ? Math.min(...asked) : 0;
+  const met = (profile.education ?? []).filter((school) => {
+    const held = LANGUAGES.flatMap((l) => studyYears(school.title?.[l]));
+    return held.length ? Math.max(...held) >= needed : needed === 0;
+  });
+  return { met: met.length > 0, stated: met.map((school) => school.title[lang] ?? school.title.fr) };
+}
+
+/**
  * The kind a requirement left at "no" has under today's rules, in
- * normalize()'s order: quality, condition, language, certification, or null
+ * normalize()'s order: quality, condition, language, certification, degree, or null
  * for a skill. A run older than a rule kept no kind (2.22b reads them all).
  */
 export function settledKind(requirement, profile, lang = 'fr') {
@@ -146,6 +180,7 @@ export function settledKind(requirement, profile, lang = 'fr') {
   if (requirement.never) return null;
   if (languageOf(requirement, profile, lang)) return 'language';
   if (certificationOf(requirement, profile, lang)) return 'certification';
+  if (degreeOf(requirement, profile, lang)) return 'degree';
   return null;
 }
 
@@ -494,6 +529,17 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       requirement.match = match;
       requirement.skills = [];
       requirement.note = certified.stated.length ? `profile: ${certified.stated.join(', ')}` : 'no such certification in the profile';
+      delete requirement.judged;
+    }
+    // A degree is the profile's education to answer, never a skill's.
+    const degree = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' || spoken || certified ? null : degreeOf(requirement, profile, analysis.language);
+    if (degree) {
+      const match = degree.met ? 'yes' : 'no';
+      if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a degree, ${match} by the profile's education`);
+      requirement.kind = 'degree';
+      requirement.match = match;
+      requirement.skills = [];
+      requirement.note = degree.met ? `profile: ${degree.stated.join(', ')}` : 'no such degree in the profile';
       delete requirement.judged;
     }
     // The profile's own answer (2.28b-iii, coverage.js): what the whole
