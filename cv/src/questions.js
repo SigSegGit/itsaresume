@@ -15,7 +15,7 @@ import { readAnswers } from './answers.js';
 import { isNever } from './score.js';
 
 /** Not a skill to ask about: code settles these from the profile's own lines, or the interview does. */
-const NOT_A_SKILL = new Set(['quality', 'condition', 'language', 'certification']);
+const NOT_A_SKILL = new Set(['quality', 'condition', 'language', 'certification', 'degree']);
 
 /** What groups a phrase with others: the concepts it names, else its own words. */
 function groupOf(index, phrase) {

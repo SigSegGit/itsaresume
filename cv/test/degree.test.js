@@ -70,6 +70,6 @@ test('a run older than the rule is read with it: a degree it kept as a skill is 
 
 test('a degree row met with no skill passes the validation', () => {
   const row = judge('Master en informatique');
-  const errors = validateAnalysis({ language: 'fr', fit: { score: 50, verdict: 'partial', rationale: '' }, headline: 'SRE', summary: ['SRE.'], requirements: [row], experiences: [], skill_groups: [] }, profile(MASTER));
+  const { errors } = validateAnalysis({ language: 'fr', fit: { score: 50, verdict: 'partial', rationale: '' }, headline: 'SRE', summary: ['SRE.'], requirements: [row], experiences: [], skill_groups: [] }, profile(MASTER));
   assert.ok(!errors.some((error) => /names no profile skill/.test(error)), errors.join());
 });
