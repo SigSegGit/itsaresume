@@ -711,6 +711,7 @@ property it proves.
 | in public mode a done job keeps no repair lines, a failed job has a generic error | Web: a public job has no repair lines; Web: a public failed job has a generic error; Web: the public job list has a generic error |
 | outside public mode the owner still sees the repairs and the real error | — |
 | a reloaded public page is the same visitor, and sees its running job | Public: a reload keeps the visitor; Public: the visitor cookie is set; Public: the visitor cookie is HttpOnly, Secure, Strict |
+| a public page opened before a restart can still post after it | Public: a token is adopted after a restart only with its own cookie; Public: a page opened before a restart is adopted again |
 | public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour | Ban: more than banAfter attempts bans; Ban: the default threshold is ten; Ban: a banned client is refused; Ban: a ban expires; Ban: attempts are counted per IP |
 | requests older than an hour do not count towards the ban | Ban: the default threshold is ten; Ban: only the last hour counts |
 | requests refused by the existing caps still count towards the ban, and the thresholds are configurable | Ban: more than banAfter attempts bans; Ban: a ban expires; Ban: the ban lasts banHours |

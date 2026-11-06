@@ -204,9 +204,27 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // A reload is the same visitor (seen 2026-10-01: reopening the page during
   // a several-minute run lost the CV): the visitor's token rides in a cookie
   // the page cannot read (HttpOnly) and other sites cannot send (Strict).
+  const rawCookieOf = (request) => /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1] ?? null;
   const cookieOf = (request) => {
-    const kept = /(?:^|;\s*)itsacv_visitor=([0-9a-f]{48})(?:;|$)/.exec(String(request.headers.cookie ?? ''))?.[1];
+    const kept = rawCookieOf(request);
     return kept && visitors.has(kept) ? kept : null;
+  };
+  // Page loads are free, so a flood of them must not evict the visitors
+  // who own CVs: the oldest without a job goes first (redteam, 2026-10-05).
+  const remember = (visitor) => {
+    visitors.set(visitor, new Set());
+    if (visitors.size > (publicMode.maxVisitors ?? MAX_VISITORS)) {
+      let gone = null;
+      for (const [known, owned] of visitors) {
+        if (owned.size === 0 && known !== visitor) {
+          gone = known;
+          break;
+        }
+      }
+      gone ??= visitors.keys().next().value;
+      visitors.delete(gone);
+      invited.delete(gone);
+    }
   };
   const pageToken = (request, code) => {
     if (!publicMode) return { value: token };
@@ -217,27 +235,21 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       return { value: kept };
     }
     const fresh = randomBytes(24).toString('hex');
-    visitors.set(fresh, new Set());
+    remember(fresh);
     if (live) invited.set(fresh, live);
-    // Page loads are free, so a flood of them must not evict the visitors
-    // who own CVs: the oldest without a job goes first (redteam, 2026-10-05).
-    if (visitors.size > (publicMode.maxVisitors ?? MAX_VISITORS)) {
-      let gone = null;
-      for (const [visitor, owned] of visitors) {
-        if (owned.size === 0) {
-          gone = visitor;
-          break;
-        }
-      }
-      gone ??= visitors.keys().next().value;
-      visitors.delete(gone);
-      invited.delete(gone);
-    }
     return { value: fresh, cookie: `itsacv_visitor=${fresh}; Path=/; Max-Age=${VISITOR_DAYS * 24 * 3600}; HttpOnly; Secure; SameSite=Strict` };
   };
   const visitorOf = (request) => {
     const given = request.headers['x-csrf-token'];
-    return typeof given === 'string' && visitors.has(given) ? given : null;
+    if (typeof given !== 'string') return null;
+    if (visitors.has(given)) return given;
+    // Visitors live in memory: a page opened before a restart (a deploy) is
+    // adopted again when its header is its own cookie, which only this site
+    // can send (HttpOnly, SameSite=Strict); the header alone never is (seen
+    // 2026-11-06, "a missing or wrong CSRF token").
+    if (rawCookieOf(request) !== given) return null;
+    remember(given);
+    return given;
   };
   // A read: the page's header, or the cookie alone for a link it renders (a
   // download). Never enough to write: a POST needs the header (CSRF).
