@@ -5,7 +5,10 @@
 # cv.<domain> (127.0.0.1:18790). Nothing listens beyond 127.0.0.1.
 #
 # Private, never in the repository, in $DATA (default ~/itsacv-data):
-#   profile.json + sources/   the owner's compiled profile (copied by the owner)
+#   profile/                  the owner's compiled profile: profile.json and
+#                             sources/ (copied by the owner; a folder, because
+#                             a file mounted alone keeps its old inode when
+#                             it is replaced)
 #   router.toml               the router configuration (see router.example.toml)
 #   .env                      CLAUDE_CODE_OAUTH_TOKEN=... (claude setup-token)
 #                             CV_HOST=cv.example.org
@@ -68,10 +71,9 @@ services:
       - path: ${DATA:-~/itsacv-data}/.env
         required: false
     environment:
-      ITSACV_PROFILE: /data/profile.json
+      ITSACV_PROFILE: /data/profile/profile.json
     volumes:
-      - ${DATA:-~/itsacv-data}/profile.json:/data/profile.json:ro
-      - ${DATA:-~/itsacv-data}/sources:/data/sources:ro
+      - ${DATA:-~/itsacv-data}/profile:/data/profile:ro
       - ${DATA:-~/itsacv-data}/out:/data/out
     # A shell for $CV_HOST: the image's entrypoint is node itself.
     entrypoint: ["sh", "-c"]

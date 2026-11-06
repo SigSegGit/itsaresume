@@ -2,7 +2,7 @@
 # engine (Word's place), Carlito (metric-compatible with the template's
 # Calibri), PyMuPDF for the PDF's length and its ATS read-back.
 # The owner's profile is never in the image: it is mounted read-only at run
-# time (/data/profile.json), the runs go to /data/out.
+# time (/data/profile/profile.json, beside its sources/), the runs go to /data/out.
 FROM node:22-bookworm-slim
 
 RUN apt-get update \

@@ -17,6 +17,14 @@
       "expect": [
         "the VM router is health-checked on the port it listens on"
       ]
+    },
+    "Deploy: the VM generator mounts its profile as a folder": {
+      "file": "deploy/vm-generator/compose.yaml",
+      "live": "      - ${DATA:-~/itsacv-data}/profile:/data/profile:ro",
+      "dead": "      - ${DATA:-~/itsacv-data}/profile/profile.json:/data/profile/profile.json:ro",
+      "expect": [
+        "the VM generator mounts directories only, never a file alone"
+      ]
     }
   }
 }
