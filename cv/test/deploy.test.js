@@ -16,3 +16,16 @@ test('the VM router is health-checked on the port it listens on', () => {
   const health = router.match(/healthcheck:[\s\S]*?127\.0\.0\.1:(\d+)\/healthz/)?.[1];
   assert.equal(health, listen, 'the healthcheck asks the listen port');
 });
+
+// A file mounted alone keeps the inode it was mounted with: when the owner
+// replaced profile.json on the VM, the generator kept reading the old one
+// against the new sources/, and every run failed its quote check (seen
+// 2026-11-06). Only directories are mounted.
+test('the VM generator mounts directories only, never a file alone', () => {
+  const generator = compose.slice(compose.indexOf('  generator:'));
+  const mounts = [...generator.matchAll(/^\s+- \$\{DATA[^}]*\}\/([^:]+):(\/data\/[^:\s]+)/gm)];
+  assert.ok(mounts.length >= 2, 'the generator mounts its data');
+  for (const [, source, target] of mounts) assert.ok(!/\.\w+$/.test(source), `${source} -> ${target} is a file`);
+  const profile = generator.match(/ITSACV_PROFILE: (\S+)/)?.[1];
+  assert.ok(mounts.some(([, , target]) => profile.startsWith(`${target}/`)), 'the profile is read inside a mounted directory');
+});
