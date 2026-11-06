@@ -551,6 +551,28 @@ test('a reloaded public page is the same visitor, and sees its running job', asy
   assert.notEqual(stranger.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1], token, 'an unknown cookie is a new visitor');
 });
 
+// Seen 2026-11-06: the server restarted (a deploy) while the page was open,
+// and the next run was refused, "a missing or wrong CSRF token": visitors
+// live in memory. The page's token, sent as the header AND the HttpOnly,
+// SameSite=Strict cookie, is adopted again; the header alone is not.
+test('a public page opened before a restart can still post after it', async (t) => {
+  const before = await startPublic(t);
+  const first = await call(before.port, { headers: before.host });
+  const token = first.text.match(/name="csrf-token" content="([0-9a-f]+)"/)[1];
+  const visitorCookie = String(first.headers['set-cookie']).split(';')[0];
+  before.server.close();
+
+  const after = await startPublic(t);
+  const body = JSON.stringify({ offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] });
+  const headers = { ...after.host, Origin: 'https://cv.example.org', 'X-CSRF-Token': token, 'Content-Type': 'application/json' };
+  assert.equal((await call(after.port, { method: 'POST', path: '/api/jobs', headers, body })).status, 403, 'the header alone is not enough');
+  const forged = { ...headers, Cookie: 'itsacv_visitor=' + 'f'.repeat(48) };
+  assert.equal((await call(after.port, { method: 'POST', path: '/api/jobs', headers: forged, body })).status, 403, 'the cookie must be the same token');
+  assert.equal((await call(after.port, { method: 'POST', path: '/api/jobs', headers: { ...headers, Cookie: visitorCookie }, body })).status, 202);
+  const jobs = JSON.parse((await call(after.port, { path: '/api/jobs', headers: { ...after.host, 'X-CSRF-Token': token } })).text);
+  assert.equal(jobs.length, 1, 'the adopted visitor owns its job');
+});
+
 const BAN = 'Trop de demandes : accès suspendu pour 24 h.';
 // The message names the configured duration ("24 h" by default).
 const banned = (response, hours = 24) => response.status === 429 && JSON.parse(response.text).error === BAN.replace('24', String(hours));
