@@ -207,6 +207,7 @@ button.primary {
 }
 button.link { padding: 4px 8px; border: 0; background: none; color: var(--muted); font-weight: 500; }
 button.link:hover { color: var(--bad); }
+button.link.rename:hover { color: var(--text); }
 
 .offers { display: grid; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; counter-reset: offer; }
 .offer {
@@ -224,13 +225,13 @@ button.link:hover { color: var(--bad); }
   width: 100%;
   min-width: 0;
   padding: 6px 8px;
-  border: 1px solid transparent;
+  border: 1px dashed var(--line);
   border-radius: 6px;
   background: transparent;
   color: var(--text);
   font: 600 14px var(--sans);
 }
-.offer input:hover { border-color: var(--line); }
+.offer input:hover, .offer input:focus { border-style: solid; }
 .offer .meta { grid-column: 2; color: var(--muted); font-size: 12px; }
 
 .error { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }

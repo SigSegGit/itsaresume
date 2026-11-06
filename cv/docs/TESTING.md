@@ -488,6 +488,14 @@ property it proves.
 | "Bases de données NoSQL" is met through MongoDB when the profile holds it | Must stay no: MongoDB sits under NoSQL |
 | a migration the model met through the tool it leaves is only the model's reading | Must stay no: a migration asks for its target |
 
+## `test/naming.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a run is named after the name typed for it, else the offer's first line | Run: a run folder takes the name typed for it |
+| the name typed before the run reaches the run; none when none was typed | Web: the name typed for an offer reaches its run |
+| a run can be renamed after it ran, the name kept beside it | Web: a new run name is a plain name; Web: a renamed run keeps its name beside it |
+
 ## `test/normalize.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -700,6 +708,7 @@ property it proves.
 | the job view says which rows are personal qualities and which matches are the model reading | View: the kind reaches the page; View: a judged match reaches the page |
 | public mode answers to its public name and origin, not to another | Public: another host is refused |
 | in public mode a visitor sees only the jobs of its own page | Public: a visitor sees only its jobs; Public: one token per page load |
+| in public mode a run is renamed only by the visitor whose page created it | Web: a run is renamed only by its own page |
 | in public mode a job and its files are served only to the visitor whose page created it | Public: a reload keeps the visitor; Public: a job is its visitor's alone; Public: a download is read by the cookie |
 | in public mode generations are capped per visitor per hour and per day, and the queue is bounded | Public: the hourly cap per visitor; Public: the daily cap; Public: the bounded queue |
 | in public mode the owner's internal notes and the report are not served, and splitting is off | Public: the owner notes are hidden; Public: no report download; Public: no split |
@@ -824,6 +833,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**544 tests, 448 of them covered by at least one sabotage defence.**
+**549 tests, 453 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

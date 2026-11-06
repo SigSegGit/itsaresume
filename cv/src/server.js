@@ -11,7 +11,7 @@
 // The page itself only ever sets textContent (test/web.test.js checks it).
 
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, createReadStream } from 'node:fs';
+import { readFileSync, existsSync, createReadStream, writeFileSync } from 'node:fs';
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -184,6 +184,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // capped per visitor per hour, per day for everyone, and in the queue, so
   // nobody can spend the owner's model quota beyond a known bound.
   const visitors = new Map();
+  // 2.31a: a renamed run's name, beside its files, once it has a folder.
+  const keepTitle = (job) => {
+    if (job.result?.dir && existsSync(job.result.dir)) writeFileSync(join(job.result.dir, 'title.txt'), `${job.title}\n`);
+  };
   // 2.16: the invitation code a visitor's page was opened with, so each of
   // its jobs names the ESN; read again at each job, so a revocation holds.
   const invited = new Map();
@@ -353,7 +357,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         };
         // Every model answer's tokens, kept on the job: a failed run spent them too.
         const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);
-        job.result = await deps.tailor({ offer: job.text, model: job.model, onStep, onAnswer, profile: job.profile });
+        job.result = await deps.tailor({ offer: job.text, title: job.named, model: job.model, onStep, onAnswer, profile: job.profile });
+        // Renamed while it ran: the name joins the run once it has a folder.
+        if (job.renamed) keepTitle(job);
         job.status = 'done';
         job.endedAt = clock();
       } catch (error) {
@@ -462,6 +468,18 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         }
         return send(response, 200, await deps.split(body.text));
       }
+      // 2.31a: a run renamed by its owner; the name is kept beside the run.
+      const renaming = path.match(/^\/api\/jobs\/([0-9a-f-]{36})\/title$/);
+      if (renaming) {
+        const job = (!publicMode || visitors.get(visitor)?.has(renaming[1])) && jobs.get(renaming[1]);
+        if (!job) throw new HttpError(404, 'not found');
+        const title = cleanName(body?.title ?? '');
+        if (!title) throw new HttpError(400, 'title: a plain name on one line');
+        job.title = title;
+        job.renamed = true;
+        keepTitle(job);
+        return send(response, 200, { id: job.id, title });
+      }
       if (path === '/api/jobs') {
         if (publicMode) checkBan(request);
         const invite = publicMode ? inviteOf(visitor) : null;
@@ -487,7 +505,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (publicMode && !looksLikeOffer(offer.text)) {
             throw new HttpError(400, `Ce texte ne ressemble pas à une offre d’emploi (entre ${OFFER_CHARS.min} et ${OFFER_CHARS.max} caractères) : colle le texte d’une offre.`);
           }
-          return { id: randomUUID(), title: cleanName(offer.title ?? '') ?? 'Offre', text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor, invite, profile };
+          // 2.31a: the name typed for the offer, if any, also names its run.
+          const named = cleanName(offer.title ?? '') ?? undefined;
+          return { id: randomUUID(), title: named ?? 'Offre', named, text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor, invite, profile };
         });
         // An offer already answered is answered from its run: no model call, not counted.
         // A model chosen by hand is a measure: it always runs.

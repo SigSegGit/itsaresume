@@ -111,13 +111,13 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     status: () => status({ profilePath, url, useWord, out }),
     profiles: () => [...profiles().keys()],
     split: (text) => splitOffers({ text, llm }),
-    tailor: async ({ offer, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE }) => {
+    tailor: async ({ offer, title, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE }) => {
       const path = profiles().get(profile);
       if (!path) throw new Error(`no profile "${profile}"`);
       const loaded = loadProfile(path);
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep });
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep, profileId: profile });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep, profileId: profile, title });
       return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.

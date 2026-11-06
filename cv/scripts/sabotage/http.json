@@ -62,7 +62,8 @@
     "test/answers.test.js",
     "src/questions.js",
     "src/links.js",
-    "src/coverage.js"
+    "src/coverage.js",
+    "test/naming.test.js"
   ],
   "defences": {
     "Questions link: hidden in public": {
@@ -206,8 +207,8 @@
     },
     "QA: the chosen model reaches the generation": {
       "file": "src/server.js",
-      "live": "offer: job.text, model: job.model, onStep, onAnswer, profile: job.profile });",
-      "dead": "offer: job.text, onStep, onAnswer, profile: job.profile });",
+      "live": "offer: job.text, title: job.named, model: job.model, onStep, onAnswer, profile: job.profile });",
+      "dead": "offer: job.text, title: job.named, onStep, onAnswer, profile: job.profile });",
       "expect": [
         "a job carries the chosen model to the generation; none means auto; an unknown one is refused"
       ]
@@ -486,8 +487,8 @@
     },
     "Web: a job title is a plain name": {
       "file": "src/server.js",
-      "live": "title: cleanName(offer.title ?? '') ?? 'Offre',",
-      "dead": "title: String(offer.title ?? 'Offre'),",
+      "live": "const named = cleanName(offer.title ?? '') ?? undefined;",
+      "dead": "const named = offer.title ? String(offer.title) : undefined;",
       "expect": [
         "what a job may carry is bounded, and its title is a plain name"
       ]
@@ -1027,6 +1028,46 @@
       "dead": "    return null;",
       "expect": [
         "a public page opened before a restart can still post after it"
+      ]
+    },
+    "Web: the name typed for an offer reaches its run": {
+      "file": "src/server.js",
+      "live": "offer: job.text, title: job.named,",
+      "dead": "offer: job.text, title: undefined,",
+      "expect": [
+        "the name typed before the run reaches the run; none when none was typed"
+      ]
+    },
+    "Web: a run is renamed only by its own page": {
+      "file": "src/server.js",
+      "live": "const job = (!publicMode || visitors.get(visitor)?.has(renaming[1])) && jobs.get(renaming[1]);",
+      "dead": "const job = jobs.get(renaming[1]);",
+      "expect": [
+        "in public mode a run is renamed only by the visitor whose page created it"
+      ]
+    },
+    "Web: a new run name is a plain name": {
+      "file": "src/server.js",
+      "live": "const title = cleanName(body?.title ?? '');",
+      "dead": "const title = String(body?.title ?? '') || null;",
+      "expect": [
+        "a run can be renamed after it ran, the name kept beside it"
+      ]
+    },
+    "Web: a renamed run keeps its name beside it": {
+      "file": "src/server.js",
+      "live": "        job.renamed = true;\n        keepTitle(job);",
+      "dead": "        job.renamed = true;",
+      "expect": [
+        "a run can be renamed after it ran, the name kept beside it"
+      ]
+    },
+    "Run: a run folder takes the name typed for it": {
+      "file": "src/run.js",
+      "live": "  const first = title?.trim() || (offer.split(",
+      "dead": "  const first = (offer.split(",
+      "expect": [
+        "a run is named after the name typed for it, else the offer's first line"
       ]
     }
   }
