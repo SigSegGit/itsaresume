@@ -148,7 +148,8 @@ function addOffer(text, title) {
 function renderOffers() {
   const list = $('offers');
   list.replaceChildren(...offers.map((offer, index) => {
-    const title = h('input', { type: 'text', value: offer.title, maxLength: 80, 'aria-label': `Titre de l'offre ${index + 1}` });
+    // 2.31a: the name names the run and its folder; optional, the first line by default.
+    const title = h('input', { type: 'text', value: offer.title, maxLength: 80, placeholder: 'Nom de l’offre (facultatif)', title: 'Nom du run, modifiable : il nomme aussi son dossier', 'aria-label': `Nom de l'offre ${index + 1} (facultatif)` });
     title.addEventListener('input', () => { offer.title = title.value; });
     const remove = h('button', { type: 'button', class: 'link', text: 'Retirer', 'aria-label': `Retirer l'offre ${index + 1}` });
     remove.addEventListener('click', () => {
@@ -373,13 +374,27 @@ function renderJob(job) {
   }[job.status] ?? ['', job.status];
   // The server's clock (audit 2026-09-27): running, it grows; done, it stays.
   const elapsed = Number.isFinite(job.elapsed_ms) ? ` · ${Math.round(job.elapsed_ms / 1000)} s` : '';
-  const children = [h('div', { class: 'job-head' }, h('h3', { text: job.title }), h('span', { class: `chip ${status[0]}`, text: status[1] + elapsed }))];
+  // 2.31a: a run can be renamed at any time, to be found again.
+  const rename = h('button', { type: 'button', class: 'link rename', text: 'Renommer', 'aria-label': `Renommer « ${job.title} »` });
+  rename.addEventListener('click', () => renameJob(job));
+  const children = [h('div', { class: 'job-head' }, h('h3', { text: job.title }), rename, h('span', { class: `chip ${status[0]}`, text: status[1] + elapsed }))];
   if (job.status !== 'done') children.push(stepsOf(job));
   if (job.status === 'failed') children.push(h('p', { class: 'error', text: job.error ?? 'échec' }));
   const detail = details.get(job.id);
   if (detail) children.push(...resultOf(job, detail).filter(Boolean));
   card.replaceChildren(...children);
   $('jobs-empty').hidden = true;
+}
+
+async function renameJob(job) {
+  const title = window.prompt('Nouveau nom du run :', job.title);
+  if (title === null || !title.trim() || title.trim() === job.title) return;
+  try {
+    job.title = (await api(`/api/jobs/${job.id}/title`, { title: title.trim() })).title;
+    renderJob(job);
+  } catch (error) {
+    showError(`Renommage refusé : ${error.message}`);
+  }
 }
 
 let polling = false;

@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.30
-TITLE: 2.30 (a) and (b) done: OpenJev repos read (nothing vendored), Bionic gives logprobs; next 2.30 (c), the private measure on the real runs, Bionic woken by bionic-up.sh
-WRITTEN-AT: 2026-11-02
+NEXT: 2.31b
+TITLE: 2.31a (name a run, rename it) in PR #156; next 2.31b, the comparison over every model with a code-built compare.md; 2.31c (re-read the owner's "jobs" project) waits for his export
+WRITTEN-AT: 2026-11-06
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,7 +11,15 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-10-29)
+## 0. Where things stand (2026-11-06)
+
+- **2026-11-06, cv.<domain> repaired twice**: the VM mounted `profile.json`
+  alone, so a replaced profile was never seen and every run failed its quote
+  check (#152, PR #153: the profile and its sources are one mounted folder,
+  `$DATA/profile/`); the restart then lost the open pages' visitors, "a
+  missing or wrong CSRF token" (#154, PR #155: a token sent as header and as
+  its own cookie is adopted again). Both merged and deployed. 2.31a (name a
+  run before, rename it after) is PR #156; 2.31b (comparison) is next.
 
 - **2.28b-iv (2026-10-29), with Claude only** (Bionic off that evening):
   the compare on the Ansible DBA offer and one real run each of the two
@@ -1088,6 +1096,37 @@ answered 413, `Connection: close`; no elapsed time on the page: fixed, the
 job view carries `elapsed_ms` from the server's clock, the page shows it in
 the status chip). The audit list is closed. One rare flake seen once in
 three full runs on 2026-09-30, none in six more: name it when it shows.
+
+- [ ] **2.31** (the owner, 2026-11-06) **Find runs again, compare every
+  model, recover what the profile lost.**
+  - [x] **2.31a** (PR #156) A name typed before the run names its folder
+    (`runName(offer, now, title)`); `POST /api/jobs/:id/title` renames a
+    run at any time (plain name, the page's own job in public mode), kept as
+    `title.txt` beside it; the page's name field is visibly editable and each
+    card has "Renommer". `test/naming.test.js`, 6 defences (http.json).
+  - [ ] **2.31b** "Comparer tous les modèles" in the page's model menu:
+    `model: "compare"` makes one job per model the menu says is available
+    (claude, gemini, openai, local; `auto` left out), same offer, same name
+    suffixed " — <model>", one `group` id; counted as that many runs in the
+    public quotas (`admit(request, count)`). When the group's last job ends,
+    a pure `compareRuns(entries)` in `src/compare.js` (entries = what
+    `log(job)` writes; refactor it into `entryOf(job)`) builds, per model:
+    status, error, elapsed, tokens, score, verdict, qualification, attempts,
+    repair count, page fill; `compareVerdicts` for the requirements where
+    models disagree (DIFF first, each demotion's reason); and leads found by
+    code (a failed model, a disagreement, a score spread over 15 points,
+    more than one attempt, many repairs). Written by serve as
+    `out/<stamp>-compare-<slug>/compare.{md,json}`; `GET /api/groups/:id`
+    (+ `/compare.md`), the page's visitor only in public mode; the page
+    shows one "Comparaison" card with the table and the download. TDD,
+    sabotage (owner check, count, DIFF first), then one real comparison on
+    the DevSecOps offer of 2026-11-06.
+  - [ ] **2.31c** (waits for the owner) Re-read every file of his claude.ai
+    project "jobs" (the v4's origin; he believes knowledge and experience
+    were lost on the way). He exports it to `~/.itsaresume/sources/jobs/`;
+    then list, per fact found, whether the v4 holds it, and add what it
+    lacks as a dated precisions source (as 2026-11-06), never a level he
+    did not say, the doubtful to `A-CONFIRMER-preuves.md`.
 
 ## 9. Open on purpose
 

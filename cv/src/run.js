@@ -88,10 +88,13 @@ function answered(profile, path, out) {
   return merged;
 }
 
-/** "20260924-031500-architecte-solutions" from the time and the offer's first line. */
-export function runName(offer, now = new Date()) {
+/**
+ * "20260924-031500-architecte-solutions" from the time and the name typed for
+ * the offer (2.31a), else its first line.
+ */
+export function runName(offer, now = new Date(), title = '') {
   const stamp = now.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
-  const first = offer.split('\n').find((line) => line.trim()) ?? 'offer';
+  const first = title?.trim() || (offer.split('\n').find((line) => line.trim()) ?? 'offer');
   const slug = first.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'offer';
   return `${stamp}-${slug}`;
 }
@@ -101,9 +104,9 @@ export function runName(offer, now = new Date()) {
  * analysis ({attempt}), layout ({layouts}), pdf, ats, done ({dir}).
  * `startLayout` starts the layout engine (Word; tests fake it).
  */
-export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE }) {
+export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title }) {
   const { full, profile, assessment, removed, texts } = loaded;
-  const dir = join(outDir, runName(offer));
+  const dir = join(outDir, runName(offer, new Date(), title));
   let result;
   try {
     result = await analyse({ profile, offer, llm, assessment, onStep, listingCache: fileListingCache(join(outDir, '.listings')) });

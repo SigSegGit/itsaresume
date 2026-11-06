@@ -350,6 +350,18 @@ test('in public mode a visitor sees only the jobs of its own page', async (t) =>
   assert.equal(JSON.parse((await alice.get('/api/jobs')).text).length, 1);
 });
 
+// 2.31a: renaming is writing: only the page that created the run may.
+test('in public mode a run is renamed only by the visitor whose page created it', async (t) => {
+  const app = await startPublic(t);
+  const alice = await app.visit('203.0.113.7');
+  const bob = await app.visit('198.51.100.9');
+  const [job] = JSON.parse((await alice.post('/api/jobs', { offers: [{ title: 'Alice offer', text: PUBLIC_OFFER('Senior SRE') }] })).text);
+  await finished(alice, job.id, 'done');
+  assert.equal((await bob.post(`/api/jobs/${job.id}/title`, { title: 'Bob was here' })).status, 404);
+  assert.equal((await alice.post(`/api/jobs/${job.id}/title`, { title: 'SRE fintech' })).status, 200);
+  assert.equal(JSON.parse((await alice.get('/api/jobs')).text)[0].title, 'SRE fintech');
+});
+
 // Another ESN must not read what one tested: a job's id is no key to it.
 test('in public mode a job and its files are served only to the visitor whose page created it', async (t) => {
   const app = await startPublic(t);
