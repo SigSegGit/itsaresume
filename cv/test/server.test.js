@@ -585,6 +585,69 @@ test('a public page opened before a restart can still post after it', async (t) 
   assert.equal(jobs.length, 1, 'the adopted visitor owns its job');
 });
 
+// 2.31b: one offer through every model the menu offers, one comparison.
+const MENU = { default: 'claude', options: { auto: { available: true }, claude: { available: true }, gemini: { available: true }, openai: { available: false }, local: { available: true } } };
+const statusWith = (models) => async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false }, models });
+const groupDone = async (read, id) => {
+  for (let i = 0; i < 200; i += 1) {
+    const group = JSON.parse((await read(`/api/groups/${id}`)).text);
+    if (group.status === 'done') return group;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error('the comparison never finished');
+};
+
+test('compare: one job per available model, counted as that many, one comparison for its page alone', async (t) => {
+  const app = await startPublic(t, { status: statusWith(MENU), perVisitorPerHour: 3, maxQueued: 3 });
+  const alice = await app.visit('203.0.113.7');
+  const bob = await app.visit('198.51.100.9');
+  const answer = await alice.post('/api/jobs', { model: 'compare', offers: [{ title: 'Fintech', text: PUBLIC_OFFER('Senior SRE') }] });
+  assert.equal(answer.status, 202);
+  const jobs = JSON.parse(answer.text);
+  assert.deepEqual(jobs.map((job) => job.model).sort(), ['claude', 'gemini', 'local']);
+  assert.deepEqual(jobs.map((job) => job.title).sort(), ['Fintech — claude', 'Fintech — gemini', 'Fintech — local']);
+  assert.equal(new Set(jobs.map((job) => job.group)).size, 1);
+  const id = jobs[0].group;
+  assert.equal((await alice.post('/api/jobs', { offers: [{ title: 'one more', text: PUBLIC_OFFER('DevOps') }] })).status, 429, 'three runs were counted');
+  const group = await groupDone(alice.get, id);
+  assert.equal(group.comparison.models.length, 3);
+  assert.ok(group.comparison.models.every((model) => !('dir' in model)), 'the public page reads the public comparison');
+  assert.equal((await bob.get(`/api/groups/${id}`)).status, 404);
+  assert.equal((await bob.get(`/api/groups/${id}/compare.md`)).status, 404);
+  assert.match((await alice.get(`/api/groups/${id}/compare.md`)).text, /^# Comparaison : Fintech/);
+});
+
+test('compare: refused for several offers at once, and when fewer than two models can answer', async (t) => {
+  const lone = { default: 'claude', options: { auto: { available: true }, claude: { available: true }, gemini: { available: false }, openai: { available: false }, local: { available: false } } };
+  let menu = MENU;
+  const app = await start({ status: async () => statusWith(menu)() });
+  t.after(() => app.server.close());
+  const offers = [{ title: 'a', text: 'x' }];
+  assert.equal((await post(app, '/api/jobs', { model: 'compare', offers: [...offers, ...offers] })).status, 400);
+  menu = lone;
+  assert.equal((await post(app, '/api/jobs', { model: 'compare', offers })).status, 400);
+});
+
+test('compare: the owner gets the full comparison, kept once, a failed model included', async (t) => {
+  const saved = [];
+  const app = await start({
+    status: statusWith(MENU),
+    tailor: async ({ offer, model, title }) => {
+      if (model === 'gemini') throw new Error('router http://10.0.0.5 down');
+      assert.ok(title.startsWith(model), 'the model leads the folder name: the lanes run at once');
+      return fakeResult(offer);
+    },
+    saveComparison: (name, comparison, markdown) => saved.push({ name, comparison, markdown }),
+  });
+  t.after(() => app.server.close());
+  const jobs = JSON.parse((await post(app, '/api/jobs', { model: 'compare', offers: [{ title: 'Fintech', text: 'x' }] })).text);
+  const group = await groupDone((path) => call(app.port, { path }), jobs[0].group);
+  assert.match(group.comparison.models.find((m) => m.model === 'gemini').error, /10\.0\.0\.5/);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].name, 'Fintech');
+  assert.match(saved[0].markdown, /gemini/);
+});
+
 const BAN = 'Trop de demandes : accès suspendu pour 24 h.';
 // The message names the configured duration ("24 h" by default).
 const banned = (response, hours = 24) => response.status === 429 && JSON.parse(response.text).error === BAN.replace('24', String(hours));

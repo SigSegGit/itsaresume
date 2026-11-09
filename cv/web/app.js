@@ -386,6 +386,31 @@ function renderJob(job) {
   $('jobs-empty').hidden = true;
 }
 
+/* 2.31b: one card for a comparison; each model keeps its own card, its CV and report. */
+const groupCards = new Map();
+async function renderGroup(id) {
+  if (groupCards.get(id)?.done) return;
+  const group = await api(`/api/groups/${id}`);
+  let card = groupCards.get(id)?.card;
+  if (!card) {
+    card = h('article', { class: 'job', 'aria-label': `Comparaison : ${group.title}` });
+    $('jobs').prepend(card);
+  }
+  groupCards.set(id, { card, done: group.status === 'done' });
+  const head = h('div', { class: 'job-head' }, h('h3', { text: `Comparaison : ${group.title}` }), h('span', { class: `chip ${group.comparison ? 'ok' : 'info'}`, text: group.comparison ? 'prête' : 'en cours' }));
+  if (!group.comparison) return card.replaceChildren(head);
+  const { models, rows, leads } = group.comparison;
+  const cells = (tag, values) => h('tr', {}, ...values.map((value) => h(tag, { text: value === null || value === undefined ? '–' : String(value) })));
+  const done = models.filter((model) => model.status === 'done').map((model) => model.model);
+  const differ = rows.filter((row) => !row.agree);
+  return card.replaceChildren(head,
+    ...(leads.length ? [h('ul', {}, ...leads.map((lead) => h('li', { text: lead.text })))] : []),
+    h('table', {}, cells('th', ['Modèle', 'Statut', 'Score', 'Verdict', 'Durée (s)', 'Tokens', 'Tentatives', 'Réparations']),
+      ...models.map((m) => cells('td', [m.model, m.status, m.score, m.verdict, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs]))),
+    ...(differ.length ? [h('table', {}, cells('th', ['Désaccords', ...done]), ...differ.map((row) => cells('td', [row.name, ...done.map((name) => row.verdicts[name])])))] : []),
+    h('a', { href: `/api/groups/${id}/compare.md`, text: 'Télécharger la comparaison' }));
+}
+
 async function renameJob(job) {
   const title = window.prompt('Nouveau nom du run :', job.title);
   if (title === null || !title.trim() || title.trim() === job.title) return;
@@ -412,6 +437,7 @@ async function poll() {
         if (job.status === 'done' && !details.has(job.id)) details.set(job.id, await api(`/api/jobs/${job.id}`));
         renderJob(job);
       }
+      for (const id of new Set(jobs.map((job) => job.group).filter(Boolean))) await renderGroup(id);
       if (!jobs.some((job) => job.status === 'queued' || job.status === 'running')) break;
       await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     }

@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.31b
-TITLE: 2.31a (name a run, rename it) in PR #156; next 2.31b, the comparison over every model with a code-built compare.md; 2.31c (re-read the owner's "jobs" project) waits for his export
-WRITTEN-AT: 2026-11-06
+NEXT: 2.30
+TITLE: 2.31a and b built (name a run, compare every model, PR #157); next a real comparison on the DevSecOps offer, then 2.30 (c), the private OpenJev measure; 2.31c (the jobs project) waits for the owner's export
+WRITTEN-AT: 2026-11-09
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1104,7 +1104,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     run at any time (plain name, the page's own job in public mode), kept as
     `title.txt` beside it; the page's name field is visibly editable and each
     card has "Renommer". `test/naming.test.js`, 6 defences (http.json).
-  - [ ] **2.31b** "Comparer tous les modèles" in the page's model menu:
+  - [x] **2.31b** (built 2026-11-09; real run to read) "Comparer tous les modèles" in the page's model menu:
     `model: "compare"` makes one job per model the menu says is available
     (claude, gemini, openai, local; `auto` left out), same offer, same name
     suffixed " — <model>", one `group` id; counted as that many runs in the

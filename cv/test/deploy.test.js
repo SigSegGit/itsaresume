@@ -17,6 +17,11 @@ test('the VM router is health-checked on the port it listens on', () => {
   assert.equal(health, listen, 'the healthcheck asks the listen port');
 });
 
+// 2.31b: a comparison is one job per model: a queue of three refused it always.
+test('the VM queue holds a whole comparison', () => {
+  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) >= 4, 'claude, gemini, openai, local');
+});
+
 // A file mounted alone keeps the inode it was mounted with: when the owner
 // replaced profile.json on the VM, the generator kept reading the old one
 // against the new sources/, and every run failed its quote check (seen
