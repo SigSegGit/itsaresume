@@ -63,7 +63,9 @@
     "src/questions.js",
     "src/links.js",
     "src/coverage.js",
-    "test/naming.test.js"
+    "test/naming.test.js",
+    "test/compare.test.js",
+    "src/compare.js"
   ],
   "defences": {
     "Questions link: hidden in public": {
@@ -199,8 +201,8 @@
     },
     "QA: an unknown model is refused": {
       "file": "src/server.js",
-      "live": "if (!MODELS.includes(model)) throw new HttpError(400,",
-      "dead": "if (false) throw new HttpError(400,",
+      "live": "if (model !== COMPARE && !MODELS.includes(model)) throw",
+      "dead": "if (false) throw",
       "expect": [
         "a job carries the chosen model to the generation; none means auto; an unknown one is refused"
       ]
@@ -1068,6 +1070,94 @@
       "dead": "  const first = (offer.split(",
       "expect": [
         "a run is named after the name typed for it, else the offer's first line"
+      ]
+    },
+    "Compare: a comparison is its page's alone": {
+      "file": "src/server.js",
+      "live": "if (!group || (publicMode && group.visitor !== readerOf(request))) throw",
+      "dead": "if (!group) throw",
+      "expect": [
+        "compare: one job per available model, counted as that many, one comparison for its page alone"
+      ]
+    },
+    "Compare: each model counts in the public quotas": {
+      "file": "src/server.js",
+      "live": "if (publicMode) admit(request, reused.filter((result) => !result).length);",
+      "dead": "if (publicMode) admit(request, Math.min(1, reused.filter((result) => !result).length));",
+      "expect": [
+        "compare: one job per available model, counted as that many, one comparison for its page alone"
+      ]
+    },
+    "Compare: only models that can answer": {
+      "file": "src/server.js",
+      "live": "name !== 'auto' && menu?.options?.[name]?.available);",
+      "dead": "name !== 'auto');",
+      "expect": [
+        "compare: one job per available model, counted as that many, one comparison for its page alone"
+      ]
+    },
+    "Compare: two models at least": {
+      "file": "src/server.js",
+      "live": "if (compared.length < 2) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "compare: refused for several offers at once, and when fewer than two models can answer"
+      ]
+    },
+    "Compare: one offer at a time": {
+      "file": "src/server.js",
+      "live": "if (offers.length !== 1) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "compare: refused for several offers at once, and when fewer than two models can answer"
+      ]
+    },
+    "Compare: waits for every model": {
+      "file": "src/server.js",
+      "live": "group.jobs.some(({ status }) => status !== 'done' && status !== 'failed')",
+      "dead": "false",
+      "expect": [
+        "compare: the owner gets the full comparison, kept once, a failed model included"
+      ]
+    },
+    "Compare: disagreements first": {
+      "file": "src/compare.js",
+      "live": "rows.sort((a, b) => Number(a.agree) - Number(b.agree));",
+      "dead": "",
+      "expect": [
+        "compareRuns: one line per model, disagreements first, leads found by code"
+      ]
+    },
+    "Compare: no error text in public": {
+      "file": "src/compare.js",
+      "live": "error: model.error ? 'échec' : null })",
+      "dead": "error: model.error })",
+      "expect": [
+        "the public comparison keeps no error text, no reason, no path"
+      ]
+    },
+    "Compare: no reason in public": {
+      "file": "src/compare.js",
+      "live": "rows: report.rows.map((row) => ({ ...row, why: {} })),",
+      "dead": "rows: report.rows,",
+      "expect": [
+        "the public comparison keeps no error text, no reason, no path"
+      ]
+    },
+    "Compare: a spread is a lead past its limit": {
+      "file": "src/compare.js",
+      "live": "if (spread > SPREAD) leads",
+      "dead": "if (spread >= SPREAD) leads",
+      "expect": [
+        "compareRuns: a spread of 15 points or fewer is no lead"
+      ]
+    },
+    "Compare: a cell cannot break its row": {
+      "file": "src/compare.js",
+      "live": "String(value).replace(/\\s*[\\r\\n]+\\s*/g, ' ').replaceAll('|', '\\\\|'));",
+      "dead": "String(value));",
+      "expect": [
+        "the comparison in markdown: a table per model, a cell cannot break its row"
       ]
     }
   }

@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanName } from './guard.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
+import { compareRuns, compareMarkdown, publicComparison } from './compare.js';
 import { addTokens } from './llm.js';
 import { invitationOf } from './invites.js';
 import { DEFAULT_PROFILE } from './profiles.js';
@@ -128,7 +129,7 @@ function publicStatus(status) {
 function view(job, { detail = false, publicMode = null, position } = {}) {
   // Router text and paths are the owner's: a visitor only learns that it failed.
   const error = publicMode && job.status === 'failed' ? 'échec' : job.error ?? null;
-  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via, ...(position ? { position } : {}) };
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via, ...(job.group ? { group: job.group } : {}), ...(position ? { position } : {}) };
   if (!job.result) return base;
   const { fit } = job.result.view;
   base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
@@ -164,6 +165,8 @@ const VISITOR_DAYS = 7;
  * The server, not yet listening. Everything that touches a model, Word or the
  * disk comes in through `deps`, so the tests run it with fakes.
  */
+const COMPARE = 'compare';
+
 export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null, clock = Date.now }) {
   const jobs = new Map();
   // Two lanes, each one job at a time (2026-10-06): a Claude job never
@@ -184,6 +187,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   // capped per visitor per hour, per day for everyone, and in the queue, so
   // nobody can spend the owner's model quota beyond a known bound.
   const visitors = new Map();
+  // 2.31b: one offer through every model: group id -> its jobs, then its comparison.
+  const groups = new Map();
   // 2.31a: a renamed run's name, beside its files, once it has a folder.
   const keepTitle = (job) => {
     if (job.result?.dir && existsSync(job.result.dir)) writeFileSync(join(job.result.dir, 'title.txt'), `${job.title}\n`);
@@ -308,11 +313,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   }
 
   /** Manual QA: one line per run, kept by the owner (deps.log), never shown to visitors. */
-  function log(job) {
-    if (!deps.log) return;
+  function entryOf(job) {
     const result = job.result ?? {};
-    try {
-      deps.log({
+    return {
         at: new Date(clock()).toISOString(),
         id: job.id,
         title: job.title,
@@ -334,10 +337,28 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         dir: result.dir ?? null,
         fit: result.view?.fit ?? null,
         analysis: result.analysis ?? null,
-      });
+        pages: result.view?.layout?.pages ?? null,
+    };
+  }
+
+  function log(job) {
+    if (!deps.log) return;
+    try {
+      deps.log(entryOf(job));
     } catch (error) {
-      process.stderr.write(`itsacv serve: the QA log failed: ${error.message ?? error}
-`);
+      process.stderr.write(`itsacv serve: the QA log failed: ${error.message ?? error}\n`);
+    }
+  }
+
+  /** 2.31b: the group's last job over, its comparison, built and kept once. */
+  function finishGroup(job) {
+    const group = groups.get(job.group);
+    if (!group || group.jobs.some(({ status }) => status !== 'done' && status !== 'failed')) return;
+    group.comparison = compareRuns(group.jobs.map(entryOf));
+    try {
+      deps.saveComparison?.(group.title, group.comparison, compareMarkdown(group.title, group.comparison));
+    } catch (error) {
+      process.stderr.write(`itsacv serve: the comparison was not saved: ${error.message ?? error}\n`);
     }
   }
 
@@ -368,6 +389,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         job.error = String(error.message ?? error).slice(0, 2000);
       }
       log(job);
+      finishGroup(job);
     }
     running[lane] = false;
   }
@@ -421,6 +443,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
           return send(response, 200, [...jobs.values()].filter((job) => !mine || mine.has(job.id)).map((job) => view(job, { publicMode, position: positionOf(job) })));
+        }
+        const grouped = path.match(/^\/api\/groups\/([0-9a-f-]{36})(\/compare\.md)?$/);
+        if (grouped) {
+          // Public: a comparison is its visitor's alone, and without the owner's notes.
+          const group = groups.get(grouped[1]);
+          if (!group || (publicMode && group.visitor !== readerOf(request))) throw new HttpError(404, 'not found');
+          const comparison = group.comparison && publicMode ? publicComparison(group.comparison) : group.comparison;
+          if (!grouped[2]) return send(response, 200, { id: group.id, title: group.title, status: comparison ? 'done' : 'running', comparison });
+          if (!comparison) throw new HttpError(404, 'not found');
+          return send(response, 200, compareMarkdown(group.title, comparison), 'text/markdown; charset=utf-8', { 'Content-Disposition': 'attachment; filename="comparaison.md"' });
         }
         const match = path.match(/^\/api\/jobs\/([0-9a-f-]{36})(?:\/files\/([a-z]+\.[a-z]+)|\/(page))?$/);
         // Public: a job is its visitor's alone; to anyone else it does not exist.
@@ -488,7 +520,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         }
         const offers = body?.offers;
         const model = body?.model ?? 'auto';
-        if (!MODELS.includes(model)) throw new HttpError(400, `model: one of ${MODELS.join(', ')}`);
+        if (model !== COMPARE && !MODELS.includes(model)) throw new HttpError(400, `model: one of ${MODELS.join(', ')}`);
         // 4.1: a profile from the owner's closed list; in public, the owner's alone.
         const profile = body?.profile ?? DEFAULT_PROFILE;
         const known = publicMode ? [DEFAULT_PROFILE] : deps.profiles?.() ?? [DEFAULT_PROFILE];
@@ -498,7 +530,15 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (!Array.isArray(offers) || offers.length === 0 || offers.length > MAX_OFFERS) {
           throw new HttpError(400, `offers: from 1 to ${MAX_OFFERS}`);
         }
-        const created = offers.map((offer) => {
+        let compared = null;
+        if (model === COMPARE) {
+          if (offers.length !== 1) throw new HttpError(400, 'Une comparaison porte sur une seule offre à la fois.');
+          const { models: menu } = await deps.status();
+          compared = MODELS.filter((name) => name !== 'auto' && menu?.options?.[name]?.available);
+          if (compared.length < 2) throw new HttpError(400, 'Il faut au moins deux modèles disponibles pour comparer.');
+        }
+        const group = compared ? randomUUID() : undefined;
+        const created = offers.flatMap((offer) => {
           if (typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT) {
             throw new HttpError(400, `offer text: a non-empty string of at most ${MAX_TEXT} characters`);
           }
@@ -507,12 +547,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           }
           // 2.31a: the name typed for the offer, if any, also names its run.
           const named = cleanName(offer.title ?? '') ?? undefined;
-          return { id: randomUUID(), title: named ?? 'Offre', named, text: offer.text, status: 'queued', steps: [], times: [], model, via, visitor, invite, profile };
+          const job = { text: offer.text, status: 'queued', steps: [], times: [], via, visitor, invite, profile };
+          if (!compared) return [{ ...job, id: randomUUID(), title: named ?? 'Offre', named, model }];
+          // The model leads the folder's name: two lanes may start in the same second.
+          return compared.map((name) => ({ ...job, id: randomUUID(), title: `${named ?? 'Offre'} — ${name}`, named: `${name} ${named ?? 'offre'}`, model: name, group }));
         });
         // An offer already answered is answered from its run: no model call, not counted.
         // A model chosen by hand is a measure: it always runs.
         const reused = created.map((job) => (publicMode && deps.reuse && job.model === 'auto' ? deps.reuse(job.text) : null));
         if (publicMode) admit(request, reused.filter((result) => !result).length);
+        if (group) groups.set(group, { id: group, title: cleanName(offers[0].title ?? '') ?? 'Offre', visitor, jobs: created, comparison: null });
         created.forEach((job, index) => {
           jobs.set(job.id, job);
           visitors.get(visitor)?.add(job.id);
@@ -533,6 +577,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (old.status !== 'done' && old.status !== 'failed') continue;
           jobs.delete(id);
           visitors.get(old.visitor)?.delete(id);
+        }
+        for (const old of groups.keys()) {
+          if (groups.size <= maxJobs) break;
+          groups.delete(old);
         }
         work('claude');
         work('local');

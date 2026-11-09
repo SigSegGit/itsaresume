@@ -12,7 +12,7 @@ test('compareRuns: one line per model, disagreements first, leads found by code'
   const report = compareRuns([
     entry('claude', { analysis: { requirements: [{ name: 'Kubernetes', match: 'yes' }, { name: 'Terraform', match: 'adjacent' }] }, attempts: 2 }),
     entry('gemini', { fit: { score: 80, verdict: 'go', qualification: { level: 'strong' } }, repairs: Array(10).fill('x') }),
-    entry('local', { status: 'failed', error: 'router http://10.0.0.5 down', fit: null, analysis: null, repairs: null }),
+    entry('local', { status: 'failed', error: 'router http://10.0.0.5 down', fit: null, analysis: null, repairs: null, tokens: null }),
   ]);
   assert.deepEqual(report.models.map((m) => [m.model, m.status, m.score, m.tokens]), [['claude', 'done', 60, 15], ['gemini', 'done', 80, 15], ['local', 'failed', null, null]]);
   assert.equal(report.rows[0].name, 'terraform', 'a disagreement comes first');

@@ -1,9 +1,10 @@
 // `itsacv serve`: the web server wired to the real profile, model and Word.
 
 import { request } from 'node:http';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createApp } from './server.js';
-import { loadProfile, readRun, tailorOffer } from './run.js';
+import { loadProfile, readRun, runName, tailorOffer } from './run.js';
 import { pageData } from './tailor.js';
 import { appendQaLog, withModel } from './qa.js';
 import { splitOffers } from './split.js';
@@ -138,6 +139,13 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       return addAnswer(join(dirname(profilePath), 'answers.json'), body, { profile: loaded.profile, blocked: blocked(loaded.assessment) });
     },
     log: (entry) => appendQaLog(out, entry),
+    // 2.31b: beside the runs, in a folder of its own (not a run: loadRuns skips it).
+    saveComparison: (name, comparison, markdown) => {
+      const dir = join(out, 'compare', runName('', new Date(), name));
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, 'compare.md'), markdown);
+      writeFileSync(join(dir, 'compare.json'), `${JSON.stringify(comparison, null, 2)}\n`);
+    },
     invites: () => loadInvites(out),
   };
   const { server } = createApp({ deps, publicMode });

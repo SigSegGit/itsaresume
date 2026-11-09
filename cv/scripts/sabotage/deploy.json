@@ -25,6 +25,14 @@
       "expect": [
         "the VM generator mounts directories only, never a file alone"
       ]
+    },
+    "Deploy: the VM queue holds a whole comparison": {
+      "file": "deploy/vm-generator/compose.yaml",
+      "live": "--max-queued 4",
+      "dead": "--max-queued 3",
+      "expect": [
+        "the VM queue holds a whole comparison"
+      ]
     }
   }
 }

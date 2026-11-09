@@ -611,6 +611,7 @@ test('compare: one job per available model, counted as that many, one comparison
   assert.equal((await alice.post('/api/jobs', { offers: [{ title: 'one more', text: PUBLIC_OFFER('DevOps') }] })).status, 429, 'three runs were counted');
   const group = await groupDone(alice.get, id);
   assert.equal(group.comparison.models.length, 3);
+  assert.ok(group.comparison.models.every((model) => !('dir' in model)), 'the public page reads the public comparison');
   assert.equal((await bob.get(`/api/groups/${id}`)).status, 404);
   assert.equal((await bob.get(`/api/groups/${id}/compare.md`)).status, 404);
   assert.match((await alice.get(`/api/groups/${id}/compare.md`)).text, /^# Comparaison : Fintech/);

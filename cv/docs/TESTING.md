@@ -110,6 +110,10 @@ property it proves.
 
 | Property (the test name) | Sabotage defences |
 |---|---|
+| compareRuns: one line per model, disagreements first, leads found by code | Compare: disagreements first |
+| compareRuns: a spread of 15 points or fewer is no lead | Compare: a spread is a lead past its limit |
+| the public comparison keeps no error text, no reason, no path | Compare: no error text in public; Compare: no reason in public |
+| the comparison in markdown: a table per model, a cell cannot break its row | Compare: a cell cannot break its row |
 | compare: one row per requirement across backends, disagreements and demotion reasons kept | Comparative run (2026-10-24): a demotion reason stays on its requirement |
 
 ## `test/core.test.js`
@@ -213,6 +217,7 @@ property it proves.
 | Property (the test name) | Sabotage defences |
 |---|---|
 | the VM router is health-checked on the port it listens on | Deploy: the VM router is health-checked on its own port |
+| the VM queue holds a whole comparison | Deploy: the VM queue holds a whole comparison |
 | the VM generator mounts directories only, never a file alone | Deploy: the VM generator mounts its profile as a folder |
 
 ## `test/equivalent.test.js`
@@ -721,6 +726,9 @@ property it proves.
 | outside public mode the owner still sees the repairs and the real error | — |
 | a reloaded public page is the same visitor, and sees its running job | Public: a reload keeps the visitor; Public: the visitor cookie is set; Public: the visitor cookie is HttpOnly, Secure, Strict |
 | a public page opened before a restart can still post after it | Public: a token is adopted after a restart only with its own cookie; Public: a page opened before a restart is adopted again |
+| compare: one job per available model, counted as that many, one comparison for its page alone | Compare: a comparison is its page's alone; Compare: each model counts in the public quotas; Compare: only models that can answer |
+| compare: refused for several offers at once, and when fewer than two models can answer | Compare: two models at least; Compare: one offer at a time |
+| compare: the owner gets the full comparison, kept once, a failed model included | Compare: waits for every model |
 | public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour | Ban: more than banAfter attempts bans; Ban: the default threshold is ten; Ban: a banned client is refused; Ban: a ban expires; Ban: attempts are counted per IP |
 | requests older than an hour do not count towards the ban | Ban: the default threshold is ten; Ban: only the last hour counts |
 | requests refused by the existing caps still count towards the ban, and the thresholds are configurable | Ban: more than banAfter attempts bans; Ban: a ban expires; Ban: the ban lasts banHours |
@@ -833,6 +841,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**549 tests, 453 of them covered by at least one sabotage defence.**
+**557 tests, 461 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

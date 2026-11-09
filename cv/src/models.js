@@ -61,5 +61,7 @@ export function modelMenu(backends, now = Date.now() / 1000, { awake = false } =
   // The owner, 2026-10-14: past Claude, the cloud free tiers before the slow local model.
   const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')
     || (openai.available && 'openai') || (local.available && 'local') || fallback;
-  return { default: chosen, options: { auto, claude, gemini, openai, local } };
+  // 2.31b: comparing needs two models that can answer.
+  const compare = { available: [claude, gemini, openai, local].filter((model) => model.available).length >= 2, note: '' };
+  return { default: chosen, options: { auto, claude, gemini, openai, local, compare } };
 }
