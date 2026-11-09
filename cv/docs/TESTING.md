@@ -450,6 +450,16 @@ property it proves.
 | loadProfile reads links.json beside the profile | Links: read beside the profile |
 | ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else | Prompt opt-ins: off by default |
 
+## `test/listing-model.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the listing goes to the listing model, the judgement to the chosen one | Listing: the listing model lists |
+| without a listing model the chosen one lists, as before | — |
+| a listing model that fails leaves the listing to the chosen one | Listing: a failing listing model falls back |
+| two runs of one offer at once share one listing | Listing: runs at once share one listing |
+| a failed listing is not shared with the next run | Listing: a failed listing is not kept |
+
 ## `test/matrix.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -841,6 +851,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**557 tests, 461 of them covered by at least one sabotage defence.**
+**562 tests, 465 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

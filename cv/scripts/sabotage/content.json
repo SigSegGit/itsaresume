@@ -76,9 +76,42 @@
     "test/replay.test.js",
     "src/coverage.js",
     "test/coverage.test.js",
-    "test/degree.test.js"
+    "test/degree.test.js",
+    "test/listing-model.test.js"
   ],
   "defences": {
+    "Listing: the listing model lists": {
+      "file": "src/pipeline.js",
+      "live": "llm: listingLlm ? recorded(listingLlm) : llm }",
+      "dead": "llm }",
+      "expect": [
+        "the listing goes to the listing model, the judgement to the chosen one"
+      ]
+    },
+    "Listing: a failing listing model falls back": {
+      "file": "src/pipeline.js",
+      "live": "if (!listingLlm) throw error;",
+      "dead": "throw error;",
+      "expect": [
+        "a listing model that fails leaves the listing to the chosen one"
+      ]
+    },
+    "Listing: runs at once share one listing": {
+      "file": "src/listing.js",
+      "live": "if (!listing.has(offer)) listing.set",
+      "dead": "listing.set",
+      "expect": [
+        "two runs of one offer at once share one listing"
+      ]
+    },
+    "Listing: a failed listing is not kept": {
+      "file": "src/listing.js",
+      "live": "list().finally(() => listing.delete(offer))",
+      "dead": "list()",
+      "expect": [
+        "a failed listing is not shared with the next run"
+      ]
+    },
     "Degree: an engineering school is a degree": {
       "file": "src/normalize.js",
       "live": "([ée]coles?\\s+d['’]\\s*ing[ée]nieurs?|engineering\\s+school|dipl",

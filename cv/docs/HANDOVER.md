@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.32
-TITLE: comparison live; next 2.32, a score that does not depend on the model's listing; then 2.30 (c); 2.31c waits for the owner's export
+NEXT: 2.30
+TITLE: 2.32 built, the rows no longer depend on the judging model; next a real comparison with Claude, then 2.30 (c); 2.31c waits for the owner's export
 WRITTEN-AT: 2026-11-09
 -->
 
@@ -1128,7 +1128,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     lacks as a dated precisions source (as 2026-11-06), never a level he
     did not say, the doubtful to `A-CONFIRMER-preuves.md`.
 
-- [ ] **2.32** (the owner, 2026-11-09) **One offer, one score, whatever the
+- [x] **2.32** (built 2026-11-09: the page's runs list through `auto`, whatever model judges, the chosen one if that fails; a comparison shares one listing; real run to read) (the owner, 2026-11-09) **One offer, one score, whatever the
   model.** Same offer: 58 with the local model, 77 with Gemini. The score is
   met/total over the rows the model listed, and the listing differs: 12 rows
   on the local run (named tools, the hardest ones) against 35 (responsibilities

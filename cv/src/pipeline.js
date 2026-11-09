@@ -12,7 +12,7 @@ import { extractJson } from './llm.js';
 import { validateAnalysis } from './analysis.js';
 import { normalize } from './normalize.js';
 import { detectLanguage } from './language.js';
-import { listRequirements, mergeListed } from './listing.js';
+import { listRequirements, sharedListing, mergeListed } from './listing.js';
 
 export const MAX_ATTEMPTS = 2;
 
@@ -20,21 +20,35 @@ export const MAX_ATTEMPTS = 2;
  * `profile` is the one the CV may draw from (restricted by the evidence,
  * src/evidence.js); `assessment`, when given, is checked again on the answer.
  */
-export async function analyse({ profile, offer, llm: call, assessment, structured = false, listingCache = null, prompt: options = promptOptions(), onStep = () => {} }) {
+export async function analyse({ profile, offer, llm: call, listingLlm = null, assessment, structured = false, listingCache = null, prompt: options = promptOptions(), onStep = () => {} }) {
   // Every raw answer, in call order (2.8): a replay re-normalizes the stored
   // analysis, so a rule acting on the model's own answer shows only here.
   const calls = [];
   let step = 'listing';
-  const llm = async (request) => {
-    const answer = await call(request);
+  const recorded = (ask) => async (request) => {
+    const answer = await ask(request);
     calls.push({ step, backend: answer.backend, text: answer.text });
     return answer;
   };
+  const llm = recorded(call);
   onStep('listing');
+  // 2.32: the rows do not depend on who judges them; a listing model that
+  // cannot answer leaves it to the chosen one.
+  const list = async () => {
+    try {
+      return await listRequirements({ offer, llm: listingLlm ? recorded(listingLlm) : llm });
+    } catch (error) {
+      if (!listingLlm) throw error;
+      return listRequirements({ offer, llm });
+    }
+  };
   let listed = listingCache?.read(offer);
   if (!listed) {
-    listed = await listRequirements({ offer, llm });
-    listingCache?.write(offer, listed);
+    listed = listingCache ? await sharedListing(offer, async () => {
+      const fresh = await list();
+      listingCache.write(offer, fresh);
+      return fresh;
+    }) : await list();
   }
   step = 'analysis';
   const { system, prompt } = buildPrompt(profile, offer, listed, options);

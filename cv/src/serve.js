@@ -118,7 +118,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       const loaded = loadProfile(path);
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep });
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), outDir: out, useWord, onStep, profileId: profile, title });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: out, useWord, onStep, profileId: profile, title });
       return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.
