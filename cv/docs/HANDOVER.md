@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.30
-TITLE: 2.31a and b built (name a run, compare every model, PR #157); next a real comparison on the DevSecOps offer, then 2.30 (c), the private OpenJev measure; 2.31c (the jobs project) waits for the owner's export
+NEXT: 2.32
+TITLE: comparison live; next 2.32, a score that does not depend on the model's listing; then 2.30 (c); 2.31c waits for the owner's export
 WRITTEN-AT: 2026-11-09
 -->
 
@@ -1127,6 +1127,17 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     then list, per fact found, whether the v4 holds it, and add what it
     lacks as a dated precisions source (as 2026-11-06), never a level he
     did not say, the doubtful to `A-CONFIRMER-preuves.md`.
+
+- [ ] **2.32** (the owner, 2026-11-09) **One offer, one score, whatever the
+  model.** Same offer: 58 with the local model, 77 with Gemini. The score is
+  met/total over the rows the model listed, and the listing differs: 12 rows
+  on the local run (named tools, the hardest ones) against 35 (responsibilities
+  too). Build: a listing that does not depend on the model answering, for
+  instance the richest listing kept for an offer (`fileListingCache` keeps the
+  first writer's today, so the order of the runs decides) or the offer's
+  mission lines added by code. Measure on the real runs before shipping
+  (`rules-replay.mjs`): the score must not move for a model that lists well.
+  - [x] Done 2026-11-09: "école d'ingénieurs" is a degree (PR #159).
 
 ## 9. Open on purpose
 
