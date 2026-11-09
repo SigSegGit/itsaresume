@@ -51,7 +51,8 @@
     "test/rules.test.js",
     "test/split.test.js",
     "src/links.js",
-    "src/coverage.js"
+    "src/coverage.js",
+    "src/compare.js"
   ],
   "defences": {
     "Injection: the analysis prompt fences the offer": {
@@ -70,10 +71,10 @@
         "the offer is fenced by a marker it cannot guess"
       ]
     },
-    "Instructions: French '\u00e9crivez le mot'": {
+    "Instructions: French 'écrivez le mot'": {
       "file": "src/instructions.js",
-      "live": "<(?:\u00e9cri(?:s|vez|re)|inscri",
-      "dead": "<(?:x\u00e9cri(?:s|vez|re)|inscri",
+      "live": "<(?:écri(?:s|vez|re)|inscri",
+      "dead": "<(?:xécri(?:s|vez|re)|inscri",
       "expect": [
         "French instructions to the candidate or an AI are found one by one",
         "only the instruction sentence of a line is returned, not its neighbours"
@@ -105,8 +106,8 @@
     },
     "Instructions: French 'si tu es une IA'": {
       "file": "src/instructions.js",
-      "live": "<si (?:tu es|vous \u00eates)",
-      "dead": "<xsi (?:tu es|vous \u00eates)",
+      "live": "<si (?:tu es|vous êtes)",
+      "dead": "<xsi (?:tu es|vous êtes)",
       "expect": [
         "French instructions to the candidate or an AI are found one by one",
         "English instructions to the candidate or an AI are found too"
@@ -114,8 +115,8 @@
     },
     "Instructions: French 'note pour l'IA'": {
       "file": "src/instructions.js",
-      "live": "<note (?:pour|\u00e0)",
-      "dead": "<xnote (?:pour|\u00e0)",
+      "live": "<note (?:pour|à)",
+      "dead": "<xnote (?:pour|à)",
       "expect": [
         "French instructions to the candidate or an AI are found one by one"
       ]
@@ -211,8 +212,8 @@
     },
     "Instructions: a typographic apostrophe is read as a plain one": {
       "file": "src/instructions.js",
-      "live": "replace(/[\u2019\u2018]/g, \"'\")",
-      "dead": "replace(/[\u2018]/g, \"'\")",
+      "live": "replace(/[’‘]/g, \"'\")",
+      "dead": "replace(/[‘]/g, \"'\")",
       "expect": [
         "French instructions to the candidate or an AI are found one by one"
       ]
@@ -236,7 +237,7 @@
     },
     "Closed: the prompt lists titles by id": {
       "file": "src/prompt.js",
-      "live": "for (const title of profile.titles) lines.push(`- ${title.id} \u2014 ${title.en}`);",
+      "live": "for (const title of profile.titles) lines.push(`- ${title.id} — ${title.en}`);",
       "dead": "void 0;",
       "expect": [
         "the prompt lists the titles and facts by id and asks for ids"
@@ -260,8 +261,8 @@
     },
     "Prompt: each fact is listed with its kind": {
       "file": "src/prompt.js",
-      "live": "lines.push(`- ${fact.id} (${fact.kind}) \u2014 ${fact.en}`);",
-      "dead": "lines.push(`- ${fact.id} \u2014 ${fact.en}`);",
+      "live": "lines.push(`- ${fact.id} (${fact.kind}) — ${fact.en}`);",
+      "dead": "lines.push(`- ${fact.id} — ${fact.en}`);",
       "expect": [
         "the prompt gives each fact its kind and says the summary is one hook",
         "the prompt lists the titles and facts by id and asks for ids"

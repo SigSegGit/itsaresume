@@ -56,7 +56,8 @@
     "src/links.js",
     "src/coverage.js",
     "deploy/laptop/bionic-up.sh",
-    "test/bionic-up.test.js"
+    "test/bionic-up.test.js",
+    "src/compare.js"
   ],
   "defences": {
     "Evidence: the CLI refuses a quote its source lacks": {
