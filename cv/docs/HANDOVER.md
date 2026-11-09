@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.31c
-TITLE: 2.31a and b built (name a run, compare every model); 2.31c (re-read the owner's jobs project) waits for his export
+NEXT: 2.30
+TITLE: 2.31a and b built (name a run, compare every model, PR #157); next a real comparison on the DevSecOps offer, then 2.30 (c), the private OpenJev measure; 2.31c (the jobs project) waits for the owner's export
 WRITTEN-AT: 2026-11-09
 -->
 
