@@ -32,7 +32,7 @@ const judge = (name, education = MASTER, match = 'no', skills = []) => {
   return normalize(analysis, profile(education)).analysis.requirements[0];
 };
 
-for (const name of ['Diplôme ingénieur ou Master informatique', "Diplôme d'ingénieur", 'Bac+5 en informatique', "Master's degree in computer science", 'Master en informatique']) {
+for (const name of ["école d'ingénieurs ou équivalent", "Issu(e) d’une école d’ingénieurs", 'Diplôme ingénieur ou Master informatique', "Diplôme d'ingénieur", 'Bac+5 en informatique', "Master's degree in computer science", 'Master en informatique']) {
   test(`a Bac+5 in the education meets "${name}"`, () => {
     const row = judge(name);
     assert.equal(row.match, 'yes');
