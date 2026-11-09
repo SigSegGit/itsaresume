@@ -140,7 +140,7 @@ function certificationOf(requirement, profile, lang) {
  * catalogue and has no education in it: "Diplôme non renseigné" beside a
  * Master's level diploma (seen 2026-11-02).
  */
-const DEGREE = /(?<![\p{L}\p{N}])(dipl[oô]m[ée]?e?s?|degrees?|bac\s*\+\s*\d|master(?:'?s)?\s+(?:\d|en|in|of|informatique|computer)|(?:ou|or)\s+master)(?![\p{L}\p{N}])/iu;
+const DEGREE = /(?<![\p{L}\p{N}])([ée]coles?\s+d['’]\s*ing[ée]nieurs?|engineering\s+school|dipl[oô]m[ée]?e?s?|degrees?|bac\s*\+\s*\d|master(?:'?s)?\s+(?:\d|en|in|of|informatique|computer)|(?:ou|or)\s+master)(?![\p{L}\p{N}])/iu;
 /** The study levels a text names, in years after the baccalauréat. */
 const STUDY_YEARS = [
   [/doctorat|doctorate|\bph\.?d\b/iu, 8],

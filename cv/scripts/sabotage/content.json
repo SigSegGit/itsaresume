@@ -79,6 +79,14 @@
     "test/degree.test.js"
   ],
   "defences": {
+    "Degree: an engineering school is a degree": {
+      "file": "src/normalize.js",
+      "live": "([ée]coles?\\s+d['’]\\s*ing[ée]nieurs?|engineering\\s+school|dipl",
+      "dead": "(dipl",
+      "expect": [
+        "a Bac+5 in the education meets \"école d'ingénieurs ou équivalent\""
+      ]
+    },
     "Profile: bullet skills must exist": {
       "file": "src/profile.js",
       "live": "need(skills.has(skill), `bullet ${bullet.id}: unknown skill ${skill}`);",
