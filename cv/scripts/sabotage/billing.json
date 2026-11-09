@@ -93,8 +93,8 @@
     },
     "Models: the local model down is unavailable": {
       "file": "src/models.js",
-      "live": "if (backend.state === 'down') return { available: false, note: 'portable éteint ou hors ligne' };",
-      "dead": "if (backend.state === 'down') return { available: true, note: 'portable éteint ou hors ligne' };",
+      "live": "if (backend.state === 'down') return { available: false, note: 'portable \u00e9teint ou hors ligne' };",
+      "dead": "if (backend.state === 'down') return { available: true, note: 'portable \u00e9teint ou hors ligne' };",
       "expect": [
         "the local model down is unavailable, said plainly, and auto takes the default"
       ]

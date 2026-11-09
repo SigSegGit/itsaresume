@@ -168,7 +168,7 @@
       "live": "const spoken = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' ? null : languageOf(requirement, profile, analysis.language);",
       "dead": "const spoken = null;",
       "expect": [
-        "\"Anglais professionnel\" is met by the profile's \"Anglais — bilingue\", and counts"
+        "\"Anglais professionnel\" is met by the profile's \"Anglais \u2014 bilingue\", and counts"
       ]
     },
     "Languages: notions do not meet a language requirement": {
@@ -693,7 +693,7 @@
     "Hygiene: an invisible character in a source file is found": {
       "file": "src/text.js",
       "live": "// Text helpers shared by the checks.",
-      "dead": "// Text helpers shared by the checks.​",
+      "dead": "// Text helpers shared by the checks.\u200b",
       "expect": [
         "no source file contains an invisible or bidi control character"
       ]
@@ -776,7 +776,7 @@
     },
     "Must stay no: certificates are not a certification": {
       "file": "src/normalize.js",
-      "live": "certifi(?:cations?|[ée]e?s?|ed)",
+      "live": "certifi(?:cations?|[\u00e9e]e?s?|ed)",
       "dead": "certifi\\w*",
       "expect": [
         "the TLS certificates of a PKI are not a certification"
@@ -784,8 +784,8 @@
     },
     "Must stay no: a certification code names one": {
       "file": "src/normalize.js",
-      "live": "(?:cations?|[ée]e?s?|ed)|CKA|",
-      "dead": "(?:cations?|[ée]e?s?|ed)|",
+      "live": "(?:cations?|[\u00e9e]e?s?|ed)|CKA|",
+      "dead": "(?:cations?|[\u00e9e]e?s?|ed)|",
       "expect": [
         "a certification named by its code alone (\"niveau CKA\") is not met by owning Kubernetes"
       ]
@@ -1117,7 +1117,7 @@
     },
     "Closed: the headline is the profile's titles": {
       "file": "src/normalize.js",
-      "live": "analysis.headline = headed.map((id) => titles.get(id)[lang]).join(' · ');",
+      "live": "analysis.headline = headed.map((id) => titles.get(id)[lang]).join(' \u00b7 ');",
       "dead": "void headed;",
       "expect": [
         "the headline and the summary are the profile's own titles and facts, chosen by id; the model's free text is dropped"
@@ -1297,7 +1297,7 @@
     },
     "Quality: learning fast is a quality": {
       "file": "src/text.js",
-      "live": "    'monter rapidement', 'nouveaux sujets', 'montée compétence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact'])",
+      "live": "    'monter rapidement', 'nouveaux sujets', 'mont\u00e9e comp\u00e9tence', 'quick learner', 'fast learner', 'learn quickly', 'autodidact'])",
       "dead": "    ])",
       "expect": [
         "learning fast is a personal quality; machine learning stays a skill"
@@ -1313,7 +1313,7 @@
     },
     "Quality: collaboration words": {
       "file": "src/text.js",
-      "live": "  .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter équipe']);",
+      "live": "  .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter \u00e9quipe']);",
       "dead": "  ;",
       "expect": [
         "collaboration and soft skills are met qualities: never a gap, never adjacent, never scored"
@@ -1329,7 +1329,7 @@
     },
     "Quality: working in pairs is a quality": {
       "file": "src/text.js",
-      "live": "  .concat(['binôm', 'binom', 'pair work'])\n",
+      "live": "  .concat(['bin\u00f4m', 'binom', 'pair work'])\n",
       "dead": "\n",
       "expect": [
         "working in pairs is a personal quality, never a failed requirement"
@@ -1502,12 +1502,12 @@
       "live": "ids.has(id) && !linked.no.includes(id)",
       "dead": "ids.has(id)",
       "expect": [
-        "the owner’s verdicts rule: same and near join the shortlist whatever the count, no removes a skill from it"
+        "the owner\u2019s verdicts rule: same and near join the shortlist whatever the count, no removes a skill from it"
       ]
     },
     "Shortlist: the prompt carries the candidates": {
       "file": "src/prompt.js",
-      "live": "${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}",
+      "live": "${candidates.length ? ` \u2014 candidates: ${candidates.join(', ')}` : ''}",
       "dead": "",
       "expect": [
         "the prompt offers each listed requirement its shortlist, and says it is not a limit"
@@ -1519,7 +1519,7 @@
       "dead": "seen.size === 0 && seen.add(key(term))",
       "expect": [
         "the compact catalogue keeps every skill id, name, alias and term",
-        "the compact catalogue states each skill’s level and group, lab still spelt out"
+        "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
       ]
     },
     "Compact: levels as one letter, stated once": {
@@ -1527,7 +1527,7 @@
       "live": "${LEVELS[skill.level] ?? skill.level}",
       "dead": "${skill.level}",
       "expect": [
-        "the compact catalogue states each skill’s level and group, lab still spelt out"
+        "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
       ]
     },
     "Prompt opt-ins: off by default": {
