@@ -104,12 +104,12 @@ export function runName(offer, now = new Date(), title = '') {
  * analysis ({attempt}), layout ({layouts}), pdf, ats, done ({dir}).
  * `startLayout` starts the layout engine (Word; tests fake it).
  */
-export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title }) {
+export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title, listingLlm = null }) {
   const { full, profile, assessment, removed, texts } = loaded;
   const dir = join(outDir, runName(offer, new Date(), title));
   let result;
   try {
-    result = await analyse({ profile, offer, llm, assessment, onStep, listingCache: fileListingCache(join(outDir, '.listings')) });
+    result = await analyse({ profile, offer, llm, listingLlm, assessment, onStep, listingCache: fileListingCache(join(outDir, '.listings')) });
   } catch (error) {
     // Keep what the model said: the next attempt at a prompt starts there.
     (error.answers ?? []).forEach((answer, index) => {

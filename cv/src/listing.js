@@ -201,3 +201,11 @@ function onlyDenied(offer, name) {
     .filter((clause) => mentions(clause, name));
   return clauses.length > 0 && clauses.every((clause) => DENIAL.test(clause) && !NICE.test(clause));
 }
+
+const listing = new Map();
+
+/** 2.32: runs of one offer at once (a comparison) share one listing; a failure is shared by none after it. */
+export function sharedListing(offer, list) {
+  if (!listing.has(offer)) listing.set(offer, list().finally(() => listing.delete(offer)));
+  return listing.get(offer);
+}
