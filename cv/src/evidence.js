@@ -182,7 +182,7 @@ export function assess(profile, scanned) {
 
     const count = new Set(supporting.map((entry) => entry.source)).size;
     const flags = [];
-    if (skill.level !== 'notions' && verdict === 'self-declared' && count < 1) {
+    if (skill.level !== 'notions' && verdict === 'self-declared' && count < 2) {
       flags.push(`${skill.name}: ${skill.level} level claimed in one CV only`);
     }
     // Levels stated by the sources ("Proficient: AWS", "Notions Azure"),
