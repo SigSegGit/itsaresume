@@ -21,6 +21,7 @@ env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
   RUSTDOCFLAGS: -D warnings
+  RUST_BACKTRACE: full
 
 jobs:
   # One workflow for the router and the generator (2026-10-06, was two):
