@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.30
-TITLE: 2.32 built, the rows no longer depend on the judging model; next a real comparison with Claude, then 2.30 (c); 2.31c waits for the owner's export
-WRITTEN-AT: 2026-11-09
+NEXT: 2.33
+TITLE: 2.32 verified on a real comparison (58 -> 94 local, three models within 4 points); 2.30 closed, nothing ships; next 2.33, comparison leads that name what to fix; 2.31c waits for the owner's export
+WRITTEN-AT: 2026-11-10
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1013,7 +1013,7 @@ Traps met, each cost time once:
   scripts to `~/.itsaresume/bin/` and restart the watcher
   (`wake-watcher.vbs`).
 - [x] **2.29b** (the owner, 2026-11-02) A degree requirement is answered by the profile's education at the level asked, never by a skill (`degreeOf`, kind `degree`, `test/degree.test.js`, 5 defences). Seen: "no" beside a Master's level diploma, the model reading only the skill catalogue. The profile corrections of that session are private.
-- [ ] **2.30** (the owner, 2026-10-31) **OpenJev: a question-answer
+- [x] **2.30** (closed 2026-11-10: (c) measured, nothing ships) (the owner, 2026-10-31) **OpenJev: a question-answer
   structure on the local model, a spike, measure first.** The idea read
   that day (secondhand: blogs, not the READMEs): split one decision into
   small closed questions, each option scored by one tiny constrained call,
@@ -1052,6 +1052,15 @@ Traps met, each cost time once:
   run's analysis time. Ship nothing unless agreement holds and time
   drops; then a red test first, and the code still decides (the answer is
   one more selection, settled by `normalize.js`'s rules).
+  **(c) done 2026-11-10, nothing ships**: 80 rows of the 4 latest Claude
+  runs, one closed question each to Bionic (qwen3-coder-next, one letter,
+  top-5 logprobs): 66 % agree with the run's final verdict, 76 % of the 50
+  answers given at p >= 0.9; and slower, not faster: about 3.3 s a row,
+  110-120 s a run against 36-43 s for Claude's whole analysis. Part of the
+  disagreement is the reference itself (rows judged before the profile of
+  2026-11-06/09 gained Kubernetes, Datadog, IAM, EKS), but the time alone
+  settles it. Script and rows: `~/.itsaresume/migrations/qa-replay.mjs`,
+  `out/qa-replay-2026-11-10.json`.
 - [ ] **5.x** (the owner, 2026-10-04: "further still") **Matchmaking, N
   offers × M profiles.** Needs 4.1 and the ESCO mapping of 2.25 (offers
   and profiles compared on ESCO concepts). The cost is the model calls: the
@@ -1128,7 +1137,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     lacks as a dated precisions source (as 2026-11-06), never a level he
     did not say, the doubtful to `A-CONFIRMER-preuves.md`.
 
-- [x] **2.32** (built 2026-11-09: the page's runs list through `auto`, whatever model judges, the chosen one if that fails; a comparison shares one listing; real run to read) (the owner, 2026-11-09) **One offer, one score, whatever the
+- [x] **2.32** (verified 2026-11-10 on a real comparison, "Test 1": one listing of 28 rows for all three models, Claude 92, Gemini 96, local 94, against 58/77 before; built 2026-11-09: the page's runs list through `auto`, whatever model judges, the chosen one if that fails; a comparison shares one listing; real run to read) (the owner, 2026-11-09) **One offer, one score, whatever the
   model.** Same offer: 58 with the local model, 77 with Gemini. The score is
   met/total over the rows the model listed, and the listing differs: 12 rows
   on the local run (named tools, the hardest ones) against 35 (responsibilities
@@ -1138,6 +1147,18 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   mission lines added by code. Measure on the real runs before shipping
   (`rules-replay.mjs`): the score must not move for a model that lists well.
   - [x] Done 2026-11-09: "école d'ingénieurs" is a degree (PR #159).
+
+- [ ] **2.33** (2026-11-10, from the first real comparison) **The
+  comparison's leads say what to fix.** On "Test 1" every model got the
+  "many repairs: the prompt guides it badly" lead (34, 29, 44), but most of
+  those repairs are the code's ordinary work ("listed 2 times, counted
+  once", "a personal quality, not scored", "named like the profile skill
+  X, now yes with that skill alone"). In `src/compare.js`: count only the
+  repairs that change a verdict the model gave (a row raised or lowered),
+  per model, and name the three most frequent kinds; the lead then reads
+  "the code changed N of the model's verdicts, mostly: ...". Red test from
+  the repair strings of a real comparison (made fictional), sabotage on
+  the filter.
 
 ## 9. Open on purpose
 
