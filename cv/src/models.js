@@ -10,10 +10,38 @@ const at = (seconds) => clock.format(new Date(seconds * 1000));
 
 // Claude, Gemini, OpenAI: a cloud plan or free tier, judged alike from the
 // router's last answer or check (8.49, every ~15 min).
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/**
+ * 2.35: when a limit lifts, from the backend's own words ("resets 5:30pm
+ * (UTC)", "resets Nov 13, 5pm (UTC)"), in seconds; null when it does not say.
+ */
+export function resetAt(reason, since) {
+  const said = /resets (?:([a-z]{3}) (\d{1,2}), )?(\d{1,2})(?::(\d{2}))?\s*(am|pm) \(UTC\)/i.exec(reason ?? '');
+  if (!said) return null;
+  const [, month, day, hour, minute = '0', half] = said;
+  const hours = (Number(hour) % 12) + (half.toLowerCase() === 'pm' ? 12 : 0);
+  const seen = new Date(since * 1000);
+  const monthIndex = month ? MONTHS.indexOf(month.toLowerCase()) : seen.getUTCMonth();
+  if (monthIndex < 0) return null;
+  let reset = Date.UTC(seen.getUTCFullYear(), monthIndex, month ? Number(day) : seen.getUTCDate(), hours, Number(minute)) / 1000;
+  while (reset <= since) reset = month ? Date.UTC(new Date(reset * 1000).getUTCFullYear() + 1, monthIndex, Number(day), hours, Number(minute)) / 1000 : reset + 24 * 3600;
+  return reset;
+}
+
 function cloudOption(backend, now) {
   if (!backend) return { available: false, note: 'non configuré' };
+  // 2.35: no credits never lifts by itself; adding some is per-token billing (§1).
+  if (backend.state === 'limited' && /no credits remaining|insufficient_quota/i.test(backend.reason ?? '')) {
+    return { available: false, note: 'sans crédit : l’API est payante au token, exclue' };
+  }
   if (backend.state === 'limited') {
     const since = backend.since ?? now;
+    const reset = resetAt(backend.reason, since);
+    if (reset !== null) {
+      if (now < reset) return { available: false, note: `limite atteinte, levée à ${at(reset)}` };
+      return { available: true, note: '' };
+    }
     if (now - since < LIMIT_PAUSE_S) return { available: false, note: `limite d’usage atteinte à ${at(since)}` };
     return { available: true, note: `limite atteinte à ${at(since)}, peut-être levée` };
   }
