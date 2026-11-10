@@ -23,9 +23,18 @@
     "crates/itsaresume-router/src/stats.rs",
     "crates/itsaresume-router/tests/cli.rs",
     "crates/itsaresume-router/tests/journal.rs",
-    "crates/itsaresume-router/tests/stats.rs"
+    "crates/itsaresume-router/tests/stats.rs",
+    "crates/itsaresume-router/tests/lm_studio.rs"
   ],
   "defences": {
+    "Local (2.34): an unloaded model is unreachable": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "        \"Model is unloaded\",\n",
+      "dead": "        \"No models loaded\",\n",
+      "expect": [
+        "an_unloaded_or_still_loading_model_is_unreachable"
+      ]
+    },
     "Journal keeps the prompt out": {
       "file": "crates/itsaresume-router/src/journal.rs",
       "live": "\"prompt_chars\": request.prompt.chars().count(),",

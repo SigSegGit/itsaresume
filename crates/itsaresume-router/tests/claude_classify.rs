@@ -302,8 +302,7 @@ fn an_answer_billed_as_overage_trips_the_billing_wire() {
 /// at its reset, never the billing latch.
 #[test]
 fn a_refusal_flagged_as_overage_is_the_limit_not_the_billing_wire() {
-    let mut messages: Vec<Value> =
-        serde_json::from_str(&with_overage(json!(true))).expect("array");
+    let mut messages: Vec<Value> = serde_json::from_str(&with_overage(json!(true))).expect("array");
     let result = messages.last_mut().expect("a result");
     result["is_error"] = json!(true);
     result["api_error_status"] = json!(429);

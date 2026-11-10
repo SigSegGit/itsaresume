@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.33
-TITLE: 2.32 verified on a real comparison (58 -> 94 local, three models within 4 points); 2.30 closed, nothing ships; next 2.33, comparison leads that name what to fix; 2.31c waits for the owner's export
+TITLE: 2.34 built (models come back by themselves and stay in sight); next 2.33, comparison leads that name what to fix; 2.31c waits for the owner's export
 WRITTEN-AT: 2026-11-10
 -->
 
@@ -1159,6 +1159,25 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   "the code changed N of the model's verdicts, mostly: ...". Red test from
   the repair strings of a real comparison (made fictional), sabotage on
   the filter.
+
+- [x] **2.34** (the owner, 2026-11-10, built the same day) **A model that
+  is down for a while comes back by itself, and stays in sight.**
+  (a) Router: a refusal (`is_error: true`) flagged `isUsingOverage` no longer
+  trips the billing latch: it served and billed nothing, it is the plan's
+  limit (seen 2026-11-06 at the weekly limit, extra usage off: Claude was
+  latched off the VM for three days). A served answer flagged overage still
+  trips. (b) Router: Bionic's "Model is unloaded." (a bare string) and
+  "Failed to load model" (a load that gave up while loading) are
+  `unreachable`, like "No models loaded": `auto` goes on. (c) Generator: a
+  local job on a running Bionic whose model is unloaded first sends one small
+  request, retried until the model answers (`ensureLocal`'s `warm`), step
+  "load". (d) Page: an unavailable model stays in the menu, greyed with its
+  reason (reverses 2026-10-14's "only what can answer is shown").
+  Not done: OpenAI. Its key is on the VM but the account has no credits
+  ("You have no credits remaining"): the API bills per token, which §1
+  forbids, and a ChatGPT subscription does not cover it. The plan-backed
+  route would be a `codex` backend (Codex CLI logged in with ChatGPT), like
+  claude-code: a router step of its own, for the owner to decide.
 
 ## 9. Open on purpose
 

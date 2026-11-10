@@ -310,14 +310,24 @@ fn classify(label: &str, status: u16, body: &str) -> Result<Completion, BackendE
         };
     }
 
-    let message = parsed["error"]["message"].as_str().map_or_else(
-        || format!("{} characters", body.chars().count()),
-        str::to_owned,
-    );
+    // Bionic says "Model is unloaded." as a bare string (observed 2.34).
+    let message = parsed["error"]["message"]
+        .as_str()
+        .or_else(|| parsed["error"].as_str())
+        .map_or_else(
+            || format!("{} characters", body.chars().count()),
+            str::to_owned,
+        );
     let detail = format!("{label} HTTP {status}: {message}");
-    // Observed: nothing loaded is a 400. It is the server's state, not the
-    // request's, so the next backend may answer.
-    if status == 400 && message.contains("No models loaded") {
+    // Observed: nothing loaded, a model unloaded after its idle hour, a load
+    // that gave up while still loading. The server's state, not the
+    // request's: the next backend may answer, and this one once loaded.
+    const NOT_LOADED: [&str; 3] = [
+        "No models loaded",
+        "Model is unloaded",
+        "Failed to load model",
+    ];
+    if status == 400 && NOT_LOADED.iter().any(|said| message.contains(said)) {
         return Err(BackendError::Unreachable(detail));
     }
     Err(match status {

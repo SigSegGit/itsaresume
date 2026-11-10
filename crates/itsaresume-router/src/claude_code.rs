@@ -86,7 +86,15 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         message["type"] == "rate_limit_event"
             && message["rate_limit_info"]["isUsingOverage"] == true
     });
-    if overage {
+    // 2.34: a refusal (`is_error: true`) serves and bills nothing, even
+    // flagged as overage (seen at the weekly limit with extra usage off):
+    // it is the plan's limit. Anything else, or no result, trips.
+    let served = messages
+        .iter()
+        .rev()
+        .find(|message| message["type"] == "result")
+        .is_none_or(|result| result["is_error"] != true);
+    if overage && served {
         return Err(BackendError::Other(
             "billing tripwire: claude reports this answer as extra usage (overage, \
              isUsingOverage), which is billed per token; itsaresume only uses the \

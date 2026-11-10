@@ -32,6 +32,14 @@
     "crates/itsaresume-router/tests/system_file_collision.rs"
   ],
   "defences": {
+    "Billing (2.34): a refusal flagged as overage is the limit": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".is_none_or(|result| result[\"is_error\"] != true);",
+      "dead": ".is_none_or(|_result| true);",
+      "expect": [
+        "a_refusal_flagged_as_overage_is_the_limit_not_the_billing_wire"
+      ]
+    },
     "Other never allows fallback": {
       "file": "crates/itsaresume-router/src/backend.rs",
       "live": "Self::Other(_) => false,",
@@ -257,8 +265,8 @@
     },
     "LM Studio: no model loaded is unreachable": {
       "file": "crates/itsaresume-router/src/lm_studio.rs",
-      "live": "if status == 400 && message.contains(\"No models loaded\") {",
-      "dead": "if status == 400 && message.contains(\"No models loaded-never\") {",
+      "live": "        \"No models loaded\",\n",
+      "dead": "        \"No models loaded-never\",\n",
       "expect": [
         "the_observed_no_models_loaded_is_unreachable"
       ]
