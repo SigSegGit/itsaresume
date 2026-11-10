@@ -60,6 +60,22 @@
     "src/compare.js"
   ],
   "defences": {
+    "Wake (2.34): an unloaded model is loaded before the job": {
+      "file": "src/wake.js",
+      "live": "if (!warm || backends.find((backend) => backend.kind === 'lm-studio')?.loaded !== false) return;",
+      "dead": "if (true) return;",
+      "expect": [
+        "a local model unloaded on a running Bionic is loaded before the job, retried until it answers"
+      ]
+    },
+    "Wake (2.34): a load is retried": {
+      "file": "src/wake.js",
+      "live": "      if (Date.now() >= deadline) break;\n    }\n    await new Promise",
+      "dead": "      break;\n    }\n    await new Promise",
+      "expect": [
+        "a local model unloaded on a running Bionic is loaded before the job, retried until it answers"
+      ]
+    },
     "Evidence: the CLI refuses a quote its source lacks": {
       "file": "src/run.js",
       "live": "if (quotes.length) throw new RunError(2,",

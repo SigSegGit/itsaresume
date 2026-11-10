@@ -796,6 +796,8 @@ property it proves.
 | a request to wake is a file the watcher takes | — |
 | a local model already up is used at once, with no step | — |
 | a sleeping local model on an awake laptop is woken, and the job waits for it | Wake: the request is left for the watcher |
+| a local model unloaded on a running Bionic is loaded before the job, retried until it answers | Wake (2.34): an unloaded model is loaded before the job; Wake (2.34): a load is retried |
+| a local model that never loads fails the job plainly | — |
 | a laptop off, or a model that never wakes, fails the job plainly | Wake: a laptop off fails at once |
 | serve() runs a local job through the wake check | Wake: a local job goes through the wake check |
 
@@ -829,7 +831,7 @@ property it proves.
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 | an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
 | the page offers a profile choice only when the status lists several, and sends the one chosen | — |
-| the page greys the models the server says cannot answer, and refreshes the menu | Models: the page greys what cannot answer; Models: the page hides what cannot answer |
+| the page greys the models the server says cannot answer, and refreshes the menu | Menu (2.34): an unavailable model stays in sight; Models: the page greys what cannot answer |
 | the page shows a queued job its place in the queue | Web: the page shows the place in the queue |
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
@@ -851,6 +853,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**562 tests, 465 of them covered by at least one sabotage defence.**
+**564 tests, 466 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

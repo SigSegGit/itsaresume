@@ -60,9 +60,8 @@ function applyModels(models) {
     const state = models.options[option.value];
     if (!state) continue;
     option.dataset.label ??= option.textContent;
-    // Only what can answer is shown (the owner, 2026-10-14).
+    // 2.34 (the owner, 2026-11-10): what cannot answer stays in sight, greyed with its reason.
     option.disabled = !state?.available;
-    option.hidden = !state?.available;
     option.textContent = state.note ? `${option.dataset.label} (${state.note})` : option.dataset.label;
   }
   if ((!modelChosen || !models.options[select.value]?.available) && models.default) select.value = models.default;

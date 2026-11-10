@@ -35,15 +35,38 @@ const localUp = (backends) => backends?.find((backend) => backend.kind === 'lm-s
  * is on. `backends` reads the router's /status; `onStep('wake', {note})`
  * tells the page what was done.
  */
-export async function ensureLocal({ out, backends, onStep, wait = WAKE_WAIT }) {
-  if (localUp(await backends())) return;
+export async function ensureLocal({ out, backends, onStep, wait = WAKE_WAIT, warm = null }) {
+  const now = await backends();
+  if (localUp(now)) return loadLocal(now, { onStep, wait, warm });
   if (!laptopAwake(out)) throw new Error('IA locale indisponible : portable éteint ou hors ligne. Choisis Claude.');
   requestWake(out);
   onStep('wake', { note: `Réveil de l’IA locale demandé au portable (jusqu’à ${Math.round(wait.max / 60_000)} min) : la génération partira d’elle-même.` });
   const deadline = Date.now() + wait.max;
   while (Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, wait.every));
-    if (localUp(await backends())) return;
+    const woken = await backends();
+    if (localUp(woken)) return loadLocal(woken, { onStep, wait, warm });
   }
   throw new Error(`L’IA locale ne s’est pas réveillée en ${Math.round(wait.max / 60_000)} min. Choisis Claude.`);
+}
+
+/**
+ * 2.34: Bionic up, its model unloaded after an idle hour. The first request
+ * loads it and may give up while it is still loading (seen 2026-11-09): one
+ * small request, retried until the model answers, before the job's own.
+ */
+async function loadLocal(backends, { onStep, wait, warm }) {
+  if (!warm || backends.find((backend) => backend.kind === 'lm-studio')?.loaded !== false) return;
+  onStep('load', { note: 'Chargement du modèle local (1 à 3 min) : la génération partira d’elle-même.' });
+  const deadline = Date.now() + wait.max;
+  for (;;) {
+    try {
+      await warm();
+      return;
+    } catch {
+      if (Date.now() >= deadline) break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, wait.every));
+  }
+  throw new Error(`L’IA locale ne s’est pas chargée en ${Math.round(wait.max / 60_000)} min. Choisis un autre modèle.`);
 }

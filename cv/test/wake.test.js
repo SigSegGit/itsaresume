@@ -54,6 +54,28 @@ test('a sleeping local model on an awake laptop is woken, and the job waits for 
   assert.ok(existsSync(join(out, WAKE_DIR, 'local')), 'the request was left');
 });
 
+// 2.34 (seen 2026-11-09/10): Bionic up, its model unloaded after an idle
+// hour; the job's first request gave up while the model was still loading.
+// The model is loaded first, retried until it answers.
+const unloaded = [{ name: 'bionic', kind: 'lm-studio', state: 'up', loaded: false }];
+test('a local model unloaded on a running Bionic is loaded before the job, retried until it answers', async () => {
+  const steps = [];
+  let tries = 0;
+  await ensureLocal({
+    out: outDir(), backends: async () => unloaded, onStep: (step) => steps.push(step), wait: QUICK,
+    warm: async () => { tries += 1; if (tries < 3) throw new Error('lm-studio HTTP 400: Failed to load model'); },
+  });
+  assert.equal(tries, 3);
+  assert.deepEqual(steps, ['load']);
+});
+
+test('a local model that never loads fails the job plainly', async () => {
+  await assert.rejects(
+    ensureLocal({ out: outDir(), backends: async () => unloaded, onStep: () => {}, wait: QUICK, warm: async () => { throw new Error('Model is unloaded.'); } }),
+    /ne s’est pas chargée/,
+  );
+});
+
 test('a laptop off, or a model that never wakes, fails the job plainly', async () => {
   await assert.rejects(
     ensureLocal({ out: outDir(), backends: async () => local('down'), onStep: () => {}, wait: QUICK }),

@@ -68,6 +68,14 @@
     "src/compare.js"
   ],
   "defences": {
+    "Menu (2.34): an unavailable model stays in sight": {
+      "file": "web/app.js",
+      "live": "    option.disabled = !state?.available;\n",
+      "dead": "    option.disabled = !state?.available;\n    option.hidden = !state?.available;\n",
+      "expect": [
+        "the page greys the models the server says cannot answer, and refreshes the menu"
+      ]
+    },
     "Questions link: hidden in public": {
       "file": "web/app.js",
       "live": "    $('questions-link').hidden = Boolean(open);",
@@ -1006,14 +1014,6 @@
       "dead": "",
       "expect": [
         "2.22c: addAnswer appends a checked answer, stamped, and the next read has it"
-      ]
-    },
-    "Models: the page hides what cannot answer": {
-      "file": "web/app.js",
-      "live": "    option.hidden = !state?.available;",
-      "dead": "    option.hidden = false;",
-      "expect": [
-        "the page greys the models the server says cannot answer, and refreshes the menu"
       ]
     },
     "Public: a token is adopted after a restart only with its own cookie": {

@@ -242,7 +242,10 @@ test('the page offers a profile choice only when the status lists several, and s
 test('the page greys the models the server says cannot answer, and refreshes the menu', () => {
   const app = web('app.js');
   assert.match(app, /option\.disabled = !state\?\.available;/);
-  assert.match(app, /option\.hidden = !state\?\.available;/);
+  // 2.34 (the owner, 2026-11-10): a model that cannot answer stays in sight,
+  // greyed with its reason, so its absence reads as temporary.
+  assert.doesNotMatch(app, /option\.hidden =/);
+  assert.match(app, /option\.textContent = state\.note \?/);
   assert.match(app, /button\.disabled = offers\.length === 0 \|\| !modelsReady;/);
   assert.match(app, /setInterval\?\.\(\(\) => document\.hidden \|\| refreshStatus\(\), \d+\)/);
   assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
