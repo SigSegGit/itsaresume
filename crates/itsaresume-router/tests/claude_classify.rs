@@ -296,6 +296,22 @@ fn an_answer_billed_as_overage_trips_the_billing_wire() {
     assert_eq!(kind(&classify(&with_overage(json!(false)))), "success");
 }
 
+/// 2.34 (seen 2026-11-06): at the weekly limit, with extra usage off, the CLI
+/// refused the request and still flagged its rate-limit event as overage.
+/// A refusal serves nothing and bills nothing: it is the plan's limit, lifted
+/// at its reset, never the billing latch.
+#[test]
+fn a_refusal_flagged_as_overage_is_the_limit_not_the_billing_wire() {
+    let mut messages: Vec<Value> =
+        serde_json::from_str(&with_overage(json!(true))).expect("array");
+    let result = messages.last_mut().expect("a result");
+    result["is_error"] = json!(true);
+    result["api_error_status"] = json!(429);
+    result["result"] = json!("You've hit your weekly limit · resets Nov 8, 3pm (UTC)");
+    let outcome = classify(&Value::Array(messages).to_string());
+    assert_eq!(kind(&outcome), "quota_exceeded", "{outcome:?}");
+}
+
 /// 8.32: the plan's limits as the CLI reported them with this answer, kept
 /// for the journal (M4): which limit, allowed or not, overage or not.
 #[test]

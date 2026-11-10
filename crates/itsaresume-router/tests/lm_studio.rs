@@ -14,6 +14,8 @@ use support::serve;
 const SUCCESS: &str = include_str!("fixtures/lm-studio/observed-success.json");
 const NO_MODELS_LOADED: &str = include_str!("fixtures/lm-studio/observed-no-models-loaded.json");
 const INVALID_JSON: &str = include_str!("fixtures/lm-studio/observed-invalid-json.json");
+const MODEL_UNLOADED: &str = include_str!("fixtures/lm-studio/observed-model-unloaded.json");
+const FAILED_TO_LOAD: &str = include_str!("fixtures/lm-studio/observed-failed-to-load.json");
 
 fn backend(base_url: &str) -> LmStudioBackend {
     LmStudioBackend::new(base_url, "example-model").with_timeout(Duration::from_secs(10))
@@ -97,6 +99,19 @@ fn the_observed_no_models_loaded_is_unreachable() {
     let (base_url, _) = serve(400, NO_MODELS_LOADED);
     let outcome = backend(&base_url).complete(&Request::new("hi"));
     assert_eq!(kind(&outcome), "unreachable", "{outcome:?}");
+}
+
+/// Observed on Bionic (2.34): a model unloaded after its idle hour, and a
+/// load that gave up while the model was still loading. Both are the
+/// backend's state, not the request's: `auto` goes on to the next backend,
+/// and the model answers once loaded.
+#[test]
+fn an_unloaded_or_still_loading_model_is_unreachable() {
+    for fixture in [MODEL_UNLOADED, FAILED_TO_LOAD] {
+        let (base_url, _) = serve(400, fixture);
+        let outcome = backend(&base_url).complete(&Request::new("hi"));
+        assert_eq!(kind(&outcome), "unreachable", "{outcome:?}");
+    }
 }
 
 #[test]

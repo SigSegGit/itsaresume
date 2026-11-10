@@ -10,6 +10,8 @@ replaced by `Hello!`.
 | `observed-success.json` | chat completion, model loaded | 200 |
 | `observed-no-models-loaded.json` | chat completion, server up, no model loaded (any `model`, or none) | **400** `invalid_request_error` |
 | `observed-invalid-json.json` | a body that is not JSON | 400 `invalid_json` |
+| `observed-model-unloaded.json` | Bionic, the model unloaded after its idle hour (2026-11-10) | 400, `error` a bare string |
+| `observed-failed-to-load.json` | Bionic, the first request's load gave up while the model was still loading (2026-11-09) | 400 |
 
 Also observed, not captured as a file: with a model loaded, a **nonexistent**
 model id is ignored and the loaded model answers; an id that exists but is not

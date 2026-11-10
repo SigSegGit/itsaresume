@@ -1,0 +1,8 @@
+{
+    "error": {
+        "message": "Failed to load model \"qwen/qwen3-coder-next\". Error: llama-server did not become healthy: Engine protocol healthCheck request returned 503: {\"error\":{\"message\":\"Loading model\",\"type\":\"unavailable_error\",\"code\":503}}",
+        "type": "invalid_request_error",
+        "param": "model",
+        "code": null
+    }
+}
