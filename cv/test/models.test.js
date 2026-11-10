@@ -139,3 +139,26 @@ test('nothing able to answer leaves no default and auto off', () => {
   assert.equal(menu.default, null);
   assert.equal(menu.options.auto.available, false);
 });
+
+// 2.35 (seen 2026-11-10 at 18:09): Claude and OpenAI refused in the same
+// auto run and both read "limite d’usage atteinte à 18:09". Claude's own
+// words say when its limit lifts: the menu waits for that time, not an
+// hour. OpenAI's "no credits" never lifts by itself (adding credits is
+// per-token billing, forbidden): said as such, never retried.
+test('Claude at its limit waits for the reset time it gave, not an hour', () => {
+  const since = NOW - 10 * 60;
+  const reason = "quota_exceeded: claude error (HTTP 429): You've hit your session limit · resets 3:30pm (UTC)";
+  const before = modelMenu([claude('limited', { since, reason }), local('down')], NOW + 55 * 60);
+  assert.equal(before.options.claude.available, false, 'the hour is past, the reset is not');
+  assert.match(before.options.claude.note, /17:30/);
+  const after = modelMenu([claude('limited', { since, reason }), local('down')], NOW + 95 * 60);
+  assert.equal(after.options.claude.available, true);
+});
+
+test('OpenAI with no credits is said so, and stays off after the hour', () => {
+  const reason = 'quota_exceeded: openai HTTP 429: You have no credits remaining. Add credits to continue';
+  const menu = modelMenu([claude('up'), openai('limited', { since: NOW - 3 * 3600, reason }), local('down')], NOW);
+  assert.equal(menu.options.openai.available, false);
+  assert.match(menu.options.openai.note, /crédit/);
+  assert.doesNotMatch(menu.options.openai.note, /limite/);
+});
