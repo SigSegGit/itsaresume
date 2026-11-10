@@ -51,6 +51,22 @@
     "src/compare.js"
   ],
   "defences": {
+    "Models (2.35): a limit waits for the reset it gave": {
+      "file": "src/models.js",
+      "live": "      if (now < reset) return { available: false,",
+      "dead": "      if (false) return { available: false,",
+      "expect": [
+        "Claude at its limit waits for the reset time it gave, not an hour"
+      ]
+    },
+    "Models (2.35): no credits stays off": {
+      "file": "src/models.js",
+      "live": "if (backend.state === 'limited' && /no credits remaining|insufficient_quota/i.test(",
+      "dead": "if (false && /no credits remaining|insufficient_quota/i.test(",
+      "expect": [
+        "OpenAI with no credits is said so, and stays off after the hour"
+      ]
+    },
     "Contract: another major is refused": {
       "file": "src/llm.js",
       "live": "if (major !== undefined && Number(major) === CONTRACT_MAJOR) return null;",
