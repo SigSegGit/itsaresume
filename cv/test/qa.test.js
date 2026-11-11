@@ -34,7 +34,7 @@ test('a chosen model goes with every call to the router; auto sends none', async
   assert.deepEqual(sent, [{ system: 's', prompt: 'p', backend: 'lm-studio' }, { system: 's', prompt: 'p', backend: undefined }]);
 });
 
-test('2.37: only Groq splits its analysis in two calls', () => {
-  assert.deepEqual([...SPLIT], ['groq']);
+test('2.37: Groq and the local model split their analysis in two calls', () => {
+  assert.deepEqual([...SPLIT], ['groq', 'local']);
   assert.ok(MODELS.includes('groq'));
 });

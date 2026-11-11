@@ -98,12 +98,12 @@
         "a split analysis asks the requirements, then the choices given them, and merges both"
       ]
     },
-    "Groq (2.37): only Groq splits": {
+    "Groq (2.37): Groq and the local model split": {
       "file": "src/qa.js",
-      "live": "export const SPLIT = new Set(['groq']);",
+      "live": "export const SPLIT = new Set(['groq', 'local']);",
       "dead": "export const SPLIT = new Set([]);",
       "expect": [
-        "2.37: only Groq splits its analysis in two calls"
+        "2.37: Groq and the local model split their analysis in two calls"
       ]
     },
     "Listing: the listing model lists": {

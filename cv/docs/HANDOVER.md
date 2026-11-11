@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.37b
-TITLE: 2.33 and 2.37 built (leads count changed verdicts; Groq in two calls, paced); next 2.37b, Groq measured on a real comparison; 2.31c waits for the owner's export
+NEXT: 2.38
+TITLE: 2.33 and 2.37 built (leads count changed verdicts; Groq in two calls, paced); 2.37b measured (Groq kept at 94 in 44 s, Qwen refused, local splits too); next 2.38, why Claude's row names differ from the shared listing; 2.31c done (the jobs export holds nothing the profile lacks)
 WRITTEN-AT: 2026-11-11
 -->
 
@@ -1130,12 +1130,21 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     shows one "Comparaison" card with the table and the download. TDD,
     sabotage (owner check, count, DIFF first), then one real comparison on
     the DevSecOps offer of 2026-11-06.
-  - [ ] **2.31c** (waits for the owner) Re-read every file of his claude.ai
+  - [x] **2.31c** (waits for the owner) Re-read every file of his claude.ai
     project "jobs" (the v4's origin; he believes knowledge and experience
     were lost on the way). He exports it to `~/.itsaresume/sources/jobs/`;
     then list, per fact found, whether the v4 holds it, and add what it
     lacks as a dated precisions source (as 2026-11-06), never a level he
     did not say, the doubtful to `A-CONFIRMER-preuves.md`.
+    - [x] Done 2026-11-11: his export (one consolidated file, made by AI
+      from the project and its memory; private, in `sources/jobs/`) is the
+      v4 itself plus memory notes. Every skill, mission, tool attribution,
+      date, language and "never" it holds is already in the profile; where
+      they differ the profile wins (his rule: verified since): Kubernetes,
+      Datadog (confirmed 2026-11-06/09, "never" in the old file), Docker and
+      the LLM skills (levels raised since). Nothing lost. Left out on
+      purpose: "Product Management, never held" (no skill claims it, a gap
+      already), the small projects (quiz page, invoicing CLI), salary.
 
 - [x] **2.32** (verified 2026-11-10 on a real comparison, "Test 1": one listing of 28 rows for all three models, Claude 92, Gemini 96, local 94, against 58/77 before; built 2026-11-09: the page's runs list through `auto`, whatever model judges, the chosen one if that fails; a comparison shares one listing; real run to read) (the owner, 2026-11-09) **One offer, one score, whatever the
   model.** Same offer: 58 with the local model, 77 with Gemini. The score is
@@ -1209,10 +1218,34 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   requirements against the compact skills (no bullet), then the CV's
   choices given those requirements (skill ids only); merged, then the
   usual normalize and validation. Each call is about half the whole.
-- [ ] **2.37b** Groq back in the VM's `router.toml`
-  (`router.toml.with-groq-20261111`), then one real comparison: scores
-  and verdicts beside Claude's and Gemini's, time, tokens, any 413/429.
-  Keep Groq if it holds; else out again, with the numbers here.
+- [x] **2.37b** (2026-11-11) **Groq kept; the local model splits too.**
+  Groq (gpt-oss-120b) back in the VM's `router.toml`. One real comparison
+  ("2.37b caraz", one shared listing, 33 rows): Claude 98 in 58 s (2 759
+  tokens, 2 verdicts changed by the code), Gemini 98 in 92 s (11 977, 4),
+  **Groq 94 in 44 s (10 425, 0)**, local 96 in 426 s (9 215, 7). Groq's
+  4 points: Trivy "no" (Gemini adjacent), "3 years of DevOps" adjacent.
+  Qwen 3.8 (`qwen/qwen3.8-27b`) tried in its place: refused at once, its
+  free tier allows 1 000 *output* tokens a minute (429 "output tokens per
+  minute (OTPM): Limit 1000"); back to gpt-oss. The local model, whole
+  against split (`measure-analysis.mjs --split`, two corpus offers): the
+  same labels, verdicts and scores (fr-sre-banque 91, en-devsecops 46),
+  208 s against 217 s, and 196 s against 379 s (whole needed a retry):
+  `SPLIT` now holds `local` too.
+  Seen, not fixed: Claude's rows carry other names than the three others'
+  ("moindre privilège / iam" against "moindre privilège") although the
+  listing is shared, which counted 11 disagreements of 33. Next: 2.38.
+
+- [ ] **2.38** (seen on 2.37b) **A comparison lines rows up by the listing,
+  not by each model's names.** Found: the listing is a guide, every model
+  names its rows (all four merged "Terraform" and "CloudFormation" into
+  one; Claude alone merged "moindre privilège" and "IAM", and wrote
+  "Détection et remédiation de vulnérabilités"), and `mergeListed` only
+  adds the listed rows a model left out. `compareVerdicts` keys rows by
+  lower-cased name, so one requirement named two ways is two
+  "disagreements". In `src/compare.js`: key each model's row by the listed
+  rows it covers (the words `mergeListed`'s `covered` already uses), fall
+  back to its name; a red test from the 2.37b rows (made fictional), a
+  sabotage on the key.
 
 ## 9. Open on purpose
 
