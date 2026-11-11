@@ -91,3 +91,17 @@ fn a_schema_uses_the_shared_rule_and_json_object_mode() {
 fn its_name_is_openai() {
     assert_eq!(backend("http://127.0.0.1:9/v1", None).name(), "openai");
 }
+
+/// 2.36 (the owner, 2026-11-11): Groq's free tier, no payment method on the
+/// account, so nothing can be billed. Its own kind, its own key variable,
+/// its fixed address: a configuration never sends a key elsewhere.
+#[test]
+fn groq_is_its_own_backend_with_its_own_key_and_address() {
+    let groq = OpenAiBackend::groq("openai/gpt-oss-120b", None);
+    assert_eq!(groq.name(), "groq");
+    assert_eq!(itsaresume_router::openai::GROQ_URL, "https://api.groq.com/openai/v1");
+    match groq.complete(&Request::new("hi")) {
+        Err(BackendError::Other(message)) => assert!(message.contains("GROQ_API_KEY"), "{message}"),
+        other => panic!("expected the missing key, got {other:?}"),
+    }
+}
