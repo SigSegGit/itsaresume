@@ -371,11 +371,24 @@ fn a_huge_declared_body_is_413_and_the_server_lives() {
         usize::MAX / 2,
     );
     let refused = raw(address, &head, b"{");
-    thread::sleep(Duration::from_millis(300));
-    let alive = child.0.try_wait().expect("child status").is_none();
+    // A drain that aborts may come only once the client has gone (seen on a
+    // slow CI runner, 2026-11-11: 300 ms let a sabotaged server look alive).
+    // Watch for 3 s, then the server must still answer.
+    let deadline = Instant::now() + Duration::from_secs(3);
+    let mut alive = true;
+    while alive && Instant::now() < deadline {
+        alive = child.0.try_wait().expect("child status").is_none();
+        thread::sleep(Duration::from_millis(50));
+    }
+    let after = agent()
+        .get(&format!("http://{address}/healthz"))
+        .call()
+        .ok()
+        .map(|response| response.status().as_u16());
     drop(child);
     assert_eq!(refused, Some(413));
     assert!(alive, "the server died on a huge declared body");
+    assert_eq!(after, Some(200), "the server still answers after it");
 }
 
 /// 8.14(c): the serve loop reports the error that ends it instead of
