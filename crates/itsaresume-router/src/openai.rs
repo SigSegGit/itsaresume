@@ -43,8 +43,17 @@ impl OpenAiBackend {
 
     /// Groq's backend for `model`, with `key` (`None`: every request stops).
     pub fn groq(model: impl Into<String>, key: Option<String>) -> Self {
-        let mut backend = Self::new(GROQ_URL, model, key);
+        Self::groq_at(GROQ_URL, model, key)
+    }
+
+    /// Groq's backend at `base_url`: for tests only, a configuration has
+    /// no address for Groq (see [`OpenAiBackend::groq`]).
+    #[doc(hidden)]
+    pub fn groq_at(base_url: &str, model: impl Into<String>, key: Option<String>) -> Self {
+        let mut backend = Self::new(base_url, model, key);
         backend.inner.label = "groq";
+        backend.inner.reasoning_effort = Some("low");
+        backend.inner.wait_rate_limit = true;
         backend.kind = "groq";
         backend.key_env = GROQ_KEY_ENV;
         backend

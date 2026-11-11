@@ -34,7 +34,27 @@ export function compareVerdicts(runs) {
 }
 
 const SPREAD = 15;
-const MANY_REPAIRS = 10;
+// 2.33: a repair counts when it changes the model's verdict, which the
+// repair says with "(was …)"; the rest is the code's ordinary work.
+const MANY_CHANGES = 3;
+const CHANGED = / \(was (?:yes|adjacent|no)\)$/;
+const KINDS = [
+  [/no profile skill names it/, 'aucune compétence du profil ne la nomme'],
+  [/never claimed in the profile/, 'jamais revendiquée'],
+  [/named like the profile skill/, 'nommée comme une compétence du profil'],
+  [/each part named like a profile skill/, 'chaque partie nommée dans le profil'],
+  [/ruled it near/, 'règle « proche » du profil'],
+  [/without a profile skill/, 'sans compétence du profil'],
+  [/: a language, /, 'langue lue dans le profil'],
+  [/: a certification, /, 'certification lue dans le profil'],
+];
+const kindOf = (repair) => KINDS.find(([pattern]) => pattern.test(repair))?.[1] ?? 'autre';
+const changedVerdicts = (repairs) => (repairs ?? []).filter((repair) => CHANGED.test(repair));
+function mostly(changes) {
+  const counts = new Map();
+  for (const repair of changes) counts.set(kindOf(repair), (counts.get(kindOf(repair)) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([kind, count]) => `${kind} (${count})`).join(', ');
+}
 const tokensOf = (tokens) => (tokens ? Object.values(tokens).reduce((sum, used) => sum + (used.input ?? 0) + (used.output ?? 0), 0) : null);
 
 /**
@@ -54,6 +74,7 @@ export function compareRuns(entries) {
     qualification: entry.fit?.qualification?.level ?? null,
     attempts: entry.attempts ?? null,
     repairs: entry.repairs?.length ?? null,
+    verdicts_changed: entry.repairs ? changedVerdicts(entry.repairs).length : null,
     pages: entry.pages ?? null,
     dir: entry.dir ?? null,
   }));
@@ -61,10 +82,10 @@ export function compareRuns(entries) {
     entry.status === 'done' ? { requirements: entry.analysis?.requirements, repairs: entry.repairs } : { error: entry.error ?? 'failed' }])));
   rows.sort((a, b) => Number(a.agree) - Number(b.agree));
   const leads = [];
-  for (const model of models) {
+  for (const [index, model] of models.entries()) {
     if (model.status !== 'done') leads.push({ kind: 'failed', text: `${model.model} a échoué : à corriger avant de le comparer.` });
     if (model.attempts > 1) leads.push({ kind: 'attempts', text: `${model.model} a demandé ${model.attempts} tentatives : ses réponses sont refusées par les contrôles.` });
-    if (model.repairs >= MANY_REPAIRS) leads.push({ kind: 'repairs', text: `${model.model} : ${model.repairs} réparations par le code : le prompt le guide mal.` });
+    if (model.verdicts_changed >= MANY_CHANGES) leads.push({ kind: 'repairs', text: `${model.model} : le code a changé ${model.verdicts_changed} de ses verdicts, surtout : ${mostly(changedVerdicts(entries[index].repairs))}.` });
   }
   const scored = models.filter((model) => model.score !== null);
   if (scored.length > 1) {
@@ -93,8 +114,8 @@ const line = (cells) => `| ${cells.map(cell).join(' | ')} |`;
 export function compareMarkdown(title, report) {
   const out = [`# Comparaison : ${cell(title)}`, ''];
   if (report.leads.length) out.push('## À regarder', '', ...report.leads.map((lead) => `- ${cell(lead.text)}`), '');
-  out.push('## Par modèle', '', '| Modèle | Statut | Score | Verdict | Qualification | Durée (s) | Tokens | Tentatives | Réparations | Pages |', '|---|---|---|---|---|---|---|---|---|---|');
-  for (const m of report.models) out.push(line([m.model, m.status, m.score, m.verdict, m.qualification, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs, m.pages]));
+  out.push('## Par modèle', '', '| Modèle | Statut | Score | Verdict | Qualification | Durée (s) | Tokens | Tentatives | Réparations | Verdicts changés | Pages |', '|---|---|---|---|---|---|---|---|---|---|---|');
+  for (const m of report.models) out.push(line([m.model, m.status, m.score, m.verdict, m.qualification, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs, m.verdicts_changed, m.pages]));
   const errors = report.models.filter((m) => m.error);
   if (errors.length) out.push('', '## Erreurs', '', ...errors.map((m) => `- **${m.model}** : ${cell(m.error)}`));
   const names = report.models.filter((m) => m.status === 'done').map((m) => m.model);

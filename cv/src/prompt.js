@@ -73,8 +73,8 @@ export function promptOptions(env = process.env) {
   return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist') };
 }
 
-export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false } = {}) {
-  const lines = ['CATALOGUE', ''];
+function skillLines(profile, compact) {
+  const lines = [];
   if (compact) lines.push(...compactSkills(profile));
   else {
     lines.push('Skill groups (id — title):');
@@ -89,7 +89,11 @@ export function buildPrompt(profile, offer, listed = [], { compact = false, shor
   }
   const never = (profile.never ?? []).flatMap((entry) => [entry.name, ...(entry.aliases ?? [])]);
   if (never.length) lines.push('', `Never claim, the candidate has confirmed having no experience of: ${never.join(', ')}`);
-  lines.push('', 'Experiences (id — title, organisation, dates; then bullet ids and texts):');
+  return lines;
+}
+
+function experienceLines(profile) {
+  const lines = ['Experiences (id — title, organisation, dates; then bullet ids and texts):'];
   for (const experience of profile.experiences) {
     const dates = experience.end ? `${experience.start}–${experience.end}` : experience.start;
     const kind = { main: '', short: ' [short missions: only the ones this offer calls for]', rnd: ' [R&D projects: only the ones this offer calls for]' }[kindOf(experience)];
@@ -104,24 +108,92 @@ export function buildPrompt(profile, offer, listed = [], { compact = false, shor
     lines.push('', 'Facts about the candidate (id (kind: hook, fact or note) — text):');
     for (const fact of profile.profile_facts) lines.push(`- ${fact.id} (${fact.kind}) — ${fact.en}`);
   }
-  const language = detectLanguage(offer);
-  lines.push('', ...fence(offer), '');
-  if (listed.length) {
-    // 2.3b-ii: the candidates code finds for each requirement, offered first;
-    // the model may still pick any other skill (not a lock, the owner 2026-10-06).
-    const index = defaultIndex();
-    const placed = offered ? skillConcepts(index, profile.skills) : null;
-    lines.push(offered
-      ? 'Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):'
-      : 'Requirements found in the offer (classify every one of them in "requirements"):');
-    for (const item of listed) {
-      const candidates = offered ? shortlist(profile, item.name, { index, placed }) : [];
-      lines.push(`- ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
-    }
-    lines.push('');
+  return lines;
+}
+
+function listedLines(profile, listed, offered) {
+  if (!listed.length) return [];
+  // 2.3b-ii: the candidates code finds for each requirement, offered first;
+  // the model may still pick any other skill (not a lock, the owner 2026-10-06).
+  const index = defaultIndex();
+  const placed = offered ? skillConcepts(index, profile.skills) : null;
+  const lines = [offered
+    ? 'Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):'
+    : 'Requirements found in the offer (classify every one of them in "requirements"):'];
+  for (const item of listed) {
+    const candidates = offered ? shortlist(profile, item.name, { index, placed }) : [];
+    lines.push(`- ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
   }
-  lines.push(`The offer is in ${LANGUAGE_NAMES[language]}: set "language" to "${language}" and write the headline, summary, rationale and notes in ${LANGUAGE_NAMES[language]}.`);
+  lines.push('');
+  return lines;
+}
+
+// Every prompt that carries the offer fences it (src/guard.js).
+function offerLines(offer) {
+  return ['', ...fence(offer), ''];
+}
+
+function languageLine(offer) {
+  const language = detectLanguage(offer);
+  return `The offer is in ${LANGUAGE_NAMES[language]}: set "language" to "${language}" and write the headline, summary, rationale and notes in ${LANGUAGE_NAMES[language]}.`;
+}
+
+export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false } = {}) {
+  const lines = ['CATALOGUE', '', ...skillLines(profile, compact), '', ...experienceLines(profile), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)];
   return { system: SYSTEM, prompt: lines.join('\n') };
+}
+
+// 2.37: Groq's free tier allows 8 000 tokens a minute; the whole analysis
+// takes about 9 500 (prompt and answer). Split, it is two calls of about
+// half: the requirements against the skills (no bullet), then the CV's
+// choices given those requirements (skill ids only, no skill text).
+const REQUIREMENT_RULES = ['- requirements:', '- requirements decide', '- Never claim'];
+const BOTH = '- A skill marked lab';
+const RULES = SYSTEM.split('\n').filter((line) => line.startsWith('- '));
+const ruled = (requirementOnes) => RULES.filter((line) => line.startsWith(BOTH) || REQUIREMENT_RULES.some((start) => line.startsWith(start)) === requirementOnes).join('\n');
+const shapeOf = (keep) => JSON.stringify(Object.fromEntries(Object.entries(SHAPE).filter(([key]) => keep(key))), null, 1);
+const ASKED = new Set(['language', 'requirements']);
+
+export const REQUIREMENTS_SYSTEM = `You classify how a candidate's catalogue skills meet each requirement of a job offer.
+
+Answer with ONE JSON object and nothing else, of this shape:
+${shapeOf((key) => ASKED.has(key))}
+
+Rules:
+- Use only skill ids that appear in the catalogue. Never invent a skill.
+- language: "fr" if the offer is written in French, otherwise "en". Write the notes in that language.
+${ruled(true)}
+
+${UNTRUSTED}`;
+
+export const CHOICES_SYSTEM = `You choose, from the candidate's catalogue, what a CV tailored to a job offer should show. The offer's requirements are already classified: they are given, do not answer them.
+
+Answer with ONE JSON object and nothing else, of this shape:
+${shapeOf((key) => !ASKED.has(key))}
+
+Rules:
+${ruled(false)}
+
+${UNTRUSTED}`;
+
+/**
+ * 2.37: `requirements`, the first call's prompt; `choices(classified)`, the
+ * second's, given the requirements the first classified.
+ */
+export function buildSplitPrompts(profile, offer, listed = [], { shortlist: offered = false } = {}) {
+  const requirements = {
+    system: REQUIREMENTS_SYSTEM,
+    prompt: ['CATALOGUE', '', ...skillLines(profile, true), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)].join('\n'),
+  };
+  const choices = (classified) => {
+    const groups = profile.skill_groups.map((group) => `- ${group.id} (${group.title.en}): ${profile.skills.filter((skill) => skill.group === group.id).map((skill) => skill.id).join(', ')}`);
+    const rows = (classified ?? []).map((row) => `- ${row.name}: ${row.match}${row.skills?.length ? ` (${row.skills.join(', ')})` : ''}`);
+    return {
+      system: CHOICES_SYSTEM,
+      prompt: ['CATALOGUE', '', 'Skill ids by group:', ...groups, '', ...experienceLines(profile), ...offerLines(offer), 'Requirements, already classified (name: match (skill ids)):', ...rows, '', languageLine(offer)].join('\n'),
+    };
+  };
+  return { requirements, choices };
 }
 
 /**

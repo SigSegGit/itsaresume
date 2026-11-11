@@ -115,6 +115,7 @@ property it proves.
 | the public comparison keeps no error text, no reason, no path | Compare: no error text in public; Compare: no reason in public |
 | the comparison in markdown: a table per model, a cell cannot break its row | Compare: a cell cannot break its row |
 | compare: one row per requirement across backends, disagreements and demotion reasons kept | Comparative run (2026-10-24): a demotion reason stays on its requirement |
+| compareRuns: only the repairs that change a verdict make the lead, which names the most frequent kinds | Comparison leads (2.33): only a changed verdict counts |
 
 ## `test/core.test.js`
 
@@ -574,6 +575,8 @@ property it proves.
 | serve() writes each job's tokens per backend to the QA log, through the real pipeline | Tokens: serve() counts the real pipeline's answers |
 | serve() tailors a job to the profile it names, from --profiles, and the run records it | Profile: serve() loads the named profile's file; Profile: the log line names the profile; Profile: the run records its profile |
 | 2.26a: a second run of the same offer makes no listing call, its rows read from the cache | Listing cached per offer (2.26a): one offer is listed once |
+| a split analysis asks the requirements, then the choices given them, and merges both | Groq (2.37): a split model's analysis is two calls; Groq (2.37): the second call gets the first's requirements |
+| without split, the analysis is one call | — |
 
 ## `test/profiles.test.js`
 
@@ -590,6 +593,7 @@ property it proves.
 | auto lets the router choose; claude, gemini, openai and local name its backends | QA: claude and local name the router backends |
 | each run appends one JSON line to the QA log, never rewriting it | QA: the log appends |
 | a chosen model goes with every call to the router; auto sends none | QA: every call of a run goes to the chosen backend |
+| 2.37: only Groq splits its analysis in two calls | Groq (2.37): only Groq splits |
 
 ## `test/questions.test.js`
 
@@ -621,7 +625,7 @@ property it proves.
 | the skills column holds at most six groups of six skills, those meeting a requirement first | Layout: at most six shown groups; Layout: at most six skills per group; Layout: skills meeting a requirement come first |
 | a requirement the offer never states is dropped, and brings nothing onto the CV | Red team: a requirement must be stated in the offer; Red team: an inflected word of the offer states it |
 | a profile line must be made of its quotes, name no skill its French lacks, and no never-claimed item | Red team: a composed line has quotes; Red team: a composed line is made of its quotes; Red team: the English names no skill the French lacks; Red team: no profile line names a never-claimed item |
-| a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification | Judged: a gap of the qualification; Real run: a requirement is met only through a skill named for it; Judged: the model's reading keeps half credit |
+| a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification | Judged: a gap of the qualification; Comparison leads (2.33): a repair says the verdict it changed, and only then; Real run: a requirement is met only through a skill named for it; Judged: the model's reading keeps half credit |
 | a summary sentence naming what only the lab covers says it comes from the lab or R&D | Real run: a lab-only claim in the summary says so |
 | an invisible combining mark does not hide a never-claimed skill | Red team: default-ignorable marks are folded away |
 | a number written in words must come from the profile too | Red team: numbers in words come from the profile |
@@ -856,6 +860,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**567 tests, 468 of them covered by at least one sabotage defence.**
+**571 tests, 471 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -517,3 +517,40 @@ test('2.26a: a second run of the same offer makes no listing call, its rows read
   await analyse({ profile: profile(), offer: `${OFFER} Also Go.`, llm, listingCache: cache });
   assert.equal(systems.filter((s) => s === LISTING_SYSTEM).length, 2, 'another offer is listed');
 });
+
+// 2.37: Groq's free tier allows 8 000 tokens a minute, the whole analysis
+// takes about 9 500. Split, it is two calls of about half: the requirements
+// against the skills, then the CV's choices given those requirements.
+test('a split analysis asks the requirements, then the choices given them, and merges both', async () => {
+  const seen = [];
+  const { requirements, language, ...choices } = valid();
+  const llm = async ({ system, prompt }) => {
+    if (system === LISTING_SYSTEM) return { text: EMPTY_LISTING, backend: 'fake' };
+    seen.push({ system, prompt });
+    return { text: JSON.stringify(seen.length === 1 ? { language, requirements } : choices), backend: 'groq' };
+  };
+  const whole = buildPrompt(profile(), OFFER);
+  const result = await analyse({ profile: profile(), offer: OFFER, llm, split: true });
+  assert.equal(seen.length, 2, 'two calls');
+  const [first, second] = seen;
+  assert.ok(first.prompt.includes(OFFER) && first.prompt.includes('postgresql'), 'the requirements call has the offer and the skills');
+  assert.ok(!first.prompt.includes('acme-pg'), 'but no bullet');
+  assert.ok(second.prompt.includes('acme-pg'), 'the choices call has the bullets');
+  assert.match(second.prompt, /PostgreSQL: yes \(postgresql\)/, 'and the requirements as classified');
+  assert.ok(first.system.length + first.prompt.length < whole.system.length + whole.prompt.length, 'each call is smaller than the whole');
+  assert.ok(second.system.length + second.prompt.length < whole.system.length + whole.prompt.length, 'each call is smaller than the whole');
+  assert.deepEqual(result.analysis.requirements.map((r) => [r.name, r.match]), [['PostgreSQL', 'yes'], ['Kubernetes', 'adjacent'], ['Kafka', 'no']]);
+  assert.deepEqual(result.analysis.experiences, [{ id: 'acme', bullets: ['acme-pg'] }]);
+  assert.equal(result.calls.filter((call) => call.step === 'analysis').length, 2);
+});
+
+test('without split, the analysis is one call', async () => {
+  let calls = 0;
+  const llm = async ({ system }) => {
+    if (system === LISTING_SYSTEM) return { text: EMPTY_LISTING, backend: 'fake' };
+    calls += 1;
+    return { text: JSON.stringify(valid()), backend: 'fake' };
+  };
+  await analyse({ profile: profile(), offer: OFFER, llm });
+  assert.equal(calls, 1);
+});

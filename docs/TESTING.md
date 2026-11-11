@@ -211,6 +211,11 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_schema_uses_the_shared_rule_and_json_object_mode` | `tests/openai.rs` | A schema goes as the shared JSON rule plus `json_object` mode | OpenAI schema through the shared rule |
 | `its_name_is_openai` | `tests/openai.rs` | The journal name | — |
 | `groq_is_its_own_backend_with_its_own_key_and_address` | `tests/openai.rs` | Groq (2.36) is its own backend: named `groq`, its address fixed, its key read from `GROQ_API_KEY` only | Groq (2.36): its address is fixed; Groq (2.36): its own key variable |
+| `groq_waits_out_a_rate_limit_and_asks_again` | `tests/openai.rs` | Groq (2.37): a 429 with `retry-after` is waited out and asked again, within the timeout | Groq (2.37): a rate limit is waited out, then asked again |
+| `groq_does_not_wait_past_its_timeout` | `tests/openai.rs` | Groq (2.37): a wait longer than the time left is no wait, the router falls back at once | Groq (2.37): no wait past the timeout |
+| `openai_does_not_wait_out_a_429` | `tests/openai.rs` | Plain OpenAI never waits out a 429: its 429 is a quota | Groq (2.37): plain OpenAI never waits |
+| `groq_request_too_large_falls_back` | `tests/openai.rs` | Groq (2.37): a request over the minute's token budget (413) falls back | Groq (2.37): a request over the minute's budget falls back |
+| `groq_asks_for_low_reasoning_and_openai_does_not` | `tests/openai.rs` | Groq (2.37): gpt-oss is sent `reasoning_effort: low`, OpenAI is not | Groq (2.37): gpt-oss is asked to think briefly |
 | `an_openai_backend_has_a_model_and_no_key_or_url` | `tests/config.rs` | `kind = "openai"`: a model; `api_key` and `base_url` refused | — |
 | `a_groq_backend_has_a_model_and_no_key_or_url` | `tests/config.rs` | `kind = "groq"` takes a model; a key or a base URL in the configuration is refused (2.36) | — |
 | `checks_are_off_unless_a_period_is_given` | `tests/config.rs` | `check_every_secs` absent: no checks | — |

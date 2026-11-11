@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { MODELS, backendFor, withModel, appendQaLog, QA_LOG } from '../src/qa.js';
+import { MODELS, SPLIT, backendFor, withModel, appendQaLog, QA_LOG } from '../src/qa.js';
 test('auto lets the router choose; claude, gemini, openai and local name its backends', () => {
   assert.deepEqual(MODELS, ['auto', 'claude', 'gemini', 'openai', 'groq', 'local']);
   assert.equal(backendFor('auto'), undefined);
@@ -32,4 +32,9 @@ test('a chosen model goes with every call to the router; auto sends none', async
   await withModel(llm, 'local')({ system: 's', prompt: 'p' });
   await withModel(llm, 'auto')({ system: 's', prompt: 'p' });
   assert.deepEqual(sent, [{ system: 's', prompt: 'p', backend: 'lm-studio' }, { system: 's', prompt: 'p', backend: undefined }]);
+});
+
+test('2.37: only Groq splits its analysis in two calls', () => {
+  assert.deepEqual([...SPLIT], ['groq']);
+  assert.ok(MODELS.includes('groq'));
 });

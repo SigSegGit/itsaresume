@@ -7,7 +7,7 @@
 // The model gets one retry, told exactly what was wrong; an answer still
 // invalid after that is refused, never rendered, and kept for diagnosis.
 
-import { analysisSchema, buildPrompt, promptOptions, retryPrompt } from './prompt.js';
+import { analysisSchema, buildPrompt, buildSplitPrompts, promptOptions, retryPrompt } from './prompt.js';
 import { extractJson } from './llm.js';
 import { validateAnalysis } from './analysis.js';
 import { normalize } from './normalize.js';
@@ -20,7 +20,7 @@ export const MAX_ATTEMPTS = 2;
  * `profile` is the one the CV may draw from (restricted by the evidence,
  * src/evidence.js); `assessment`, when given, is checked again on the answer.
  */
-export async function analyse({ profile, offer, llm: call, listingLlm = null, assessment, structured = false, listingCache = null, prompt: options = promptOptions(), onStep = () => {} }) {
+export async function analyse({ profile, offer, llm: call, listingLlm = null, assessment, structured = false, listingCache = null, prompt: options = promptOptions(), split = false, onStep = () => {} }) {
   // Every raw answer, in call order (2.8): a replay re-normalizes the stored
   // analysis, so a rule acting on the model's own answer shows only here.
   const calls = [];
@@ -58,9 +58,33 @@ export async function analyse({ profile, offer, llm: call, listingLlm = null, as
   let current = prompt;
   let errors = [];
   const answers = [];
+  // 2.37: two calls, each under Groq's free minute; the second gets the
+  // requirements the first classified. A retry sends each its own answer.
+  const parts = split ? buildSplitPrompts(profile, offer, listed, options) : null;
+  let previous = null;
+  const askSplit = async () => {
+    const first = previous ? retryPrompt(parts.requirements.prompt, previous.requirements, errors) : parts.requirements.prompt;
+    const asked = await llm({ system: parts.requirements.system, prompt: first });
+    let classified;
+    try {
+      classified = extractJson(asked.text);
+    } catch {
+      return { text: asked.text, backend: asked.backend, parts: { requirements: asked.text, choices: '' } };
+    }
+    const choices = parts.choices(classified.requirements);
+    const second = previous ? retryPrompt(choices.prompt, previous.choices, errors) : choices.prompt;
+    const chosen = await llm({ system: choices.system, prompt: second });
+    let text = chosen.text;
+    try {
+      text = JSON.stringify({ ...extractJson(chosen.text), language: classified.language, requirements: classified.requirements });
+    } catch { /* invalid: told below, and sent back */ }
+    return { text, backend: chosen.backend, parts: { requirements: asked.text, choices: chosen.text } };
+  };
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     onStep('analysis', { attempt });
-    const { text, backend } = await llm({ system, prompt: current, ...schema });
+    const asked = split ? await askSplit() : await llm({ system, prompt: current, ...schema });
+    const { text, backend } = asked;
+    previous = asked.parts ?? null;
     answers.push(text);
     let analysis;
     let repairs = [];
