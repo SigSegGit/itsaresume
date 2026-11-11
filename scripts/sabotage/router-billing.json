@@ -33,6 +33,46 @@
     "crates/itsaresume-router/tests/openai.rs"
   ],
   "defences": {
+    "Groq (2.37): a rate limit is waited out, then asked again": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "&& self.wait_rate_limit",
+      "dead": "&& false",
+      "expect": [
+        "groq_waits_out_a_rate_limit_and_asks_again"
+      ]
+    },
+    "Groq (2.37): no wait past the timeout": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "&& Instant::now() + wait < deadline =>",
+      "dead": "=>",
+      "expect": [
+        "groq_does_not_wait_past_its_timeout"
+      ]
+    },
+    "Groq (2.37): plain OpenAI never waits": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "            wait_rate_limit: false,",
+      "dead": "            wait_rate_limit: true,",
+      "expect": [
+        "openai_does_not_wait_out_a_429"
+      ]
+    },
+    "Groq (2.37): a request over the minute's budget falls back": {
+      "file": "crates/itsaresume-router/src/lm_studio.rs",
+      "live": "413 if message.contains(\"tokens per minute\") => BackendError::QuotaExceeded(detail),",
+      "dead": "413 if false => BackendError::QuotaExceeded(detail),",
+      "expect": [
+        "groq_request_too_large_falls_back"
+      ]
+    },
+    "Groq (2.37): gpt-oss is asked to think briefly": {
+      "file": "crates/itsaresume-router/src/openai.rs",
+      "live": "backend.inner.reasoning_effort = Some(\"low\");",
+      "dead": "backend.inner.reasoning_effort = None;",
+      "expect": [
+        "groq_asks_for_low_reasoning_and_openai_does_not"
+      ]
+    },
     "Groq (2.36): its address is fixed": {
       "file": "crates/itsaresume-router/src/openai.rs",
       "live": "pub const GROQ_URL: &str = \"https://api.groq.com/openai/v1\";",

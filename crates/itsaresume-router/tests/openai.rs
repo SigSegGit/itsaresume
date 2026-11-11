@@ -7,8 +7,8 @@ mod support;
 use itsaresume_router::openai::OpenAiBackend;
 use itsaresume_router::{Backend, BackendError, Request};
 use serde_json::json;
-use std::time::Duration;
-use support::serve;
+use std::time::{Duration, Instant};
+use support::{serve, serve_sequence};
 
 const SUCCESS: &str = include_str!("fixtures/lm-studio/observed-success.json");
 
@@ -107,4 +107,92 @@ fn groq_is_its_own_backend_with_its_own_key_and_address() {
         Err(BackendError::Other(message)) => assert!(message.contains("GROQ_API_KEY"), "{message}"),
         other => panic!("expected the missing key, got {other:?}"),
     }
+}
+
+/// 2.37: Groq's free tier allows 8 000 tokens a minute. A 429 that says
+/// when to come back (`retry-after`, seconds) is waited out and asked again,
+/// within the timeout: one analysis in two calls fits, the second waiting.
+#[test]
+fn groq_waits_out_a_rate_limit_and_asks_again() {
+    let limited = r#"{"error":{"message":"Rate limit reached for model on tokens per minute (TPM): Limit 8000","type":"tokens","code":"rate_limit_exceeded"}}"#;
+    let (base_url, received) =
+        serve_sequence(&[(429, "retry-after: 1\r\n", limited), (200, "", SUCCESS)]);
+    let groq = OpenAiBackend::groq_at(&base_url, "openai/gpt-oss-120b", Some("k".into()))
+        .with_timeout(Duration::from_secs(10));
+    let started = Instant::now();
+    let answer = groq
+        .complete(&Request::new("hi"))
+        .expect("answered after the wait");
+    assert_eq!(answer.text, "Hello!");
+    assert!(started.elapsed() >= Duration::from_millis(900), "it waited");
+    assert_eq!(received.iter().take(2).count(), 2, "asked twice");
+}
+
+/// A wait longer than the time left is no wait: the router falls back now.
+#[test]
+fn groq_does_not_wait_past_its_timeout() {
+    let limited = r#"{"error":{"message":"Rate limit reached","code":"rate_limit_exceeded"}}"#;
+    let (base_url, _) = serve_sequence(&[(429, "retry-after: 30\r\n", limited)]);
+    let groq = OpenAiBackend::groq_at(&base_url, "openai/gpt-oss-120b", Some("k".into()))
+        .with_timeout(Duration::from_secs(2));
+    let started = Instant::now();
+    let outcome = groq.complete(&Request::new("hi"));
+    assert!(
+        matches!(outcome, Err(BackendError::QuotaExceeded(_))),
+        "{outcome:?}"
+    );
+    assert!(started.elapsed() < Duration::from_secs(2));
+}
+
+/// Plain OpenAI never waits: its 429 is a quota, not a minute's budget.
+#[test]
+fn openai_does_not_wait_out_a_429() {
+    let limited = r#"{"error":{"message":"Rate limit reached"}}"#;
+    let (base_url, _) = serve_sequence(&[(429, "retry-after: 1\r\n", limited), (200, "", SUCCESS)]);
+    let outcome = backend(&base_url, Some("k")).complete(&Request::new("hi"));
+    assert!(
+        matches!(outcome, Err(BackendError::QuotaExceeded(_))),
+        "{outcome:?}"
+    );
+}
+
+/// A request bigger than the minute's budget (observed: 413, "Request too
+/// large ... tokens per minute (TPM): Limit 8000, Requested 9083") is that
+/// backend's limit, not a broken request: `auto` goes on to the next one.
+#[test]
+fn groq_request_too_large_falls_back() {
+    let body = r#"{"error":{"message":"Request too large for model `openai/gpt-oss-120b` on tokens per minute (TPM): Limit 8000, Requested 9083, please reduce your message size and try again.","type":"tokens","code":"rate_limit_exceeded"}}"#;
+    let (base_url, _) = serve(413, body);
+    let groq = OpenAiBackend::groq_at(&base_url, "openai/gpt-oss-120b", Some("k".into()))
+        .with_timeout(Duration::from_secs(5));
+    let outcome = groq.complete(&Request::new("hi"));
+    assert!(
+        matches!(outcome, Err(BackendError::QuotaExceeded(_))),
+        "{outcome:?}"
+    );
+}
+
+/// gpt-oss thinks before it answers, and its thinking counts in the
+/// minute's tokens: Groq is asked to keep it short.
+#[test]
+fn groq_asks_for_low_reasoning_and_openai_does_not() {
+    let (base_url, received) = serve(200, SUCCESS);
+    let groq = OpenAiBackend::groq_at(&base_url, "openai/gpt-oss-120b", Some("k".into()));
+    groq.complete(&Request::new("hi")).expect("answer");
+    assert_eq!(
+        received.recv().expect("request").body["reasoning_effort"],
+        "low"
+    );
+    let (base_url, received) = serve(200, SUCCESS);
+    backend(&base_url, Some("k"))
+        .complete(&Request::new("hi"))
+        .expect("answer");
+    assert!(
+        received
+            .recv()
+            .expect("request")
+            .body
+            .get("reasoning_effort")
+            .is_none()
+    );
 }

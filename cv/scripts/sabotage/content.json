@@ -77,9 +77,35 @@
     "src/coverage.js",
     "test/coverage.test.js",
     "test/degree.test.js",
-    "test/listing-model.test.js"
+    "test/listing-model.test.js",
+    "src/qa.js",
+    "test/qa.test.js"
   ],
   "defences": {
+    "Groq (2.37): a split model's analysis is two calls": {
+      "file": "src/pipeline.js",
+      "live": "const asked = split ? await askSplit() : await llm({ system, prompt: current, ...schema });",
+      "dead": "const asked = await llm({ system, prompt: current, ...schema });",
+      "expect": [
+        "a split analysis asks the requirements, then the choices given them, and merges both"
+      ]
+    },
+    "Groq (2.37): the second call gets the first's requirements": {
+      "file": "src/prompt.js",
+      "live": "'Requirements, already classified (name: match (skill ids)):', ...rows,",
+      "dead": "'Requirements, already classified (name: match (skill ids)):',",
+      "expect": [
+        "a split analysis asks the requirements, then the choices given them, and merges both"
+      ]
+    },
+    "Groq (2.37): only Groq splits": {
+      "file": "src/qa.js",
+      "live": "export const SPLIT = new Set(['groq']);",
+      "dead": "export const SPLIT = new Set([]);",
+      "expect": [
+        "2.37: only Groq splits its analysis in two calls"
+      ]
+    },
     "Listing: the listing model lists": {
       "file": "src/pipeline.js",
       "live": "llm: listingLlm ? recorded(listingLlm) : llm }",
@@ -1491,6 +1517,22 @@
       "dead": "if (row && false) (row.why[backend] ??= []).push(found[2]);",
       "expect": [
         "compare: one row per requirement across backends, disagreements and demotion reasons kept"
+      ]
+    },
+    "Comparison leads (2.33): only a changed verdict counts": {
+      "file": "src/compare.js",
+      "live": "const changedVerdicts = (repairs) => (repairs ?? []).filter((repair) => CHANGED.test(repair));",
+      "dead": "const changedVerdicts = (repairs) => (repairs ?? []);",
+      "expect": [
+        "compareRuns: only the repairs that change a verdict make the lead, which names the most frequent kinds"
+      ]
+    },
+    "Comparison leads (2.33): a repair says the verdict it changed, and only then": {
+      "file": "src/normalize.js",
+      "live": "adjacent, to verify${requirement.match !== 'adjacent' ? ` (was ${requirement.match})` : ''}",
+      "dead": "adjacent, to verify (was ${requirement.match})",
+      "expect": [
+        "a requirement its skills do not name is the model reading only: half credit, to verify, a gap of the qualification"
       ]
     },
     "Alternatives (2.26b): rows an \"ou\" joins are merged": {

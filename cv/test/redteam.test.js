@@ -179,6 +179,9 @@ test('a requirement its skills do not name is the model reading only: half credi
   assert.equal(analysis.fit.score, 75);
   assert.deepEqual(analysis.fit.qualification.gaps, ['Virtualisation (to verify)', 'Supervision (to verify)']);
   assert.match(repairs.join('\n'), /requirement Virtualisation: no profile skill names it, the model's reading only: adjacent, to verify/);
+  // 2.33: a repair says the verdict it changed, and only then.
+  assert.ok(repairs.includes("requirement Virtualisation: no profile skill names it, the model's reading only: adjacent, to verify (was yes)"), repairs.join('\n'));
+  assert.ok(repairs.includes("requirement Supervision: no profile skill names it, the model's reading only: adjacent, to verify"), repairs.join('\n'));
 });
 
 /** Seen on a real run (architect offer): "Expert en PostgreSQL haute

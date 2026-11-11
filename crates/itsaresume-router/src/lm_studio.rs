@@ -32,7 +32,16 @@ pub struct LmStudioBackend {
     pub(crate) label: &'static str,
     /// Sent as `temperature` when set; else the server's default.
     temperature: Option<f64>,
+    /// 2.37: sent as `reasoning_effort` when set (Groq's gpt-oss: its
+    /// thinking counts in the minute's tokens).
+    pub(crate) reasoning_effort: Option<&'static str>,
+    /// 2.37: a 429 with `retry-after` is waited out and asked again, within
+    /// the timeout (Groq's per-minute budget); else it falls back at once.
+    pub(crate) wait_rate_limit: bool,
 }
+
+/// At most this many waits on one completion.
+const MAX_WAITS: u32 = 3;
 
 /// How many completions may be on the server at once, and how many are.
 #[derive(Debug)]
@@ -94,6 +103,8 @@ impl LmStudioBackend {
             schema_as_rule: false,
             label: "lm-studio",
             temperature: None,
+            reasoning_effort: None,
+            wait_rate_limit: false,
         }
     }
 
@@ -148,6 +159,9 @@ impl LmStudioBackend {
     fn finish(&self, mut body: serde_json::Value) -> String {
         if let Some(temperature) = self.temperature {
             body["temperature"] = json!(temperature);
+        }
+        if let Some(effort) = self.reasoning_effort {
+            body["reasoning_effort"] = json!(effort);
         }
         body.to_string()
     }
@@ -209,18 +223,41 @@ impl Backend for LmStudioBackend {
             .build()
             .into();
 
-        let mut post = agent.post(&url).header("Content-Type", "application/json");
-        if let Some(bearer) = &self.bearer {
-            post = post.header("Authorization", &format!("Bearer {bearer}"));
-        }
-        let mut response = post
-            .send(self.body(request))
-            .map_err(|error| transport(self.label, &url, error))?;
-        let status = response.status().as_u16();
-        let body = response
-            .body_mut()
-            .read_to_string()
-            .map_err(|error| transport(self.label, &url, error))?;
+        let sent = self.body(request);
+        let mut waits = 0;
+        let (status, body) = loop {
+            let mut post = agent.post(&url).header("Content-Type", "application/json");
+            if let Some(bearer) = &self.bearer {
+                post = post.header("Authorization", &format!("Bearer {bearer}"));
+            }
+            let mut response = post
+                .send(&sent)
+                .map_err(|error| transport(self.label, &url, error))?;
+            let status = response.status().as_u16();
+            let retry_after = response
+                .headers()
+                .get("retry-after")
+                .and_then(|value| value.to_str().ok())
+                .and_then(|value| value.trim().parse::<f64>().ok())
+                .filter(|seconds| seconds.is_finite() && *seconds >= 0.0)
+                .map(Duration::from_secs_f64);
+            let body = response
+                .body_mut()
+                .read_to_string()
+                .map_err(|error| transport(self.label, &url, error))?;
+            match retry_after {
+                Some(wait)
+                    if status == 429
+                        && self.wait_rate_limit
+                        && waits < MAX_WAITS
+                        && Instant::now() + wait < deadline =>
+                {
+                    waits += 1;
+                    std::thread::sleep(wait);
+                }
+                _ => break (status, body),
+            }
+        };
         let completion = classify(self.label, status, &body)?;
         if request.schema.is_some() && serde_json::from_str::<Value>(&completion.text).is_err() {
             return Err(BackendError::Other(format!(
@@ -332,6 +369,8 @@ fn classify(label: &str, status: u16, body: &str) -> Result<Completion, BackendE
     }
     Err(match status {
         429 => BackendError::QuotaExceeded(detail),
+        // 2.37, observed on Groq: a request over the minute's token budget.
+        413 if message.contains("tokens per minute") => BackendError::QuotaExceeded(detail),
         502..=504 => BackendError::Unreachable(detail),
         _ => BackendError::Other(detail),
     })

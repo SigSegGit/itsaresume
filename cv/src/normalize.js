@@ -415,7 +415,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // extra skill the model adds may not lift a lab-only match to full credit.
     if (named && (requirement.match !== 'yes' || requirement.skills.length !== 1 || requirement.skills[0] !== named)) {
       const others = requirement.skills.filter((id) => id !== named);
-      repairs.push(`requirement ${requirement.name}: named like the profile skill ${named}, now yes with that skill alone${others.length ? ` (dropped: ${others.join(', ')})` : ''}`);
+      repairs.push(`requirement ${requirement.name}: named like the profile skill ${named}, now yes with that skill alone${others.length ? ` (dropped: ${others.join(', ')})` : ''}${requirement.match !== 'yes' ? ` (was ${requirement.match})` : ''}`);
       requirement.match = 'yes';
       requirement.skills = [named];
     }
@@ -424,14 +424,14 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // One part the profile does not name ("Kubernetes / Docker") leaves it.
     const parts = named ? null : partsNamed(requirement.name, byIdentity);
     if (parts && (requirement.match !== 'yes' || requirement.skills.join() !== parts.join())) {
-      repairs.push(`requirement ${requirement.name}: each part named like a profile skill (${parts.join(', ')}), now yes`);
+      repairs.push(`requirement ${requirement.name}: each part named like a profile skill (${parts.join(', ')}), now yes${requirement.match !== 'yes' ? ` (was ${requirement.match})` : ''}`);
       requirement.match = 'yes';
       requirement.skills = parts;
     }
     keys.push(named ? `skill:${named}` : parts ? `skill:${parts.join('+')}` : `name:${String(requirement.name ?? '').trim().toLowerCase()}`);
     // Profile v4, §3.10: what the candidate never claims stays a gap, whatever the model thought.
     if (isNever(requirement, profile.never)) {
-      if (requirement.match !== 'no' || !requirement.never) repairs.push(`requirement ${requirement.name}: never claimed in the profile, now no`);
+      if (requirement.match !== 'no' || !requirement.never) repairs.push(`requirement ${requirement.name}: never claimed in the profile, now no${requirement.match !== 'no' ? ` (was ${requirement.match})` : ''}`);
       requirement.match = 'no';
       requirement.skills = [];
       requirement.never = true;
@@ -470,16 +470,16 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     // flagged to verify, and still a gap of the qualification. Zeroing it
     // turned real matches into false gaps.
     if ((requirement.match === 'yes' || requirement.match === 'adjacent') && known.length > 0 && held.length === 0 && !grounded(asked(requirement.name), known.map((id) => skills.get(id)))) {
-      repairs.push(`requirement ${requirement.name}: no profile skill names it, the model's reading only: adjacent, to verify`);
+      repairs.push(`requirement ${requirement.name}: no profile skill names it, the model's reading only: adjacent, to verify${requirement.match !== 'adjacent' ? ` (was ${requirement.match})` : ''}`);
       requirement.match = 'adjacent';
       requirement.judged = true;
     }
     if (requirement.match === 'yes' && known.length > 0 && known.every((id) => ruled.near.includes(id))) {
-      repairs.push(`requirement ${requirement.name}: the owner ruled it near ${known.map((id) => skills.get(id).name).join(', ')}: adjacent, never yes`);
+      repairs.push(`requirement ${requirement.name}: the owner ruled it near ${known.map((id) => skills.get(id).name).join(', ')}: adjacent, never yes (was yes)`);
       requirement.match = 'adjacent';
     }
     if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0) {
-      repairs.push(`requirement ${requirement.name}: marked ${requirement.match} without a profile skill, now no`);
+      repairs.push(`requirement ${requirement.name}: marked ${requirement.match} without a profile skill, now no (was ${requirement.match})`);
       requirement.match = 'no';
     } else if (requirement.match === 'no' && requirement.skills.length > 0) {
       repairs.push(`requirement ${requirement.name}: marked no, its skills dropped`);
@@ -511,7 +511,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     const spoken = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' ? null : languageOf(requirement, profile, analysis.language);
     if (spoken) {
       const { match } = spoken;
-      if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a language, ${match} by the profile (${spoken.stated.join(', ')})`);
+      if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a language, ${match} by the profile (${spoken.stated.join(', ')}) (was ${requirement.match})`);
       requirement.kind = 'language';
       requirement.match = match;
       requirement.skills = [];
@@ -524,7 +524,7 @@ export function normalize(input, profile, { assessment, offer } = {}) {
     const certified = requirement.never || requirement.kind === 'quality' || requirement.kind === 'condition' || spoken ? null : certificationOf(requirement, profile, analysis.language);
     if (certified) {
       const match = certified.stated.length === 0 ? 'no' : certified.expired ? 'adjacent' : 'yes';
-      if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a certification, ${match} by the profile's certifications`);
+      if (requirement.match !== match) repairs.push(`requirement ${requirement.name}: a certification, ${match} by the profile's certifications (was ${requirement.match})`);
       requirement.kind = 'certification';
       requirement.match = match;
       requirement.skills = [];

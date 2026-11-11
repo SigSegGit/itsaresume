@@ -11,7 +11,7 @@ const entry = (model, over = {}) => ({
 test('compareRuns: one line per model, disagreements first, leads found by code', () => {
   const report = compareRuns([
     entry('claude', { analysis: { requirements: [{ name: 'Kubernetes', match: 'yes' }, { name: 'Terraform', match: 'adjacent' }] }, attempts: 2 }),
-    entry('gemini', { fit: { score: 80, verdict: 'go', qualification: { level: 'strong' } }, repairs: Array(10).fill('x') }),
+    entry('gemini', { fit: { score: 80, verdict: 'go', qualification: { level: 'strong' } }, repairs: [...Array(3).fill("requirement Go: no profile skill names it, the model's reading only: adjacent, to verify (was yes)"), 'requirement Linux: never claimed in the profile, now no (was yes)'] }),
     entry('local', { status: 'failed', error: 'router http://10.0.0.5 down', fit: null, analysis: null, repairs: null, tokens: null }),
   ]);
   assert.deepEqual(report.models.map((m) => [m.model, m.status, m.score, m.tokens]), [['claude', 'done', 60, 15], ['gemini', 'done', 80, 15], ['local', 'failed', null, null]]);
@@ -62,4 +62,32 @@ test('compare: one row per requirement across backends, disagreements and demoti
   const astreinte = rows.find((row) => row.name === 'astreinte');
   assert.equal(astreinte.agree, true);
   assert.deepEqual(astreinte.why, { claude: ["no profile skill names it, the model's reading only: adjacent, to verify"] });
+});
+
+// 2.33: on "Test 1" every model got "many repairs" (34, 29, 44), mostly the
+// code's ordinary work. Only a repair that changes the model's verdict counts.
+test('compareRuns: only the repairs that change a verdict make the lead, which names the most frequent kinds', () => {
+  const ordinary = [
+    'requirement PostgreSQL: listed 9 times, counted once',
+    'requirement Pédagogie: a personal quality, not scored (to show in interview)',
+    'requirement AWS: named like the profile skill aws, now yes with that skill alone (dropped: gcp)',
+    "requirement Ansible: the profile's Terraform meets it too",
+    'requirement Nationalité: an administrative condition, to confirm (not scored)',
+    "requirement Python: nice by the offer's cue, the model said must",
+    "requirement Bash: no profile skill names it, the model's reading only: adjacent, to verify",
+  ];
+  const changed = [
+    "requirement Astreinte: no profile skill names it, the model's reading only: adjacent, to verify (was yes)",
+    "requirement Veille: no profile skill names it, the model's reading only: adjacent, to verify (was yes)",
+    'requirement Kafka: never claimed in the profile, now no (was adjacent)',
+    'requirement Docker: named like the profile skill docker, now yes with that skill alone (was no)',
+  ];
+  const report = compareRuns([
+    entry('claude', { repairs: [...Array(30).fill(ordinary).flat()] }),
+    entry('gemini', { repairs: [...ordinary, ...changed] }),
+  ]);
+  assert.deepEqual(report.models.map((m) => [m.model, m.repairs, m.verdicts_changed]), [['claude', 210, 0], ['gemini', 11, 4]]);
+  const leads = report.leads.filter((lead) => lead.kind === 'repairs');
+  assert.equal(leads.length, 1, 'ordinary repairs, however many, are no lead');
+  assert.match(leads[0].text, /^gemini : le code a changé 4 de ses verdicts, surtout : aucune compétence du profil ne la nomme \(2\), jamais revendiquée \(1\), nommée comme une compétence du profil \(1\)\.$/);
 });

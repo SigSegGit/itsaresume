@@ -57,8 +57,8 @@
   "defences": {
     "Injection: the analysis prompt fences the offer": {
       "file": "src/prompt.js",
-      "live": "lines.push('', ...fence(offer), '');",
-      "dead": "lines.push('', 'OFFER', '<<<', offer.trim(), '>>>', '');",
+      "live": "return ['', ...fence(offer), ''];",
+      "dead": "return ['', 'OFFER', '<<<', offer.trim(), '>>>', ''];",
       "expect": [
         "the offer is fenced by a marker it cannot guess"
       ]

@@ -163,3 +163,55 @@ pub fn serve_routes(routes: &[(&str, u16, &str)], connections: usize) -> String 
     });
     base_url
 }
+
+/// 2.37: serve `answers` in order, one connection each: `(status, extra
+/// header lines, body)`. Returns the base URL and the requests received.
+pub fn serve_sequence(answers: &[(u16, &str, &str)]) -> (String, Receiver<Received>) {
+    let listener = TcpListener::bind("127.0.0.1:0").expect("bind a free port");
+    let base_url = format!("http://{}/v1", listener.local_addr().expect("address"));
+    let answers: Vec<(u16, String, String)> = answers
+        .iter()
+        .map(|(status, extra, body)| (*status, (*extra).to_owned(), (*body).to_owned()))
+        .collect();
+    let (sender, receiver) = channel();
+    thread::spawn(move || {
+        for (status, extra, body) in answers {
+            let Ok((stream, _)) = listener.accept() else {
+                return;
+            };
+            let mut reader = BufReader::new(stream.try_clone().expect("clone stream"));
+            let mut request_line = String::new();
+            reader.read_line(&mut request_line).expect("request line");
+            let mut headers = Vec::new();
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).expect("header line");
+                let line = line.trim_end();
+                if line.is_empty() {
+                    break;
+                }
+                let (name, value) = line.split_once(':').expect("a header");
+                headers.push((name.trim().to_lowercase(), value.trim().to_owned()));
+            }
+            let length: usize = headers
+                .iter()
+                .find(|(name, _)| name == "content-length")
+                .map(|(_, value)| value.parse().expect("a length"))
+                .unwrap_or(0);
+            let mut raw = vec![0; length];
+            reader.read_exact(&mut raw).expect("body");
+            let _ = sender.send(Received {
+                request_line: request_line.trim_end().to_owned(),
+                headers,
+                body: serde_json::from_slice(&raw).unwrap_or(Value::Null),
+            });
+            let mut stream = stream;
+            let response = format!(
+                "HTTP/1.1 {status} Status\r\nContent-Type: application/json\r\n{extra}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).expect("respond");
+        }
+    });
+    (base_url, receiver)
+}

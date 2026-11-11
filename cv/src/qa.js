@@ -10,6 +10,9 @@ import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const MODELS = ['auto', 'claude', 'gemini', 'openai', 'groq', 'local'];
+// 2.37: models whose analysis goes in two calls (Groq's free tier: 8 000
+// tokens a minute, the whole analysis about 9 500).
+export const SPLIT = new Set(['groq']);
 export const QA_LOG = 'qa-log.jsonl';
 
 const BACKENDS = { auto: undefined, claude: 'claude-code', gemini: 'gemini-cli', openai: 'openai', groq: 'groq', local: 'lm-studio' };

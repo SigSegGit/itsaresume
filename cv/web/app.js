@@ -404,8 +404,8 @@ async function renderGroup(id) {
   const differ = rows.filter((row) => !row.agree);
   return card.replaceChildren(head,
     ...(leads.length ? [h('ul', {}, ...leads.map((lead) => h('li', { text: lead.text })))] : []),
-    h('table', {}, cells('th', ['Modèle', 'Statut', 'Score', 'Verdict', 'Durée (s)', 'Tokens', 'Tentatives', 'Réparations']),
-      ...models.map((m) => cells('td', [m.model, m.status, m.score, m.verdict, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs]))),
+    h('table', {}, cells('th', ['Modèle', 'Statut', 'Score', 'Verdict', 'Durée (s)', 'Tokens', 'Tentatives', 'Réparations', 'Verdicts changés']),
+      ...models.map((m) => cells('td', [m.model, m.status, m.score, m.verdict, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs, m.verdicts_changed]))),
     ...(differ.length ? [h('table', {}, cells('th', ['Désaccords', ...done]), ...differ.map((row) => cells('td', [row.name, ...done.map((name) => row.verdicts[name])])))] : []),
     h('a', { href: `/api/groups/${id}/compare.md`, text: 'Télécharger la comparaison' }));
 }

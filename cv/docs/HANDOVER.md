@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.33
-TITLE: 2.34 built (models come back by themselves and stay in sight); next 2.33, comparison leads that name what to fix; 2.31c waits for the owner's export
-WRITTEN-AT: 2026-11-10
+NEXT: 2.37b
+TITLE: 2.33 and 2.37 built (leads count changed verdicts; Groq in two calls, paced); next 2.37b, Groq measured on a real comparison; 2.31c waits for the owner's export
+WRITTEN-AT: 2026-11-11
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1148,7 +1148,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   (`rules-replay.mjs`): the score must not move for a model that lists well.
   - [x] Done 2026-11-09: "école d'ingénieurs" is a degree (PR #159).
 
-- [ ] **2.33** (2026-11-10, from the first real comparison) **The
+- [x] **2.33** (2026-11-10, from the first real comparison; built 2026-11-11) **The
   comparison's leads say what to fix.** On "Test 1" every model got the
   "many repairs: the prompt guides it badly" lead (34, 29, 44), but most of
   those repairs are the code's ordinary work ("listed 2 times, counted
@@ -1159,6 +1159,10 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   "the code changed N of the model's verdicts, mostly: ...". Red test from
   the repair strings of a real comparison (made fictional), sabotage on
   the filter.
+  - [x] Done 2026-11-11: a repair that changes the model's verdict ends
+    with "(was yes|adjacent|no)" (`src/normalize.js`, only when it did);
+    `compareRuns` counts those per model (`verdicts_changed`, a column of
+    both tables) and leads from 3 on, naming the three most frequent kinds.
 
 - [x] **2.34** (the owner, 2026-11-10, built the same day) **A model that
   is down for a while comes back by itself, and stays in sight.**
@@ -1190,6 +1194,25 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   falling back: Groq was taken out of the VM's `router.toml` again (kept as
   `router.toml.with-groq-20261111`, the key in `groq.env`). Its option shows
   "non configuré". Worth it only on a paid Groq tier, which §1 excludes.
+
+- [x] **2.37** (the owner, 2026-11-11: "ne peut-on pas trouver un moyen de
+  faire fonctionner groq ?") **Groq within its free minute.** Measured on
+  the VM: gpt-oss-120b, gpt-oss-20b and qwen3.8-27b all allow 8 000 tokens
+  a minute; a 6 000-token call passes, a 9 000-token one is refused at once
+  (413, "Request too large ... tokens per minute (TPM)"). The listing goes
+  to `auto` since 2.32; the analysis (about 6 700 in, 2 700 out) did not fit.
+  (a) Router, Groq only: `reasoning_effort: low` (gpt-oss's thinking counts
+  in the minute); a 429 with `retry-after` is waited out and asked again,
+  at most 3 times and never past the timeout; a 413 over the minute's
+  tokens is a quota (`auto` falls back). (b) Generator: `SPLIT` models
+  (`src/qa.js`: groq) analyse in two calls (`buildSplitPrompts`): the
+  requirements against the compact skills (no bullet), then the CV's
+  choices given those requirements (skill ids only); merged, then the
+  usual normalize and validation. Each call is about half the whole.
+- [ ] **2.37b** Groq back in the VM's `router.toml`
+  (`router.toml.with-groq-20261111`), then one real comparison: scores
+  and verdicts beside Claude's and Gemini's, time, tokens, any 413/429.
+  Keep Groq if it holds; else out again, with the numbers here.
 
 ## 9. Open on purpose
 
