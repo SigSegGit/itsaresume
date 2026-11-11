@@ -121,6 +121,15 @@ test('Gemini and OpenAI are offered when up, and unconfigured ones are not', () 
   assert.equal(menu.options.openai.note, 'non configuré');
 });
 
+// 2.36: Groq's free tier, OpenAI's open models (gpt-oss), its own option.
+test('Groq is offered when up, unconfigured otherwise, and counts for a comparison', () => {
+  const groq = { name: 'groq', kind: 'groq', state: 'up' };
+  const menu = modelMenu([claude('up'), groq], NOW);
+  assert.equal(menu.options.groq.available, true);
+  assert.equal(menu.options.compare.available, true);
+  assert.equal(modelMenu([claude('up')], NOW).options.groq.note, 'non configuré');
+});
+
 test('Claude spent hands the default to Gemini before the slow local model', () => {
   const since = NOW - 60;
   const menu = modelMenu([claude('limited', { since }), gemini('up'), openai('limited', { since }), local('up', { loaded: true })], NOW);
