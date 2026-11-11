@@ -11,10 +11,19 @@ use std::time::Duration;
 /// The variable the key is read from.
 pub const KEY_ENV: &str = "OPENAI_API_KEY";
 
-/// The OpenAI backend.
+/// 2.36: Groq's OpenAI-compatible API, its free tier (no payment method on
+/// the owner's account, so nothing can be billed): a fixed address and its
+/// own key variable, so a configuration never sends a key elsewhere.
+pub const GROQ_URL: &str = "https://api.groq.com/openai/v1";
+/// The variable Groq's key is read from.
+pub const GROQ_KEY_ENV: &str = "GROQ_API_KEY";
+
+/// The OpenAI backend (and Groq's, the same protocol).
 #[derive(Debug, Clone)]
 pub struct OpenAiBackend {
     inner: LmStudioBackend,
+    kind: &'static str,
+    key_env: &'static str,
 }
 
 impl OpenAiBackend {
@@ -25,7 +34,20 @@ impl OpenAiBackend {
         inner.bearer = key.filter(|k| !k.is_empty());
         inner.schema_as_rule = true;
         inner.label = "openai";
-        Self { inner }
+        Self {
+            inner,
+            kind: "openai",
+            key_env: KEY_ENV,
+        }
+    }
+
+    /// Groq's backend for `model`, with `key` (`None`: every request stops).
+    pub fn groq(model: impl Into<String>, key: Option<String>) -> Self {
+        let mut backend = Self::new(GROQ_URL, model, key);
+        backend.inner.label = "groq";
+        backend.kind = "groq";
+        backend.key_env = GROQ_KEY_ENV;
+        backend
     }
 
     /// Give up (as `Unreachable`) after this long.
@@ -37,7 +59,7 @@ impl OpenAiBackend {
 
 impl Backend for OpenAiBackend {
     fn name(&self) -> &str {
-        "openai"
+        self.kind
     }
 
     fn probe(&self) -> Option<Probe> {
@@ -47,7 +69,8 @@ impl Backend for OpenAiBackend {
     fn complete(&self, request: &Request) -> Result<Completion, BackendError> {
         if self.inner.bearer.is_none() {
             return Err(BackendError::Other(format!(
-                "openai: {KEY_ENV} is not in the router's environment"
+                "{}: {} is not in the router's environment",
+                self.kind, self.key_env
             )));
         }
         self.inner.complete(request)

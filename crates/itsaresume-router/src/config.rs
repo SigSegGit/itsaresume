@@ -90,6 +90,17 @@ pub enum BackendConfig {
         /// Seconds before giving up.
         timeout_secs: Option<u64>,
     },
+    /// 2.36: Groq's free tier, its key in `GROQ_API_KEY`, its address fixed.
+    Groq {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
+        /// The request kinds it takes (default: all).
+        serves: Option<Vec<Kind>>,
+        /// The model id (the cheapest that does the job).
+        model: String,
+        /// Seconds before giving up.
+        timeout_secs: Option<u64>,
+    },
     /// LM Studio's OpenAI-compatible server.
     LmStudio {
         /// The name requests and the journal use (default: the kind).
@@ -118,6 +129,7 @@ impl BackendConfig {
             Self::ClaudeCode { timeout_secs, .. }
             | Self::GeminiCli { timeout_secs, .. }
             | Self::Openai { timeout_secs, .. }
+            | Self::Groq { timeout_secs, .. }
             | Self::LmStudio { timeout_secs, .. } => timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS),
         };
         Duration::from_secs(seconds)
@@ -130,6 +142,7 @@ impl BackendConfig {
             Self::ClaudeCode { name, .. } => name.clone().unwrap_or_else(|| "claude-code".into()),
             Self::GeminiCli { name, .. } => name.clone().unwrap_or_else(|| "gemini-cli".into()),
             Self::Openai { name, .. } => name.clone().unwrap_or_else(|| "openai".into()),
+            Self::Groq { name, .. } => name.clone().unwrap_or_else(|| "groq".into()),
             Self::LmStudio { name, .. } => name.clone().unwrap_or_else(|| "lm-studio".into()),
         }
     }
@@ -139,6 +152,7 @@ impl BackendConfig {
         let (Self::ClaudeCode { serves, .. }
         | Self::GeminiCli { serves, .. }
         | Self::Openai { serves, .. }
+        | Self::Groq { serves, .. }
         | Self::LmStudio { serves, .. }) = self;
         serves
             .clone()
@@ -148,7 +162,10 @@ impl BackendConfig {
     /// How many completions may reach the backend at once (`None`: no limit).
     pub fn max_concurrent(&self) -> Option<usize> {
         match self {
-            Self::ClaudeCode { .. } | Self::GeminiCli { .. } | Self::Openai { .. } => None,
+            Self::ClaudeCode { .. }
+            | Self::GeminiCli { .. }
+            | Self::Openai { .. }
+            | Self::Groq { .. } => None,
             Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(1)),
         }
     }
@@ -211,6 +228,10 @@ impl BackendConfig {
                     std::env::var(crate::openai::KEY_ENV).ok(),
                 )
                 .with_timeout(self.timeout()),
+            ),
+            Self::Groq { model, .. } => Box::new(
+                OpenAiBackend::groq(model, std::env::var(crate::openai::GROQ_KEY_ENV).ok())
+                    .with_timeout(self.timeout()),
             ),
             Self::LmStudio {
                 base_url,

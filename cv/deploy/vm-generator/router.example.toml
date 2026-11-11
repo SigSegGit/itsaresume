@@ -45,6 +45,14 @@ timeout_secs = 900
 # model = "gpt-5-mini"
 # timeout_secs = 600
 
+# Groq's free tier (2.36): OpenAI's open model, no payment method on the
+# account, so nothing can be billed; past its limits a 429, the router falls
+# back. GROQ_API_KEY in $DATA/groq.env, never here; its address is fixed.
+# [[backend]]
+# kind = "groq"
+# model = "openai/gpt-oss-120b"
+# timeout_secs = 600
+
 # The laptop's local model, through the tunnel the laptop opens when it is
 # on (deploy/laptop/bionic-tunnel.sh). Off: an outage, the request is
 # exhausted, the page says so.

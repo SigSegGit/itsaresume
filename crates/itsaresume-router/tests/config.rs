@@ -369,6 +369,21 @@ fn an_openai_backend_has_a_model_and_no_key_or_url() {
 }
 
 #[test]
+fn a_groq_backend_has_a_model_and_no_key_or_url() {
+    let config = Config::parse(
+        "journal = \"j\"\n[[backend]]\nkind = \"groq\"\nmodel = \"openai/gpt-oss-120b\"\n",
+    )
+    .expect("valid");
+    assert_eq!(config.backends[0].name(), "groq");
+    config.router().expect("a router");
+    for extra in ["api_key = \"x\"", "base_url = \"http://evil/v1\""] {
+        let text =
+            format!("journal = \"j\"\n[[backend]]\nkind = \"groq\"\nmodel = \"m\"\n{extra}\n");
+        assert!(Config::parse(&text).is_err(), "{extra}");
+    }
+}
+
+#[test]
 fn checks_are_off_unless_a_period_is_given() {
     let base = "journal = \"j\"\n[[backend]]\nkind = \"openai\"\nmodel = \"m\"\n";
     assert_eq!(Config::parse(base).expect("valid").check_every_secs, None);

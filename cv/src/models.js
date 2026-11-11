@@ -71,25 +71,27 @@ function localOption(backend, awake) {
 export function modelMenu(backends, now = Date.now() / 1000, { awake = false } = {}) {
   if (backends === null) {
     const off = { available: false, note: 'routeur injoignable' };
-    return { default: null, options: { auto: off, claude: off, gemini: off, openai: off, local: off } };
+    return { default: null, options: { auto: off, claude: off, gemini: off, openai: off, groq: off, local: off } };
   }
   if (!Array.isArray(backends)) {
     const open = { available: true, note: '' };
     const unknown = { available: false, note: 'non configuré' };
-    return { default: 'auto', options: { auto: open, claude: open, gemini: unknown, openai: unknown, local: open } };
+    return { default: 'auto', options: { auto: open, claude: open, gemini: unknown, openai: unknown, groq: unknown, local: open } };
   }
   const claudeBackend = backends.find((backend) => backend.kind === 'claude-code');
   const claude = cloudOption(claudeBackend, now);
   const gemini = cloudOption(backends.find((backend) => backend.kind === 'gemini-cli'), now);
   const openai = cloudOption(backends.find((backend) => backend.kind === 'openai'), now);
+  // 2.36: Groq's free tier (OpenAI's open models), its own option.
+  const groq = cloudOption(backends.find((backend) => backend.kind === 'groq'), now);
   const local = localOption(backends.find((backend) => backend.kind === 'lm-studio'), awake);
   const light = claudeBackend?.state !== 'limited' && [undefined, 'allowed'].includes(claudeBackend?.usage);
-  const auto = { available: claude.available || gemini.available || openai.available || local.available, note: '' };
+  const auto = { available: claude.available || gemini.available || openai.available || groq.available || local.available, note: '' };
   const fallback = auto.available ? 'auto' : null;
   // The owner, 2026-10-14: past Claude, the cloud free tiers before the slow local model.
   const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')
-    || (openai.available && 'openai') || (local.available && 'local') || fallback;
+    || (openai.available && 'openai') || (groq.available && 'groq') || (local.available && 'local') || fallback;
   // 2.31b: comparing needs two models that can answer.
-  const compare = { available: [claude, gemini, openai, local].filter((model) => model.available).length >= 2, note: '' };
-  return { default: chosen, options: { auto, claude, gemini, openai, local, compare } };
+  const compare = { available: [claude, gemini, openai, groq, local].filter((model) => model.available).length >= 2, note: '' };
+  return { default: chosen, options: { auto, claude, gemini, openai, groq, local, compare } };
 }

@@ -190,7 +190,7 @@ test('the public status renders without the owner assessment', async () => {
 test('the page lets the owner pick the model, and sends the choice with the offers', () => {
   const html = web('index.html');
   const select = html.match(/<select id="model"[\s\S]*?<\/select>/)?.[0] ?? '';
-  assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'gemini', 'openai', 'local', 'compare']);
+  assert.deepEqual([...select.matchAll(/value="([a-z]+)"/g)].map((m) => m[1]), ['auto', 'claude', 'gemini', 'openai', 'groq', 'local', 'compare']);
   assert.match(web('app.js'), /api\('\/api\/jobs', \{ offers: [^\n]*, model: \$\('model'\)\.value[,} ]/);
 });
 

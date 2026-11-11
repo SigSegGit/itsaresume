@@ -309,8 +309,8 @@
     },
     "Models: Gemini before the slow local model": {
       "file": "src/models.js",
-      "live": "    || (openai.available && 'openai') || (local.available && 'local') || fallback;",
-      "dead": "    || (local.available && 'local') || (openai.available && 'openai') || fallback;",
+      "live": "    || (openai.available && 'openai') || (groq.available && 'groq') || (local.available && 'local') || fallback;",
+      "dead": "    || (local.available && 'local') || (openai.available && 'openai') || (groq.available && 'groq') || fallback;",
       "expect": [
         "Claude spent hands the default to Gemini before the slow local model"
       ]
