@@ -1179,6 +1179,18 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   route would be a `codex` backend (Codex CLI logged in with ChatGPT), like
   claude-code: a router step of its own, for the owner to decide.
 
+- [x] **2.36** (the owner, 2026-11-11) **Groq's free tier: built, measured,
+  not used.** Router `kind = "groq"` (fixed address, `GROQ_API_KEY` only)
+  and the page's "OpenAI gpt-oss via Groq" (PR #168). Measured the same night
+  on the VM with `openai/gpt-oss-120b`: Groq's headers say 8 000 tokens a
+  minute (`x-ratelimit-limit-tokens`), and the real run stopped at the
+  listing (a 21 500-character prompt, about 5 500 tokens), its answer cut
+  at "finish_reason length" in 7 s; the analysis (up to 14 500 tokens)
+  cannot fit at all. A cut answer is `other`, which stops `auto` instead of
+  falling back: Groq was taken out of the VM's `router.toml` again (kept as
+  `router.toml.with-groq-20261111`, the key in `groq.env`). Its option shows
+  "non configuré". Worth it only on a paid Groq tier, which §1 excludes.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in
