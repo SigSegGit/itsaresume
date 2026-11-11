@@ -593,7 +593,7 @@ property it proves.
 | auto lets the router choose; claude, gemini, openai and local name its backends | QA: claude and local name the router backends |
 | each run appends one JSON line to the QA log, never rewriting it | QA: the log appends |
 | a chosen model goes with every call to the router; auto sends none | QA: every call of a run goes to the chosen backend |
-| 2.37: only Groq splits its analysis in two calls | Groq (2.37): only Groq splits |
+| 2.37: Groq and the local model split their analysis in two calls | Groq (2.37): Groq and the local model split |
 
 ## `test/questions.test.js`
 

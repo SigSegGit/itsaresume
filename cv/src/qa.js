@@ -11,8 +11,10 @@ import { join } from 'node:path';
 
 export const MODELS = ['auto', 'claude', 'gemini', 'openai', 'groq', 'local'];
 // 2.37: models whose analysis goes in two calls (Groq's free tier: 8 000
-// tokens a minute, the whole analysis about 9 500).
-export const SPLIT = new Set(['groq']);
+// tokens a minute, the whole analysis about 9 500). 2.37b: the local model
+// too, measured on two corpus offers: same verdicts and scores, no retry
+// (one before), 208 s against 217 s and 196 s against 379 s.
+export const SPLIT = new Set(['groq', 'local']);
 export const QA_LOG = 'qa-log.jsonl';
 
 const BACKENDS = { auto: undefined, claude: 'claude-code', gemini: 'gemini-cli', openai: 'openai', groq: 'groq', local: 'lm-studio' };
