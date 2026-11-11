@@ -377,7 +377,8 @@ fn a_groq_backend_has_a_model_and_no_key_or_url() {
     assert_eq!(config.backends[0].name(), "groq");
     config.router().expect("a router");
     for extra in ["api_key = \"x\"", "base_url = \"http://evil/v1\""] {
-        let text = format!("journal = \"j\"\n[[backend]]\nkind = \"groq\"\nmodel = \"m\"\n{extra}\n");
+        let text =
+            format!("journal = \"j\"\n[[backend]]\nkind = \"groq\"\nmodel = \"m\"\n{extra}\n");
         assert!(Config::parse(&text).is_err(), "{extra}");
     }
 }

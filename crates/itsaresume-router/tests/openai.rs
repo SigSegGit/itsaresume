@@ -99,7 +99,10 @@ fn its_name_is_openai() {
 fn groq_is_its_own_backend_with_its_own_key_and_address() {
     let groq = OpenAiBackend::groq("openai/gpt-oss-120b", None);
     assert_eq!(groq.name(), "groq");
-    assert_eq!(itsaresume_router::openai::GROQ_URL, "https://api.groq.com/openai/v1");
+    assert_eq!(
+        itsaresume_router::openai::GROQ_URL,
+        "https://api.groq.com/openai/v1"
+    );
     match groq.complete(&Request::new("hi")) {
         Err(BackendError::Other(message)) => assert!(message.contains("GROQ_API_KEY"), "{message}"),
         other => panic!("expected the missing key, got {other:?}"),

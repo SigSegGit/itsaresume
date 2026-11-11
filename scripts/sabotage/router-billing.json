@@ -29,9 +29,26 @@
     "crates/itsaresume-router/tests/lm_studio.rs",
     "crates/itsaresume-router/tests/router.rs",
     "crates/itsaresume-router/tests/server.rs",
-    "crates/itsaresume-router/tests/system_file_collision.rs"
+    "crates/itsaresume-router/tests/system_file_collision.rs",
+    "crates/itsaresume-router/tests/openai.rs"
   ],
   "defences": {
+    "Groq (2.36): its address is fixed": {
+      "file": "crates/itsaresume-router/src/openai.rs",
+      "live": "pub const GROQ_URL: &str = \"https://api.groq.com/openai/v1\";",
+      "dead": "pub const GROQ_URL: &str = \"https://api.groq.example/openai/v1\";",
+      "expect": [
+        "groq_is_its_own_backend_with_its_own_key_and_address"
+      ]
+    },
+    "Groq (2.36): its own key variable": {
+      "file": "crates/itsaresume-router/src/openai.rs",
+      "live": "        backend.key_env = GROQ_KEY_ENV;\n",
+      "dead": "",
+      "expect": [
+        "groq_is_its_own_backend_with_its_own_key_and_address"
+      ]
+    },
     "Billing (2.34): a refusal flagged as overage is the limit": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": ".is_none_or(|result| result[\"is_error\"] != true);",

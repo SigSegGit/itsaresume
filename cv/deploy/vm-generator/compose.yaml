@@ -17,6 +17,7 @@
 #                             until the VM has its own token)
 #   gemini.env                GEMINI_API_KEY=... (owner's free-tier key, no billing)
 #   openai.env                OPENAI_API_KEY=... (owner's free-tier key, no overage)
+#   groq.env                  GROQ_API_KEY=... (Groq's free tier, no payment method)
 #   gemini/                   oauth_creds.json + settings.json of a `gemini`
 #                             "Login with Google" (optional; never a key)
 #   out/ journal/             runs and the router journal
@@ -45,6 +46,9 @@ services:
         required: false
       # OPENAI_API_KEY (kind = "openai"), for the router only.
       - path: ${DATA:-~/itsacv-data}/openai.env
+        required: false
+      # GROQ_API_KEY (kind = "groq", 2.36), for the router only.
+      - path: ${DATA:-~/itsacv-data}/groq.env
         required: false
     volumes:
       - ${DATA:-~/itsacv-data}/router.toml:/etc/itsaresume/config.toml:ro

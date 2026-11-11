@@ -210,7 +210,9 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `an_openai_error_names_openai_never_lm_studio` | `tests/openai.rs` | An HTTP or transport error names `openai`, never "LM Studio" (observed on the VM, 8.53) | openai: an HTTP error names its backend; openai: a transport error names its backend |
 | `a_schema_uses_the_shared_rule_and_json_object_mode` | `tests/openai.rs` | A schema goes as the shared JSON rule plus `json_object` mode | OpenAI schema through the shared rule |
 | `its_name_is_openai` | `tests/openai.rs` | The journal name | — |
+| `groq_is_its_own_backend_with_its_own_key_and_address` | `tests/openai.rs` | Groq (2.36) is its own backend: named `groq`, its address fixed, its key read from `GROQ_API_KEY` only | Groq (2.36): its address is fixed; Groq (2.36): its own key variable |
 | `an_openai_backend_has_a_model_and_no_key_or_url` | `tests/config.rs` | `kind = "openai"`: a model; `api_key` and `base_url` refused | — |
+| `a_groq_backend_has_a_model_and_no_key_or_url` | `tests/config.rs` | `kind = "groq"` takes a model; a key or a base URL in the configuration is refused (2.36) | — |
 | `checks_are_off_unless_a_period_is_given` | `tests/config.rs` | `check_every_secs` absent: no checks | — |
 | `a_check_asks_each_backend_once_and_records_its_state` | `tests/router.rs` | 8.49: one tiny request per silent backend; status up/limited/down | — |
 | `a_backend_seen_within_the_period_is_not_checked_again` | `tests/router.rs` | Real traffic within the period counts as a check | Check skips a backend seen within the period |
