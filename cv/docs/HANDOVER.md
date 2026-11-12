@@ -1092,6 +1092,17 @@ Traps met, each cost time once:
     Done: test `5.1b: itsacv matrix reads the runs made…`, 2 defences
     (guard.json); on the owner's 26 runs, 9 distinct offers, one column
     (no --profiles there). Next for 5.x: 5.2 (the model on the top K).
+  - [ ] **5.2a** (2026-11-12) `itsacv rank <offer.txt>... [--top K]
+    [--run] [--profile FILE] [--out DIR] [--url URL]`: N offers pasted, the
+    best K tailored, the rest never analysed. Per offer, its listing (one
+    call, cached in `<out>/.listings` as the pipeline caches it, so a later
+    analysis reuses it), `coverage` of the profile on the listed names, and
+    the analysis prompt's estimated input tokens (`buildPrompt`, 4
+    characters a token). Markdown on stdout, best share first, the top K
+    marked and their estimate summed; with `--run` the top K go through
+    `tailor`, without it no analysis call. Pure `rankOffers`/`rankMarkdown`
+    in `src/rank.js`; red tests on the synthetic profile, a CLI test with
+    the listings cached (no router), defences on the order and the cut.
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
