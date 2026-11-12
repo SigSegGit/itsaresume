@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.40
-TITLE: 2.38 and 2.39 done (a comparison keys rows by the listing: 11 disagreements of 33 became 2 on a real 4-model run); 5.2a-c done (itsacv rank and the page's "keep the best 3", measured 21/21); next 2.40, "N years of X" settled by code from the dated experiences
+NEXT: 2.41
+TITLE: 2.38-2.40 done (comparison keyed by the listing: 2 disagreements of 33 on a real 4-model run; "N years of X" raised by code, raise only after a replay); 5.2a-c done (itsacv rank, the page keeps the best 3, 21/21); next 2.41, a row the model translated is not added back by mergeListed (unblocks 2.25's compact prompt)
 WRITTEN-AT: 2026-11-12
 -->
 
@@ -1319,7 +1319,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   Gemini "adjacent, to verify" by their reading, Groq and local "no"), and
   "3 ans d'expérience DevOps" (Claude, Gemini yes; Groq, local adjacent).
 
-- [ ] **2.40** **"N years of X" settled by code.** Seen on 2.39: "3 ans
+- [x] **2.40** **"N years of X" settled by code.** Seen on 2.39: "3 ans
   d'expérience DevOps" is yes for two models, adjacent for two; the profile
   dates its experiences, so the code can count. In `src/normalize.js`
   (`ASKS_EXPERIENCE`/`STATES_YEARS` already read the years): a requirement
@@ -1330,6 +1330,31 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   (one skill over 2 then 4 years), a defence on the comparison of years;
   replay on the real runs (`rules-replay.mjs`) before shipping: list which
   verdicts change.
+  Done 2026-11-12, **raise only**: the replay (`~/.itsaresume/migrations/
+  years-replay.mjs`, 68 real analyses, 15 rows asking years) showed the
+  rule as written refusing 10 honest yes: those rows go through umbrella
+  skills (`devops`, `seniority`) that no bullet cites, so they count 0
+  years. Now `yearsAsked`/`yearsCited` (`src/normalize.js`) only raise a
+  row to yes when the experiences citing its skills span the years asked
+  (overlaps once, "12/2019" read to the month, no end = now); otherwise
+  the verdict stays. Replayed: 1 change of 15, the 2.39 row (Groq
+  adjacent -> yes, 9 years). 4 tests (`test/years.test.js`), 1 defence.
+  Lowering stays open: it needs the years per domain in the profile
+  (§9).
+
+- [ ] **2.41** **A row the model translated is not added back.** Seen in
+  2.25c: the listing named an offer's rows in English, the compact prompt
+  answered them in French, and `mergeListed` (`src/listing.js`, matching
+  names by words) added the 14 English rows back as "no": each requirement
+  counted twice (the AI tech lead offer, 60 -> 47). Red test first: a
+  listing `["Machine learning", "Cloud infrastructure"]` and an analysis
+  answering `["Apprentissage automatique", "Infrastructure cloud"]` adds
+  nothing. Code: a listed row is covered when the lexicon (`relate()`,
+  `src/lexicon.js`) places it on the same concept as an analysis row, as
+  well as by words; a defence on that branch. Then one A/B of that offer
+  only (`~/.itsaresume/migrations/ab-2.25c.py`, 2 Claude calls, the owner
+  already said yes on 2026-10-29 for the 2.25c runs): if no row is lost,
+  switch `ITSACV_PROMPT=compact,shortlist` on by default (2.25d).
 
 ## 9. Open on purpose
 
