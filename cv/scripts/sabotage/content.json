@@ -8,6 +8,8 @@
   "files": [
     "bin/itsacv.js",
     "src/matrix.js",
+    "src/rank.js",
+    "test/rank.test.js",
     "data/tech.json",
     "src/analysis.js",
     "src/answers.js",
@@ -1890,6 +1892,30 @@
       "dead": "    return content.length >= 1 && content.every((word) => words.has(word));",
       "expect": [
         "compareRuns: a listed word inside a longer name is not that requirement (\"SQL\" is not \"SQL Server\")"
+      ]
+    },
+    "Rank (5.2a): the best share first": {
+      "file": "src/rank.js",
+      "live": "  rows.sort((a, b) => b.share - a.share || a.at - b.at);",
+      "dead": "  rows.sort((a, b) => a.at - b.at);",
+      "expect": [
+        "rankOffers: the best share first, only the top K chosen, each with its estimate"
+      ]
+    },
+    "Rank (5.2a): only the top K, never an offer covered by nothing": {
+      "file": "src/rank.js",
+      "live": "  return rows.map(({ at, ...row }, rank) => ({ ...row, chosen: rank < top && row.share > 0 }));",
+      "dead": "  return rows.map(({ at, ...row }, rank) => ({ ...row, chosen: rank < top }));",
+      "expect": [
+        "rankOffers: an offer covered by nothing is never chosen, whatever K"
+      ]
+    },
+    "Rank (5.2a): no analysis without --run": {
+      "file": "bin/itsacv.js",
+      "live": "    if (!options.run) return;",
+      "dead": "",
+      "expect": [
+        "5.2a: itsacv rank reads the cached listings, calls no model without --run"
       ]
     }
   }
