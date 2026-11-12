@@ -392,16 +392,16 @@
     },
     "Listing: a name the analysis already covers is not added": {
       "file": "src/listing.js",
-      "live": "return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));",
-      "dead": "return false;",
+      "live": "if (words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'))) return true;",
+      "dead": "",
       "expect": [
         "a listed name whose words the analysis already names is not added twice"
       ]
     },
     "Listing: one word is not covered by a longer row": {
       "file": "src/listing.js",
-      "live": "return words.length >= 2 && analysed",
-      "dead": "return words.length >= 1 && analysed",
+      "live": "if (words.length >= 2 && analysed",
+      "dead": "if (words.length >= 1 && analysed",
       "expect": [
         "a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps)"
       ]
@@ -1625,6 +1625,22 @@
       "dead": ") {",
       "expect": [
         "a degree row met with no skill passes the validation"
+      ]
+    },
+    "Listing (2.41): a row answered translated covers its listed row": {
+      "file": "src/listing.js",
+      "live": "    return concepts !== '' && analysed.some((row) => row.concepts === concepts && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": "    return false;",
+      "expect": [
+        "a listed row the analysis answered translated is not added back (same lexicon concept)"
+      ]
+    },
+    "Listing (2.41): a nice translated row does not cover a listed must": {
+      "file": "src/listing.js",
+      "live": "row.concepts === concepts && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": "row.concepts === concepts);",
+      "expect": [
+        "a translated row covers a listed must only when it is a must too"
       ]
     }
   }

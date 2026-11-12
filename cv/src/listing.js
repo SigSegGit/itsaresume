@@ -12,6 +12,7 @@ import { extractJson } from './llm.js';
 import { cleanName, fence, UNTRUSTED } from './guard.js';
 import { MUST, NICE } from './importance.js';
 import { canonical, GENERIC, mentions, stem, STOP, wordsOf } from './text.js';
+import { defaultIndex, lookup } from './lexicon.js';
 
 export const LISTING_SYSTEM = `List every skill, technology, tool, product, method or personal quality that the job offer asks for or names.
 
@@ -130,10 +131,16 @@ export function mergeListed(analysis, listed) {
   // meetings", 2.10): added again, it counted a must twice.
   // Covered only by two content words at least ("SQL" is not "SQL Server",
   // "DevOps" is not "Azure DevOps"), and never a must by a nice row.
-  const analysed = (analysis.requirements ?? []).map((requirement) => ({ words: new Set(wordsOf(requirement.name).map(stem)), importance: requirement.importance }));
+  const index = defaultIndex();
+  const conceptsOf = (name) => [...new Set(lookup(index, String(name)))].sort().join(' ');
+  const analysed = (analysis.requirements ?? []).map((requirement) => ({ words: new Set(wordsOf(requirement.name).map(stem)), importance: requirement.importance, concepts: conceptsOf(requirement.name) }));
   const covered = (item) => {
     const words = wordsOf(item.name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
-    return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));
+    if (words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'))) return true;
+    // 2.41: the same row answered in another language ("Machine learning" /
+    // "Apprentissage automatique"): both names on the same lexicon concepts.
+    const concepts = conceptsOf(item.name);
+    return concepts !== '' && analysed.some((row) => row.concepts === concepts && (row.importance === 'must' || item.importance === 'nice'));
   };
   // A name that heads a row before its parenthesis is that row ("HA" /
   // "HA (haute disponibilité réseau)", 2026-10-02); "SQL" still is not "SQL Server".

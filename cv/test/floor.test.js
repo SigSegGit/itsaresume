@@ -153,3 +153,27 @@ test('a translated row covers a listed must only when it is a must too', async (
   const { analysis: merged } = mergeListed(analysis, [{ name: 'Machine learning', importance: 'must' }]);
   assert.deepEqual(merged.requirements.map((r) => r.name), ['Apprentissage automatique', 'Machine learning']);
 });
+
+// 2.41, the real case of 2.25c: the analysis kept the listing's order and
+// translated every row the lexicon does not know; each was dropped (not in
+// the offer) and its listed row added back as an unmet must.
+test('rows answered translated, in the listing\'s order, take the listing\'s names', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const offer = 'We need Kubernetes, rigor, active listening and change management.';
+  const row = (name, match) => ({ name, importance: 'must', match, skills: [], note: '' });
+  const analysis = { requirements: [row('Kubernetes', 'yes'), row('Rigueur', 'yes'), row('Écoute active', 'yes'), row('Conduite du changement', 'adjacent')] };
+  const listed = ['Kubernetes', 'Rigor', 'Active listening', 'Change management'].map((name) => ({ name, importance: 'must' }));
+  const { analysis: merged, repairs } = mergeListed(analysis, listed, offer);
+  assert.deepEqual(merged.requirements.map((r) => [r.name, r.match]), [['Kubernetes', 'yes'], ['Rigor', 'yes'], ['Active listening', 'yes'], ['Change management', 'adjacent']]);
+  assert.ok(repairs.some((repair) => /answered as Rigueur/.test(repair)), repairs.join('\n'));
+});
+
+test('unmatched rows are not renamed when the counts differ, nor when the offer states them', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const row = (name) => ({ name, importance: 'must', match: 'yes', skills: [], note: '' });
+  const listed = ['Rigor', 'Active listening'].map((name) => ({ name, importance: 'must' }));
+  const fewer = mergeListed({ requirements: [row('Rigueur')] }, listed, 'Rigor and active listening.');
+  assert.deepEqual(fewer.analysis.requirements.map((r) => r.name), ['Rigueur', 'Rigor', 'Active listening']);
+  const stated = mergeListed({ requirements: [row('Terraform'), row('Ansible')] }, listed, 'Terraform, Ansible, rigor and active listening.');
+  assert.deepEqual(stated.analysis.requirements.map((r) => r.name), ['Terraform', 'Ansible', 'Rigor', 'Active listening']);
+});
