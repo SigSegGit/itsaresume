@@ -1875,6 +1875,22 @@
       "expect": [
         "a degree below the one asked stays no, whatever the model read"
       ]
+    },
+    "Comparison (2.38): a row is keyed by the listed requirements it covers": {
+      "file": "src/compare.js",
+      "live": "    const found = listedOf(name, listed).map((item) => item.name.trim().toLowerCase());",
+      "dead": "    const found = [];",
+      "expect": [
+        "compareRuns: rows line up by the listed requirements they cover, not by each model's names"
+      ]
+    },
+    "Comparison (2.38): a listed word inside a longer name is not that requirement": {
+      "file": "src/listing.js",
+      "live": "    return content.length >= 2 && content.every((word) => words.has(word));",
+      "dead": "    return content.length >= 1 && content.every((word) => words.has(word));",
+      "expect": [
+        "compareRuns: a listed word inside a longer name is not that requirement (\"SQL\" is not \"SQL Server\")"
+      ]
     }
   }
 }

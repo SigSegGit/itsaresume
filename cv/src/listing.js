@@ -105,6 +105,24 @@ export function fileListingCache(dir) {
   };
 }
 
+/**
+ * 2.38: the listed requirements a row named `name` stands for: one it names
+ * exactly, before its parenthesis or as one of its parts ("Moindre privilège
+ * / IAM"), or whose content words, two at least, the row names all (the
+ * words `mergeListed` covers with). "SQL" is not "SQL Server".
+ */
+export function listedOf(name, listed) {
+  const whole = String(name).trim().toLowerCase();
+  const parts = new Set([whole, whole.split('(')[0].trim(), ...whole.split(/\s*(?:[/,;+&]|(?<!\p{L})(?:et|and)(?!\p{L}))\s*/u).map((part) => part.trim())]);
+  const words = new Set(wordsOf(whole).map(stem));
+  return (listed ?? []).filter((item) => {
+    const own = String(item.name).trim().toLowerCase();
+    if (parts.has(own)) return true;
+    const content = wordsOf(own).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
+    return content.length >= 2 && content.every((word) => words.has(word));
+  });
+}
+
 export function mergeListed(analysis, listed) {
   const present = new Set((analysis.requirements ?? []).map((requirement) => String(requirement.name).trim().toLowerCase()));
   // A listed name whose every content word the analysis already names, in

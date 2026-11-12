@@ -337,6 +337,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         dir: result.dir ?? null,
         fit: result.view?.fit ?? null,
         analysis: result.analysis ?? null,
+        listed: result.listed ?? null,
         pages: result.view?.layout?.pages ?? null,
     };
   }

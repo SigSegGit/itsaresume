@@ -118,7 +118,7 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
     });
     throw new RunError(/itsaresume/.test(error.message) ? 4 : 3, error.message, { answers: error.answers, dir: error.answers ? dir : undefined });
   }
-  const { analysis, attempts, backend, repairs, calls } = result;
+  const { analysis, attempts, backend, repairs, calls, listed } = result;
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'analysis.json'), JSON.stringify(analysis, null, 2));
   writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));
@@ -132,7 +132,7 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   writeFileSync(join(dir, 'offer.txt'), offer);
   writeFileSync(join(dir, 'run.json'), JSON.stringify({ profile: profileId, attempts, backend, repairs, layout, ats, skipped, older, instructions }, null, 2));
   onStep('done', { dir });
-  return { dir, name: basename(dir), analysis, attempts, backend, repairs, layout, ats, skipped, older, instructions, report: text };
+  return { dir, name: basename(dir), analysis, listed: listed ?? null, attempts, backend, repairs, layout, ats, skipped, older, instructions, report: text };
 }
 
 /** A finished run read back from its directory, to answer the same offer again. */
