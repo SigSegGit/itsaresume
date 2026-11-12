@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.41
-TITLE: 2.38-2.40 done (comparison keyed by the listing: 2 disagreements of 33 on a real 4-model run; "N years of X" raised by code, raise only after a replay); 5.2a-c done (itsacv rank, the page keeps the best 3, 21/21); next 2.41, a row the model translated is not added back by mergeListed (unblocks 2.25's compact prompt)
+NEXT: 2.42
+TITLE: 2.38-2.41 done (comparison keyed by the listing, 2/33 on a real run; "N years" raised by code; a translated row on a known concept not added back); 5.2a-c done; next 2.42, the analysis answers each listed row by its id, so a translation never re-adds it (unblocks 2.25's compact prompt)
 WRITTEN-AT: 2026-11-12
 -->
 
@@ -1342,7 +1342,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   Lowering stays open: it needs the years per domain in the profile
   (§9).
 
-- [ ] **2.41** **A row the model translated is not added back.** Seen in
+- [x] **2.41** **A row the model translated is not added back.** Seen in
   2.25c: the listing named an offer's rows in English, the compact prompt
   answered them in French, and `mergeListed` (`src/listing.js`, matching
   names by words) added the 14 English rows back as "no": each requirement
@@ -1355,6 +1355,29 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   only (`~/.itsaresume/migrations/ab-2.25c.py`, 2 Claude calls, the owner
   already said yes on 2026-10-29 for the 2.25c runs): if no row is lost,
   switch `ITSACV_PROMPT=compact,shortlist` on by default (2.25d).
+  Done 2026-11-12, **in part**: `mergeListed` also covers a listed row
+  when the lexicon puts both names on the same concepts (`lookup`), a must
+  only by a must. 2 tests, 2 defences (guard.json; the two older anchors
+  follow). Replayed on 19 real analyses (main runs and both 2.25c arms,
+  each arm's own `.listings`): 2 rows no longer re-added, both genuine
+  ("GenAI tools for development", "AI governance"), none wrong. It does not
+  fix 2.25c: 13 of its 15 rows are soft skills and phrases the lexicon
+  does not know. Tried and **dropped**: pairing unmatched rows with the
+  left-out listed rows in order, when as many: on the replay it renamed a
+  "Kubernetes" row "Scalabilité des applications" and missed 2.25c (the
+  counts differ). No A/B run: the gate is not met.
+
+- [ ] **2.42** **The analysis answers each listed row by its id.** The
+  prompt numbers the listed rows (`L1`..`Ln`, `listedLines` in
+  `src/prompt.js`); each requirement of the answer carries `listed: "L3"`
+  (or none for a row the model adds); `mergeListed` matches by that id
+  first (the row takes the listing's name, its verdict kept), then by
+  words and concept as today; an id unknown or used twice is ignored and
+  said in a repair. Red tests: the 2.25c shape made fictional (rows
+  translated, ids kept) adds nothing; a wrong id is not trusted. Measure
+  on the real runs (old answers carry no id: nothing changes), then the
+  2.25c A/B of the AI tech lead offer (2 Claude calls): if no row is lost,
+  2.25d switches the compact prompt on.
 
 ## 9. Open on purpose
 
