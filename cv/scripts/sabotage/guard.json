@@ -408,8 +408,8 @@
     },
     "Listing: a must is not covered by a nice row": {
       "file": "src/listing.js",
-      "live": " && (row.importance === 'must' || item.importance === 'nice'));",
-      "dead": ");",
+      "live": " && (row.importance === 'must' || item.importance === 'nice'))) return true;",
+      "dead": ")) return true;",
       "expect": [
         "a two-word listed must is not absorbed by a nice row that names its words"
       ]
