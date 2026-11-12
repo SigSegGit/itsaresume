@@ -91,3 +91,30 @@ test('compareRuns: only the repairs that change a verdict make the lead, which n
   assert.equal(leads.length, 1, 'ordinary repairs, however many, are no lead');
   assert.match(leads[0].text, /^gemini : le code a changé 4 de ses verdicts, surtout : aucune compétence du profil ne la nomme \(2\), jamais revendiquée \(1\), nommée comme une compétence du profil \(1\)\.$/);
 });
+
+// 2.38 (seen on 2.37b): the listing is shared, each model names its rows;
+// one requirement named two ways was two "disagreements".
+test('compareRuns: rows line up by the listed requirements they cover, not by each model\'s names', () => {
+  const listed = [
+    { name: 'Moindre privilège', importance: 'must' },
+    { name: 'IAM', importance: 'must' },
+    { name: 'Remédiation des vulnérabilités', importance: 'nice' },
+    { name: 'Terraform', importance: 'must' },
+  ];
+  const rows = (...requirements) => ({ listed, analysis: { requirements } });
+  const report = compareRuns([
+    entry('claude', rows({ name: 'Moindre privilège / IAM', match: 'yes' }, { name: 'Détection et remédiation des vulnérabilités', match: 'adjacent' }, { name: 'Terraform', match: 'yes' }, { name: 'Ansible', match: 'no' })),
+    entry('gemini', rows({ name: 'Moindre privilège', match: 'yes' }, { name: 'IAM', match: 'yes' }, { name: 'Remédiation des vulnérabilités', match: 'adjacent' }, { name: 'Terraform', match: 'yes' }, { name: 'Ansible', match: 'no' })),
+  ]);
+  assert.deepEqual(Object.fromEntries(report.rows.map((row) => [row.name, row.agree])), { ansible: true, iam: true, 'moindre privilège': true, 'remédiation des vulnérabilités': true, terraform: true });
+  assert.ok(!report.leads.some((lead) => lead.kind === 'disagree'));
+});
+
+test('compareRuns: a listed word inside a longer name is not that requirement ("SQL" is not "SQL Server")', () => {
+  const listed = [{ name: 'SQL', importance: 'must' }];
+  const report = compareRuns([
+    entry('claude', { listed, analysis: { requirements: [{ name: 'SQL Server', match: 'no' }, { name: 'SQL', match: 'yes' }] } }),
+    entry('gemini', { listed, analysis: { requirements: [{ name: 'SQL', match: 'yes' }] } }),
+  ]);
+  assert.deepEqual(Object.fromEntries(report.rows.map((row) => [row.name, row.agree])), { sql: true, 'sql server': false });
+});

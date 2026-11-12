@@ -2,14 +2,21 @@
 // backend, its requirements lined up so a disagreement, and the code's
 // reason for each demotion to adjacent ("proche"), show at a glance.
 
+import { listedOf } from './listing.js';
+
 const PREFIX = /^requirement (.+?): (.*)$/;
 
 /**
- * `runs`: backend → `{ requirements, repairs }` or `{ error }`. Rows are keyed
- * by the requirement's lower-cased name; `why` keeps, per backend, the
- * repairs that touched that requirement.
+ * `runs`: backend → `{ requirements, repairs }` or `{ error }`. A row is
+ * keyed by the listed requirements it stands for (2.38: `listed`, the
+ * listing every model was given), else by its lower-cased name; `why`
+ * keeps, per backend, the repairs that touched that requirement.
  */
-export function compareVerdicts(runs) {
+export function compareVerdicts(runs, listed = []) {
+  const keysOf = (name) => {
+    const found = listedOf(name, listed).map((item) => item.name.trim().toLowerCase());
+    return found.length ? found : [name.trim().toLowerCase()];
+  };
   const rows = new Map();
   const failed = {};
   for (const [backend, run] of Object.entries(runs)) {
@@ -18,15 +25,19 @@ export function compareVerdicts(runs) {
       continue;
     }
     for (const requirement of run.requirements ?? []) {
-      const name = requirement.name.trim().toLowerCase();
-      const row = rows.get(name) ?? { name, verdicts: {}, why: {} };
-      row.verdicts[backend] = requirement.match;
-      rows.set(name, row);
+      for (const name of keysOf(requirement.name)) {
+        const row = rows.get(name) ?? { name, verdicts: {}, why: {} };
+        row.verdicts[backend] ??= requirement.match;
+        rows.set(name, row);
+      }
     }
     for (const repair of run.repairs ?? []) {
       const found = PREFIX.exec(repair);
-      const row = found && rows.get(found[1].trim().toLowerCase());
-      if (row) (row.why[backend] ??= []).push(found[2]);
+      if (!found) continue;
+      for (const name of keysOf(found[1])) {
+        const row = rows.get(name);
+        if (row) (row.why[backend] ??= []).push(found[2]);
+      }
     }
   }
   const list = [...rows.values()].map((row) => ({ ...row, agree: new Set(Object.values(row.verdicts)).size === 1 && Object.keys(row.verdicts).length === Object.keys(runs).length - Object.keys(failed).length }));
@@ -79,7 +90,8 @@ export function compareRuns(entries) {
     dir: entry.dir ?? null,
   }));
   const { rows, failed } = compareVerdicts(Object.fromEntries(entries.map((entry) => [entry.model,
-    entry.status === 'done' ? { requirements: entry.analysis?.requirements, repairs: entry.repairs } : { error: entry.error ?? 'failed' }])));
+    entry.status === 'done' ? { requirements: entry.analysis?.requirements, repairs: entry.repairs } : { error: entry.error ?? 'failed' }])),
+  entries.find((entry) => entry.listed?.length)?.listed ?? []);
   rows.sort((a, b) => Number(a.agree) - Number(b.agree));
   const leads = [];
   for (const [index, model] of models.entries()) {
