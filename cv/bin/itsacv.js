@@ -4,7 +4,7 @@
 
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, extname, join } from 'node:path';
 import { complete, TIMEOUT_MS } from '../src/llm.js';
 import { loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
@@ -15,6 +15,8 @@ import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
 import { matrix, offersFromRuns, toCsv, toMarkdown } from '../src/matrix.js';
 import { listProfiles } from '../src/profiles.js';
+import { fileListingCache, listRequirements } from '../src/listing.js';
+import { rankMarkdown, rankOffers } from '../src/rank.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -26,6 +28,7 @@ const USAGE = `usage:
   itsacv invite --list | --usage | --revoke <label|code> [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
   itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
+  itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -42,6 +45,10 @@ const USAGE = `usage:
              twice is its latest run) and each profile (--profile, then --profiles DIR),
              the share of its requirements the profile's skills name; a Markdown table,
              or CSV with --csv
+  rank       the offers ranked by the share of their listed requirements the profile
+             covers (one listing call per offer, cached in <out>/.listings and reused
+             by the analysis), each with its analysis prompt's estimated tokens; the
+             best --top K (default 3) marked; with --run, only those are tailored
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
   --profiles serve: other profiles a job may be tailored to, each DIR/<id>.json (id: lower
@@ -70,8 +77,8 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true] };
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top'];
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -80,7 +87,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix', 'rank'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -103,6 +110,8 @@ function parse(argv) {
     usage: false,
     csv: false,
     revoke: null,
+    top: '3',
+    run: false,
   };
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i];
@@ -118,6 +127,7 @@ function parse(argv) {
     return options;
   }
   if (!['serve', 'questions', 'matrix'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
+  if (command === 'rank' && !/^[1-9]\d*$/.test(options.top)) fail(2, '--top: a whole number, 1 or more');
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
   if (!/^\d+(\.\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {
     fail(2, `--timeout (or ITSACV_TIMEOUT) needs a number of seconds above 0, not "${options.timeout}"\n\n${USAGE}`);
@@ -234,6 +244,24 @@ async function main() {
       for (const repair of found.repairs) process.stderr.write(`itsacv: ${file}: ${repair}\n`);
       offers.push(...found.offers.map((offer) => offer.text));
     }
+  }
+
+  // 5.2a: rank first; the analysis, if asked, for the best K only.
+  if (options.command === 'rank') {
+    const cache = fileListingCache(join(options.out, '.listings'));
+    const ranked = [];
+    for (const [index, text] of offers.entries()) {
+      let listed = cache.read(text);
+      if (!listed) {
+        listed = await listRequirements({ offer: text, llm }).catch((error) => fail(4, `${options.files[index]}: ${error.message}`));
+        cache.write(text, listed);
+      }
+      ranked.push({ name: basename(options.files[index], extname(options.files[index])), text, listed });
+    }
+    const rows = rankOffers(ranked, loaded.profile, { top: Number(options.top) });
+    process.stdout.write(rankMarkdown(rows));
+    if (!options.run) return;
+    offers.splice(0, offers.length, ...rows.filter((row) => row.chosen).map((row) => row.text));
   }
 
   // Each offer runs whatever happened to the ones before it; the exit code

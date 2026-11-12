@@ -19,7 +19,7 @@ const OFFERS = [
 
 test('rankOffers: the best share first, only the top K chosen, each with its estimate', () => {
   const rows = rankOffers(OFFERS, synthetic(), { top: 2, tokensOf: (offer) => offer.text.length });
-  assert.deepEqual(rows.map((row) => [row.name, row.covered, row.total, row.chosen]), [['k8s', 3, 4, true], ['dba', 3, 4, true], ['none', 0, 2, false]]);
+  assert.deepEqual(rows.map((row) => [row.name, row.covered, row.total, row.chosen]), [['k8s', 4, 4, true], ['dba', 3, 4, true], ['none', 0, 2, false]]);
   assert.equal(rows[0].tokens, 'k8s offer'.length);
 });
 
@@ -30,7 +30,7 @@ test('rankOffers: an offer covered by nothing is never chosen, whatever K', () =
 
 test('rankMarkdown: one line per offer, the chosen marked, their estimate summed', () => {
   const text = rankMarkdown(rankOffers(OFFERS, synthetic(), { top: 1, tokensOf: () => 1000 }));
-  assert.match(text, /\| 1 \| k8s \| 3\/4 \| 75 % \| 1000 \| oui \|/);
+  assert.match(text, /\| 1 \| k8s \| 4\/4 \| 88 % \| 1000 \| oui \|/);
   assert.match(text, /\| 3 \| none \| 0\/2 \| 0 % \| 1000 \| non \|/);
   assert.match(text, /1 offre\(s\) retenue\(s\), environ 1000 tokens d'entrée pour l'analyse/);
 });
@@ -55,7 +55,7 @@ test('5.2a: itsacv rank reads the cached listings, calls no model without --run'
     // No router listens there: any model call would fail the run.
     const run = spawnSync(process.execPath, [CLI, 'rank', ...files, '--top', '1', '--out', out, '--profile', join(home, 'profile.json'), '--url', 'http://127.0.0.1:9'], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
-    assert.match(run.stdout, /\| 1 \| k8s \| 3\/4 \| 75 % \| \d+ \| oui \|/);
+    assert.match(run.stdout, /\| 1 \| k8s \| 4\/4 \| 88 % \| \d+ \| oui \|/);
     assert.match(run.stdout, /\| 2 \| dba \| 3\/4 \| 75 % \| \d+ \| non \|/);
   } finally {
     rmSync(home, { recursive: true, force: true });

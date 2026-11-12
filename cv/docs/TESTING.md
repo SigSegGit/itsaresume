@@ -612,6 +612,16 @@ property it proves.
 | itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile | Questions: the command subtracts answers.json beside the profile; Questions: the command reads the runs named |
 | 2.22c: the page’s questions come from the runs in out/ and answers.json beside the profile, with the levels and groups to answer with | Questions page: the runs of out/, not readRuns' wrapper |
 
+## `test/rank.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| rankOffers: the best share first, only the top K chosen, each with its estimate | Rank (5.2a): the best share first |
+| rankOffers: an offer covered by nothing is never chosen, whatever K | Rank (5.2a): only the top K, never an offer covered by nothing |
+| rankMarkdown: one line per offer, the chosen marked, their estimate summed | — |
+| estimateTokens: the analysis prompt, four characters a token | — |
+| 5.2a: itsacv rank reads the cached listings, calls no model without --run | Rank (5.2a): no analysis without --run |
+
 ## `test/redteam.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -862,6 +872,6 @@ property it proves.
 | itsacv tailor: an unexpected error in one offer does not stop the offers after it | CLI: an unexpected error costs only its offer |
 | a run keeps its offer and what it did, and reads back as the same result | Run: the offer is kept |
 
-**573 tests, 473 of them covered by at least one sabotage defence.**
+**578 tests, 476 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

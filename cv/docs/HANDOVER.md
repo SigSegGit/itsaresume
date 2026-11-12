@@ -1092,7 +1092,7 @@ Traps met, each cost time once:
     Done: test `5.1b: itsacv matrix reads the runs made…`, 2 defences
     (guard.json); on the owner's 26 runs, 9 distinct offers, one column
     (no --profiles there). Next for 5.x: 5.2 (the model on the top K).
-  - [ ] **5.2a** (2026-11-12) `itsacv rank <offer.txt>... [--top K]
+  - [x] **5.2a** (2026-11-12) `itsacv rank <offer.txt>... [--top K]
     [--run] [--profile FILE] [--out DIR] [--url URL]`: N offers pasted, the
     best K tailored, the rest never analysed. Per offer, its listing (one
     call, cached in `<out>/.listings` as the pipeline caches it, so a later
@@ -1103,6 +1103,15 @@ Traps met, each cost time once:
     `tailor`, without it no analysis call. Pure `rankOffers`/`rankMarkdown`
     in `src/rank.js`; red tests on the synthetic profile, a CLI test with
     the listings cached (no router), defences on the order and the cut.
+    Done: `src/rank.js`, `test/rank.test.js` (5 tests), 3 defences
+    (content.json: the order, the cut, no analysis without `--run`). An
+    offer the profile covers not at all is never chosen. Checked on three
+    of the owner's real offers whose listings were cached (no model call):
+    82 %, 66 %, 57 %, about 6k input tokens each; the first and last agree
+    with their pipeline scores (100 and 70-80). Next for 5.x: 5.2b, the
+    same ranking on the page (paste N offers, "les K meilleures"), then
+    measure on the corpus whether the top K by coverage holds the top K by
+    the pipeline's score.
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,

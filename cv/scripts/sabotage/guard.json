@@ -63,6 +63,7 @@
     "test/stem.test.js",
     "src/links.js",
     "src/matrix.js",
+    "src/rank.js",
     "test/compact.test.js",
     "test/links.test.js",
     "test/matrix.test.js",
