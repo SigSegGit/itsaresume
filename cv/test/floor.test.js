@@ -131,3 +131,25 @@ test('a listed name that heads an analysed row before its parenthesis is that ro
   const { analysis: merged } = mergeListed(analysis, [{ name: 'HA', importance: 'must' }, { name: 'BGP', importance: 'must' }]);
   assert.deepEqual(merged.requirements.map((row) => row.name), ['HA (haute disponibilité réseau)', 'BGP']);
 });
+
+// 2.41 (seen in 2.25c): the listing named the rows in English, the analysis
+// answered them in French; each listed row came back as an unmet must.
+test('a listed row the analysis answered translated is not added back (same lexicon concept)', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const row = (name) => ({ name, importance: 'must', match: 'yes', skills: [], note: '' });
+  const analysis = { requirements: [row('Apprentissage automatique'), row('Observabilité')] };
+  const { analysis: merged, repairs } = mergeListed(analysis, [
+    { name: 'Machine learning', importance: 'must' },
+    { name: 'Observability', importance: 'must' },
+    { name: 'Kubernetes', importance: 'must' },
+  ]);
+  assert.deepEqual(merged.requirements.map((r) => r.name), ['Apprentissage automatique', 'Observabilité', 'Kubernetes']);
+  assert.equal(repairs.length, 1);
+});
+
+test('a translated row covers a listed must only when it is a must too', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const analysis = { requirements: [{ name: 'Apprentissage automatique', importance: 'nice', match: 'yes', skills: [], note: '' }] };
+  const { analysis: merged } = mergeListed(analysis, [{ name: 'Machine learning', importance: 'must' }]);
+  assert.deepEqual(merged.requirements.map((r) => r.name), ['Apprentissage automatique', 'Machine learning']);
+});
