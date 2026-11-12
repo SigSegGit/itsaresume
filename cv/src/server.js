@@ -26,6 +26,8 @@ import { DEFAULT_PROFILE } from './profiles.js';
 export const MAX_BODY = 256 * 1024;
 export const MAX_OFFERS = 6;
 export const MAX_TEXT = 60_000;
+// 5.2b: offers ranked at once (no analysis, one cached listing each).
+export const MAX_RANKED = 20;
 
 const WEB = fileURLToPath(new URL('../web/', import.meta.url));
 const STATIC = {
@@ -500,6 +502,23 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           throw new HttpError(400, `text: a non-empty string of at most ${MAX_TEXT} characters`);
         }
         return send(response, 200, await deps.split(body.text));
+      }
+      // 5.2b: the waiting offers ranked; the listing calls are the owner's quota.
+      if (path === '/api/rank') {
+        if (publicMode) throw new HttpError(403, 'le classement des offres n’est pas disponible en accès public');
+        const offers = body?.offers;
+        if (!Array.isArray(offers) || offers.length < 2 || offers.length > MAX_RANKED) throw new HttpError(400, `offers: from 2 to ${MAX_RANKED}`);
+        if (offers.some((offer) => typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT)) {
+          throw new HttpError(400, `offer text: a non-empty string of at most ${MAX_TEXT} characters`);
+        }
+        const top = body?.top;
+        if (!Number.isInteger(top) || top < 1 || top > offers.length) throw new HttpError(400, 'top: a whole number from 1 to the number of offers');
+        const named = offers.map((offer, index) => ({ title: cleanName(String(offer.title ?? '')) || `offre ${index + 1}`, text: offer.text }));
+        try {
+          return send(response, 200, { rows: await deps.rank({ offers: named, top }) });
+        } catch (error) {
+          throw new HttpError(502, String(error.message ?? error));
+        }
       }
       // 2.31a: a run renamed by its owner; the name is kept beside the run.
       const renaming = path.match(/^\/api\/jobs\/([0-9a-f-]{36})\/title$/);

@@ -1112,7 +1112,7 @@ Traps met, each cost time once:
     same ranking on the page (paste N offers, "les K meilleures"), then
     measure on the corpus whether the top K by coverage holds the top K by
     the pipeline's score.
-  - [ ] **5.2b** (2026-11-12) **The ranking on the page.** `rankListed`
+  - [x] **5.2b** (2026-11-12) **The ranking on the page.** `rankListed`
     in `src/rank.js` (listing through the cache, then `rankOffers`), used by
     the CLI and by `POST /api/rank` `{offers: [{title, text}], top}` (2 to
     20 offers, `top` 1 to their count; the owner's page only: public mode
@@ -1122,6 +1122,14 @@ Traps met, each cost time once:
     share and the tokens estimated. Red tests: the endpoint (owner, bad
     body, public), `rankListed` reusing the cache; a defence on the public
     refusal.
+    Done: 3 tests (red first), 2 defences (http.json: the public 403,
+    the 2-offer floor); the 5.2a defences follow `index`. The button shows
+    once more than 3 offers wait; checked in the built-in browser against a
+    stub server (5 offers -> the 3 best kept in order, the line shown, the
+    button hidden after). Not checked with the real router (off that day).
+    Next for 5.x: 5.2c, measure on the corpus whether the top 3 by coverage
+    holds the top 3 by the pipeline's score (runs already made: `matrix`
+    against their `fit.score`, no new call).
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
