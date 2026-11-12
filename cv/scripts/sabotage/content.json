@@ -10,6 +10,7 @@
     "src/matrix.js",
     "src/rank.js",
     "test/rank.test.js",
+    "test/years.test.js",
     "data/tech.json",
     "src/analysis.js",
     "src/answers.js",
@@ -1916,6 +1917,14 @@
       "dead": "",
       "expect": [
         "5.2a: itsacv rank reads the cached listings, calls no model without --run"
+      ]
+    },
+    "Years (2.40): N years cited by the experiences raise the row to yes": {
+      "file": "src/normalize.js",
+      "live": "      if (span >= wanted) {",
+      "dead": "      if (span >= wanted + 100) {",
+      "expect": [
+        "2.40: N years met by the experiences citing the skill is yes, whatever the model said"
       ]
     }
   }

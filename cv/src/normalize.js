@@ -23,6 +23,33 @@ const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
 const ASKS_EXPERIENCE = /(?<![\p{L}])(?:exp[ée]riment[ée]e?s?|experienced|s[ée]niors?|s[ée]niorit[ée]|seniority|\d+\s*\+?\s*(?:ans|years))(?![\p{L}])/iu;
 /** A text stating a number of years ("15 ans", "10 years"). */
 const STATES_YEARS = /\d+\s*\+?\s*(?:ans|years)(?![\p{L}])/iu;
+/** 2.40: the years a requirement asks for ("3 ans d'expérience DevOps"), or null. */
+export function yearsAsked(name) {
+  const found = /(?<![\p{L}\p{N}])(\d{1,2})\s*\+?\s*(?:ans|years?)(?![\p{L}])/iu.exec(String(name ?? ''));
+  return found ? Number(found[1]) : null;
+}
+/** A profile date ("2019", "12/2019") as a year with its months; none: now. */
+const yearOf = (date, end) => {
+  const found = /^(?:(\d{1,2})\/)?(\d{4})$/.exec(String(date ?? '').trim());
+  if (!found) return end ? new Date().getFullYear() + new Date().getMonth() / 12 : null;
+  return Number(found[2]) + (found[1] ? (Number(found[1]) - 1) / 12 : 0);
+};
+/** The whole years the experiences citing one of `ids` span, overlaps once. */
+export function yearsCited(experiences, ids) {
+  const spans = (experiences ?? [])
+    .filter((experience) => (experience.bullets ?? []).some((bullet) => (bullet.skills ?? []).some((id) => ids.has(id))))
+    .map((experience) => [yearOf(experience.start, false), yearOf(experience.end, true)])
+    .filter(([from, to]) => from !== null && to > from)
+    .sort((a, b) => a[0] - b[0]);
+  let total = 0;
+  let reach = -Infinity;
+  for (const [from, to] of spans) {
+    if (to <= reach) continue;
+    total += to - Math.max(from, reach);
+    reach = to;
+  }
+  return Math.floor(total + 1e-9);
+}
 /** The skills column: at most this many groups shown, and skills in each (the prompt says so; the model does not always listen). */
 export const MAX_GROUPS = 6;
 export const MAX_GROUP_SKILLS = 6;
@@ -584,6 +611,19 @@ export function normalize(input, profile, { assessment, offer } = {}) {
         else delete requirement.judged;
         if (found.via === 'concept') requirement.equivalent = names;
         requirement.note = [requirement.note, found.note].filter(Boolean).join('; ');
+      }
+    }
+    // 2.40: "N years of X" counted on the dated experiences whose bullets
+    // cite the row's skills (overlaps once). It only raises: an umbrella
+    // skill ("devops", "seniority") no bullet cites counts 0 years, and the
+    // replay of 2026-11-12 showed a lowering rule would refuse 10 honest yes.
+    const wanted = yearsAsked(requirement.name);
+    if (wanted && !requirement.never && requirement.kind === undefined && requirement.match !== 'yes' && requirement.skills?.length) {
+      const span = yearsCited(profile.experiences, new Set(requirement.skills));
+      if (span >= wanted) {
+        repairs.push(`requirement ${requirement.name}: ${wanted} years asked, the experiences citing it span ${span} years: yes (was ${requirement.match})`);
+        requirement.match = 'yes';
+        delete requirement.judged;
       }
     }
   }
