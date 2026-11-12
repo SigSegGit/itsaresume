@@ -1130,6 +1130,14 @@ Traps met, each cost time once:
     Next for 5.x: 5.2c, measure on the corpus whether the top 3 by coverage
     holds the top 3 by the pipeline's score (runs already made: `matrix`
     against their `fit.score`, no new call).
+  - [x] **5.2c** (2026-11-12, measure, no call) `~/.itsaresume/migrations/
+    rank-agree.mjs`: the owner's 7 distinct offers (latest run each), every
+    batch of 5 (21): the best-scored offer is in the top 3 by coverage in
+    21 of 21 (60 % by chance); the top 3 share 2.29 offers of 3 with the
+    top 3 by score (1.80 by chance). Small sample, correlated batches, and
+    coverage read on the analysis rows, not the listing: enough to keep
+    "the best 3" as a filter, not to drop an offer the owner wants. Next
+    for 5.x: nothing until more offers are run (redo the measure at 15).
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
