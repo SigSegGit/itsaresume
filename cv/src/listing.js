@@ -124,7 +124,39 @@ export function listedOf(name, listed) {
   });
 }
 
-export function mergeListed(analysis, listed) {
+/**
+ * 2.42: a row answered with a listed id ("L3", the prompt numbers the
+ * listing) takes that row's name, its verdict kept: a name the model
+ * translated no longer re-adds its row (2.25c). An id unknown or used
+ * twice is not trusted. The id never leaves here.
+ */
+function byListedId(analysis, listed) {
+  const repairs = [];
+  const used = new Map();
+  for (const row of analysis.requirements ?? []) {
+    if (typeof row.listed === 'string') used.set(row.listed, (used.get(row.listed) ?? 0) + 1);
+  }
+  const requirements = (analysis.requirements ?? []).map(({ listed: id, ...row }) => {
+    if (typeof id !== 'string') return row;
+    const at = /^L([1-9]\d*)$/.exec(id) ? Number(id.slice(1)) - 1 : -1;
+    if (at < 0 || at >= listed.length) {
+      repairs.push(`requirement ${row.name}: listed id ${id} unknown, not trusted`);
+      return row;
+    }
+    if (used.get(id) > 1) {
+      repairs.push(`requirement ${row.name}: listed id ${id} given twice, not trusted`);
+      return row;
+    }
+    const name = listed[at].name;
+    if (String(row.name).trim().toLowerCase() !== name.trim().toLowerCase()) repairs.push(`requirement ${name}: answered as ${row.name}, named as the listing (${id})`);
+    return { ...row, name };
+  });
+  return { analysis: { ...analysis, requirements }, repairs };
+}
+
+export function mergeListed(given, listed) {
+  const named = byListedId(given, listed);
+  const analysis = named.analysis;
   const present = new Set((analysis.requirements ?? []).map((requirement) => String(requirement.name).trim().toLowerCase()));
   // A listed name whose every content word the analysis already names, in
   // one row, is that row ("Customer meetings" / "Customer-facing
@@ -154,7 +186,7 @@ export function mergeListed(analysis, listed) {
         ...added.map((item) => ({ name: item.name, importance: item.importance, match: 'no', skills: [], note: 'named in the offer, left out by the analysis' })),
       ],
     },
-    repairs: added.map((item) => `requirement ${item.name} (${item.importance}) named in the offer and left out by the analysis: added`),
+    repairs: [...named.repairs, ...added.map((item) => `requirement ${item.name} (${item.importance}) named in the offer and left out by the analysis: added`)],
   };
 }
 

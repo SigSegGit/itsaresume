@@ -294,6 +294,9 @@ property it proves.
 | a listed name that heads an analysed row before its parenthesis is that row | Listing: a name heading a row before its parenthesis is that row |
 | a listed row the analysis answered translated is not added back (same lexicon concept) | Listing (2.41): a row answered translated covers its listed row |
 | a translated row covers a listed must only when it is a must too | Listing (2.41): a nice translated row does not cover a listed must |
+| rows answered by their listed id take the listing's name, verdict kept, nothing added | Listing (2.42): a row answered by its listed id takes the listing's name |
+| an unknown or repeated listed id is not trusted | Listing (2.42): a listed id given twice is not trusted |
+| the prompt numbers the listed rows and asks for their id | Prompt (2.42): the listed rows are numbered |
 
 ## `test/guard.test.js`
 
@@ -886,6 +889,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**587 tests, 481 of them covered by at least one sabotage defence.**
+**590 tests, 484 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

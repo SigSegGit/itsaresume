@@ -1642,6 +1642,30 @@
       "expect": [
         "a translated row covers a listed must only when it is a must too"
       ]
+    },
+    "Listing (2.42): a row answered by its listed id takes the listing's name": {
+      "file": "src/listing.js",
+      "live": "    return { ...row, name };",
+      "dead": "    return row;",
+      "expect": [
+        "rows answered by their listed id take the listing's name, verdict kept, nothing added"
+      ]
+    },
+    "Listing (2.42): a listed id given twice is not trusted": {
+      "file": "src/listing.js",
+      "live": "    if (used.get(id) > 1) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "an unknown or repeated listed id is not trusted"
+      ]
+    },
+    "Prompt (2.42): the listed rows are numbered": {
+      "file": "src/prompt.js",
+      "live": "    lines.push(`- L${at + 1}: ${item.name} (${item.importance})",
+      "dead": "    lines.push(`- ${item.name} (${item.importance})",
+      "expect": [
+        "the prompt numbers the listed rows and asks for their id"
+      ]
     }
   }
 }

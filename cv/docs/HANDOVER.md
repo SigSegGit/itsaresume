@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.42
-TITLE: 2.38-2.41 done (comparison keyed by the listing, 2/33 on a real run; "N years" raised by code; a translated row on a known concept not added back); 5.2a-c done; next 2.42, the analysis answers each listed row by its id, so a translation never re-adds it (unblocks 2.25's compact prompt)
+NEXT: 2.42b
+TITLE: 2.38-2.42 done (comparison keyed by the listing; "N years" raised by code; listed rows answered by id, so a translation never re-adds them); 5.2a-c done; next 2.42b, the 2.25c A/B on the AI tech lead offer (blocked: the laptop's claude CLI needs the owner's login)
 WRITTEN-AT: 2026-11-12
 -->
 
@@ -1367,7 +1367,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   "Kubernetes" row "Scalabilité des applications" and missed 2.25c (the
   counts differ). No A/B run: the gate is not met.
 
-- [ ] **2.42** **The analysis answers each listed row by its id.** The
+- [x] **2.42** **The analysis answers each listed row by its id.** The
   prompt numbers the listed rows (`L1`..`Ln`, `listedLines` in
   `src/prompt.js`); each requirement of the answer carries `listed: "L3"`
   (or none for a row the model adds); `mergeListed` matches by that id
@@ -1378,6 +1378,28 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   on the real runs (old answers carry no id: nothing changes), then the
   2.25c A/B of the AI tech lead offer (2 Claude calls): if no row is lost,
   2.25d switches the compact prompt on.
+  Done 2026-11-12: `listedLines` numbers the rows (`- L1: Rigor (must)`),
+  the shape and the schema carry an optional `listed`; `byListedId`
+  (`src/listing.js`) runs first in `mergeListed`: a valid id renames the
+  row to its listed name (verdict kept, a repair when the name differed),
+  an id unknown or given twice is not trusted (repair), the id never
+  leaves. 3 tests + the shortlist prompt test updated, 3 defences
+  (guard.json). No real answer before this carries `listed` (0 raw.json):
+  past runs replay unchanged.
+
+- [ ] **2.42b** **The 2.25c A/B, once more, on the AI tech lead offer.**
+  Blocked 2026-11-12: the laptop's `claude` answered "OAuth session expired
+  and could not be refreshed" (the owner logs in again; never by us). The
+  arms are ready in `~/.itsaresume/out/ab-2.42/{off,on}` with the English
+  listing of 2.25c in each `.listings`. Start the router (copy the binary
+  first; `sonnet-qwen.local.toml`, `--listen 127.0.0.1:18789`), then
+  `node bin/itsacv.js tailor <ab-2.25c/on/…genai…/offer.txt> --no-layout
+  --profile ~/.itsaresume/profile.json --out <ab-2.42/ARM> --url
+  http://127.0.0.1:18789`, with `ITSACV_PROMPT=` (off) and
+  `ITSACV_PROMPT=compact,shortlist` (on): 2 Claude calls. Compare with
+  `python ~/.itsaresume/migrations/ab-2.25c.py ~/.itsaresume/out/ab-2.42`.
+  Done when "on" adds no listed row back and loses no verdict against
+  "off"; then 2.25d: `compact,shortlist` on by default.
 
 ## 9. Open on purpose
 
@@ -1441,5 +1463,9 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   offer could raise the score by at most that, never the qualification.
 
 ## 10. Waiting for the owner
+
+- **2026-11-12: log the laptop's `claude` in again** (`claude` then
+  `/login`, or `claude auth status` to check): it answered "OAuth session
+  expired"; 2.42b waits for it. The VM has its own token and runs on.
 
 In `~/.itsaresume/HANDOVER-prive.md` (private).
