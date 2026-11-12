@@ -6,6 +6,8 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/matrix.js",
+    "src/rank.js",
     "web/questions.html",
     "web/questions.js",
     "test/questions.test.js",
@@ -1158,6 +1160,22 @@
       "dead": "String(value));",
       "expect": [
         "the comparison in markdown: a table per model, a cell cannot break its row"
+      ]
+    },
+    "Rank (5.2b): a public visitor cannot rank": {
+      "file": "src/server.js",
+      "live": "        if (publicMode) throw new HttpError(403, 'le classement des offres n’est pas disponible en accès public');",
+      "dead": "",
+      "expect": [
+        "5.2b: a public visitor cannot rank (the listing calls are the owner's quota)"
+      ]
+    },
+    "Rank (5.2b): one offer is nothing to rank": {
+      "file": "src/server.js",
+      "live": "        if (!Array.isArray(offers) || offers.length < 2 || offers.length > MAX_RANKED) throw new HttpError(400, `offers: from 2 to ${MAX_RANKED}`);",
+      "dead": "",
+      "expect": [
+        "5.2b: the owner ranks the waiting offers; a bad body is refused before any call"
       ]
     }
   }

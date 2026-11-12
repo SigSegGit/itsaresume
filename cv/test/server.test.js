@@ -1076,3 +1076,30 @@ test('2.22c-link: /api/questions?job=<id> keeps the questions that job\'s run as
     app.server.close();
   }
 });
+
+test('5.2b: the owner ranks the waiting offers; a bad body is refused before any call', async () => {
+  const asked = [];
+  const app = await start({ rank: async ({ offers, top }) => { asked.push({ offers, top }); return offers.map((offer, index) => ({ index, name: offer.title, covered: 1, total: 2, share: 0.5, tokens: 10, chosen: index < top })); } });
+  try {
+    const offers = [{ title: 'A', text: 'a' }, { title: 'B', text: 'b' }, { title: 'C', text: 'c' }];
+    const ranked = await post(app, '/api/rank', { offers, top: 2 });
+    assert.equal(ranked.status, 200, ranked.text);
+    assert.deepEqual(JSON.parse(ranked.text).rows.map((row) => row.chosen), [true, true, false]);
+    assert.deepEqual(asked, [{ offers, top: 2 }]);
+    assert.equal((await post(app, '/api/rank', { offers: offers.slice(0, 1), top: 1 })).status, 400, 'one offer is nothing to rank');
+    assert.equal((await post(app, '/api/rank', { offers, top: 0 })).status, 400);
+    assert.equal((await post(app, '/api/rank', { offers, top: 4 })).status, 400);
+    assert.equal((await post(app, '/api/rank', { offers: Array(21).fill({ title: 'x', text: 'x' }), top: 1 })).status, 400);
+    assert.equal((await post(app, '/api/rank', { offers: [{ title: 'x', text: ' ' }, ...offers], top: 1 })).status, 400);
+    assert.equal(asked.length, 1);
+  } finally {
+    app.server.close();
+  }
+});
+
+test('5.2b: a public visitor cannot rank (the listing calls are the owner\'s quota)', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  const answer = await visitor.post('/api/rank', { offers: [{ title: 'A', text: PUBLIC_OFFER('a') }, { title: 'B', text: PUBLIC_OFFER('b') }], top: 1 });
+  assert.equal(answer.status, 403);
+});

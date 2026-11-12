@@ -15,8 +15,8 @@ import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
 import { matrix, offersFromRuns, toCsv, toMarkdown } from '../src/matrix.js';
 import { listProfiles } from '../src/profiles.js';
-import { fileListingCache, listRequirements } from '../src/listing.js';
-import { rankMarkdown, rankOffers } from '../src/rank.js';
+import { fileListingCache } from '../src/listing.js';
+import { rankListed, rankMarkdown } from '../src/rank.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -248,17 +248,9 @@ async function main() {
 
   // 5.2a: rank first; the analysis, if asked, for the best K only.
   if (options.command === 'rank') {
-    const cache = fileListingCache(join(options.out, '.listings'));
-    const ranked = [];
-    for (const [index, text] of offers.entries()) {
-      let listed = cache.read(text);
-      if (!listed) {
-        listed = await listRequirements({ offer: text, llm }).catch((error) => fail(4, `${options.files[index]}: ${error.message}`));
-        cache.write(text, listed);
-      }
-      ranked.push({ name: basename(options.files[index], extname(options.files[index])), text, listed });
-    }
-    const rows = rankOffers(ranked, loaded.profile, { top: Number(options.top) });
+    const named = offers.map((text, index) => ({ title: basename(options.files[index], extname(options.files[index])), text }));
+    const rows = await rankListed({ offers: named, profile: loaded.profile, top: Number(options.top), llm, cache: fileListingCache(join(options.out, '.listings')) })
+      .catch((error) => fail(4, error.message));
     process.stdout.write(rankMarkdown(rows));
     if (!options.run) return;
     offers.splice(0, offers.length, ...rows.filter((row) => row.chosen).map((row) => row.text));

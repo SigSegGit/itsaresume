@@ -88,6 +88,7 @@ async function refreshStatus() {
     // Public mode: a recruiter pastes one offer; splitting an email is the owner's.
     if (open) {
       $('split').hidden = true;
+      rankAllowed = false;
       $('drop-help').textContent = `Colle le texte d’une offre d’emploi : tu obtiens le CV de ${profile.name ?? 'ce candidat'} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.`;
     }
     if (profile.error) setPill('status-profile', 'bad', 'Profil invalide');
@@ -144,6 +145,10 @@ function addOffer(text, title) {
   renderOffers();
 }
 
+// 5.2b: the owner's page ranks the waiting offers (no analysis), keeps the best.
+const RANK_TOP = 3;
+let rankAllowed = true;
+
 function renderOffers() {
   const list = $('offers');
   list.replaceChildren(...offers.map((offer, index) => {
@@ -157,6 +162,7 @@ function renderOffers() {
     });
     return h('li', { class: 'offer' }, title, remove, h('span', { class: 'meta', text: `${offer.text.split('\n').length} lignes · ${offer.text.length} caractères` }));
   }));
+  $('rank').hidden = !rankAllowed || offers.length <= RANK_TOP;
   const button = $('generate');
   button.disabled = offers.length === 0 || !modelsReady;
   button.textContent = offers.length > 1 ? `Générer les ${offers.length} CV` : 'Générer le CV';
@@ -217,6 +223,26 @@ function setupOffers() {
     event.preventDefault();
     drop.classList.remove('over');
     readFiles(event.dataTransfer.files);
+  });
+  $('rank').addEventListener('click', async () => {
+    showError(null);
+    const button = $('rank');
+    button.disabled = true;
+    button.textContent = 'Classement…';
+    try {
+      const { rows } = await api('/api/rank', { offers: offers.map(({ title, text }) => ({ title, text })), top: RANK_TOP });
+      const kept = rows.filter((row) => row.chosen).map((row) => offers[row.index]);
+      const line = rows.map((row) => `${row.chosen ? '✓' : '✗'} ${row.name} ${Math.round(row.share * 100)} % (~${row.tokens} tokens)`).join(' · ');
+      offers.splice(0, offers.length, ...kept);
+      renderOffers();
+      $('rank-result').textContent = `Classement par couverture du profil : ${line}`;
+      $('rank-result').hidden = false;
+    } catch (error) {
+      showError(`Classement impossible : ${error.message}`);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Classer et garder les 3 meilleures';
+    }
   });
   $('generate').addEventListener('click', async () => {
     showError(null);

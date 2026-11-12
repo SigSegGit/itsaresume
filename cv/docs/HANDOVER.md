@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.39
-TITLE: 2.38 built (a comparison keys rows by the listed requirements they cover; the VM's 4-model run: 11 disagreements of 33 become 2); next 2.39, one real comparison on the VM reads its listing from the QA log
+NEXT: 2.40
+TITLE: 2.38 and 2.39 done (a comparison keys rows by the listing: 11 disagreements of 33 became 2 on a real 4-model run); 5.2a-c done (itsacv rank and the page's "keep the best 3", measured 21/21); next 2.40, "N years of X" settled by code from the dated experiences
 WRITTEN-AT: 2026-11-12
 -->
 
@@ -1112,6 +1112,32 @@ Traps met, each cost time once:
     same ranking on the page (paste N offers, "les K meilleures"), then
     measure on the corpus whether the top K by coverage holds the top K by
     the pipeline's score.
+  - [x] **5.2b** (2026-11-12) **The ranking on the page.** `rankListed`
+    in `src/rank.js` (listing through the cache, then `rankOffers`), used by
+    the CLI and by `POST /api/rank` `{offers: [{title, text}], top}` (2 to
+    20 offers, `top` 1 to their count; the owner's page only: public mode
+    answers 403, the listing calls are on his quota). The page: "Classer
+    (garder les 3 meilleures)" beside "Générer les CV" once two offers wait;
+    the list keeps the chosen, in order, and a line shows each offer's
+    share and the tokens estimated. Red tests: the endpoint (owner, bad
+    body, public), `rankListed` reusing the cache; a defence on the public
+    refusal.
+    Done: 3 tests (red first), 2 defences (http.json: the public 403,
+    the 2-offer floor); the 5.2a defences follow `index`. The button shows
+    once more than 3 offers wait; checked in the built-in browser against a
+    stub server (5 offers -> the 3 best kept in order, the line shown, the
+    button hidden after). Not checked with the real router (off that day).
+    Next for 5.x: 5.2c, measure on the corpus whether the top 3 by coverage
+    holds the top 3 by the pipeline's score (runs already made: `matrix`
+    against their `fit.score`, no new call).
+  - [x] **5.2c** (2026-11-12, measure, no call) `~/.itsaresume/migrations/
+    rank-agree.mjs`: the owner's 7 distinct offers (latest run each), every
+    batch of 5 (21): the best-scored offer is in the top 3 by coverage in
+    21 of 21 (60 % by chance); the top 3 share 2.29 offers of 3 with the
+    top 3 by score (1.80 by chance). Small sample, correlated batches, and
+    coverage read on the analysis rows, not the listing: enough to keep
+    "the best 3" as a filter, not to drop an offer the owner wants. Next
+    for 5.x: nothing until more offers are run (redo the measure at 15).
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
@@ -1278,7 +1304,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   2/33; a 3-model run 3/28 -> 4/36 (the same "logs cloud / règles de
   détection" disagreement, now its two listed rows); a 2-model run 0 -> 0.
 
-- [ ] **2.39** **One real comparison reads its listing from the log.** Once
+- [x] **2.39** **One real comparison reads its listing from the log.** Once
   `main` is deployed on the VM (it follows main), one "Comparer tous les
   modèles" on a corpus offer (the owner's quota: one run per model). Done
   when the new `qa-log.jsonl` entries carry `listed` and the group's
@@ -1286,6 +1312,24 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   than the same offer's comparison before 2.38. Read with `ssh` (see the
   private handover), never a full log: `tail -n 4 qa-log.jsonl | jq
   '.listed|length'`.
+  Done 2026-11-12 on the VM, the 2.37b offer again ("2.39 caraz"): the
+  four entries carry `listed` (34); Claude 98 in 56 s, Gemini 98 in 77 s,
+  Groq 94 in 53 s, local 94 in 693 s; **2 disagreements of 33** (11 in
+  2.37b). Both are real: Trivy (no profile skill names it: Claude and
+  Gemini "adjacent, to verify" by their reading, Groq and local "no"), and
+  "3 ans d'expérience DevOps" (Claude, Gemini yes; Groq, local adjacent).
+
+- [ ] **2.40** **"N years of X" settled by code.** Seen on 2.39: "3 ans
+  d'expérience DevOps" is yes for two models, adjacent for two; the profile
+  dates its experiences, so the code can count. In `src/normalize.js`
+  (`ASKS_EXPERIENCE`/`STATES_YEARS` already read the years): a requirement
+  stating N years of a skill or domain is yes when the experiences whose
+  bullets cite that skill (or a skill of its concept) span N years or
+  more (overlaps counted once), adjacent when they span less, no when none;
+  the repair says the years counted. Red test on the synthetic profile
+  (one skill over 2 then 4 years), a defence on the comparison of years;
+  replay on the real runs (`rules-replay.mjs`) before shipping: list which
+  verdicts change.
 
 ## 9. Open on purpose
 

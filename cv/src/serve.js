@@ -18,6 +18,8 @@ import { ensureLocal, laptopAwake } from './wake.js';
 import { addAnswer } from './answers.js';
 import { pageQuestions } from './questions.js';
 import { blocked } from './evidence.js';
+import { rankListed } from './rank.js';
+import { fileListingCache } from './listing.js';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -112,6 +114,8 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     status: () => status({ profilePath, url, useWord, out }),
     profiles: () => [...profiles().keys()],
     split: (text) => splitOffers({ text, llm }),
+    // 5.2b: the default profile, the listing cache the analysis reads.
+    rank: ({ offers, top }) => rankListed({ offers, profile: loadProfile(profiles().get(DEFAULT_PROFILE)).profile, top, llm: withModel(llm, 'auto'), cache: fileListingCache(join(out, '.listings')) }),
     tailor: async ({ offer, title, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE }) => {
       const path = profiles().get(profile);
       if (!path) throw new Error(`no profile "${profile}"`);

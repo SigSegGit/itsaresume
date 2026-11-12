@@ -1904,8 +1904,8 @@
     },
     "Rank (5.2a): only the top K, never an offer covered by nothing": {
       "file": "src/rank.js",
-      "live": "  return rows.map(({ at, ...row }, rank) => ({ ...row, chosen: rank < top && row.share > 0 }));",
-      "dead": "  return rows.map(({ at, ...row }, rank) => ({ ...row, chosen: rank < top }));",
+      "live": "  return rows.map(({ at, ...row }, rank) => ({ index: at, ...row, chosen: rank < top && row.share > 0 }));",
+      "dead": "  return rows.map(({ at, ...row }, rank) => ({ index: at, ...row, chosen: rank < top }));",
       "expect": [
         "rankOffers: an offer covered by nothing is never chosen, whatever K"
       ]

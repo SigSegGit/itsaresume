@@ -4,6 +4,7 @@
 
 import { coverage } from './matrix.js';
 import { buildPrompt } from './prompt.js';
+import { listRequirements } from './listing.js';
 
 const CHARS_PER_TOKEN = 4;
 
@@ -23,7 +24,24 @@ export function rankOffers(offers, profile, { top, tokensOf = (offer) => estimat
     return { at, name: offer.name, text: offer.text, covered: covered.length, total, share, tokens: tokensOf(offer) };
   });
   rows.sort((a, b) => b.share - a.share || a.at - b.at);
-  return rows.map(({ at, ...row }, rank) => ({ ...row, chosen: rank < top && row.share > 0 }));
+  return rows.map(({ at, ...row }, rank) => ({ index: at, ...row, chosen: rank < top && row.share > 0 }));
+}
+
+/**
+ * 5.2b: `offers` [{ title, text }]: each listed once through `cache` (the
+ * pipeline's, so a later analysis reuses it), then ranked.
+ */
+export async function rankListed({ offers, profile, top, llm, cache }) {
+  const listedOffers = [];
+  for (const offer of offers) {
+    let listed = cache?.read(offer.text);
+    if (!listed) {
+      listed = await listRequirements({ offer: offer.text, llm });
+      cache?.write(offer.text, listed);
+    }
+    listedOffers.push({ name: offer.title, text: offer.text, listed });
+  }
+  return rankOffers(listedOffers, profile, { top });
 }
 
 const cell = (value) => String(value).replace(/\s*[\r\n]+\s*/g, ' ').replaceAll('|', '\|');
