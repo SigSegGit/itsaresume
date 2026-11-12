@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.38
-TITLE: 2.33 and 2.37 built (leads count changed verdicts; Groq in two calls, paced); 2.37b measured (Groq kept at 94 in 44 s, Qwen refused, local splits too); next 2.38, why Claude's row names differ from the shared listing; 2.31c done (the jobs export holds nothing the profile lacks)
-WRITTEN-AT: 2026-11-11
+NEXT: 2.39
+TITLE: 2.38 built (a comparison keys rows by the listed requirements they cover; the VM's 4-model run: 11 disagreements of 33 become 2); next 2.39, one real comparison on the VM reads its listing from the QA log
+WRITTEN-AT: 2026-11-12
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1235,7 +1235,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   ("moindre privilège / iam" against "moindre privilège") although the
   listing is shared, which counted 11 disagreements of 33. Next: 2.38.
 
-- [ ] **2.38** (seen on 2.37b) **A comparison lines rows up by the listing,
+- [x] **2.38** (seen on 2.37b) **A comparison lines rows up by the listing,
   not by each model's names.** Found: the listing is a guide, every model
   names its rows (all four merged "Terraform" and "CloudFormation" into
   one; Claude alone merged "moindre privilège" and "IAM", and wrote
@@ -1246,6 +1246,26 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   rows it covers (the words `mergeListed`'s `covered` already uses), fall
   back to its name; a red test from the 2.37b rows (made fictional), a
   sabotage on the key.
+  Built 2026-11-12: `listedOf(name, listed)` (`src/listing.js`) gives the
+  listed requirements a row stands for (its exact name, its head before
+  "(", one of its parts split on `/ , ; + & et and`, or every content word
+  of a listed name of two words at least); `compareVerdicts(runs, listed)`
+  keys each row by them, else by its name; a row standing for two listed
+  requirements gives its verdict to both. The run result and the QA log
+  entry now carry `listed`; `compareRuns` uses the first entry's. Two
+  tests in `test/compare.test.js`, two defences (content.json). Replayed
+  on the VM's QA log with its `.listings`: the 4-model run 11/33 differ ->
+  2/33; a 3-model run 3/28 -> 4/36 (the same "logs cloud / règles de
+  détection" disagreement, now its two listed rows); a 2-model run 0 -> 0.
+
+- [ ] **2.39** **One real comparison reads its listing from the log.** Once
+  `main` is deployed on the VM (it follows main), one "Comparer tous les
+  modèles" on a corpus offer (the owner's quota: one run per model). Done
+  when the new `qa-log.jsonl` entries carry `listed` and the group's
+  `compare.md` shows rows named as the listing names them, with fewer DIFF
+  than the same offer's comparison before 2.38. Read with `ssh` (see the
+  private handover), never a full log: `tail -n 4 qa-log.jsonl | jq
+  '.listed|length'`.
 
 ## 9. Open on purpose
 
