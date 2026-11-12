@@ -10,7 +10,7 @@ import { defaultIndex, key, skillConcepts } from './lexicon.js';
 const SHAPE = {
   language: 'fr | en',
   fit: { rationale: '2-3 sentences' },
-  requirements: [{ name: 'Kubernetes', importance: 'must | nice', match: 'yes | adjacent | no', skills: ['skill-id'], note: '' }],
+  requirements: [{ listed: 'L1', name: 'Kubernetes', importance: 'must | nice', match: 'yes | adjacent | no', skills: ['skill-id'], note: '' }],
   headline_ids: ['title-id'],
   summary_ids: ['hook-id', 'fact-id'],
   headline: 'CV title line',
@@ -118,11 +118,12 @@ function listedLines(profile, listed, offered) {
   const index = defaultIndex();
   const placed = offered ? skillConcepts(index, profile.skills) : null;
   const lines = [offered
-    ? 'Requirements found in the offer (classify every one of them in "requirements"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):'
-    : 'Requirements found in the offer (classify every one of them in "requirements"):'];
-  for (const item of listed) {
+    ? 'Requirements found in the offer (classify every one of them in "requirements", with its id in "listed"; "candidates" are skill ids the catalogue links to it, check them first, and use any other catalogue skill that covers it):'
+    : 'Requirements found in the offer (classify every one of them in "requirements", with its id in "listed"):'];
+  // 2.42: the id ties each answered row to its listed row, whatever its name.
+  for (const [at, item] of listed.entries()) {
     const candidates = offered ? shortlist(profile, item.name, { index, placed }) : [];
-    lines.push(`- ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
+    lines.push(`- L${at + 1}: ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
   }
   lines.push('');
   return lines;
@@ -211,7 +212,7 @@ export function analysisSchema(profile) {
     fit: object({ rationale: string }),
     requirements: {
       type: 'array',
-      items: object({ name: string, importance: { type: 'string', enum: ['must', 'nice'] }, match: { type: 'string', enum: ['yes', 'adjacent', 'no'] }, skills: ids(skills), note: string }),
+      items: object({ listed: string, name: string, importance: { type: 'string', enum: ['must', 'nice'] }, match: { type: 'string', enum: ['yes', 'adjacent', 'no'] }, skills: ids(skills), note: string }, ['name', 'importance', 'match', 'skills', 'note']),
     },
     headline: string,
     summary: { type: 'array', items: string },

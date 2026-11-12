@@ -116,8 +116,8 @@ test('the prompt offers each listed requirement its shortlist, and says it is no
   const listed = [{ name: 'Chaîne CI/CD', importance: 'must' }, { name: 'Gouvernance', importance: 'nice' }];
   assert.doesNotMatch(buildPrompt(p, 'Offre.', listed).prompt, /candidates/, 'off by default until a real replay');
   const { prompt } = buildPrompt(p, 'Offre : chaîne CI/CD et PostgreSQL.', listed, { shortlist: true });
-  assert.match(prompt, /- Chaîne CI\/CD \(must\) — candidates: docker/);
-  assert.match(prompt, /- Gouvernance \(nice\)$/m, 'no candidate, nothing added');
+  assert.match(prompt, /- L1: Chaîne CI\/CD \(must\) — candidates: docker/);
+  assert.match(prompt, /- L2: Gouvernance \(nice\)$/m, 'no candidate, nothing added');
   assert.match(prompt, /any other catalogue skill/i);
 });
 

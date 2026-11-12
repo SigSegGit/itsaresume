@@ -392,24 +392,24 @@
     },
     "Listing: a name the analysis already covers is not added": {
       "file": "src/listing.js",
-      "live": "return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));",
-      "dead": "return false;",
+      "live": "if (words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'))) return true;",
+      "dead": "",
       "expect": [
         "a listed name whose words the analysis already names is not added twice"
       ]
     },
     "Listing: one word is not covered by a longer row": {
       "file": "src/listing.js",
-      "live": "return words.length >= 2 && analysed",
-      "dead": "return words.length >= 1 && analysed",
+      "live": "if (words.length >= 2 && analysed",
+      "dead": "if (words.length >= 1 && analysed",
       "expect": [
         "a listed must is not absorbed by a longer row (SQL beside SQL Server, DevOps beside Azure DevOps)"
       ]
     },
     "Listing: a must is not covered by a nice row": {
       "file": "src/listing.js",
-      "live": " && (row.importance === 'must' || item.importance === 'nice'));",
-      "dead": ");",
+      "live": " && (row.importance === 'must' || item.importance === 'nice'))) return true;",
+      "dead": ")) return true;",
       "expect": [
         "a two-word listed must is not absorbed by a nice row that names its words"
       ]
@@ -1625,6 +1625,46 @@
       "dead": ") {",
       "expect": [
         "a degree row met with no skill passes the validation"
+      ]
+    },
+    "Listing (2.41): a row answered translated covers its listed row": {
+      "file": "src/listing.js",
+      "live": "    return concepts !== '' && analysed.some((row) => row.concepts === concepts && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": "    return false;",
+      "expect": [
+        "a listed row the analysis answered translated is not added back (same lexicon concept)"
+      ]
+    },
+    "Listing (2.41): a nice translated row does not cover a listed must": {
+      "file": "src/listing.js",
+      "live": "row.concepts === concepts && (row.importance === 'must' || item.importance === 'nice'));",
+      "dead": "row.concepts === concepts);",
+      "expect": [
+        "a translated row covers a listed must only when it is a must too"
+      ]
+    },
+    "Listing (2.42): a row answered by its listed id takes the listing's name": {
+      "file": "src/listing.js",
+      "live": "    return { ...row, name };",
+      "dead": "    return row;",
+      "expect": [
+        "rows answered by their listed id take the listing's name, verdict kept, nothing added"
+      ]
+    },
+    "Listing (2.42): a listed id given twice is not trusted": {
+      "file": "src/listing.js",
+      "live": "    if (used.get(id) > 1) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "an unknown or repeated listed id is not trusted"
+      ]
+    },
+    "Prompt (2.42): the listed rows are numbered": {
+      "file": "src/prompt.js",
+      "live": "    lines.push(`- L${at + 1}: ${item.name} (${item.importance})",
+      "dead": "    lines.push(`- ${item.name} (${item.importance})",
+      "expect": [
+        "the prompt numbers the listed rows and asks for their id"
       ]
     }
   }

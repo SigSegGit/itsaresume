@@ -131,3 +131,57 @@ test('a listed name that heads an analysed row before its parenthesis is that ro
   const { analysis: merged } = mergeListed(analysis, [{ name: 'HA', importance: 'must' }, { name: 'BGP', importance: 'must' }]);
   assert.deepEqual(merged.requirements.map((row) => row.name), ['HA (haute disponibilité réseau)', 'BGP']);
 });
+
+// 2.41 (seen in 2.25c): the listing named the rows in English, the analysis
+// answered them in French; each listed row came back as an unmet must.
+test('a listed row the analysis answered translated is not added back (same lexicon concept)', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const row = (name) => ({ name, importance: 'must', match: 'yes', skills: [], note: '' });
+  const analysis = { requirements: [row('Apprentissage automatique'), row('Observabilité')] };
+  const { analysis: merged, repairs } = mergeListed(analysis, [
+    { name: 'Machine learning', importance: 'must' },
+    { name: 'Observability', importance: 'must' },
+    { name: 'Kubernetes', importance: 'must' },
+  ]);
+  assert.deepEqual(merged.requirements.map((r) => r.name), ['Apprentissage automatique', 'Observabilité', 'Kubernetes']);
+  assert.equal(repairs.length, 1);
+});
+
+test('a translated row covers a listed must only when it is a must too', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const analysis = { requirements: [{ name: 'Apprentissage automatique', importance: 'nice', match: 'yes', skills: [], note: '' }] };
+  const { analysis: merged } = mergeListed(analysis, [{ name: 'Machine learning', importance: 'must' }]);
+  assert.deepEqual(merged.requirements.map((r) => r.name), ['Apprentissage automatique', 'Machine learning']);
+});
+
+// 2.42: the listed rows are numbered in the prompt and the analysis answers
+// each by its id, so a translated name never re-adds its row (2.25c).
+test('rows answered by their listed id take the listing\'s name, verdict kept, nothing added', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const row = (name, listed, match = 'yes') => ({ name, importance: 'must', match, skills: [], note: '', listed });
+  const analysis = { requirements: [row('Rigueur', 'L1'), row('Écoute active', 'L2', 'adjacent'), row('Python', undefined)] };
+  const listed = [{ name: 'Rigor', importance: 'must' }, { name: 'Active listening', importance: 'must' }];
+  const { analysis: merged, repairs } = mergeListed(analysis, listed);
+  assert.deepEqual(merged.requirements.map((r) => [r.name, r.match]), [['Rigor', 'yes'], ['Active listening', 'adjacent'], ['Python', 'yes']]);
+  assert.ok(merged.requirements.every((r) => !('listed' in r)), 'the id does not leave mergeListed');
+  assert.ok(repairs.some((repair) => /answered as Rigueur/.test(repair)), repairs.join('\n'));
+});
+
+test('an unknown or repeated listed id is not trusted', async () => {
+  const { mergeListed } = await import('../src/listing.js');
+  const row = (name, listed) => ({ name, importance: 'must', match: 'yes', skills: [], note: '', listed });
+  const listed = [{ name: 'Rigor', importance: 'must' }, { name: 'Active listening', importance: 'must' }];
+  const { analysis: merged, repairs } = mergeListed({ requirements: [row('Rigueur', 'L1'), row('Kubernetes', 'L1'), row('Docker', 'L9')] }, listed);
+  assert.deepEqual(merged.requirements.map((r) => r.name), ['Rigueur', 'Kubernetes', 'Docker', 'Rigor', 'Active listening']);
+  assert.ok(repairs.some((repair) => /L1 .*twice/.test(repair)), repairs.join('\n'));
+  assert.ok(repairs.some((repair) => /L9 .*unknown/.test(repair)), repairs.join('\n'));
+});
+
+test('the prompt numbers the listed rows and asks for their id', async () => {
+  const { buildPrompt, SYSTEM } = await import('../src/prompt.js');
+  const { v4 } = await import('./fixtures/v4.js');
+  const { prompt } = buildPrompt(v4(), 'An offer', [{ name: 'Rigor', importance: 'must' }, { name: 'Kubernetes', importance: 'nice' }]);
+  assert.match(prompt, /^- L1: Rigor \(must\)$/m);
+  assert.match(prompt, /^- L2: Kubernetes \(nice\)$/m);
+  assert.match(SYSTEM, /"listed"/);
+});

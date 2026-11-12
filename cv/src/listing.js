@@ -12,6 +12,7 @@ import { extractJson } from './llm.js';
 import { cleanName, fence, UNTRUSTED } from './guard.js';
 import { MUST, NICE } from './importance.js';
 import { canonical, GENERIC, mentions, stem, STOP, wordsOf } from './text.js';
+import { defaultIndex, lookup } from './lexicon.js';
 
 export const LISTING_SYSTEM = `List every skill, technology, tool, product, method or personal quality that the job offer asks for or names.
 
@@ -123,17 +124,55 @@ export function listedOf(name, listed) {
   });
 }
 
-export function mergeListed(analysis, listed) {
+/**
+ * 2.42: a row answered with a listed id ("L3", the prompt numbers the
+ * listing) takes that row's name, its verdict kept: a name the model
+ * translated no longer re-adds its row (2.25c). An id unknown or used
+ * twice is not trusted. The id never leaves here.
+ */
+function byListedId(analysis, listed) {
+  const repairs = [];
+  const used = new Map();
+  for (const row of analysis.requirements ?? []) {
+    if (typeof row.listed === 'string') used.set(row.listed, (used.get(row.listed) ?? 0) + 1);
+  }
+  const requirements = (analysis.requirements ?? []).map(({ listed: id, ...row }) => {
+    if (typeof id !== 'string') return row;
+    const at = /^L([1-9]\d*)$/.exec(id) ? Number(id.slice(1)) - 1 : -1;
+    if (at < 0 || at >= listed.length) {
+      repairs.push(`requirement ${row.name}: listed id ${id} unknown, not trusted`);
+      return row;
+    }
+    if (used.get(id) > 1) {
+      repairs.push(`requirement ${row.name}: listed id ${id} given twice, not trusted`);
+      return row;
+    }
+    const name = listed[at].name;
+    if (String(row.name).trim().toLowerCase() !== name.trim().toLowerCase()) repairs.push(`requirement ${name}: answered as ${row.name}, named as the listing (${id})`);
+    return { ...row, name };
+  });
+  return { analysis: { ...analysis, requirements }, repairs };
+}
+
+export function mergeListed(given, listed) {
+  const named = byListedId(given, listed);
+  const analysis = named.analysis;
   const present = new Set((analysis.requirements ?? []).map((requirement) => String(requirement.name).trim().toLowerCase()));
   // A listed name whose every content word the analysis already names, in
   // one row, is that row ("Customer meetings" / "Customer-facing
   // meetings", 2.10): added again, it counted a must twice.
   // Covered only by two content words at least ("SQL" is not "SQL Server",
   // "DevOps" is not "Azure DevOps"), and never a must by a nice row.
-  const analysed = (analysis.requirements ?? []).map((requirement) => ({ words: new Set(wordsOf(requirement.name).map(stem)), importance: requirement.importance }));
+  const index = defaultIndex();
+  const conceptsOf = (name) => [...new Set(lookup(index, String(name)))].sort().join(' ');
+  const analysed = (analysis.requirements ?? []).map((requirement) => ({ words: new Set(wordsOf(requirement.name).map(stem)), importance: requirement.importance, concepts: conceptsOf(requirement.name) }));
   const covered = (item) => {
     const words = wordsOf(item.name).filter((word) => !STOP.has(word) && !GENERIC.has(word)).map(stem);
-    return words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'));
+    if (words.length >= 2 && analysed.some((row) => words.every((word) => row.words.has(word)) && (row.importance === 'must' || item.importance === 'nice'))) return true;
+    // 2.41: the same row answered in another language ("Machine learning" /
+    // "Apprentissage automatique"): both names on the same lexicon concepts.
+    const concepts = conceptsOf(item.name);
+    return concepts !== '' && analysed.some((row) => row.concepts === concepts && (row.importance === 'must' || item.importance === 'nice'));
   };
   // A name that heads a row before its parenthesis is that row ("HA" /
   // "HA (haute disponibilité réseau)", 2026-10-02); "SQL" still is not "SQL Server".
@@ -147,7 +186,7 @@ export function mergeListed(analysis, listed) {
         ...added.map((item) => ({ name: item.name, importance: item.importance, match: 'no', skills: [], note: 'named in the offer, left out by the analysis' })),
       ],
     },
-    repairs: added.map((item) => `requirement ${item.name} (${item.importance}) named in the offer and left out by the analysis: added`),
+    repairs: [...named.repairs, ...added.map((item) => `requirement ${item.name} (${item.importance}) named in the offer and left out by the analysis: added`)],
   };
 }
 
