@@ -456,7 +456,7 @@ property it proves.
 | the prompt offers each listed requirement its shortlist, and says it is not a limit | Shortlist: the prompt carries the candidates |
 | a pick outside the shortlist stays met when the grounding keeps it | — |
 | loadProfile reads links.json beside the profile | Links: read beside the profile |
-| ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else | Prompt opt-ins: off by default |
+| the compact catalogue and the shortlist are on by default (2.25d); ITSACV_PROMPT=off is the whole prompt | Prompt options: each one only when named (or by default); Prompt (2.25d): compact and shortlist on by default |
 
 ## `test/listing-model.test.js`
 

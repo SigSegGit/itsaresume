@@ -1531,12 +1531,12 @@
         "the compact catalogue states each skill\u2019s level and group, lab still spelt out"
       ]
     },
-    "Prompt opt-ins: off by default": {
+    "Prompt options: each one only when named (or by default)": {
       "file": "src/prompt.js",
       "live": "shortlist: asked.includes('shortlist') };",
       "dead": "shortlist: true };",
       "expect": [
-        "ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else"
+        "the compact catalogue and the shortlist are on by default (2.25d); ITSACV_PROMPT=off is the whole prompt"
       ]
     },
     "Links: read beside the profile": {
@@ -1665,6 +1665,14 @@
       "dead": "    lines.push(`- ${item.name} (${item.importance})",
       "expect": [
         "the prompt numbers the listed rows and asks for their id"
+      ]
+    },
+    "Prompt (2.25d): compact and shortlist on by default": {
+      "file": "src/prompt.js",
+      "live": "  const asked = (given || 'compact,shortlist').split(',')",
+      "dead": "  const asked = (given || '').split(',')",
+      "expect": [
+        "the compact catalogue and the shortlist are on by default (2.25d); ITSACV_PROMPT=off is the whole prompt"
       ]
     }
   }

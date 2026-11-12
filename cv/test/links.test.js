@@ -137,9 +137,13 @@ test('loadProfile reads links.json beside the profile', async () => {
   assert.deepEqual(loadProfile(join(dir, 'profile.json')).profile.links, [{ words: 'adf', skill: 'ad', offers: 0, verdict: 'near' }]);
 });
 
-test('ITSACV_PROMPT turns the compact catalogue and the shortlist on, nothing else', async () => {
+test('the compact catalogue and the shortlist are on by default (2.25d); ITSACV_PROMPT=off is the whole prompt', async () => {
   const { promptOptions } = await import('../src/prompt.js');
-  assert.deepEqual(promptOptions({}), { compact: false, shortlist: false });
+  assert.deepEqual(promptOptions({}), { compact: true, shortlist: true });
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: '' }), { compact: true, shortlist: true });
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'off' }), { compact: false, shortlist: false });
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'shortlist' }), { compact: false, shortlist: true });
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact' }), { compact: true, shortlist: false });
   assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact, shortlist' }), { compact: true, shortlist: true });
   assert.throws(() => promptOptions({ ITSACV_PROMPT: 'tiny' }), /ITSACV_PROMPT/);
 });
