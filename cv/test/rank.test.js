@@ -61,3 +61,20 @@ test('5.2a: itsacv rank reads the cached listings, calls no model without --run'
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+test('5.2b: rankListed lists each offer once, through the cache, then ranks', async () => {
+  const { rankListed } = await import('../src/rank.js');
+  const kept = new Map();
+  const cache = { read: (offer) => kept.get(offer) ?? null, write: (offer, listed) => kept.set(offer, listed) };
+  let asked = 0;
+  const llm = async ({ prompt }) => {
+    asked += 1;
+    const names = prompt.includes('k8s') ? ['Kubernetes', 'AWS', 'Terraform', 'Docker'] : ['Rust', 'Kafka'];
+    return { text: JSON.stringify({ requirements: names.map((name) => ({ name, importance: 'must' })) }) };
+  };
+  const offers = [{ title: 'none', text: 'none offer' }, { title: 'k8s', text: 'k8s offer' }];
+  const first = await rankListed({ offers, profile: synthetic(), top: 1, llm, cache });
+  assert.deepEqual(first.map((row) => [row.name, row.index, row.chosen]), [['k8s', 1, true], ['none', 0, false]]);
+  await rankListed({ offers, profile: synthetic(), top: 1, llm, cache });
+  assert.equal(asked, 2, 'the second ranking reads the cache');
+});

@@ -1112,6 +1112,16 @@ Traps met, each cost time once:
     same ranking on the page (paste N offers, "les K meilleures"), then
     measure on the corpus whether the top K by coverage holds the top K by
     the pipeline's score.
+  - [ ] **5.2b** (2026-11-12) **The ranking on the page.** `rankListed`
+    in `src/rank.js` (listing through the cache, then `rankOffers`), used by
+    the CLI and by `POST /api/rank` `{offers: [{title, text}], top}` (2 to
+    20 offers, `top` 1 to their count; the owner's page only: public mode
+    answers 403, the listing calls are on his quota). The page: "Classer
+    (garder les 3 meilleures)" beside "Générer les CV" once two offers wait;
+    the list keeps the chosen, in order, and a line shows each offer's
+    share and the tokens estimated. Red tests: the endpoint (owner, bad
+    body, public), `rankListed` reusing the cache; a defence on the public
+    refusal.
 
 Open from the 2026-09-27 audit, by value (split dropping lines silently:
 fixed 2026-09-30, every non-empty line in no range is named in a repair,
