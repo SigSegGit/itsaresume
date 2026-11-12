@@ -143,6 +143,7 @@ test('the compact catalogue and the shortlist are on by default (2.25d); ITSACV_
   assert.deepEqual(promptOptions({ ITSACV_PROMPT: '' }), { compact: true, shortlist: true });
   assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'off' }), { compact: false, shortlist: false });
   assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'shortlist' }), { compact: false, shortlist: true });
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact' }), { compact: true, shortlist: false });
   assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact, shortlist' }), { compact: true, shortlist: true });
   assert.throws(() => promptOptions({ ITSACV_PROMPT: 'tiny' }), /ITSACV_PROMPT/);
 });

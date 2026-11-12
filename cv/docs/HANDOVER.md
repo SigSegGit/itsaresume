@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.42b
-TITLE: 2.38-2.42 done (comparison keyed by the listing; "N years" raised by code; listed rows answered by id, so a translation never re-adds them); 5.2a-c done; next 2.42b, the 2.25c A/B on the AI tech lead offer (blocked: the laptop's claude CLI needs the owner's login)
+NEXT: 2.25e
+TITLE: 2.38-2.42b done (comparison keyed by the listing; "N years" raised by code; listed rows answered by id; the 2.25c A/B passes: 60 -> 65, no row lowered, none re-added); 2.25d: compact prompt and shortlist on by default; next 2.25e, measure the tokens and verdicts of the first VM runs with it
 WRITTEN-AT: 2026-11-12
 -->
 
@@ -48,7 +48,7 @@ the decisions waiting for him, how to reach his machines — are in
 - **2.24 done 2026-10-13** (browser fill 0.95-1.00 on the 26 runs).
 - **2.25 batch done 2026-10-13** (one PR): owner-ruled and mined links
   (`src/links.js`), the shortlist and a compact catalogue **behind
-  `ITSACV_PROMPT`** (off until 2.25c's real A/B), 2.22d measured, 5.1
+  `ITSACV_PROMPT`** (on by default since 2.25d, 2026-11-12; `ITSACV_PROMPT=off` for the whole prompt), 2.22d measured, 5.1
   coverage matrix in code (Spearman 0.62 vs the pipeline's score).
 - **Order set by the owner (2026-10-06)**: 2.24 (the A4 page laid out and
   printed by the browser, docx kept as an option), then 2.25 (a shorter
@@ -1387,7 +1387,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   (guard.json). No real answer before this carries `listed` (0 raw.json):
   past runs replay unchanged.
 
-- [ ] **2.42b** **The 2.25c A/B, once more, on the AI tech lead offer.**
+- [x] **2.42b** **The 2.25c A/B, once more, on the AI tech lead offer.**
   Blocked 2026-11-12: the laptop's `claude` answered "OAuth session expired
   and could not be refreshed" (the owner logs in again; never by us). The
   arms are ready in `~/.itsaresume/out/ab-2.42/{off,on}` with the English
@@ -1400,6 +1400,25 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   `python ~/.itsaresume/migrations/ab-2.25c.py ~/.itsaresume/out/ab-2.42`.
   Done when "on" adds no listed row back and loses no verdict against
   "off"; then 2.25d: `compact,shortlist` on by default.
+  Done 2026-11-12 (the owner logged in again): off 60/100, on 65/100
+  (2.25c: 60 -> 47), 14 rows each (2.25c "on": 30), no listed row added
+  back, no row lowered; one gain, "Ability to unite diverse profiles" no ->
+  adjacent. 16 and 17 rows renamed by their listed id.
+
+- [x] **2.25d** (2026-11-12) `promptOptions`: `compact,shortlist` when
+  `ITSACV_PROMPT` is unset or empty, `off` for the whole prompt, a list
+  as before. Test updated (red first), 1 new defence, the opt-in defence
+  retargeted (a `compact` alone keeps the shortlist off). Deploying `main`
+  turns it on for the VM too.
+
+- [ ] **2.25e** **The first real runs with the compact prompt.** After the
+  VM deploys `main`, read the next real entries of `qa-log.jsonl` there
+  (`tail -n 10`, fields `model`, `tokens`, `attempts`, `fit.score`; never
+  the whole log) against the same models' entries before 2026-11-12: the
+  input tokens of the analysis should drop (the compact catalogue), the
+  attempts not rise. If attempts rise or a score falls by more than 15
+  points on an offer run both ways, set `ITSACV_PROMPT=off` in the VM's
+  `.env` and open a step.
 
 ## 9. Open on purpose
 

@@ -67,9 +67,12 @@ function compactSkills(profile) {
  * requirement: ITSACV_PROMPT="compact,shortlist" (2.25b, 2.3b-ii).
  */
 export function promptOptions(env = process.env) {
-  const asked = String(env.ITSACV_PROMPT ?? '').split(',').map((word) => word.trim()).filter(Boolean);
+  // 2.25d: on by default since the 2.42b A/B (no row lost); "off" is the whole prompt.
+  const given = String(env.ITSACV_PROMPT ?? '').trim();
+  if (given === 'off') return { compact: false, shortlist: false };
+  const asked = (given || 'compact,shortlist').split(',').map((word) => word.trim()).filter(Boolean);
   const unknown = asked.filter((word) => word !== 'compact' && word !== 'shortlist');
-  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist)`);
+  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist, or off)`);
   return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist') };
 }
 
