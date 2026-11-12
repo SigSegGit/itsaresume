@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.39
-TITLE: 2.38 built (a comparison keys rows by the listed requirements they cover; the VM's 4-model run: 11 disagreements of 33 become 2); next 2.39, one real comparison on the VM reads its listing from the QA log
+NEXT: 2.40
+TITLE: 2.38 and 2.39 done (a comparison keys rows by the listing: 11 disagreements of 33 became 2 on a real 4-model run); 5.2a-c done (itsacv rank and the page's "keep the best 3", measured 21/21); next 2.40, "N years of X" settled by code from the dated experiences
 WRITTEN-AT: 2026-11-12
 -->
 
@@ -1304,7 +1304,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   2/33; a 3-model run 3/28 -> 4/36 (the same "logs cloud / règles de
   détection" disagreement, now its two listed rows); a 2-model run 0 -> 0.
 
-- [ ] **2.39** **One real comparison reads its listing from the log.** Once
+- [x] **2.39** **One real comparison reads its listing from the log.** Once
   `main` is deployed on the VM (it follows main), one "Comparer tous les
   modèles" on a corpus offer (the owner's quota: one run per model). Done
   when the new `qa-log.jsonl` entries carry `listed` and the group's
@@ -1312,6 +1312,24 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   than the same offer's comparison before 2.38. Read with `ssh` (see the
   private handover), never a full log: `tail -n 4 qa-log.jsonl | jq
   '.listed|length'`.
+  Done 2026-11-12 on the VM, the 2.37b offer again ("2.39 caraz"): the
+  four entries carry `listed` (34); Claude 98 in 56 s, Gemini 98 in 77 s,
+  Groq 94 in 53 s, local 94 in 693 s; **2 disagreements of 33** (11 in
+  2.37b). Both are real: Trivy (no profile skill names it: Claude and
+  Gemini "adjacent, to verify" by their reading, Groq and local "no"), and
+  "3 ans d'expérience DevOps" (Claude, Gemini yes; Groq, local adjacent).
+
+- [ ] **2.40** **"N years of X" settled by code.** Seen on 2.39: "3 ans
+  d'expérience DevOps" is yes for two models, adjacent for two; the profile
+  dates its experiences, so the code can count. In `src/normalize.js`
+  (`ASKS_EXPERIENCE`/`STATES_YEARS` already read the years): a requirement
+  stating N years of a skill or domain is yes when the experiences whose
+  bullets cite that skill (or a skill of its concept) span N years or
+  more (overlaps counted once), adjacent when they span less, no when none;
+  the repair says the years counted. Red test on the synthetic profile
+  (one skill over 2 then 4 years), a defence on the comparison of years;
+  replay on the real runs (`rules-replay.mjs`) before shipping: list which
+  verdicts change.
 
 ## 9. Open on purpose
 
