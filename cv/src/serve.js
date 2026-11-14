@@ -105,7 +105,7 @@ async function status({ profilePath, url, useWord, out }) {
   return { profile, router: { up }, models: modelMenu(up ? backends : null, undefined, { awake: laptopAwake(out) }), layout: { word, libre } };
 }
 
-export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null }) {
+export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null, addon = null }) {
   // Router 8.42: another contract major stops the start, before any job.
   const problem = await routerContract(url);
   if (problem) throw new Error(problem);
@@ -162,7 +162,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     },
     invites: () => loadInvites(out),
   };
-  const { server } = createApp({ deps, publicMode });
+  const { server } = createApp({ deps, publicMode, addon });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(port, '127.0.0.1', resolve);

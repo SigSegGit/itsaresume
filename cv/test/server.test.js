@@ -37,9 +37,10 @@ function fakeResult(offer) {
   };
 }
 
-async function start(deps = {}) {
+async function start(deps = {}, options = {}) {
   const calls = { running: 0, most: 0, offers: [] };
   const app = createApp({
+    ...options,
     token: TOKEN,
     deps: {
       status: async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } }),
@@ -1131,4 +1132,19 @@ test('4.5: a public visitor can neither match nor import', async (t) => {
   const visitor = await app.visit();
   assert.equal((await visitor.post('/api/match', { offer: { text: PUBLIC_OFFER('a') }, top: 1 })).status, 403);
   assert.equal((await visitor.post('/api/profiles', { id: 'sam', resume: {} })).status, 403);
+});
+
+// 4.7: the add-on posts the offer itself, from its own origin, with the owner's key.
+test('4.7: the add-on origin and key may create jobs, and nothing else', async () => {
+  const addon = { origin: 'chrome-extension://abcdefghijklmnop', key: 'k'.repeat(48) };
+  const app = await start({}, { addon });
+  try {
+    const headers = { Origin: addon.origin, 'X-CSRF-Token': addon.key };
+    assert.equal((await post(app, '/api/jobs', { offers: [{ title: 'A', text: 'an offer' }] }, headers)).status, 202);
+    assert.equal((await post(app, '/api/split', { text: 'x' }, headers)).status, 403, 'jobs only');
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'x' }] }, { ...headers, 'X-CSRF-Token': 'w'.repeat(48) })).status, 403);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'x' }] }, { ...headers, Origin: 'chrome-extension://other' })).status, 403);
+  } finally {
+    app.server.close();
+  }
 });

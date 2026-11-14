@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "itsaresume — CV sur mesure",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Envoie l'offre d'emploi affichée (ou le texte sélectionné) au générateur de CV itsaresume, sur un clic.",
   "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["http://127.0.0.1/*", "https://*/*"],
   "action": { "default_popup": "popup.html", "default_title": "Analyser cette offre" },
   "options_page": "options.html"
 }

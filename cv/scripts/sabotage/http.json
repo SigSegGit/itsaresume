@@ -396,7 +396,7 @@
     },
     "Web: a POST carries the CSRF token": {
       "file": "src/server.js",
-      "live": "if (publicMode ? !visitor : !sameToken(request.headers['x-csrf-token'], token)) throw new HttpError(403, ",
+      "live": "if (!fromAddon && (publicMode ? !visitor : !sameToken(request.headers['x-csrf-token'], token))) throw new HttpError(403, ",
       "dead": "if (false) throw new HttpError(403, ",
       "expect": [
         "a POST from another origin, without the token, or not in JSON is refused"
@@ -1193,6 +1193,14 @@
       "dead": "Object.fromEntries(Object.keys(body.linkedin).filter((name) => typeof body.linkedin[name] === 'string')",
       "expect": [
         "4.5: the owner ranks the profiles for one offer and imports a profile; bad bodies refused first"
+      ]
+    },
+    "Add-on (4.7): its key and job creation alone": {
+      "file": "src/server.js",
+      "live": "      if (fromAddon && (path !== '/api/jobs' || !sameToken(request.headers['x-csrf-token'], addon.key))) throw new HttpError(403,",
+      "dead": "      if (false) throw new HttpError(403,",
+      "expect": [
+        "4.7: the add-on origin and key may create jobs, and nothing else"
       ]
     }
   }

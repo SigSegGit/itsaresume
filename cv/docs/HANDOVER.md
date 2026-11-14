@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 4.7
-TITLE: 4.2-4.6 done (import a JSON Resume or LinkedIn export, itsacv match for employers, page import and profile ranking, the MV3 add-on); next 4.7, the add-on posts the offer itself; 2.25e still to read on the VM
+NEXT: 4.8
+TITLE: 4.2-4.7 done (profile import JSON Resume/LinkedIn, itsacv match, page import and ranking, the MV3 add-on posting offers with the owner's key); next 4.8 waits for the owner's ruling on public import (consent, retention); meanwhile 2.25e on the VM
 WRITTEN-AT: 2026-11-14
 -->
 
@@ -558,9 +558,12 @@ Traps met, each cost time once:
   copies the offer and opens the generator). 13 tests, 9 defences. Not
   done: a ZIP export (unzip it first), the add-on loaded in a real browser
   (load `cv/addon` unpacked: chrome://extensions, developer mode), a real
-  LinkedIn export tried. Next: **4.7** the add-on posts the offer itself
-  (a one-time token from the page, `POST /api/jobs` from the extension's
-  origin allowed by `--addon-origin`), then **4.8** a public import with
+  LinkedIn export tried. **4.7 done 2026-11-14**: `serve --addon-origin
+  chrome-extension://<id>` with `ITSACV_ADDON_KEY` (48+ chars): that origin
+  and key may `POST /api/jobs` only (owner's page, never public); the
+  add-on's options take the URL and the key, grant that host on save
+  (`optional_host_permissions`), and post the offer, else copy it. 2 tests,
+  1 defence, 2 anchors moved. Next: **4.8** a public import with
   consent and deletion (needs the owner's ruling on 4.1 (b), (c)).
 - [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
   Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused

@@ -67,6 +67,8 @@ const USAGE = `usage:
              else ${TIMEOUT_MS / 1000}); must exceed the router backend's timeout_secs, or the
              client gives up on an answer the router is still waiting for
   --no-layout  skip Word: no page fitting, no PDF, no ATS check
+  --addon-origin  serve: let the browser add-on (cv/addon) create jobs from chrome-extension://<id>,
+             with the key in $ITSACV_ADDON_KEY (48+ characters, set the same in the add-on's options)
   --public-host  serve anyone behind a reverse proxy that answers as NAME (e.g. cv.ngas.fr):
              job offers only, one visitor per page load, the owner's notes hidden, no split,
              an offer already answered reused; at most --per-day CVs a day for everyone
@@ -85,7 +87,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id'];
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
@@ -120,6 +122,7 @@ function parse(argv) {
     revoke: null,
     top: '3',
     id: null,
+    addonOrigin: null,
     run: false,
   };
   for (let i = 0; i < rest.length; i += 1) {
@@ -201,7 +204,14 @@ async function main() {
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
     const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, now: Date.now };
-    const server = await serve({ ...options, profilesDir: options.profiles, port: Number(options.port), useWord: options.layout, llm, publicMode }).catch((error) => fail(4, error.message));
+    // 4.7: the add-on's origin from --addon-origin, its key from $ITSACV_ADDON_KEY (48+ characters).
+    let addon = null;
+    if (options.addonOrigin) {
+      if (!/^chrome-extension:\/\/[a-p]{32}$/.test(options.addonOrigin) || publicMode) fail(2, '--addon-origin: chrome-extension://<id>, on the owner page only');
+      if (String(process.env.ITSACV_ADDON_KEY ?? '').length < 48) fail(2, '--addon-origin needs ITSACV_ADDON_KEY, 48 characters at least');
+      addon = { origin: options.addonOrigin, key: process.env.ITSACV_ADDON_KEY };
+    }
+    const server = await serve({ ...options, addon, profilesDir: options.profiles, port: Number(options.port), useWord: options.layout, llm, publicMode }).catch((error) => fail(4, error.message));
     const open = publicMode ? `, public as https://${publicMode.host} (at most ${publicMode.perDay} CVs a day)` : '';
     process.stderr.write(`itsacv: serving on http://127.0.0.1:${server.address().port}${open} (Ctrl+C to stop)\n`);
     return;

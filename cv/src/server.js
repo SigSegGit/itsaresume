@@ -171,7 +171,7 @@ const VISITOR_DAYS = 7;
  */
 const COMPARE = 'compare';
 
-export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null, clock = Date.now }) {
+export function createApp({ deps, token = randomBytes(24).toString('hex'), publicMode = null, clock = Date.now, addon = null }) {
   const jobs = new Map();
   // Two lanes, each one job at a time (2026-10-06): a Claude job never
   // waits behind a slow local one, and the local model keeps its one slot.
@@ -404,6 +404,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       const { port } = server.address();
       const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
       const origins = hosts.map((host) => `http://${host}`);
+      // 4.7: the add-on's own origin, on the owner's page only.
+      if (addon && !publicMode) origins.push(addon.origin);
       if (publicMode) {
         hosts.push(publicMode.host);
         origins.push(`https://${publicMode.host}`);
@@ -480,7 +482,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (request.method !== 'POST') throw new HttpError(405, 'GET or POST only');
       if (!origins.includes(request.headers.origin)) throw new HttpError(403, 'a request from another origin');
       const visitor = publicMode ? visitorOf(request) : null;
-      if (publicMode ? !visitor : !sameToken(request.headers['x-csrf-token'], token)) throw new HttpError(403, 'a missing or wrong CSRF token');
+      // 4.7: from the add-on, its key and job creation alone.
+      const fromAddon = Boolean(addon) && !publicMode && request.headers.origin === addon.origin;
+      if (fromAddon && (path !== '/api/jobs' || !sameToken(request.headers['x-csrf-token'], addon.key))) throw new HttpError(403, 'the add-on may only create jobs, with its key');
+      if (!fromAddon && (publicMode ? !visitor : !sameToken(request.headers['x-csrf-token'], token))) throw new HttpError(403, 'a missing or wrong CSRF token');
       if (!/^application\/json\b/.test(request.headers['content-type'] ?? '')) throw new HttpError(415, 'JSON only');
       let body;
       try {
