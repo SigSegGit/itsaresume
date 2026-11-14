@@ -4,9 +4,10 @@
 // the file's own words or "working" by default (to confirm). One language
 // in, the same text in fr and en.
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { mentions } from './text.js';
+import { validateProfile } from './profile.js';
 
 const LEVEL_WORDS = [
   [/\b(?:master|expert)\b/i, 'expert'],
@@ -142,6 +143,9 @@ function linkedInDate(value) {
   return month ? `${found[2]}-${String(month).padStart(2, '0')}` : found[2];
 }
 
+/** The files of a LinkedIn export this reads; any other name is ignored. */
+export const LINKEDIN_FILES = ['Profile.csv', 'Positions.csv', 'Skills.csv', 'Education.csv', 'Certifications.csv', 'Languages.csv', 'Email Addresses.csv', 'PhoneNumbers.csv'];
+
 /** 4.3: a LinkedIn data export (folder of its CSV files) -> JSON Resume. */
 export function linkedInToJsonResume(read) {
   const table = (name) => {
@@ -178,4 +182,17 @@ export function fromLinkedInExport(dir) {
 /** A JSON Resume file or a LinkedIn export folder -> profile. */
 export function importProfile(path) {
   return statSync(path).isDirectory() ? fromLinkedInExport(path) : fromJsonResume(JSON.parse(readFileSync(path, 'utf8')));
+}
+
+/** 4.5: a LinkedIn export handed in as `{ "Profile.csv": text, ... }`. */
+export const fromLinkedInFiles = (files) => fromJsonResume(linkedInToJsonResume((name) => (typeof files[name] === 'string' ? files[name] : null)));
+
+/** Checked, then written as `dir/<id>.json`; throws what makes it unusable. */
+export function writeProfile(dir, id, profile) {
+  const { errors } = validateProfile(profile);
+  if (errors.length) throw new Error(`the imported profile is not usable: ${errors.slice(0, 5).join('; ')}`);
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${id}.json`);
+  writeFileSync(path, JSON.stringify(profile, null, 2));
+  return { id, path, to_confirm: profile.to_confirm };
 }

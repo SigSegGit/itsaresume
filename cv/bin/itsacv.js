@@ -17,9 +17,7 @@ import { matrix, offersFromRuns, toCsv, toMarkdown } from '../src/matrix.js';
 import { ID, listProfiles } from '../src/profiles.js';
 import { fileListingCache } from '../src/listing.js';
 import { listingOf, rankListed, rankMarkdown, rankProfiles } from '../src/rank.js';
-import { importProfile } from '../src/import.js';
-import { validateProfile } from '../src/profile.js';
-import { writeFileSync } from 'node:fs';
+import { importProfile, writeProfile } from '../src/import.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -162,19 +160,13 @@ async function main() {
   // 4.2/4.3: another person's profile, compiled and checked before it is written.
   if (options.command === 'import') {
     if (!options.id || !ID.test(options.id)) fail(2, '--id: lower-case letters, digits and dashes');
-    let profile;
     try {
-      profile = importProfile(options.files[0]);
+      const written = writeProfile(options.profiles ?? join(homedir(), '.itsaresume', 'profiles'), options.id, importProfile(options.files[0]));
+      process.stderr.write(`itsacv: ${written.path} written; to confirm: ${written.to_confirm.length} line(s)
+`);
     } catch (error) {
       fail(2, error.message);
     }
-    const { errors } = validateProfile(profile);
-    if (errors.length) fail(2, `the imported profile is not usable: ${errors.slice(0, 5).join('; ')}`);
-    const dir = options.profiles ?? join(homedir(), '.itsaresume', 'profiles');
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, `${options.id}.json`), JSON.stringify(profile, null, 2));
-    process.stderr.write(`itsacv: ${join(dir, `${options.id}.json`)} written; to confirm: ${profile.to_confirm.length} line(s)
-`);
     return;
   }
 
