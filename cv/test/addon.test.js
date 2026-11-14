@@ -26,3 +26,7 @@ test('4.6: the selection first, else the job description block, else the page', 
   assert.equal(offerText(page({ body: 'An offer.' })), 'An offer.');
   assert.equal(offerText(page({ body: 'x'.repeat(70000) })).length, 60000, 'cut to what the generator takes');
 });
+
+test('4.7: the add-on may reach the generator only through hosts the user grants (optional)', () => {
+  assert.deepEqual(manifest.optional_host_permissions, ['http://127.0.0.1/*', 'https://*/*']);
+});
