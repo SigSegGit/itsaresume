@@ -1135,7 +1135,7 @@ test('4.5: a public visitor can neither match nor import', async (t) => {
 });
 
 // 4.7: the add-on posts the offer itself, from its own origin, with the owner's key.
-test('4.7: the add-on's origin and key may create jobs, and nothing else', async () => {
+test('4.7: the add-on origin and key may create jobs, and nothing else', async () => {
   const addon = { origin: 'chrome-extension://abcdefghijklmnop', key: 'k'.repeat(48) };
   const app = await start({}, { addon });
   try {
