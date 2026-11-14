@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.25e
-TITLE: 2.38-2.42b done (comparison keyed by the listing; "N years" raised by code; listed rows answered by id; the 2.25c A/B passes: 60 -> 65, no row lowered, none re-added); 2.25d: compact prompt and shortlist on by default; next 2.25e, measure the tokens and verdicts of the first VM runs with it
-WRITTEN-AT: 2026-11-12
+NEXT: 4.2
+TITLE: 4.x started (the owner's ask of 2026-11-14: other profiles and a LinkedIn add-on, ADR-12); next 4.2, import a JSON Resume as a profile; 2.25e still to read once the VM runs the compact prompt
+WRITTEN-AT: 2026-11-14
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -512,6 +512,43 @@ Traps met, each cost time once:
   answers to (a)-(c): an upload, a public choice, retention. `itsacv
   tailor` has no `--profiles` (use `--profile FILE`). Next: 5.1, the
   code-only matrix, now unblocked.
+- [ ] **4.x** (the owner, 2026-11-14: "comparer une offre à un autre
+  profil … importer un profil standard ou LinkedIn … un addon LinkedIn :
+  un employeur trouve des profils pour son offre, une personne trouve une
+  offre et génère le CV") **Other profiles, and the LinkedIn add-on**
+  (ADR-12). Steps:
+  - [ ] **4.2** `src/import.js` `fromJsonResume(resume)` -> profile, and
+    `itsacv import <resume.json> [--id ID] [--profiles DIR]` writing
+    `DIR/<id>.json` (default `~/.itsaresume/profiles`), checked by
+    `validateProfile` before it is written. Mapping: `basics` -> identity
+    (missing email/phone: "—", listed in `to_confirm`); `work[]` ->
+    experiences (all `main`, newest first, `startDate`/`endDate` as
+    "MM/YYYY"), one bullet per highlight, else the summary, else
+    "position — company"; each bullet cites the skills it names
+    (`mentions`); `skills[]` -> a group per entry, its name and keywords as
+    skills, level from the entry's words (master/expert -> expert,
+    advanced -> proficient, intermediate -> working, beginner/basic ->
+    notions, none -> working and listed); `education`, `certificates`,
+    `languages` as lines. One language in, the same text in fr and en.
+    Red tests on a fictional resume; defences on "no invented bullet" and
+    the level default.
+  - [ ] **4.3** LinkedIn export: `fromLinkedInExport(files)` (CSV by name,
+    from a folder or a ZIP) -> JSON Resume -> 4.2. Positions -> work
+    (description split into highlights by line), Skills -> one skill group,
+    Profile -> basics (headline as label, summary), Email Addresses ->
+    email. Red tests on fictional CSVs with LinkedIn's real headers.
+  - [ ] **4.4** Employer side: `itsacv match <offer.txt> [--profiles DIR]
+    [--top K] [--run]`: the offer's listing (cached), `coverage` of each
+    profile, best first; with `--run`, `tailor` for the top K profiles.
+    Reuses `rank` (5.2a) with the roles swapped.
+  - [ ] **4.5** The page: import a JSON Resume or LinkedIn export (owner's
+    page only), pick it as the profile; "Classer les profils" for one
+    offer. Public page: none until the owner rules on 4.1 (b), (c).
+  - [ ] **4.6** The add-on: a Manifest V3 extension (`addon/`), one button
+    on a job page sends the page's offer text (or the user's selection) to
+    the generator's URL set in its options; nothing read in the
+    background, no profile page. Spec and a manual test first; the store
+    listing is the owner's.
 - [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
   Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused
   as "not an offer": `looksLikeOffer` matched words exactly, so "rôle",
