@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/sources.js",
     "src/import.js",
     "bin/itsacv.js",
     "src/matrix.js",

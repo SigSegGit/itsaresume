@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 4.8
-TITLE: 4.2-4.7 done (profile import JSON Resume/LinkedIn, itsacv match, page import and ranking, the MV3 add-on posting offers with the owner's key); next 4.8 waits for the owner's ruling on public import (consent, retention); meanwhile 2.25e on the VM
+NEXT: 4.12
+TITLE: 4.8-4.11 done (per-run sources, nothing kept: LinkedIn ZIP, JSON Resume, old CV, AI text, links; offer as text, file or link; score + report, CV from 75; page tabs "Mon profil" / "Sources du run"); a 22-offer test corpus is being added by another session; next 4.12, CV templates and palettes
 WRITTEN-AT: 2026-11-14
 -->
 
@@ -512,7 +512,7 @@ Traps met, each cost time once:
   answers to (a)-(c): an upload, a public choice, retention. `itsacv
   tailor` has no `--profiles` (use `--profile FILE`). Next: 5.1, the
   code-only matrix, now unblocked.
-- [ ] **4.x** (the owner, 2026-11-14: "comparer une offre à un autre
+- [x] **4.x** (the owner, 2026-11-14: "comparer une offre à un autre
   profil … importer un profil standard ou LinkedIn … un addon LinkedIn :
   un employeur trouve des profils pour son offre, une personne trouve une
   offre et génère le CV") **Other profiles, and the LinkedIn add-on**
@@ -563,8 +563,23 @@ Traps met, each cost time once:
   and key may `POST /api/jobs` only (owner's page, never public); the
   add-on's options take the URL and the key, grant that host on save
   (`optional_host_permissions`), and post the offer, else copy it. 2 tests,
-  1 defence, 2 anchors moved. Next: **4.8** a public import with
-  consent and deletion (needs the owner's ruling on 4.1 (b), (c)).
+  1 defence, 2 anchors moved.
+  - [x] **4.8-4.11** (the owner, 2026-11-14: "à chaque run, on choisit
+    les données sources … et l'offre … score + court rapport, CV idéal si
+    > 75 %; pas de conservation, pas de RGPD"; "deux onglets pour ne pas
+    perdre le mode actuel") Done: `src/sources.js` (`readSource`: JSON
+    Resume, LinkedIn folder/ZIP, docx, pdf, text, link; `readOffer`;
+    `mergeResumes`; `profileFromTexts`: the model reads free text, code
+    keeps only highlights found word for word and skills the text names;
+    `profileFromSources`), `loadedFrom` and `tailorOffer({ minScore })` in
+    `src/run.js`, `itsacv fit <source>... --offer <text|file|link>
+    [--threshold 75]`, `POST /api/jobs` with `sources` (base64), `links`,
+    `threshold` (owner only), sources in a temp folder removed after the
+    run, an offer given as a link fetched (owner only), the page's two
+    tabs "Mon profil" / "Sources du run". 7 tests, 3 defences.
+  - [ ] **4.12** Templates and colour palettes for the CV, one default
+    (the owner, 2026-11-14: "par la suite"). Next.
+
 - [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
   Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused
   as "not an offer": `looksLikeOffer` matched words exactly, so "rôle",
