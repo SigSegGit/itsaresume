@@ -33,6 +33,13 @@ property it proves.
 | the fill is measured on the content, not on the fixed A4 box | A4 page: the fill is measured on the content |
 | an experience reads title, organisation, then dates (no float before the title) | A4 page: title before dates |
 
+## `test/addon.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| 4.6: the add-on asks for the active tab on a click, nothing in the background | Add-on (4.6): no host permission |
+| 4.6: the selection first, else the job description block, else the page | Add-on (4.6): the selection first |
+
 ## `test/answers.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -805,6 +812,8 @@ property it proves.
 | 2.22c-link: /api/questions?job=<id> keeps the questions that job's run asked; an unknown job is 404 | Questions link: filtered to the job's run; Questions link: an unknown job is 404 |
 | 5.2b: the owner ranks the waiting offers; a bad body is refused before any call | Rank (5.2b): one offer is nothing to rank |
 | 5.2b: a public visitor cannot rank (the listing calls are the owner's quota) | Rank (5.2b): a public visitor cannot rank |
+| 4.5: the owner ranks the profiles for one offer and imports a profile; bad bodies refused first | Import (4.5): only LinkedIn's own CSV names pass |
+| 4.5: a public visitor can neither match nor import | Match/import (4.5): the owner's page only |
 
 ## `test/split.test.js`
 
@@ -905,6 +914,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**601 tests, 487 of them covered by at least one sabotage defence.**
+**605 tests, 491 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

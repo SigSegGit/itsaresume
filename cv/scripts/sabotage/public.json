@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/import.js",
     "src/evidence.js",
     "src/guard.js",
     "src/importance.js",

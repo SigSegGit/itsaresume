@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 4.2
-TITLE: 4.x started (the owner's ask of 2026-11-14: other profiles and a LinkedIn add-on, ADR-12); next 4.2, import a JSON Resume as a profile; 2.25e still to read once the VM runs the compact prompt
+NEXT: 4.7
+TITLE: 4.2-4.6 done (import a JSON Resume or LinkedIn export, itsacv match for employers, page import and profile ranking, the MV3 add-on); next 4.7, the add-on posts the offer itself; 2.25e still to read on the VM
 WRITTEN-AT: 2026-11-14
 -->
 
@@ -517,7 +517,7 @@ Traps met, each cost time once:
   un employeur trouve des profils pour son offre, une personne trouve une
   offre et génère le CV") **Other profiles, and the LinkedIn add-on**
   (ADR-12). Steps:
-  - [ ] **4.2** `src/import.js` `fromJsonResume(resume)` -> profile, and
+  - [x] **4.2** `src/import.js` `fromJsonResume(resume)` -> profile, and
     `itsacv import <resume.json> [--id ID] [--profiles DIR]` writing
     `DIR/<id>.json` (default `~/.itsaresume/profiles`), checked by
     `validateProfile` before it is written. Mapping: `basics` -> identity
@@ -532,23 +532,36 @@ Traps met, each cost time once:
     `languages` as lines. One language in, the same text in fr and en.
     Red tests on a fictional resume; defences on "no invented bullet" and
     the level default.
-  - [ ] **4.3** LinkedIn export: `fromLinkedInExport(files)` (CSV by name,
+  - [x] **4.3** LinkedIn export: `fromLinkedInExport(files)` (CSV by name,
     from a folder or a ZIP) -> JSON Resume -> 4.2. Positions -> work
     (description split into highlights by line), Skills -> one skill group,
     Profile -> basics (headline as label, summary), Email Addresses ->
     email. Red tests on fictional CSVs with LinkedIn's real headers.
-  - [ ] **4.4** Employer side: `itsacv match <offer.txt> [--profiles DIR]
+  - [x] **4.4** Employer side: `itsacv match <offer.txt> [--profiles DIR]
     [--top K] [--run]`: the offer's listing (cached), `coverage` of each
     profile, best first; with `--run`, `tailor` for the top K profiles.
     Reuses `rank` (5.2a) with the roles swapped.
-  - [ ] **4.5** The page: import a JSON Resume or LinkedIn export (owner's
+  - [x] **4.5** The page: import a JSON Resume or LinkedIn export (owner's
     page only), pick it as the profile; "Classer les profils" for one
     offer. Public page: none until the owner rules on 4.1 (b), (c).
-  - [ ] **4.6** The add-on: a Manifest V3 extension (`addon/`), one button
+  - [x] **4.6** The add-on: a Manifest V3 extension (`addon/`), one button
     on a job page sends the page's offer text (or the user's selection) to
     the generator's URL set in its options; nothing read in the
     background, no profile page. Spec and a manual test first; the store
     listing is the owner's.
+  Done 2026-11-14 (one PR): `src/import.js` (`fromJsonResume`,
+  `parseCsv`, `linkedInToJsonResume`, `fromLinkedInExport`/`Files`,
+  `writeProfile`), `itsacv import`, `itsacv match`, `rank.js` shared
+  `rankBy`/`listingOf` (offers and profiles ranked by one helper), `POST
+  /api/match` and `/api/profiles` (owner only, LinkedIn's CSV names only),
+  the page's import and "Classer les profils", `cv/addon/` (MV3, activeTab,
+  copies the offer and opens the generator). 13 tests, 9 defences. Not
+  done: a ZIP export (unzip it first), the add-on loaded in a real browser
+  (load `cv/addon` unpacked: chrome://extensions, developer mode), a real
+  LinkedIn export tried. Next: **4.7** the add-on posts the offer itself
+  (a one-time token from the page, `POST /api/jobs` from the extension's
+  origin allowed by `--addon-origin`), then **4.8** a public import with
+  consent and deletion (needs the owner's ruling on 4.1 (b), (c)).
 - [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
   Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused
   as "not an offer": `looksLikeOffer` matched words exactly, so "rôle",

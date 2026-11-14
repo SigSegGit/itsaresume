@@ -6,6 +6,9 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/addon.test.js",
+    "addon/manifest.json",
+    "addon/extract.js",
     "test/import.test.js",
     "src/import.js",
     "bin/itsacv.js",
@@ -1951,6 +1954,22 @@
       "dead": "",
       "expect": [
         "4.4: itsacv match ranks the profiles of --profiles for one offer, no model call without --run"
+      ]
+    },
+    "Add-on (4.6): no host permission": {
+      "file": "addon/manifest.json",
+      "live": "  \"permissions\": [\"activeTab\", \"scripting\", \"storage\"],",
+      "dead": "  \"permissions\": [\"activeTab\", \"scripting\", \"storage\"], \"host_permissions\": [\"<all_urls>\"],",
+      "expect": [
+        "4.6: the add-on asks for the active tab on a click, nothing in the background"
+      ]
+    },
+    "Add-on (4.6): the selection first": {
+      "file": "addon/extract.js",
+      "live": "  if (selected) return selected.slice(0, MAX);",
+      "dead": "",
+      "expect": [
+        "4.6: the selection first, else the job description block, else the page"
       ]
     }
   }
