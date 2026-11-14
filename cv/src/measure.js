@@ -132,3 +132,9 @@ export function recetteSheet(corpus) {
   ];
   return `${lines.join('\n')}\n`;
 }
+
+/** A run file's text: UTF-8, or UTF-16 with its BOM (PowerShell 5's `>`). */
+export function runText(buffer) {
+  if (buffer[0] === 0xff && buffer[1] === 0xfe) return buffer.subarray(2).toString('utf16le');
+  return buffer.toString('utf8').replace(/^﻿/, '');
+}

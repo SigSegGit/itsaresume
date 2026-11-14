@@ -13,7 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { checkCorpus, corpusScores, loadCorpus, recetteSheet } from '../src/measure.js';
+import { checkCorpus, corpusScores, loadCorpus, recetteSheet, runText } from '../src/measure.js';
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: { sheet: { type: 'boolean' } } });
 const dir = fileURLToPath(new URL('../corpus', import.meta.url));
@@ -43,7 +43,7 @@ function runLines(root) {
   return lines;
 }
 
-const text = positionals.map((path) => (statSync(path).isDirectory() ? runLines(path).join('\n') : readFileSync(path, 'utf8'))).join('\n');
+const text = positionals.map((path) => (statSync(path).isDirectory() ? runLines(path).join('\n') : runText(readFileSync(path)))).join('\n');
 const rows = checkCorpus(corpus, corpusScores(text, corpus));
 for (const row of rows) {
   const got = row.scores.length ? row.scores.map((score, i) => `${score} (${row.bands[i]})`).join(', ') : '-';

@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { BANDS, bandOf, checkCorpus, corpusProblems, corpusScores, loadCorpus, measureImportance, recall, recetteSheet } from '../src/measure.js';
+import { BANDS, bandOf, checkCorpus, corpusProblems, corpusScores, loadCorpus, measureImportance, recall, recetteSheet, runText } from '../src/measure.js';
 import { importanceIn } from '../src/importance.js';
 
 const corpus = loadCorpus(fileURLToPath(new URL('../corpus', import.meta.url)));
@@ -99,4 +99,12 @@ test('a corpus score outside its expected range is flagged, an offer never run i
 
 test('the acceptance sheet (corpus/RECETTE.md) is the one written from the corpus', () => {
   assert.equal(readFileSync(fileURLToPath(new URL('../corpus/RECETTE.md', import.meta.url)), 'utf8'), recetteSheet(corpus));
+});
+
+test('a run file written by PowerShell 5 (UTF-16, BOM) reads as text, like UTF-8', () => {
+  const line = 'fr-x: 1 attempt(s), score 12 (3s)\n';
+  const utf16 = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(line, 'utf16le')]);
+  assert.equal(runText(utf16), line);
+  assert.equal(runText(Buffer.from(`﻿${line}`, 'utf8')), line);
+  assert.equal(runText(Buffer.from(line, 'utf8')), line);
 });
