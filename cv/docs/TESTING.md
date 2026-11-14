@@ -160,6 +160,11 @@ property it proves.
 | recall finds a label named by a listed item either way round | Recall: a listed name holding the label counts |
 | recall does not take a stem for a name | Recall: whole words, not stems |
 | a label the code contradicts is measured wrong, one it agrees with right | Corpus: the wrong list is the code's disagreement |
+| every corpus offer expects a band (low, mid, high) and a score range inside 0-100 | — |
+| a score falls in one band: low below 35, mid below 70, high from 70 | — |
+| corpus scores are read from measure-analysis output and from the QA log, by id or by offer text | — |
+| a corpus score outside its expected range is flagged, an offer never run is told apart | — |
+| the acceptance sheet (corpus/RECETTE.md) is the one written from the corpus | — |
 
 ## `test/coverage.test.js`
 
@@ -916,6 +921,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**607 tests, 492 of them covered by at least one sabotage defence.**
+**612 tests, 492 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
