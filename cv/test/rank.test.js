@@ -78,3 +78,31 @@ test('5.2b: rankListed lists each offer once, through the cache, then ranks', as
   await rankListed({ offers, profile: synthetic(), top: 1, llm, cache });
   assert.equal(asked, 2, 'the second ranking reads the cache');
 });
+
+// 4.4: the employer's side, the same ranking with the roles swapped.
+test('4.4: rankProfiles orders the profiles for one offer, the top K chosen', async () => {
+  const { rankProfiles } = await import('../src/rank.js');
+  const dba = synthetic();
+  const none = { ...synthetic(), skills: synthetic().skills.filter((skill) => skill.id === 'gcp') };
+  const rows = rankProfiles(OFFERS[2].listed, [{ id: 'none', profile: none }, { id: 'dba', profile: dba }], { top: 1 });
+  assert.deepEqual(rows.map((row) => [row.name, row.chosen]), [['dba', true], ['none', false]]);
+});
+
+test('4.4: itsacv match ranks the profiles of --profiles for one offer, no model call without --run', () => {
+  const home = mkdtempSync(join(tmpdir(), 'itsacv-match-'));
+  try {
+    const out = join(home, 'out');
+    mkdirSync(join(out, '.listings'), { recursive: true });
+    mkdirSync(join(home, 'profiles'));
+    writeFileSync(join(home, 'profile.json'), JSON.stringify(synthetic()));
+    writeFileSync(join(home, 'profiles', 'twin.json'), JSON.stringify(synthetic()));
+    writeFileSync(join(home, 'dba.txt'), OFFERS[2].text);
+    writeFileSync(join(out, '.listings', `${createHash('sha256').update(OFFERS[2].text).digest('hex')}.json`), JSON.stringify(OFFERS[2].listed));
+    const run = spawnSync(process.execPath, [CLI, 'match', join(home, 'dba.txt'), '--top', '1', '--out', out, '--profile', join(home, 'profile.json'), '--profiles', join(home, 'profiles'), '--url', 'http://127.0.0.1:9'], { encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(run.stdout, /\| 1 \| default \| 3\/4 \| 75 % \| \d+ \| oui \|/);
+    assert.match(run.stdout, /\| 2 \| twin \| 3\/4 \| 75 % \| \d+ \| non \|/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});

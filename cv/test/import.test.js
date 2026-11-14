@@ -90,3 +90,50 @@ test('4.2: itsacv import writes DIR/<id>.json, and refuses a resume it cannot co
     rmSync(home, { recursive: true, force: true });
   }
 });
+
+// 4.3: the member's own LinkedIn export ("Get a copy of your data"), its real headers.
+const LINKEDIN = {
+  'Profile.csv': 'First Name,Last Name,Maiden Name,Address,Birth Date,Headline,Summary,Industry,Zip Code,Geo Location,Twitter Handles,Websites,Instant Messengers\nSam,Doe,,,,Platform engineer,"Eight years on cloud platforms, ""hands on"".",IT,,"Lyon, France",,,\n',
+  'Positions.csv': 'Company Name,Title,Description,Location,Started On,Finished On\nNimbus,Platform engineer,"Moved 40 services to Kubernetes.\nCut the cloud bill by a third.",Lyon,Mar 2021,\nPixel,Ops engineer,,Paris,Sep 2017,Feb 2021\n',
+  'Skills.csv': 'Name\nKubernetes\nLinux\n',
+  'Education.csv': 'School Name,Start Date,End Date,Notes,Degree Name,Activities\nExample University,2012,2014,,Master,\n',
+  'Certifications.csv': 'Name,Url,Authority,Started On,Finished On,License Number\nCKA,,CNCF,Jan 2022,,\n',
+  'Languages.csv': 'Name,Proficiency\nEnglish,Full professional proficiency\n',
+  'Email Addresses.csv': 'Email Address,Confirmed,Primary,Updated On\nsam@example.org,Yes,Yes,1/1/24\n',
+};
+const linkedinDir = () => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-li-'));
+  for (const [name, text] of Object.entries(LINKEDIN)) writeFileSync(join(dir, name), text);
+  return dir;
+};
+
+test('4.3: a LinkedIn export folder compiles into a profile through JSON Resume', async () => {
+  const { fromLinkedInExport } = await import('../src/import.js');
+  const dir = linkedinDir();
+  try {
+    const profile = fromLinkedInExport(dir);
+    assert.deepEqual(validateProfile(profile).errors, []);
+    assert.equal(profile.identity.name, 'Sam Doe');
+    assert.equal(profile.identity.email, 'sam@example.org');
+    assert.deepEqual(profile.experiences.map((experience) => [experience.id, experience.start, experience.end ?? null]), [['nimbus', '03/2021', null], ['pixel', '09/2017', '02/2021']]);
+    assert.deepEqual(profile.experiences[0].bullets.map((bullet) => bullet.en), ['Moved 40 services to Kubernetes.', 'Cut the cloud bill by a third.']);
+    assert.deepEqual(profile.experiences[0].bullets[0].skills, ['kubernetes']);
+    assert.equal(profile.profile_facts[0].en, 'Eight years on cloud platforms, "hands on".');
+    assert.ok(profile.to_confirm.some((line) => /Kubernetes: level not stated/.test(line)));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('4.3: itsacv import takes a LinkedIn export folder', () => {
+  const dir = linkedinDir();
+  const home = mkdtempSync(join(tmpdir(), 'itsacv-import-'));
+  try {
+    const done = spawnSync(process.execPath, [CLI, 'import', dir, '--id', 'sam-li', '--profiles', home], { encoding: 'utf8' });
+    assert.equal(done.status, 0, done.stderr);
+    assert.equal(JSON.parse(readFileSync(join(home, 'sam-li.json'), 'utf8')).identity.email, 'sam@example.org');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
+  }
+});
