@@ -1,0 +1,30 @@
+{
+  "id": "fr-offtrack-chauffeur-livreur",
+  "language": "fr",
+  "offer": "Chauffeur-livreur poids lourd C / porteur 19 tonnes (H/F)\n\nTransporteur régional spécialisé dans la livraison de matériaux de construction, nous desservons les négoces et chantiers de Bretagne avec une flotte de quarante porteurs équipés de grues auxiliaires.\n\nVotre journée type\nVous prenez votre camion au dépôt de Rennes à 6 heures, vous vérifiez le chargement préparé par le magasin et vous partez en tournée de quatre à huit points de livraison. Sur chantier, vous déchargez vous-même avec la grue de bord : palettes de parpaings, big-bags, poutrelles. Vous faites signer les bons de livraison sur le terminal embarqué et remontez les anomalies au service exploitation. Retour au dépôt en début d'après-midi, découchage exceptionnel.\n\nVotre profil\nLe permis C en cours de validité, la FIMO ou la FCO à jour et la carte conducteur sont obligatoires. Le CACES R490 pour la grue auxiliaire est exigé ; à défaut, nous pouvons le financer pour un candidat motivé avec une solide expérience. Une expérience de la livraison sur chantier est souhaitée. Le permis CE serait un plus.\n\nVous êtes autonome, prudent au volant, soigneux avec le matériel et à l'aise avec la clientèle des artisans. La connaissance du réseau routier breton serait appréciée.\n\nNous offrons un CDI à temps plein, des camions récents et entretenus, une prime de non-casse, des tickets restaurant et un treizième mois après un an d'ancienneté. Taux horaire selon expérience, heures supplémentaires payées.",
+  "requirements": [
+    {
+      "name": "permis C",
+      "importance": "must"
+    },
+    {
+      "name": "FIMO",
+      "importance": "must"
+    },
+    {
+      "name": "CACES R490",
+      "importance": "must"
+    },
+    {
+      "name": "permis CE",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      15
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "id": "fr-mid-dba-postgresql",
+  "language": "fr",
+  "offer": "Administrateur de bases de données PostgreSQL / Oracle (H/F)\n\nDans une collectivité régionale qui modernise son système d'information, vous rejoignez la cellule bases de données, composée de trois administrateurs, pour accompagner la migration d'une partie du patrimoine Oracle vers PostgreSQL.\n\nVos missions\nVous administrez une cinquantaine d'instances Oracle et PostgreSQL : installation, montées de version, sauvegardes, restaurations et gestion des droits. Vous mettez en place la haute disponibilité PostgreSQL avec Patroni et vous assurez la réplication vers le site de secours. Vous optimisez les performances en lien avec les équipes de développement, analysez les plans d'exécution et proposez des index. Vous automatisez les tâches récurrentes avec Ansible et outillez la supervision des bases. Vous participez enfin aux études de migration : inventaire, choix des outils, tests de charge.\n\nVotre profil\nAu moins cinq ans d'expérience en administration de bases de données. La maîtrise de PostgreSQL et d'Oracle est indispensable, ainsi qu'une bonne pratique du SQL et du PL/SQL. Vous êtes à l'aise sous Linux. Une expérience de Patroni et de pgBackRest est souhaitée. La connaissance d'Ansible serait un plus. Une expérience de projets de migration Oracle vers PostgreSQL est un atout majeur.\n\nLe poste est à pourvoir à Rouen, ouvert aux fonctionnaires et aux contractuels. Télétravail possible deux jours par semaine, restaurant administratif, rémunération selon la grille des ingénieurs territoriaux.",
+  "requirements": [
+    {
+      "name": "PostgreSQL",
+      "importance": "must"
+    },
+    {
+      "name": "Oracle",
+      "importance": "must"
+    },
+    {
+      "name": "SQL",
+      "importance": "must"
+    },
+    {
+      "name": "PL/SQL",
+      "importance": "must"
+    },
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "Patroni",
+      "importance": "nice"
+    },
+    {
+      "name": "pgBackRest",
+      "importance": "nice"
+    },
+    {
+      "name": "Ansible",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      35,
+      70
+    ]
+  }
+}

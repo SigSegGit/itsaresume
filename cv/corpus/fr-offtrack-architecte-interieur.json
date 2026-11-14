@@ -1,0 +1,34 @@
+{
+  "id": "fr-offtrack-architecte-interieur",
+  "language": "fr",
+  "offer": "Architecte d'intérieur (H/F) - Agence de design résidentiel et hôtelier\n\nVous rêvez de transformer des appartements haussmanniens et des chambres d'hôtel de charme ? Notre studio de huit designers, installé à Bordeaux, cherche son prochain architecte d'intérieur.\n\nVotre rôle, en quelques mots : comprendre le client, imaginer l'espace, le rendre réel. Concrètement, vous recueillez les besoins lors des premiers rendez-vous, vous réalisez les relevés, vous proposez des planches de tendance et des plans d'aménagement, vous produisez les perspectives 3D et vous constituez les dossiers de consultation des entreprises. Une fois le projet validé, vous suivez le chantier et coordonnez menuisiers, tapissiers, peintres et éclairagistes jusqu'à la livraison.\n\nCe que nous recherchons chez vous :\nUn diplôme d'architecte d'intérieur, de niveau bac+5 de préférence, reconnu par le CFAI ou équivalent. Trois ans d'expérience au minimum en agence. Une parfaite maîtrise de SketchUp et d'AutoCAD est obligatoire ; la maîtrise de 3ds Max ou de V-Ray pour des rendus photoréalistes serait un vrai plus. Une bonne culture des matériaux, du mobilier contemporain et de l'éclairage. L'anglais est souhaité pour échanger avec notre clientèle hôtelière internationale.\n\nVotre personnalité compte autant que votre book : créativité, écoute, diplomatie et sens du détail. Merci de joindre un portfolio à votre candidature.\n\nCDI, 39 heures, prime annuelle sur objectifs, salon de design à Milan chaque année avec l'équipe.",
+  "requirements": [
+    {
+      "name": "SketchUp",
+      "importance": "must"
+    },
+    {
+      "name": "AutoCAD",
+      "importance": "must"
+    },
+    {
+      "name": "3ds Max",
+      "importance": "nice"
+    },
+    {
+      "name": "V-Ray",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

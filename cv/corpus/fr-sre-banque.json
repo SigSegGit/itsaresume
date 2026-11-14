@@ -47,5 +47,12 @@
       "name": "Anglais",
       "importance": "must"
     }
-  ]
+  ],
+  "expected": {
+    "band": "high",
+    "score": [
+      60,
+      100
+    ]
+  }
 }

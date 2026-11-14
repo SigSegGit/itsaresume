@@ -1,0 +1,30 @@
+{
+  "id": "fr-offtrack-charge-rh",
+  "language": "fr",
+  "offer": "Chargé(e) des ressources humaines généraliste - Site industriel de 350 salariés\n\nRejoignez le service RH d'un fabricant d'emballages industriels installé près d'Orléans. Au sein d'une équipe de quatre personnes, rattaché(e) à la responsable des ressources humaines du site, vous intervenez sur l'ensemble du cycle de vie du salarié.\n\nCe que vous ferez :\n- le recrutement des opérateurs, techniciens et agents de maîtrise, de la rédaction de l'annonce à l'intégration ;\n- l'administration du personnel : contrats, avenants, mutuelle, visites médicales, sorties ;\n- le pilotage du plan de développement des compétences et le suivi des formations obligatoires de sécurité ;\n- la préparation des réunions du CSE et la rédaction des procès-verbaux ;\n- la contribution au processus d'entretiens annuels et professionnels ;\n- la mise à jour des indicateurs sociaux et de la base de données économiques et sociales.\n\nCe que nous attendons de vous :\nDiplômé(e) d'un master en ressources humaines ou en droit social, vous avez trois à cinq ans d'expérience en RH généraliste, idéalement en milieu industriel. Une bonne maîtrise du droit du travail est indispensable. Vous êtes à l'aise avec Excel et avec un SIRH ; la connaissance de Silae serait un vrai plus pour la préparation des éléments variables de paie.\n\nVous êtes rigoureux(se), discret(e), à l'écoute, et vous savez trouver le ton juste avec un opérateur de ligne comme avec un directeur d'usine.\n\nCDI, statut agent de maîtrise ou cadre selon profil, horaires de journée, restaurant d'entreprise, accord d'intéressement.",
+  "requirements": [
+    {
+      "name": "droit du travail",
+      "importance": "must"
+    },
+    {
+      "name": "Excel",
+      "importance": "must"
+    },
+    {
+      "name": "SIRH",
+      "importance": "must"
+    },
+    {
+      "name": "Silae",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

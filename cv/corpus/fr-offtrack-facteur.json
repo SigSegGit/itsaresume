@@ -1,0 +1,18 @@
+{
+  "id": "fr-offtrack-facteur",
+  "language": "fr",
+  "offer": "Facteur / Factrice en CDD de six mois - Secteur rural, Drôme\n\nUn opérateur de distribution du courrier et des colis recrute pour sa plateforme de Montélimar des facteurs et factrices pour assurer la distribution sur des tournées rurales.\n\nLe métier : chaque matin, vous préparez votre tournée au centre de tri, vous classez le courrier dans l'ordre de distribution et chargez les colis. Vous partez ensuite distribuer lettres, recommandés et petits colis auprès des particuliers et des entreprises de votre secteur, en véhicule électrique. Vous proposez aussi des services de proximité : visite à des personnes âgées, relevé de compteurs, remise de documents contre signature avec le terminal portable.\n\nCe que nous attendons :\nLe permis B depuis au moins deux ans est obligatoire. Aucun diplôme n'est exigé, mais une bonne connaissance du secteur géographique est appréciée. Vous êtes à l'aise avec les outils numériques simples du terminal de distribution. Le sens du service, la ponctualité et la courtoisie sont essentiels, car vous êtes souvent le seul lien quotidien de certains habitants avec l'extérieur.\n\nLe poste demande une bonne condition physique : montées et descentes du véhicule plusieurs centaines de fois par jour, port de colis jusqu'à 30 kilos, travail par tous les temps.\n\nHoraires du mardi au samedi, de 6h45 à 13h45 environ. Rémunération mensuelle de 1 850 euros bruts, prime de fin de contrat, possibilité de titularisation en CDI à l'issue du contrat. Formation de deux semaines en binôme avec un facteur expérimenté.",
+  "requirements": [
+    {
+      "name": "permis B",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      15
+    ]
+  }
+}

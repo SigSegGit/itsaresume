@@ -1,0 +1,42 @@
+{
+  "id": "fr-itfar-support-helpdesk-n1",
+  "language": "fr",
+  "offer": "Technicien support helpdesk niveau 1 (H/F) - Centre de services\n\nAu sein du centre de services d'une entreprise de services numériques, vous assurez l'assistance aux utilisateurs de plusieurs clients grands comptes, essentiellement dans les secteurs de la distribution et de la santé. L'équipe compte une vingtaine de techniciens, en horaires décalés de 7h à 20h.\n\nVos missions :\n- prendre les appels, courriels et tickets des utilisateurs et qualifier leurs demandes ;\n- résoudre les incidents de premier niveau : mots de passe, comptes Active Directory, messagerie Outlook, accès VPN, imprimantes ;\n- prendre la main à distance sur les postes Windows pour diagnostiquer et corriger ;\n- escalader les incidents complexes vers les équipes de niveau 2 en documentant précisément le ticket ;\n- mettre à jour la base de connaissances et respecter les engagements de service.\n\nVotre profil :\nTitulaire d'un Bac+2 en informatique, de type BTS SIO, vous avez une première expérience, même courte, en support utilisateurs. Vous connaissez l'environnement Windows 10 et Windows 11 ainsi que la suite Microsoft 365. Une pratique d'un outil de ticketing comme ServiceNow ou GLPI est demandée. La certification ITIL Foundation serait un plus. L'anglais est souhaité pour certains utilisateurs.\n\nExcellent relationnel, patience au téléphone et sens du service sont indispensables.\n\nCDI, 35 heures en roulement, salaire de 23 à 26 k euros, prime d'astreinte occasionnelle, formations certifiantes financées.",
+  "requirements": [
+    {
+      "name": "Active Directory",
+      "importance": "must"
+    },
+    {
+      "name": "Windows",
+      "importance": "must"
+    },
+    {
+      "name": "Microsoft 365",
+      "importance": "must"
+    },
+    {
+      "name": "ServiceNow",
+      "importance": "must"
+    },
+    {
+      "name": "GLPI",
+      "importance": "must"
+    },
+    {
+      "name": "ITIL",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      35
+    ]
+  }
+}

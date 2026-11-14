@@ -1,0 +1,50 @@
+{
+  "id": "fr-itfar-dev-fullstack-junior",
+  "language": "fr",
+  "offer": "Développeur fullstack junior React / Node.js (H/F) - Start-up edtech\n\nNous éditons une plateforme de révision en ligne utilisée par 200 000 lycéens. Notre équipe produit compte six développeurs, une designer et un product manager. Nous cherchons un développeur junior qui a envie d'apprendre vite et de livrer des fonctionnalités visibles chaque semaine.\n\nCe que tu feras :\n- développer de nouvelles pages et composants en React avec TypeScript ;\n- écrire les API correspondantes en Node.js avec Express et les tests associés ;\n- faire évoluer le schéma de notre base MongoDB avec l'aide d'un développeur senior ;\n- participer aux revues de code, aux rétrospectives et aux démos de fin de sprint ;\n- corriger les bugs remontés par le support et améliorer l'accessibilité de l'application.\n\nCe que nous attendons :\nTu sors d'une école d'ingénieurs, d'un bootcamp ou d'une reconversion réussie, avec un premier stage ou une alternance en développement web. Tu maîtrises JavaScript, tu as déjà construit une application avec React et tu as une première pratique de Node.js. TypeScript est obligatoire chez nous, mais nous t'accompagnerons si tu débutes. Une première expérience avec Jest ou Cypress serait un plus, tout comme des notions de Figma pour dialoguer avec la designer. Docker est utilisé pour l'environnement local, sans plus.\n\nCe que nous offrons : un mentor dédié pendant six mois, du pair programming quotidien, deux jours de télétravail par semaine, un budget formation, des tickets restaurant et des bureaux près de la gare de Lille. Salaire de 36 à 40 k euros selon profil.",
+  "requirements": [
+    {
+      "name": "React",
+      "importance": "must"
+    },
+    {
+      "name": "Node.js",
+      "importance": "must"
+    },
+    {
+      "name": "TypeScript",
+      "importance": "must"
+    },
+    {
+      "name": "JavaScript",
+      "importance": "must"
+    },
+    {
+      "name": "MongoDB",
+      "importance": "nice"
+    },
+    {
+      "name": "Jest",
+      "importance": "nice"
+    },
+    {
+      "name": "Cypress",
+      "importance": "nice"
+    },
+    {
+      "name": "Figma",
+      "importance": "nice"
+    },
+    {
+      "name": "Docker",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      35
+    ]
+  }
+}

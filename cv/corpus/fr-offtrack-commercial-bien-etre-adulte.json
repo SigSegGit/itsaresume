@@ -1,0 +1,30 @@
+{
+  "id": "fr-offtrack-commercial-bien-etre-adulte",
+  "language": "fr",
+  "offer": "Commercial B2B itinérant (H/F) - Accessoires de bien-être pour adultes\n\nMarque française de produits de bien-être intime pour adultes, conçus et contrôlés en Europe, nous distribuons notre gamme auprès des boutiques spécialisées, des parapharmacies, des concept stores et de quelques enseignes de lingerie. Pour accompagner notre croissance, nous créons un poste de commercial terrain sur le quart sud-ouest.\n\nVotre mission\nVous développez et fidélisez un portefeuille d'environ 150 points de vente. Vous prospectez de nouveaux revendeurs, négociez les référencements et les conditions commerciales, formez les équipes de vente aux produits et à leur conseil, et installez la mise en avant en magasin. Vous assurez la remontée d'informations sur la concurrence et participez à deux salons professionnels par an.\n\nVotre profil\nFormation commerciale de niveau bac+2 minimum. Expérience réussie de deux ans au moins en vente B2B terrain, idéalement dans la cosmétique, la parapharmacie ou le prêt-à-porter. Le permis B est indispensable, le poste impliquant trois à quatre jours de déplacement par semaine. Vous maîtrisez un CRM, Salesforce de préférence. Une aisance à parler de bien-être et de santé intime avec naturel, professionnalisme et bienveillance est essentielle. L'espagnol serait un plus pour quelques comptes frontaliers.\n\nNous offrons une rémunération fixe attractive, des commissions déplafonnées, un véhicule de service, un ordinateur et un téléphone, ainsi qu'une équipe engagée pour un bien-être sans tabou.",
+  "requirements": [
+    {
+      "name": "permis B",
+      "importance": "must"
+    },
+    {
+      "name": "Salesforce",
+      "importance": "must"
+    },
+    {
+      "name": "CRM",
+      "importance": "must"
+    },
+    {
+      "name": "espagnol",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

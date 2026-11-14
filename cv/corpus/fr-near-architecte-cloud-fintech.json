@@ -1,0 +1,58 @@
+{
+  "id": "fr-near-architecte-cloud-fintech",
+  "language": "fr",
+  "offer": "Architecte logiciel cloud (H/F) - Fintech de paiement B2B\n\nFintech de paiement agréée, nous traitons plusieurs millions de transactions par mois pour des places de marché et des plateformes SaaS. Notre plateforme repose sur une cinquantaine de microservices, majoritairement en Java et en Kotlin, communiquant par événements.\n\nVotre rôle\nRattaché au CTO, vous êtes responsable de la cohérence de l'architecture logicielle. Vous concevez les évolutions structurantes avec les équipes de développement : découpage des domaines, contrats d'événements, stratégie de données, résilience et sécurité. Vous animez les revues d'architecture et rédigez les décisions d'architecture. Vous accompagnez l'équipe plateforme sur l'évolution de l'infrastructure cloud et vous contribuez aux audits de conformité exigés par notre régulateur.\n\nEnvironnement technique\n- Apache Kafka comme colonne vertébrale événementielle, avec Schema Registry\n- AWS : EKS, RDS, S3, IAM, KMS\n- PostgreSQL pour les données transactionnelles\n- Terraform pour l'infrastructure, GitLab CI pour la livraison\n- Datadog pour l'observabilité\n\nProfil recherché\nAu moins huit ans d'expérience en développement backend, dont trois en tant qu'architecte ou tech lead sur des systèmes distribués. La maîtrise de Kafka, d'AWS et de PostgreSQL est indispensable. Une expérience de Java ou de Kotlin est exigée. La connaissance de Terraform est souhaitée. Une expérience du domaine du paiement ou de la norme PCI DSS serait un vrai plus. Anglais courant exigé, l'équipe étant internationale.\n\nCDI à Paris, trois jours de télétravail, BSPCE, 85 à 105 k euros.",
+  "requirements": [
+    {
+      "name": "Kafka",
+      "importance": "must"
+    },
+    {
+      "name": "AWS",
+      "importance": "must"
+    },
+    {
+      "name": "EKS",
+      "importance": "nice"
+    },
+    {
+      "name": "PostgreSQL",
+      "importance": "must"
+    },
+    {
+      "name": "Java",
+      "importance": "must"
+    },
+    {
+      "name": "Kotlin",
+      "importance": "must"
+    },
+    {
+      "name": "Terraform",
+      "importance": "nice"
+    },
+    {
+      "name": "GitLab CI",
+      "importance": "nice"
+    },
+    {
+      "name": "Datadog",
+      "importance": "nice"
+    },
+    {
+      "name": "PCI DSS",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      40,
+      75
+    ]
+  }
+}

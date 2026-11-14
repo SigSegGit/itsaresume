@@ -36,5 +36,12 @@
     {
       "name": "Flink"
     }
-  ]
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      35,
+      75
+    ]
+  }
 }

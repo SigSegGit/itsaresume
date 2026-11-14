@@ -1,0 +1,58 @@
+{
+  "id": "fr-near-ingenieur-production-assurance",
+  "language": "fr",
+  "offer": "Ingénieur d'exploitation / production applicative confirmé (H/F) - Assurance\n\nAu sein de la direction de la production informatique d'un groupe d'assurance, vous rejoignez l'équipe qui exploite les applications de gestion des sinistres et des contrats, soit près de 300 serveurs Linux et une vingtaine de bases de données.\n\nMissions principales :\n- Assurer le maintien en condition opérationnelle des applications et le traitement des incidents de niveau 2 et 3.\n- Installer et paramétrer les nouvelles versions applicatives, de la recette à la production.\n- Industrialiser les déploiements et les gestes d'exploitation avec Ansible.\n- Concevoir et suivre les chaînes de traitement dans Control-M.\n- Faire évoluer la supervision avec Zabbix et Grafana, et définir les seuils d'alerte avec les équipes métier.\n- Rédiger et maintenir les consignes d'exploitation et les procédures de reprise.\n- Participer aux comités de changement selon les processus ITIL.\n\nCompétences attendues :\nVous avez au moins quatre ans d'expérience en exploitation ou en production applicative. La maîtrise de Linux et du scripting Shell est indispensable. Vous avez déjà travaillé avec Ansible et avec un ordonnanceur, Control-M de préférence. La connaissance d'Oracle et de PostgreSQL est exigée. Une expérience de Zabbix est appréciée. Des notions de Docker et d'OpenShift seraient un plus pour accompagner les premiers projets conteneurisés. Une certification ITIL est souhaitée.\n\nAstreintes une semaine sur six, poste en CDI basé au Mans, télétravail deux jours par semaine, 45 à 55 k euros selon expérience.",
+  "requirements": [
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "Shell",
+      "importance": "must"
+    },
+    {
+      "name": "Ansible",
+      "importance": "must"
+    },
+    {
+      "name": "Control-M",
+      "importance": "must"
+    },
+    {
+      "name": "Oracle",
+      "importance": "must"
+    },
+    {
+      "name": "PostgreSQL",
+      "importance": "must"
+    },
+    {
+      "name": "Zabbix",
+      "importance": "nice"
+    },
+    {
+      "name": "Grafana",
+      "importance": "nice"
+    },
+    {
+      "name": "Docker",
+      "importance": "nice"
+    },
+    {
+      "name": "OpenShift",
+      "importance": "nice"
+    },
+    {
+      "name": "ITIL",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "high",
+    "score": [
+      60,
+      100
+    ]
+  }
+}

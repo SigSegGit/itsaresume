@@ -1,0 +1,46 @@
+{
+  "id": "fr-itfar-dev-cobol-db2",
+  "language": "fr",
+  "offer": "Développeur Mainframe COBOL / DB2 confirmé (H/F) - Assurance\n\nPour la direction des systèmes d'information d'un groupe d'assurance mutualiste, nous recherchons un développeur mainframe qui rejoindra l'équipe en charge des applications de gestion des contrats santé et prévoyance. Ces applications traitent chaque nuit plusieurs millions de mouvements.\n\nVos missions :\n1. Analyser les demandes d'évolution avec les équipes métier et rédiger les spécifications techniques.\n2. Développer et maintenir les programmes batch et transactionnels en COBOL sous z/OS.\n3. Écrire et optimiser les requêtes SQL sur DB2, en lien avec les administrateurs de bases de données.\n4. Concevoir les chaînes de traitement en JCL et les ordonnancer dans le planificateur.\n5. Assurer le support de niveau 3 lors des incidents de production de nuit, à tour de rôle.\n6. Participer aux projets de modernisation : exposition de services via API et migration de certaines briques vers Java.\n\nProfil :\nVous avez au moins cinq ans d'expérience en développement COBOL en environnement IBM z/OS. La maîtrise de DB2, de JCL et de CICS est indispensable. La connaissance de l'outil d'ordonnancement Control-M serait appréciée. Une première exposition à Java ou à Git serait un plus, dans le cadre de nos travaux de modernisation. La connaissance du métier de l'assurance de personnes est un atout fort.\n\nLe poste est basé à Niort, avec deux jours de télétravail par semaine après la période d'intégration. CDI, salaire de 45 à 52 k euros, intéressement, participation et horaires variables.",
+  "requirements": [
+    {
+      "name": "COBOL",
+      "importance": "must"
+    },
+    {
+      "name": "z/OS",
+      "importance": "must"
+    },
+    {
+      "name": "DB2",
+      "importance": "must"
+    },
+    {
+      "name": "JCL",
+      "importance": "must"
+    },
+    {
+      "name": "CICS",
+      "importance": "must"
+    },
+    {
+      "name": "Control-M",
+      "importance": "nice"
+    },
+    {
+      "name": "Java",
+      "importance": "nice"
+    },
+    {
+      "name": "Git",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      30
+    ]
+  }
+}

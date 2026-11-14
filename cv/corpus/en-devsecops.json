@@ -43,5 +43,12 @@
       "name": "French",
       "importance": "must"
     }
-  ]
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      35,
+      75
+    ]
+  }
 }

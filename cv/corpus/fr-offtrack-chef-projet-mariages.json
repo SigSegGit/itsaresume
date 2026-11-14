@@ -1,0 +1,34 @@
+{
+  "id": "fr-offtrack-chef-projet-mariages",
+  "language": "fr",
+  "offer": "Chef de projet événementiel - Mariages et réceptions privées (H/F)\n\nNous sommes une agence d'organisation de mariages haut de gamme dans le Luberon et sur la Côte d'Azur. Chaque année, nous concevons et coordonnons une quarantaine de mariages, souvent pour des couples venant de l'étranger, dans des bastides, des domaines viticoles et des villas privées.\n\nLe poste\nVous prenez en charge une quinzaine de mariages par saison, de la première rencontre jusqu'au lendemain de la fête. Vous construisez le budget avec les mariés, sélectionnez et négociez avec les prestataires (traiteurs, fleuristes, musiciens, photographes, loueurs de mobilier), concevez le planning détaillé de la journée et coordonnez sa mise en œuvre sur place. Le jour J, vous êtes le chef d'orchestre : installation, cérémonie, cocktail, dîner, imprévus et pluie comprise.\n\nVous\nVous avez au moins trois ans d'expérience dans l'événementiel, idéalement dans le mariage ou l'hôtellerie de luxe. L'anglais courant est indispensable, l'essentiel de notre clientèle étant anglophone ; l'italien serait un plus. Vous maîtrisez la gestion budgétaire et êtes à l'aise avec les outils de gestion de projet comme Trello ou Notion. Le permis B est obligatoire, nos lieux étant isolés.\n\nVous êtes organisé, créatif, résistant au stress et disponible les week-ends d'avril à octobre, avec une récupération en semaine et une période plus calme l'hiver.\n\nCDI, rémunération fixe et prime par mariage, téléphone et ordinateur portables, remboursement des frais de déplacement.",
+  "requirements": [
+    {
+      "name": "anglais",
+      "importance": "must"
+    },
+    {
+      "name": "italien",
+      "importance": "nice"
+    },
+    {
+      "name": "Trello",
+      "importance": "must"
+    },
+    {
+      "name": "Notion",
+      "importance": "must"
+    },
+    {
+      "name": "permis B",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

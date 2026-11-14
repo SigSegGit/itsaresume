@@ -1,0 +1,34 @@
+{
+  "id": "fr-near-directeur-plateforme-ecommerce",
+  "language": "fr",
+  "offer": "Directeur de la plateforme e-commerce (H/F) - Enseigne de distribution spécialisée\n\nEnseigne de distribution d'articles de maison réalisant 35 % de son chiffre d'affaires en ligne, nous recrutons le directeur de notre plateforme e-commerce. Vous dirigez une équipe de quarante personnes réparties en quatre pôles : développement, exploitation et fiabilité, data, et produit.\n\nVos responsabilités\nVous définissez la feuille de route technique de la plateforme et la portez auprès du comité de direction. Vous garantissez la disponibilité et la performance du site, notamment lors des pics de soldes et du Black Friday, avec un objectif de disponibilité de 99,95 %. Vous pilotez la migration progressive de notre monolithe vers une architecture de microservices hébergée sur Google Cloud, et l'adoption de Kubernetes. Vous êtes responsable d'un budget de 8 millions d'euros, des relations avec les prestataires et du recrutement.\n\nVotre profil\nVous avez au moins douze ans d'expérience dans le numérique, dont cinq en management d'équipes techniques de plus de vingt personnes. Une expérience du e-commerce à fort trafic est indispensable. Vous avez une solide culture de l'exploitation et de la fiabilité : gestion des incidents, observabilité, astreintes, SRE. La connaissance de Google Cloud ou d'un autre cloud public est attendue. Une pratique de la méthode SAFe ou d'un autre cadre agile à l'échelle serait un plus. Anglais professionnel exigé.\n\nPoste basé à Lille, rattaché au directeur général. Rémunération fixe de 130 à 150 k euros, variable sur objectifs, véhicule et actions gratuites.",
+  "requirements": [
+    {
+      "name": "Kubernetes",
+      "importance": "nice"
+    },
+    {
+      "name": "Google Cloud",
+      "importance": "must"
+    },
+    {
+      "name": "SRE",
+      "importance": "must"
+    },
+    {
+      "name": "SAFe",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      30,
+      70
+    ]
+  }
+}

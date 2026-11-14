@@ -1,0 +1,34 @@
+{
+  "id": "fr-offtrack-frigoriste-pac",
+  "language": "fr",
+  "offer": "Technicien frigoriste - Pompes à chaleur et climatisation (H/F)\n\nInstallateur certifié RGE, nous équipons depuis quinze ans les maisons individuelles et les petits bâtiments tertiaires d'Occitanie en pompes à chaleur air-eau, en climatisation et en systèmes de ventilation. Avec la croissance de la rénovation énergétique, nous renforçons notre service installation et SAV.\n\nMissions\n1. Installer des pompes à chaleur air-eau et air-air, des systèmes multisplit et des VRV de petite puissance.\n2. Réaliser les raccordements frigorifiques, les tirages au vide et les charges en fluide.\n3. Effectuer les mises en service, les réglages de régulation et les contrôles d'étanchéité réglementaires.\n4. Diagnostiquer les pannes et intervenir en dépannage, en lien avec le support technique des fabricants.\n5. Renseigner les fiches d'intervention et le registre des fluides.\n\nProfil\nTitulaire d'un CAP, d'un Bac pro ou d'un BTS en froid et climatisation, vous justifiez d'au moins deux ans d'expérience sur des installations de pompes à chaleur. L'attestation d'aptitude à la manipulation des fluides frigorigènes de catégorie 1 est obligatoire. Le permis B est exigé. Une qualification QualiPAC serait un vrai plus. Des notions d'électricité et une habilitation électrique BR sont attendues pour les raccordements de puissance.\n\nVous êtes méthodique, attentif à la sécurité et vous savez expliquer le fonctionnement d'une installation au client.\n\nCDI, 39 heures, véhicule équipé, primes d'intervention, formations constructeurs, plan d'épargne entreprise.",
+  "requirements": [
+    {
+      "name": "BTS",
+      "importance": "must"
+    },
+    {
+      "name": "fluides frigorigènes",
+      "importance": "must"
+    },
+    {
+      "name": "permis B",
+      "importance": "must"
+    },
+    {
+      "name": "QualiPAC",
+      "importance": "nice"
+    },
+    {
+      "name": "habilitation électrique",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

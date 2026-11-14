@@ -39,5 +39,12 @@
       "name": "Rigueur",
       "importance": "must"
     }
-  ]
+  ],
+  "expected": {
+    "band": "high",
+    "score": [
+      55,
+      100
+    ]
+  }
 }
