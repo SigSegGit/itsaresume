@@ -383,7 +383,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         };
         // Every model answer's tokens, kept on the job: a failed run spent them too.
         const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);
-        job.result = await deps.tailor({ offer: job.text, title: job.named, model: job.model, onStep, onAnswer, profile: job.profile });
+        job.result = await deps.tailor({ offer: job.text, title: job.named, model: job.model, onStep, onAnswer, profile: job.profile, ...(job.sources ? { sources: job.sources, links: job.links, threshold: job.threshold } : {}) });
         // Renamed while it ran: the name joins the run once it has a folder.
         if (job.renamed) keepTitle(job);
         job.status = 'done';
@@ -585,6 +585,15 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (compared.length < 2) throw new HttpError(400, 'Il faut au moins deux modèles disponibles pour comparer.');
         }
         const group = compared ? randomUUID() : undefined;
+        // 4.11: the run's own sources (files as base64, links) and its threshold; the owner's page only.
+        const { sources, links, threshold } = body;
+        if ((sources !== undefined || links !== undefined) && publicMode) throw new HttpError(403, 'les sources du run sont réservées à la page du propriétaire');
+        if (sources !== undefined && (!Array.isArray(sources) || sources.length > 10 || !sources.every((file) => typeof file?.name === 'string' && /^[^\\/:*?"<>|]{1,120}$/.test(file.name) && !file.name.startsWith('.') && typeof file.data === 'string' && file.data.length <= MAX_TEXT * 8))) {
+          throw new HttpError(400, 'sources: at most 10 files { name, data (base64) }');
+        }
+        if (links !== undefined && (!Array.isArray(links) || links.length > 5 || !links.every((link) => typeof link === 'string' && /^https?:\/\/\S+$/.test(link)))) throw new HttpError(400, 'links: at most 5 http(s) links');
+        if (threshold !== undefined && (!Number.isInteger(threshold) || threshold < 0 || threshold > 100)) throw new HttpError(400, 'threshold: a whole number from 0 to 100');
+        const own = sources?.length || links?.length ? { sources: sources ?? [], links: links ?? [], threshold: threshold ?? 75 } : {};
         const created = offers.flatMap((offer) => {
           if (typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT) {
             throw new HttpError(400, `offer text: a non-empty string of at most ${MAX_TEXT} characters`);
@@ -594,7 +603,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           }
           // 2.31a: the name typed for the offer, if any, also names its run.
           const named = cleanName(offer.title ?? '') ?? undefined;
-          const job = { text: offer.text, status: 'queued', steps: [], times: [], via, visitor, invite, profile };
+          const job = { text: offer.text, status: 'queued', steps: [], times: [], via, visitor, invite, profile, ...own };
           if (!compared) return [{ ...job, id: randomUUID(), title: named ?? 'Offre', named, model }];
           // The model leads the folder's name: two lanes may start in the same second.
           return compared.map((name) => ({ ...job, id: randomUUID(), title: `${named ?? 'Offre'} — ${name}`, named: `${name} ${named ?? 'offre'}`, model: name, group }));

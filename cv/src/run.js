@@ -46,6 +46,13 @@ export class RunError extends Error {
  * evidence restricts the profile; without, the profile is used as it is,
  * unchecked.
  */
+/** 4.9: a profile built for one run (its sources), checked, kept in memory only. */
+export function loadedFrom(profile) {
+  const { errors } = validateProfile(profile);
+  if (errors.length) throw new RunError(2, `the profile is invalid: ${errors.join('; ')}`);
+  return { full: profile, profile, assessment: undefined, removed: [], texts: [] };
+}
+
 export function loadProfile(path) {
   let full;
   try {
@@ -104,7 +111,7 @@ export function runName(offer, now = new Date(), title = '') {
  * analysis ({attempt}), layout ({layouts}), pdf, ats, done ({dir}).
  * `startLayout` starts the layout engine (Word; tests fake it).
  */
-export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title, listingLlm = null, split = false }) {
+export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title, listingLlm = null, split = false, minScore = 0 }) {
   const { full, profile, assessment, removed, texts } = loaded;
   const dir = join(outDir, runName(offer, new Date(), title));
   let result;
@@ -122,7 +129,11 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'analysis.json'), JSON.stringify(analysis, null, 2));
   writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));
-  const { model, layout, ats, skipped } = await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
+  // 4.10: below the threshold, the score and the report only, no CV.
+  const below = minScore > 0 && analysis.fit.score < minScore;
+  const { model, layout, ats, skipped } = below
+    ? { model: { experiences: [] }, layout: null, ats: null, skipped: { reason: `no CV: the score ${analysis.fit.score} is below the threshold of ${minScore}`, failed: false } }
+    : await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
   const older = olderMentions(analysis, full, texts);
   const instructions = offerInstructions(offer);
   const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older, rendered: model.experiences, instructions });
@@ -212,7 +223,7 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep })
 }
 
 /** The PDF's text layer, as an ATS reads it (tools/pdftext.py, PyMuPDF). */
-function pdfText(pdf) {
+export function pdfText(pdf) {
   const script = fileURLToPath(new URL('../tools/pdftext.py', import.meta.url));
   try {
     return execFileSync(process.env.ITSACV_PYTHON || 'python', [script, pdf], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });

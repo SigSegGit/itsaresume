@@ -90,6 +90,7 @@ async function refreshStatus() {
       $('split').hidden = true;
       rankAllowed = false;
       $('import-row').hidden = true;
+      $('sources-card').hidden = true;
       $('drop-help').textContent = `Colle le texte d’une offre d’emploi : tu obtiens le CV de ${profile.name ?? 'ce candidat'} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.`;
     }
     if (profile.error) setPill('status-profile', 'bad', 'Profil invalide');
@@ -269,12 +270,33 @@ function setupOffers() {
     renderOffers();
     showRanking('offres', rows);
   }));
+  // 4.11: two tabs: the stored profile, or this run's own sources (nothing kept).
+  const tab = (sources) => {
+    $('tab-stored').setAttribute('aria-selected', String(!sources));
+    $('tab-sources').setAttribute('aria-selected', String(sources));
+    $('sources-panel').hidden = !sources;
+  };
+  $('tab-stored').addEventListener('click', () => tab(false));
+  $('tab-sources').addEventListener('click', () => tab(true));
+  /** The sources tab's files (base64), links and threshold, or nothing on the stored-profile tab. */
+  const runSources = async () => {
+    if ($('sources-panel').hidden) return {};
+    const files = await Promise.all([...$('source-files').files].map(async (file) => {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary = '';
+      for (let at = 0; at < bytes.length; at += 0x8000) binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
+      return { name: file.name, data: btoa(binary) };
+    }));
+    const links = $('source-links').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!files.length && !links.length) throw new Error('ajoute au moins un fichier ou un lien du candidat');
+    return { sources: files, links, threshold: Number($('threshold').value) };
+  };
   $('generate').addEventListener('click', async () => {
     showError(null);
     const batch = offers.splice(0, offers.length);
     renderOffers();
     try {
-      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value, profile: $('profile-row').hidden ? undefined : $('profile').value });
+      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value, profile: $('profile-row').hidden ? undefined : $('profile').value, ...(await runSources()) });
       poll();
     } catch (error) {
       offers.push(...batch);

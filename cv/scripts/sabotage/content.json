@@ -6,6 +6,8 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/fit.test.js",
+    "src/sources.js",
     "test/addon.test.js",
     "addon/manifest.json",
     "addon/extract.js",
@@ -1970,6 +1972,22 @@
       "dead": "",
       "expect": [
         "4.6: the selection first, else the job description block, else the page"
+      ]
+    },
+    "Fit (4.10): no CV below the threshold": {
+      "file": "src/run.js",
+      "live": "  const below = minScore > 0 && analysis.fit.score < minScore;",
+      "dead": "  const below = false;",
+      "expect": [
+        "4.10: from 75 the CV is written; below, the score and the report only"
+      ]
+    },
+    "Sources (4.9): only what the text says word for word": {
+      "file": "src/sources.js",
+      "live": "  const said = (sentence) => (corpus.includes(flat(sentence)) ? true : (dropped.push(sentence), false));",
+      "dead": "  const said = () => true;",
+      "expect": [
+        "4.9: a profile read from free text keeps only what the text says, word for word"
       ]
     }
   }

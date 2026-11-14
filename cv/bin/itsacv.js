@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, extname, join } from 'node:path';
 import { complete, TIMEOUT_MS } from '../src/llm.js';
-import { loadProfile, tailorOffer, RunError } from '../src/run.js';
+import { loadedFrom, loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
 import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/invites.js';
@@ -18,6 +18,7 @@ import { ID, listProfiles } from '../src/profiles.js';
 import { fileListingCache } from '../src/listing.js';
 import { listingOf, rankListed, rankMarkdown, rankProfiles } from '../src/rank.js';
 import { importProfile, writeProfile } from '../src/import.js';
+import { profileFromSources, readOffer } from '../src/sources.js';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -32,6 +33,7 @@ const USAGE = `usage:
   itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
   itsacv match <offer.txt> [--top K] [--run] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL]
   itsacv import <resume.json | linkedin-export-dir> --id ID [--profiles DIR]
+  itsacv fit <source>... --offer <text | file | link> [--threshold N] [--out DIR] [--url URL]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -54,6 +56,9 @@ const USAGE = `usage:
              best --top K (default 3) marked; with --run, only those are tailored
   match      the employer's side: the profiles (--profile, then --profiles DIR) ranked for
              one offer, the same way; with --run, a CV for each of the top K
+  fit        this run's own sources (LinkedIn export .zip/folder, JSON Resume, old CV .docx/.pdf,
+             a text an AI wrote, a link), nothing kept: the score and a short report, and
+             the CV only when the score reaches --threshold (default 75)
   import     a JSON Resume (jsonresume.org) or a LinkedIn data export folder compiled into
              DIR/<id>.json (default ~/.itsaresume/profiles), nothing invented: levels the file
              does not state read as working and listed in to_confirm
@@ -87,7 +92,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin'];
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin', '--offer', '--threshold'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
@@ -97,7 +102,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix', 'rank', 'match', 'import'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix', 'rank', 'match', 'import', 'fit'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -123,6 +128,8 @@ function parse(argv) {
     top: '3',
     id: null,
     addonOrigin: null,
+    offer: null,
+    threshold: '75',
     run: false,
   };
   for (let i = 0; i < rest.length; i += 1) {
@@ -258,6 +265,27 @@ async function main() {
     const { offers, repairs } = await splitOffers({ text: read(options.files[0]), llm }).catch((error) => fail(4, error.message));
     for (const repair of repairs) process.stderr.write(`itsacv: ${repair}\n`);
     offers.forEach((offer, index) => process.stdout.write(`--- offer ${index + 1}: ${offer.title}\n${offer.text}\n`));
+    return;
+  }
+
+  // 4.10: a run from its own sources; the CV only from the threshold.
+  if (options.command === 'fit') {
+    if (!options.offer) fail(2, 'fit needs --offer <text | file | link>');
+    if (!/^(\d|[1-9]\d|100)$/.test(options.threshold)) fail(2, '--threshold: 0 to 100');
+    let loaded;
+    let offer;
+    try {
+      const built = await profileFromSources(options.files, { llm });
+      loaded = loadedFrom(built.profile);
+      offer = await readOffer(options.offer);
+      for (const item of built.dropped) process.stderr.write(`itsacv: left out (not in the sources word for word): ${item}
+`);
+    } catch (error) {
+      fail(2, error.message);
+    }
+    const result = await tailorOffer({ loaded, offer, llm, outDir: options.out, useWord: options.layout, profileId: 'sources', minScore: Number(options.threshold) }).catch((error) => fail(error instanceof RunError ? error.code : 1, error.message));
+    process.stderr.write(`itsacv: fit ${result.analysis.fit.score}/100; ${result.skipped?.reason ?? 'CV written'}; report: ${result.dir}
+`);
     return;
   }
 
