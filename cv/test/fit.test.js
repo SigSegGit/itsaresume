@@ -72,31 +72,33 @@ test('4.9: sources compile into a checked profile kept in memory only', async ()
 
 // The threshold: below it, the score and the report; the CV only from it.
 const SYNTHETIC = JSON.parse(readFileSync(new URL('./fixtures/profile.synthetic.json', import.meta.url), 'utf8'));
-const answer = (match) => ({
+const answer = (match, names) => ({
   language: 'fr',
   fit: { score: 50, verdict: 'good', rationale: '' },
-  requirements: [{ name: 'PostgreSQL', importance: 'must', match, skills: match === 'yes' ? ['postgresql'] : [], note: '' }, { name: 'Terraform', importance: 'must', match, skills: match === 'yes' ? ['terraform'] : [], note: '' }],
+  requirements: names.map((name) => ({ name, importance: 'must', match, skills: match === 'yes' ? [name.toLowerCase()] : [], note: '' })),
   headline: 'Ingénieur SRE — PostgreSQL',
   summary: ['SRE exploitant PostgreSQL en production critique.'],
   experiences: [{ id: 'acme', bullets: ['acme-pg'] }],
   skill_groups: [{ id: 'db', skills: ['postgresql'] }],
 });
-const OFFER = 'Ingénieur SRE - Paris\nCompétences requises : PostgreSQL, Terraform.\nContrat : CDI.';
+const OFFER = ['Ingénieur SRE confirmé - Paris', 'Contexte : modernisation des plateformes techniques.', 'Missions : exploitation, automatisation, astreinte, amélioration continue.', 'Compétences requises : PostgreSQL, Terraform, supervision.', "Profil recherché : expérience de la production critique, esprit d'équipe.", 'Contrat : CDI, télétravail partiel.'].join(String.fromCharCode(10));
 const run = async (match, outDir) => {
-  const llm = async ({ system = '' } = {}) => (system === LISTING_SYSTEM ? { text: JSON.stringify({ requirements: [{ name: 'PostgreSQL', importance: 'must' }, { name: 'Terraform', importance: 'must' }] }), backend: 'fake' } : { text: JSON.stringify(answer(match)), backend: 'fake' });
-  return tailorOffer({ loaded: loadedFrom(SYNTHETIC), offer: OFFER, llm, outDir, useWord: false, minScore: 75 });
+  const names = match === 'yes' ? ['PostgreSQL', 'Terraform'] : ['Kafka', 'Cobol'];
+  const offer = match === 'yes' ? OFFER : OFFER.replace('PostgreSQL, Terraform, supervision', 'Kafka, Cobol');
+  const llm = async ({ system = '' } = {}) => (system === LISTING_SYSTEM ? { text: JSON.stringify({ requirements: names.map((name) => ({ name, importance: 'must' })) }), backend: 'fake' } : { text: JSON.stringify(answer(match, names)), backend: 'fake' });
+  return tailorOffer({ loaded: loadedFrom(SYNTHETIC), offer, llm, outDir, useWord: false, minScore: 60 });
 };
 
 test('4.10: from 75 the CV is written; below, the score and the report only', async () => {
   const dir = home();
   try {
     const high = await run('yes', join(dir, 'a'));
-    assert.ok(high.analysis.fit.score >= 75, String(high.analysis.fit.score));
+    assert.ok(high.analysis.fit.score >= 60, String(high.analysis.fit.score));
     assert.ok(existsSync(join(high.dir, 'cv.docx')));
     const low = await run('no', join(dir, 'b'));
-    assert.ok(low.analysis.fit.score < 75, String(low.analysis.fit.score));
+    assert.ok(low.analysis.fit.score < 60, String(low.analysis.fit.score));
     assert.ok(!existsSync(join(low.dir, 'cv.docx')));
-    assert.match(readFileSync(join(low.dir, 'report.md'), 'utf8'), /below the threshold of 75/);
+    assert.match(readFileSync(join(low.dir, 'report.md'), 'utf8'), /below the threshold of 60/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

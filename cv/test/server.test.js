@@ -1148,3 +1148,27 @@ test('4.7: the add-on origin and key may create jobs, and nothing else', async (
     app.server.close();
   }
 });
+
+// 4.11: the "Sources du run" tab: the run's own sources go with its offer, the owner's page only.
+test('4.11: a job carries its sources, links and threshold to tailor; bad ones refused first', async () => {
+  const seen = [];
+  const app = await start({ tailor: async ({ offer, sources, links, threshold }) => { seen.push({ offer, sources, links, threshold }); return fakeResult(offer); } });
+  try {
+    const sources = [{ name: 'old-cv.docx', data: Buffer.from('x').toString('base64') }];
+    const created = await post(app, '/api/jobs', { offers: [{ text: 'an offer' }], sources, links: ['https://example.org/me'], threshold: 80 });
+    assert.equal(created.status, 202, created.text);
+    await until(app, (list) => list.every((job) => job.status === 'done'));
+    assert.deepEqual(seen, [{ offer: 'an offer', sources, links: ['https://example.org/me'], threshold: 80 }]);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'x' }], links: ['file:///etc/passwd'] })).status, 400);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'x' }], sources: [{ name: '../x', data: 'eA==' }] })).status, 400);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'x' }], sources, threshold: 101 })).status, 400);
+  } finally {
+    app.server.close();
+  }
+});
+
+test('4.11: a public visitor cannot send sources or links', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('a') }], links: ['https://example.org/me'] })).status, 403);
+});
