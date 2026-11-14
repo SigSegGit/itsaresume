@@ -37,6 +37,19 @@
   </header>
 
   <main class="grid">
+    <section class="card" id="sources-card" aria-label="Profil du candidat">
+      <div role="tablist">
+        <button type="button" role="tab" id="tab-stored" aria-selected="true">Mon profil</button>
+        <button type="button" role="tab" id="tab-sources" aria-selected="false">Sources du run</button>
+      </div>
+      <div id="sources-panel" hidden>
+        <p class="meta">Fichiers du candidat pour ce run seulement (rien n’est conservé) : export LinkedIn (.zip ou ses .csv), JSON Resume, ancien CV (.docx, .pdf), profil rédigé par une IA (.txt, .md).</p>
+        <input type="file" id="source-files" multiple accept=".zip,.csv,.json,.docx,.pdf,.txt,.md">
+        <label for="source-links">Liens (un par ligne)</label>
+        <textarea id="source-links" rows="2" placeholder="https://…"></textarea>
+        <label for="threshold">CV généré à partir du score</label> <input type="number" id="threshold" min="0" max="100" value="75">
+      </div>
+    </section>
     <section class="card" aria-labelledby="offers-title">
       <h2 id="offers-title"><span class="step">1</span> Offres</h2>
       <label class="label" for="paste">Colle une offre, ou un mail d'ESN qui en contient plusieurs</label>

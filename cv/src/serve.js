@@ -1,10 +1,12 @@
 // `itsacv serve`: the web server wired to the real profile, model and Word.
 
 import { request } from 'node:http';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createApp } from './server.js';
-import { loadProfile, readRun, runName, tailorOffer } from './run.js';
+import { loadedFrom, loadProfile, readRun, runName, tailorOffer } from './run.js';
+import { profileFromSources, readOffer } from './sources.js';
 import { pageData } from './tailor.js';
 import { appendQaLog, SPLIT, withModel } from './qa.js';
 import { splitOffers } from './split.js';
@@ -126,13 +128,32 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       return writeProfile(profilesDir, id, resume ? fromJsonResume(resume) : fromLinkedInFiles(linkedin));
     },
     rank: ({ offers, top }) => rankListed({ offers, profile: loadProfile(profiles().get(DEFAULT_PROFILE)).profile, top, llm: withModel(llm, 'auto'), cache: fileListingCache(join(out, '.listings')) }),
-    tailor: async ({ offer, title, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE }) => {
-      const path = profiles().get(profile);
-      if (!path) throw new Error(`no profile "${profile}"`);
-      const loaded = loadProfile(path);
+    tailor: async ({ offer: given, title, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE, sources, links, threshold = 0 }) => {
+      // 4.11: an offer given as a link is read (the owner's page only: no fetch for the public host).
+      const offer = !publicMode && /^https?:\/\/\S+$/.test(given.trim()) ? await readOffer(given.trim()) : given;
+      // 4.11: the run's own sources, in a temporary folder removed when the run ends: nothing kept.
+      let loaded;
+      if (sources || links) {
+        const tmp = mkdtempSync(join(tmpdir(), 'itsacv-sources-'));
+        try {
+          const specs = (sources ?? []).map((file) => {
+            const path = join(tmp, file.name);
+            writeFileSync(path, Buffer.from(file.data, 'base64'));
+            return path;
+          });
+          onStep('sources');
+          loaded = loadedFrom((await profileFromSources([...specs, ...(links ?? [])], { llm: counted(withModel(llm, 'auto'), onAnswer) })).profile);
+        } finally {
+          rmSync(tmp, { recursive: true, force: true });
+        }
+      } else {
+        const path = profiles().get(profile);
+        if (!path) throw new Error(`no profile "${profile}"`);
+        loaded = loadProfile(path);
+      }
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep, warm: () => withModel(llm, 'local')({ system: 'Answer with OK.', prompt: 'OK' }) });
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: out, useWord, onStep, profileId: profile, title, split: SPLIT.has(model) });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold });
       return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.
