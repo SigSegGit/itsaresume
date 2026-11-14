@@ -16,6 +16,8 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanName } from './guard.js';
+import { LINKEDIN_FILES } from './import.js';
+import { ID } from './profiles.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
 import { compareRuns, compareMarkdown, publicComparison } from './compare.js';
@@ -518,6 +520,26 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, { rows: await deps.rank({ offers: named, top }) });
         } catch (error) {
           throw new HttpError(502, String(error.message ?? error));
+        }
+      }
+      // 4.5: the owner's own: profiles ranked for one offer, a profile imported.
+      if (path === '/api/match' || path === '/api/profiles') {
+        if (publicMode) throw new HttpError(403, 'réservé à la page du propriétaire');
+        try {
+          if (path === '/api/match') {
+            const offer = body?.offer;
+            if (typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT) throw new HttpError(400, `offer text: a non-empty string of at most ${MAX_TEXT} characters`);
+            if (!Number.isInteger(body?.top) || body.top < 1 || body.top > MAX_RANKED) throw new HttpError(400, `top: a whole number from 1 to ${MAX_RANKED}`);
+            return send(response, 200, { rows: await deps.match({ offer: { title: cleanName(String(offer.title ?? '')) || 'offre', text: offer.text }, top: body.top }) });
+          }
+          if (typeof body?.id !== 'string' || !ID.test(body.id)) throw new HttpError(400, 'id: lower-case letters, digits and dashes');
+          const linkedin = body.linkedin && typeof body.linkedin === 'object' ? Object.fromEntries(LINKEDIN_FILES.filter((name) => typeof body.linkedin[name] === 'string').map((name) => [name, body.linkedin[name]])) : null;
+          const resume = body.resume && typeof body.resume === 'object' ? body.resume : null;
+          if (!resume && !linkedin) throw new HttpError(400, 'a JSON Resume (resume) or a LinkedIn export (linkedin: its CSV files by name)');
+          return send(response, 200, await deps.importProfile({ id: body.id, resume, linkedin }));
+        } catch (error) {
+          if (error instanceof HttpError) throw error;
+          throw new HttpError(400, error.message ?? String(error));
         }
       }
       // 2.31a: a run renamed by its owner; the name is kept beside the run.

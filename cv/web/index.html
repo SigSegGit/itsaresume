@@ -66,7 +66,14 @@
         <select id="profile"></select>
       </label>
       <button type="button" class="secondary" id="rank" hidden>Classer et garder les 3 meilleures</button>
+      <button type="button" class="secondary" id="match" hidden>Classer les profils pour cette offre</button>
       <p class="meta" id="rank-result" hidden></p>
+      <details id="import-row" hidden>
+        <summary>Importer un profil (JSON Resume ou export LinkedIn)</summary>
+        <label for="import-id">Identifiant</label> <input type="text" id="import-id" maxlength="41" placeholder="ex. sam-doe">
+        <input type="file" id="import-files" multiple accept=".json,.csv">
+        <button type="button" class="secondary" id="import">Importer</button>
+      </details>
       <button type="button" class="primary" id="generate" disabled>Générer les CV</button>
       <p class="error" id="offers-error" role="alert" hidden></p>
     </section>

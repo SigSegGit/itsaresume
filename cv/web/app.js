@@ -89,6 +89,7 @@ async function refreshStatus() {
     if (open) {
       $('split').hidden = true;
       rankAllowed = false;
+      $('import-row').hidden = true;
       $('drop-help').textContent = `Colle le texte d’une offre d’emploi : tu obtiens le CV de ${profile.name ?? 'ce candidat'} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.`;
     }
     if (profile.error) setPill('status-profile', 'bad', 'Profil invalide');
@@ -147,6 +148,27 @@ function addOffer(text, title) {
 
 // 5.2b: the owner's page ranks the waiting offers (no analysis), keeps the best.
 const RANK_TOP = 3;
+/** A button busy while `work` runs; its error shown, its label back. */
+async function withButton(id, busy, work) {
+  showError(null);
+  const button = $(id);
+  const label = button.textContent;
+  button.disabled = true;
+  button.textContent = busy;
+  try {
+    await work();
+  } catch (error) {
+    showError(`${label} : ${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = label;
+  }
+}
+/** One line: each ranked row, chosen or not, its share and estimated tokens. */
+function showRanking(what, rows) {
+  $('rank-result').textContent = `Classement des ${what} par couverture : ${rows.map((row) => `${row.chosen ? '✓' : '✗'} ${row.name} ${Math.round(row.share * 100)} % (~${row.tokens} tokens)`).join(' · ')}`;
+  $('rank-result').hidden = false;
+}
 let rankAllowed = true;
 
 function renderOffers() {
@@ -163,6 +185,7 @@ function renderOffers() {
     return h('li', { class: 'offer' }, title, remove, h('span', { class: 'meta', text: `${offer.text.split('\n').length} lignes · ${offer.text.length} caractères` }));
   }));
   $('rank').hidden = !rankAllowed || offers.length <= RANK_TOP;
+  $('match').hidden = !rankAllowed || offers.length !== 1;
   const button = $('generate');
   button.disabled = offers.length === 0 || !modelsReady;
   button.textContent = offers.length > 1 ? `Générer les ${offers.length} CV` : 'Générer le CV';
@@ -224,26 +247,28 @@ function setupOffers() {
     drop.classList.remove('over');
     readFiles(event.dataTransfer.files);
   });
-  $('rank').addEventListener('click', async () => {
-    showError(null);
-    const button = $('rank');
-    button.disabled = true;
-    button.textContent = 'Classement…';
-    try {
-      const { rows } = await api('/api/rank', { offers: offers.map(({ title, text }) => ({ title, text })), top: RANK_TOP });
-      const kept = rows.filter((row) => row.chosen).map((row) => offers[row.index]);
-      const line = rows.map((row) => `${row.chosen ? '✓' : '✗'} ${row.name} ${Math.round(row.share * 100)} % (~${row.tokens} tokens)`).join(' · ');
-      offers.splice(0, offers.length, ...kept);
-      renderOffers();
-      $('rank-result').textContent = `Classement par couverture du profil : ${line}`;
-      $('rank-result').hidden = false;
-    } catch (error) {
-      showError(`Classement impossible : ${error.message}`);
-    } finally {
-      button.disabled = false;
-      button.textContent = 'Classer et garder les 3 meilleures';
-    }
-  });
+  // 4.5: the employer's side, the profiles ranked for the one waiting offer.
+  $('match').addEventListener('click', () => withButton('match', 'Classement…', async () => {
+    const { rows } = await api('/api/match', { offer: { title: offers[0].title, text: offers[0].text }, top: RANK_TOP });
+    showRanking('profils', rows);
+  }));
+  // 4.5: a JSON Resume file, or the CSV files of a LinkedIn export.
+  $('import').addEventListener('click', () => withButton('import', 'Import…', async () => {
+    const files = [...$('import-files').files];
+    if (!files.length) throw new Error('choisis un fichier .json ou les .csv de l’export LinkedIn');
+    const json = files.find((file) => file.name.toLowerCase().endsWith('.json'));
+    const body = json ? { resume: JSON.parse(await json.text()) } : { linkedin: Object.fromEntries(await Promise.all(files.map(async (file) => [file.name, await file.text()]))) };
+    const done = await api('/api/profiles', { id: $('import-id').value.trim(), ...body });
+    $('rank-result').textContent = `Profil « ${done.id} » importé ; à confirmer : ${done.to_confirm.length} ligne(s). Recharge la page pour le choisir.`;
+    $('rank-result').hidden = false;
+  }));
+  $('rank').addEventListener('click', () => withButton('rank', 'Classement…', async () => {
+    const { rows } = await api('/api/rank', { offers: offers.map(({ title, text }) => ({ title, text })), top: RANK_TOP });
+    const kept = rows.filter((row) => row.chosen).map((row) => offers[row.index]);
+    offers.splice(0, offers.length, ...kept);
+    renderOffers();
+    showRanking('offres', rows);
+  }));
   $('generate').addEventListener('click', async () => {
     showError(null);
     const batch = offers.splice(0, offers.length);

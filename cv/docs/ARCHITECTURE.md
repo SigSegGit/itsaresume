@@ -254,6 +254,37 @@ against someone with many addresses: it caps what the owner's quota can lose
 in a day. Residual: a Claude Pro subscription is personal, and serving it to
 strangers may conflict with its terms; the owner decided with that stated.
 
+### ADR-12 — Other people's profiles, imported; the LinkedIn add-on reads what the user hands it (2026-11-14)
+
+The owner (2026-11-14) wants an offer compared with other profiles than
+his, and a "LinkedIn add-on": an employer finds profiles for an offer, a
+person with a profile finds the offers that fit and gets the CV.
+
+- **One import format: JSON Resume** (jsonresume.org, schema v1, MIT): the
+  open standard many tools export. `itsacv import` compiles it into the
+  profile format (`src/profile.js`) by code, no model call: every bullet is
+  a sentence of the file (a highlight, else the position's summary, else
+  "position, company"), every skill a name of the file, its level read from
+  the file's own words or "working" by default, listed in `to_confirm`.
+  Nothing is added that the file does not say (ADR-3, the v4's rule).
+- **LinkedIn through the member's own export, never scraping.** LinkedIn's
+  terms forbid crawling and automated collection of profiles. A member
+  downloads their data ("Get a copy of your data": `Profile.csv`,
+  `Positions.csv`, `Skills.csv`, `Education.csv`, `Certifications.csv`,
+  `Languages.csv`, `Email Addresses.csv`); `itsacv import` reads that
+  folder or ZIP and goes through JSON Resume. An employer gets profiles the
+  same way: candidates hand in their export or JSON Resume.
+- **The add-on is a browser extension that sends what the user shows it**:
+  on a job page the user is reading, a button sends the offer's text to
+  the generator (local page, or the public one); no background crawl, no
+  other member's profile page read. Both directions run on code already
+  there: a person ranks offers against their profile (`itsacv rank`,
+  5.2a), an employer ranks profiles against an offer (`itsacv match`,
+  4.4), then `tailor --profile` writes the CV.
+- **Personal data stays where it was put.** Imported profiles live in the
+  owner's `--profiles DIR` (4.1) on his machine; the public page takes no
+  upload until the owner settles retention and consent (4.1's (b), (c)).
+
 ### ADR-11 — Generation on the always-on VM, Claude first (2026-10-01)
 
 *Context.* With ADR-7 the site is offline whenever the laptop is. The owner

@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/import.js",
     "src/matrix.js",
     "src/rank.js",
     "web/questions.html",
@@ -1176,6 +1177,22 @@
       "dead": "",
       "expect": [
         "5.2b: the owner ranks the waiting offers; a bad body is refused before any call"
+      ]
+    },
+    "Match/import (4.5): the owner's page only": {
+      "file": "src/server.js",
+      "live": "        if (publicMode) throw new HttpError(403, 'réservé à la page du propriétaire');",
+      "dead": "",
+      "expect": [
+        "4.5: a public visitor can neither match nor import"
+      ]
+    },
+    "Import (4.5): only LinkedIn's own CSV names pass": {
+      "file": "src/server.js",
+      "live": "Object.fromEntries(LINKEDIN_FILES.filter((name) => typeof body.linkedin[name] === 'string')",
+      "dead": "Object.fromEntries(Object.keys(body.linkedin).filter((name) => typeof body.linkedin[name] === 'string')",
+      "expect": [
+        "4.5: the owner ranks the profiles for one offer and imports a profile; bad bodies refused first"
       ]
     }
   }

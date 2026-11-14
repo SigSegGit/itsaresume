@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/import.js",
     "src/matrix.js",
     "src/rank.js",
     "src/questions.js",

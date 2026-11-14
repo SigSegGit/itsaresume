@@ -6,6 +6,11 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/addon.test.js",
+    "addon/manifest.json",
+    "addon/extract.js",
+    "test/import.test.js",
+    "src/import.js",
     "bin/itsacv.js",
     "src/matrix.js",
     "src/rank.js",
@@ -1905,8 +1910,8 @@
     },
     "Rank (5.2a): only the top K, never an offer covered by nothing": {
       "file": "src/rank.js",
-      "live": "  return rows.map(({ at, ...row }, rank) => ({ index: at, ...row, chosen: rank < top && row.share > 0 }));",
-      "dead": "  return rows.map(({ at, ...row }, rank) => ({ index: at, ...row, chosen: rank < top }));",
+      "live": "  return rows.map(({ at, ...rest }, rank) => ({ index: at, ...rest, chosen: rank < top && rest.share > 0 }));",
+      "dead": "  return rows.map(({ at, ...rest }, rank) => ({ index: at, ...rest, chosen: rank < top }));",
       "expect": [
         "rankOffers: an offer covered by nothing is never chosen, whatever K"
       ]
@@ -1925,6 +1930,46 @@
       "dead": "      if (span >= wanted + 100) {",
       "expect": [
         "2.40: N years met by the experiences citing the skill is yes, whatever the model said"
+      ]
+    },
+    "Import (4.2): a bullet is a sentence of the file": {
+      "file": "src/import.js",
+      "live": "    const sentences = highlights.length ? highlights : clean(job.summary) ? [clean(job.summary)] : [`${position} — ${org}`];",
+      "dead": "    const sentences = [`${position} — ${org}`];",
+      "expect": [
+        "4.2: every bullet is a sentence of the file: a highlight, else the summary, else position and company"
+      ]
+    },
+    "Import (4.2): a level the file does not state is to confirm": {
+      "file": "src/import.js",
+      "live": "      if (!stated) toConfirm.push(",
+      "dead": "      if (false) toConfirm.push(",
+      "expect": [
+        "4.2: a level is read from the file's words, \"working\" when it says none, and that is to confirm"
+      ]
+    },
+    "Match (4.4): no CV without --run": {
+      "file": "bin/itsacv.js",
+      "live": "    if (options.run !== true) return;",
+      "dead": "",
+      "expect": [
+        "4.4: itsacv match ranks the profiles of --profiles for one offer, no model call without --run"
+      ]
+    },
+    "Add-on (4.6): no host permission": {
+      "file": "addon/manifest.json",
+      "live": "  \"permissions\": [\"activeTab\", \"scripting\", \"storage\"],",
+      "dead": "  \"permissions\": [\"activeTab\", \"scripting\", \"storage\"], \"host_permissions\": [\"<all_urls>\"],",
+      "expect": [
+        "4.6: the add-on asks for the active tab on a click, nothing in the background"
+      ]
+    },
+    "Add-on (4.6): the selection first": {
+      "file": "addon/extract.js",
+      "live": "  if (selected) return selected.slice(0, MAX);",
+      "dead": "",
+      "expect": [
+        "4.6: the selection first, else the job description block, else the page"
       ]
     }
   }
