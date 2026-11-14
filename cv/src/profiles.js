@@ -7,7 +7,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const DEFAULT_PROFILE = 'default';
-const ID = /^[a-z0-9][a-z0-9-]{0,40}$/;
+export const ID = /^[a-z0-9][a-z0-9-]{0,40}$/;
 
 /** id -> path, the default first, then the directory's in name order. */
 export function listProfiles({ profile, profilesDir }) {

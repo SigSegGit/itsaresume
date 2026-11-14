@@ -14,9 +14,12 @@ import { QA_LOG } from '../src/qa.js';
 import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
 import { matrix, offersFromRuns, toCsv, toMarkdown } from '../src/matrix.js';
-import { listProfiles } from '../src/profiles.js';
+import { ID, listProfiles } from '../src/profiles.js';
 import { fileListingCache } from '../src/listing.js';
-import { rankListed, rankMarkdown } from '../src/rank.js';
+import { listingOf, rankListed, rankMarkdown, rankProfiles } from '../src/rank.js';
+import { importProfile } from '../src/import.js';
+import { validateProfile } from '../src/profile.js';
+import { writeFileSync } from 'node:fs';
 
 const USAGE = `usage:
   itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
@@ -29,6 +32,8 @@ const USAGE = `usage:
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
   itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
   itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
+  itsacv match <offer.txt> [--top K] [--run] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL]
+  itsacv import <resume.json | linkedin-export-dir> --id ID [--profiles DIR]
 
   tailor     one CV and one report per offer file (with --split, per offer
              found in each file: an agency email often holds several)
@@ -49,6 +54,11 @@ const USAGE = `usage:
              covers (one listing call per offer, cached in <out>/.listings and reused
              by the analysis), each with its analysis prompt's estimated tokens; the
              best --top K (default 3) marked; with --run, only those are tailored
+  match      the employer's side: the profiles (--profile, then --profiles DIR) ranked for
+             one offer, the same way; with --run, a CV for each of the top K
+  import     a JSON Resume (jsonresume.org) or a LinkedIn data export folder compiled into
+             DIR/<id>.json (default ~/.itsaresume/profiles), nothing invented: levels the file
+             does not state read as working and listed in to_confirm
 
   --profile  the profile (default: $ITSACV_PROFILE, else ~/.itsaresume/profile.json)
   --profiles serve: other profiles a job may be tailored to, each DIR/<id>.json (id: lower
@@ -77,7 +87,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top'];
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
@@ -87,7 +97,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix', 'rank'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix', 'rank', 'match', 'import'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -111,6 +121,7 @@ function parse(argv) {
     csv: false,
     revoke: null,
     top: '3',
+    id: null,
     run: false,
   };
   for (let i = 0; i < rest.length; i += 1) {
@@ -127,7 +138,7 @@ function parse(argv) {
     return options;
   }
   if (!['serve', 'questions', 'matrix'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
-  if (command === 'rank' && !/^[1-9]\d*$/.test(options.top)) fail(2, '--top: a whole number, 1 or more');
+  if ((command === 'rank' || command === 'match') && !/^[1-9]\d*$/.test(options.top)) fail(2, '--top: a whole number, 1 or more');
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
   if (!/^\d+(\.\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {
     fail(2, `--timeout (or ITSACV_TIMEOUT) needs a number of seconds above 0, not "${options.timeout}"\n\n${USAGE}`);
@@ -147,6 +158,25 @@ async function main() {
   const options = parse(process.argv.slice(2));
   const timeoutMs = Number(options.timeout) * 1000;
   const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs });
+
+  // 4.2/4.3: another person's profile, compiled and checked before it is written.
+  if (options.command === 'import') {
+    if (!options.id || !ID.test(options.id)) fail(2, '--id: lower-case letters, digits and dashes');
+    let profile;
+    try {
+      profile = importProfile(options.files[0]);
+    } catch (error) {
+      fail(2, error.message);
+    }
+    const { errors } = validateProfile(profile);
+    if (errors.length) fail(2, `the imported profile is not usable: ${errors.slice(0, 5).join('; ')}`);
+    const dir = options.profiles ?? join(homedir(), '.itsaresume', 'profiles');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `${options.id}.json`), JSON.stringify(profile, null, 2));
+    process.stderr.write(`itsacv: ${join(dir, `${options.id}.json`)} written; to confirm: ${profile.to_confirm.length} line(s)
+`);
+    return;
+  }
 
   if (options.command === 'invite') {
     try {
@@ -227,6 +257,34 @@ async function main() {
     for (const repair of repairs) process.stderr.write(`itsacv: ${repair}\n`);
     offers.forEach((offer, index) => process.stdout.write(`--- offer ${index + 1}: ${offer.title}\n${offer.text}\n`));
     return;
+  }
+
+  // 4.4: the employer's side, profiles ranked for one offer; CVs for the top K with --run.
+  if (options.command === 'match') {
+    const text = read(options.files[0]);
+    let entries;
+    try {
+      entries = [...listProfiles({ profile: options.profile, profilesDir: options.profiles })].map(([id, path]) => ({ id, path, profile: loadProfile(path).profile }));
+    } catch (error) {
+      fail(2, error.message);
+    }
+    const listed = await listingOf(text, { llm, cache: fileListingCache(join(options.out, '.listings')) }).catch((error) => fail(4, error.message));
+    const rows = rankProfiles(listed, entries, { top: Number(options.top), offer: text });
+    process.stdout.write(rankMarkdown(rows, { what: 'profil' }));
+    if (options.run !== true) return;
+    let worst = 0;
+    for (const row of rows.filter((candidate) => candidate.chosen)) {
+      try {
+        const { dir } = await tailorOffer({ loaded: loadProfile(entries[row.index].path), offer: text, llm, outDir: options.out, useWord: options.layout, profileId: row.name });
+        process.stderr.write(`itsacv: ${row.name}: written to ${dir}
+`);
+      } catch (error) {
+        worst = Math.max(worst, RunError === error.constructor ? error.code : 1);
+        process.stderr.write(`itsacv: ${row.name}: ${error.message}
+`);
+      }
+    }
+    process.exit(worst);
   }
 
   let loaded;
