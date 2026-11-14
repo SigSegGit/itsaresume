@@ -1103,3 +1103,32 @@ test('5.2b: a public visitor cannot rank (the listing calls are the owner\'s quo
   const answer = await visitor.post('/api/rank', { offers: [{ title: 'A', text: PUBLIC_OFFER('a') }, { title: 'B', text: PUBLIC_OFFER('b') }], top: 1 });
   assert.equal(answer.status, 403);
 });
+
+test('4.5: the owner ranks the profiles for one offer and imports a profile; bad bodies refused first', async () => {
+  const asked = [];
+  const app = await start({
+    match: async ({ offer, top }) => { asked.push(['match', offer.text, top]); return [{ index: 0, name: 'default', covered: 1, total: 2, share: 0.5, tokens: 10, chosen: true }]; },
+    importProfile: async ({ id, resume, linkedin }) => { asked.push(['import', id, Boolean(resume), Object.keys(linkedin ?? {})]); return { id, to_confirm: ['x'] }; },
+  });
+  try {
+    const matched = await post(app, '/api/match', { offer: { title: 'SRE', text: 'an offer' }, top: 1 });
+    assert.equal(matched.status, 200, matched.text);
+    assert.equal(JSON.parse(matched.text).rows[0].name, 'default');
+    assert.equal((await post(app, '/api/match', { offer: { text: ' ' }, top: 1 })).status, 400);
+    assert.equal((await post(app, '/api/match', { offer: { text: 'x' }, top: 0 })).status, 400);
+    const imported = await post(app, '/api/profiles', { id: 'sam', linkedin: { 'Profile.csv': 'First Name\nSam\n', 'evil.sh': 'x' } });
+    assert.equal(imported.status, 200, imported.text);
+    assert.equal((await post(app, '/api/profiles', { id: '../x', resume: {} })).status, 400);
+    assert.equal((await post(app, '/api/profiles', { id: 'sam' })).status, 400, 'a resume or a LinkedIn export');
+    assert.deepEqual(asked, [['match', 'an offer', 1], ['import', 'sam', false, ['Profile.csv']]], 'only LinkedIn\'s own CSV names pass');
+  } finally {
+    app.server.close();
+  }
+});
+
+test('4.5: a public visitor can neither match nor import', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  assert.equal((await visitor.post('/api/match', { offer: { text: PUBLIC_OFFER('a') }, top: 1 })).status, 403);
+  assert.equal((await visitor.post('/api/profiles', { id: 'sam', resume: {} })).status, 403);
+});
