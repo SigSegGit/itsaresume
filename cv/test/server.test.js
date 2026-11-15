@@ -1172,3 +1172,17 @@ test('4.11: a public visitor cannot send sources or links', async (t) => {
   const visitor = await app.visit();
   assert.equal((await visitor.post('/api/jobs', { offers: [{ text: PUBLIC_OFFER('a') }], links: ['https://example.org/me'] })).status, 403);
 });
+
+// 4.12: a job may name its template and palette; unknown ones refused first.
+test('4.12: a job carries its style to tailor; an unknown palette is refused', async () => {
+  const seen = [];
+  const app = await start({ tailor: async ({ offer, style }) => { seen.push(style); return fakeResult(offer); } });
+  try {
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'an offer' }], style: { palette: 'bordeaux' } })).status, 202);
+    await until(app, (list) => list.every((job) => job.status === 'done'));
+    assert.deepEqual(seen, [{ template: 'two-column', palette: 'bordeaux' }]);
+    assert.equal((await post(app, '/api/jobs', { offers: [{ text: 'x' }], style: { palette: 'fluo' } })).status, 400);
+  } finally {
+    app.server.close();
+  }
+});

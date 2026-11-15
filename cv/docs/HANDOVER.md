@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 4.12
-TITLE: 4.8-4.11 done (per-run sources, nothing kept: LinkedIn ZIP, JSON Resume, old CV, AI text, links; offer as text, file or link; score + report, CV from 75; page tabs "Mon profil" / "Sources du run"); a 22-offer test corpus is being added by another session; next 4.12, CV templates and palettes
-WRITTEN-AT: 2026-11-14
+NEXT: 2.25e
+TITLE: 4.12 done (CV templates and 5 palettes, marine by default, chosen per run in the page and the CLI); the 27-offer corpus is in main (#185); next 2.25e, read the VM's first runs with the compact prompt; the corpus run waits for the owner's go (its Claude calls)
+WRITTEN-AT: 2026-11-15
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -577,8 +577,18 @@ Traps met, each cost time once:
     `threshold` (owner only), sources in a temp folder removed after the
     run, an offer given as a link fetched (owner only), the page's two
     tabs "Mon profil" / "Sources du run". 7 tests, 3 defences.
-  - [ ] **4.12** Templates and colour palettes for the CV, one default
-    (the owner, 2026-11-14: "par la suite"). Next.
+  - [x] **4.12** Templates and colour palettes for the CV, one default
+    (the owner, 2026-11-14). Done 2026-11-15: `src/style.js` (`PALETTES`
+    marine (default, the template as drawn), bordeaux, foret, ardoise,
+    graphite; `recolour` swaps the template's three drawn colours in
+    document, styles and theme; `listTemplates` = `templates/*.docx`, the
+    default `two-column`; `resolveStyle`), `render(model, style)`,
+    `tailorOffer({ style })`, `--template`/`--palette` (tailor, fit), `POST
+    /api/jobs` `style` (400 when unknown), `/api/status` `styles`, the
+    page's "Présentation" selects. 3 tests, 2 defences. Next for 4.x: a
+    second template (a one-column .docx with the same tags, made in Word
+    by the owner or from two-column with `tools/templatize.py`); the A4
+    browser page (`web/cv.css`) does not follow the palette yet.
 
 - [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
   Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused
@@ -1550,6 +1560,10 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   offer could raise the score by at most that, never the qualification.
 
 ## 10. Waiting for the owner
+
+- **2026-11-15: the corpus run** (27 offers of `corpus/`, about 54 Claude
+  calls on the Pro quota): say go, then run them through `tailor --no-layout`
+  and check the scores against their expected bands with the corpus script.
 
 - **2026-11-12: log the laptop's `claude` in again** (`claude` then
   `/login`, or `claude auth status` to check): it answered "OAuth session

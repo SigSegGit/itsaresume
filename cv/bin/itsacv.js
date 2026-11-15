@@ -18,10 +18,11 @@ import { ID, listProfiles } from '../src/profiles.js';
 import { fileListingCache } from '../src/listing.js';
 import { listingOf, rankListed, rankMarkdown, rankProfiles } from '../src/rank.js';
 import { importProfile, writeProfile } from '../src/import.js';
+import { resolveStyle } from '../src/style.js';
 import { profileFromSources, readOffer } from '../src/sources.js';
 
 const USAGE = `usage:
-  itsacv tailor <offer.txt>... [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
+  itsacv tailor <offer.txt>... [--template NAME] [--palette NAME] [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
   itsacv serve [--port PORT] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
@@ -72,6 +73,8 @@ const USAGE = `usage:
              else ${TIMEOUT_MS / 1000}); must exceed the router backend's timeout_secs, or the
              client gives up on an answer the router is still waiting for
   --no-layout  skip Word: no page fitting, no PDF, no ATS check
+  --template, --palette  tailor, fit: the CV's look (templates/*.docx; palettes marine (default),
+             bordeaux, foret, ardoise, graphite)
   --addon-origin  serve: let the browser add-on (cv/addon) create jobs from chrome-extension://<id>,
              with the key in $ITSACV_ADDON_KEY (48+ characters, set the same in the add-on's options)
   --public-host  serve anyone behind a reverse proxy that answers as NAME (e.g. cv.ngas.fr):
@@ -92,7 +95,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin', '--offer', '--threshold'];
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
@@ -130,6 +133,8 @@ function parse(argv) {
     addonOrigin: null,
     offer: null,
     threshold: '75',
+    template: undefined,
+    palette: undefined,
     run: false,
   };
   for (let i = 0; i < rest.length; i += 1) {
@@ -165,6 +170,12 @@ const read = (file) => {
 async function main() {
   const options = parse(process.argv.slice(2));
   const timeoutMs = Number(options.timeout) * 1000;
+  let style;
+  try {
+    style = resolveStyle({ template: options.template, palette: options.palette });
+  } catch (error) {
+    fail(2, error.message);
+  }
   const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs });
 
   // 4.2/4.3: another person's profile, compiled and checked before it is written.
@@ -283,7 +294,7 @@ async function main() {
     } catch (error) {
       fail(2, error.message);
     }
-    const result = await tailorOffer({ loaded, offer, llm, outDir: options.out, useWord: options.layout, profileId: 'sources', minScore: Number(options.threshold) }).catch((error) => fail(error instanceof RunError ? error.code : 1, error.message));
+    const result = await tailorOffer({ loaded, offer, llm, outDir: options.out, useWord: options.layout, profileId: 'sources', minScore: Number(options.threshold), style }).catch((error) => fail(error instanceof RunError ? error.code : 1, error.message));
     process.stderr.write(`itsacv: fit ${result.analysis.fit.score}/100; ${result.skipped?.reason ?? 'CV written'}; report: ${result.dir}
 `);
     return;
@@ -349,7 +360,7 @@ async function main() {
   let worst = 0;
   for (const offer of offers) {
     try {
-      const { dir, analysis, attempts, backend, layout, ats, skipped } = await tailorOffer({ loaded, offer, llm, outDir: options.out, useWord: options.layout });
+      const { dir, analysis, attempts, backend, layout, ats, skipped } = await tailorOffer({ loaded, offer, llm, outDir: options.out, useWord: options.layout, style });
       const pages = layout ? `, ${layout.pages.toFixed(2)} page(s)` : '';
       const atsLine = ats ? `, ATS ${ats.problems.length === 0 ? 'ok' : `${ats.problems.length} problem(s)`}` : '';
       const q = analysis.fit.qualification;
