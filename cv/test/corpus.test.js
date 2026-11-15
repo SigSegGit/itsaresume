@@ -105,6 +105,6 @@ test('a run file written by PowerShell 5 (UTF-16, BOM) reads as text, like UTF-8
   const line = 'fr-x: 1 attempt(s), score 12 (3s)\n';
   const utf16 = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(line, 'utf16le')]);
   assert.equal(runText(utf16), line);
-  assert.equal(runText(Buffer.from(`﻿${line}`, 'utf8')), line);
+  assert.equal(runText(Buffer.from(`\uFEFF${line}`, 'utf8')), line);
   assert.equal(runText(Buffer.from(line, 'utf8')), line);
 });
