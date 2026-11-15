@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { v4 } from './fixtures/v4.js';
 import { normalize } from '../src/normalize.js';
 import { report } from '../src/report.js';
-import { qualification } from '../src/score.js';
+import { CORE_MISSED_CAP, qualification } from '../src/score.js';
 import { validateAnalysis } from '../src/analysis.js';
 import { listRequirements } from '../src/listing.js';
 
@@ -96,7 +96,7 @@ communication DevOps, organisation des sauvegardes PostgreSQL.`;
   assert.deepEqual(analysis.requirements.filter((r) => r.kind === 'quality').map((r) => r.name), [], 'the model\'s label is not trusted');
   assert.equal(analysis.requirements.length, names.length);
   // "Communication DevOps": DevOps held through Terraform, "communication" a word it may lack: adjacent (2.28b).
-  assert.equal(analysis.fit.score, 36, 'every one counts: two musts met, one adjacent, of seven');
+  assert.equal(analysis.fit.score, CORE_MISSED_CAP, 'every one counts: two musts met, one adjacent, four missed of seven: the core is missed, capped');
   assert.equal(analysis.fit.qualification.gaps.length, 4);
 });
 

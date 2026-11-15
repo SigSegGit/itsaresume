@@ -176,3 +176,15 @@ test('a part named only by a skill term does not meet the requirement', () => {
   const { analysis } = normalize(a, p);
   assert.equal(analysis.requirements.find((r) => r.name === 'Conteneurs (IA)').match, 'adjacent');
 });
+
+// 5.x (corpus run 2026-11-15): on an offer far from the profile (a gardener)
+// the model rightly selects no experience; the analysis was refused twice
+// instead of scoring near 0. The main experiences stand in, bullets untouched.
+test('an analysis that selects no experience gets the main experiences of the profile, not a refusal', () => {
+  const a = answer();
+  a.experiences = [];
+  const { analysis, repairs } = normalize(a, profile());
+  assert.deepEqual(analysis.experiences, [{ id: 'acme', bullets: [] }, { id: 'bank', bullets: [] }]);
+  assert.match(repairs.join('\n'), /no experience selected/);
+  assert.deepEqual(validateAnalysis(analysis, profile()).errors, []);
+});
