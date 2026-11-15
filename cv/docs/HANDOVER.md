@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.25e
-TITLE: 4.12 done (CV templates and 5 palettes, marine by default, chosen per run in the page and the CLI); the 27-offer corpus is in main (#185); next 2.25e, read the VM's first runs with the compact prompt; the corpus run waits for the owner's go (its Claude calls)
+TITLE: 4.12 merged (#186); 2.25e checked 2026-11-15, no VM run since the compact prompt, baseline written in §8; it waits for a real run (owner's go: Claude calls), like the corpus run
 WRITTEN-AT: 2026-11-15
 -->
 
@@ -1496,7 +1496,12 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   input tokens of the analysis should drop (the compact catalogue), the
   attempts not rise. If attempts rise or a score falls by more than 15
   points on an offer run both ways, set `ITSACV_PROMPT=off` in the VM's
-  `.env` and open a step.
+  `.env` and open a step. **Checked 2026-11-15: no run since the switch**
+  (last entry 2026-11-12 13:19, #181 merged 15:35). Baseline, same offer
+  ("test caraz"), input + cache tokens per call, one attempt each: claude
+  7670 (score 98), gemini 9231 (98), groq 7354 over 2 calls (94), bionic
+  6715-7738 (94-96). Rerun that offer once per model, or wait for the
+  owner's next real runs; a run costs Claude calls, so not without his go.
 
 ## 9. Open on purpose
 
