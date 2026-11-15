@@ -1,0 +1,30 @@
+{
+  "id": "fr-offtrack-electricien-tertiaire",
+  "language": "fr",
+  "offer": "Électricien tertiaire H/F - Île-de-France - Chantiers de bureaux\n\nEntreprise générale d'électricité de 80 salariés, nous réalisons les lots courants forts et courants faibles d'immeubles de bureaux, d'hôtels et d'établissements recevant du public. Pour nos chantiers de réhabilitation dans Paris et la petite couronne, nous cherchons un électricien qualifié.\n\nAu sein d'une équipe de trois à six compagnons encadrée par un chef de chantier, vous réalisez :\n- la pose de chemins de câbles, de goulottes et de luminaires en faux plafond,\n- le tirage et le raccordement des câbles, le câblage de tableaux divisionnaires,\n- l'installation des réseaux courants faibles : prises RJ45, contrôle d'accès, sécurité incendie,\n- les essais et autocontrôles avant réception, en lien avec le bureau de contrôle.\n\nVotre profil : titulaire d'un CAP ou d'un Bac pro électricité, vous avez une première expérience réussie en tertiaire. L'habilitation électrique B1V-BR est obligatoire et doit être à jour. Vous savez lire un schéma unifilaire et respecter la norme NF C 15-100. Une habilitation pour le travail en hauteur et le CACES nacelle R486 seraient appréciés. La connaissance du câblage de systèmes de sécurité incendie est un plus.\n\nQualités attendues : sens de l'organisation, respect des consignes de sécurité, esprit d'équipe sur des chantiers en site occupé.\n\nNous offrons un CDI, des indemnités de trajet et de repas selon la convention du bâtiment, des heures supplémentaires majorées et de réelles perspectives d'évolution vers un poste de chef d'équipe.",
+  "requirements": [
+    {
+      "name": "habilitation électrique",
+      "importance": "must"
+    },
+    {
+      "name": "NF C 15-100",
+      "importance": "must"
+    },
+    {
+      "name": "CAP",
+      "importance": "must"
+    },
+    {
+      "name": "CACES nacelle R486",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

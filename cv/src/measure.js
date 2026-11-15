@@ -68,3 +68,73 @@ export function recall(labels, listed) {
   }
   return { found, missed };
 }
+
+// Fit on the corpus: each offer says the band an SRE/production profile
+// should score (`expected: { band, score: [min, max] }`). Nothing here calls
+// a model: scores come from runs already made (scripts/corpus-check.mjs).
+
+/** Score bands, inclusive. */
+export const BANDS = { low: [0, 34], mid: [35, 69], high: [70, 100] };
+
+/** The band a 0-100 score falls in. */
+export function bandOf(score) {
+  return Object.keys(BANDS).find((band) => score <= BANDS[band][1]);
+}
+
+/**
+ * Scores per corpus id found in `text`: measure-analysis output lines
+ * (`<id>: ... score <n>`) and QA log lines (JSON with `offer` and
+ * `fit.score`, matched to the corpus by offer text). Other lines are skipped.
+ */
+export function corpusScores(text, corpus) {
+  const ids = new Set(corpus.map((entry) => entry.id));
+  const byOffer = new Map(corpus.map((entry) => [String(entry.offer ?? '').trim(), entry.id]));
+  const scores = {};
+  const push = (id, score) => {
+    if (!ids.has(id) || !Number.isFinite(score)) return;
+    (scores[id] ??= []).push(score);
+  };
+  for (const line of String(text).split(/\r?\n/)) {
+    if (line.startsWith('{')) {
+      let entry;
+      try { entry = JSON.parse(line); } catch { continue; }
+      push(byOffer.get(String(entry.offer ?? '').trim()), entry.fit?.score);
+      continue;
+    }
+    const measured = /^(\S+): .*\bscore (\d+)\b/.exec(line);
+    if (measured) push(measured[1], Number(measured[2]));
+  }
+  return scores;
+}
+
+/** One row per corpus offer: its scores, their bands, ok / off / unrun. */
+export function checkCorpus(corpus, scores) {
+  return corpus.map(({ id, expected }) => {
+    const got = scores[id] ?? [];
+    const [min, max] = expected.score ?? BANDS[expected.band];
+    const verdict = got.length === 0 ? 'unrun' : got.every((score) => score >= min && score <= max) ? 'ok' : 'off';
+    return { id, expected: expected.band, range: [min, max], scores: got, bands: got.map(bandOf), verdict };
+  });
+}
+
+/** The acceptance sheet: every corpus offer and the score it should get. */
+export function recetteSheet(corpus) {
+  const lines = [
+    '# Recette du corpus : score attendu par offre',
+    '',
+    'Écrit par `node scripts/corpus-check.mjs --sheet` depuis `corpus/*.json` (champ `expected`) ;',
+    'un test vérifie qu\'il est à jour. Bandes : low 0-34, mid 35-69, high 70-100, pour un',
+    'profil SRE / ingénieur de production. `node scripts/corpus-check.mjs <run>` compare un run.',
+    '',
+    '| offre | bande | score attendu |',
+    '| --- | --- | --- |',
+    ...corpus.map(({ id, expected }) => `| ${id} | ${expected.band} | ${(expected.score ?? BANDS[expected.band]).join('-')} |`),
+  ];
+  return `${lines.join('\n')}\n`;
+}
+
+/** A run file's text: UTF-8, or UTF-16 with its BOM (PowerShell 5's `>`). */
+export function runText(buffer) {
+  if (buffer[0] === 0xff && buffer[1] === 0xfe) return buffer.subarray(2).toString('utf16le');
+  return buffer.toString('utf8').replace(/^\uFEFF/, '');
+}

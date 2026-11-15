@@ -1,0 +1,26 @@
+{
+  "id": "fr-offtrack-agent-entretien-medical",
+  "language": "fr",
+  "offer": "Agent d'entretien en milieu hospitalier (H/F) - Clinique chirurgicale\n\nNotre entreprise de propreté, spécialisée dans le bionettoyage des établissements de santé, intervient dans une clinique de 180 lits à Toulouse. Nous recrutons des agents d'entretien pour les blocs opératoires, les chambres et les circulations.\n\nVos missions :\n- Bionettoyage des chambres à la sortie des patients et en présence des patients\n- Entretien des blocs opératoires entre deux interventions et en fin de programme\n- Gestion du linge, évacuation des déchets selon les filières DASRI et ordures ménagères\n- Préparation des chariots, dilution des produits, traçabilité sur les fiches de passage\n- Respect strict des protocoles d'hygiène établis avec l'équipe opérationnelle d'hygiène\n\nProfil :\nUne première expérience en milieu hospitalier ou en EHPAD est exigée. La connaissance des protocoles de bionettoyage et des précautions standard est indispensable. Un CAP Agent de propreté et d'hygiène serait apprécié, tout comme une formation au risque infectieux. Vous êtes minutieux, discret, respectueux du secret médical et des patients, et capable de travailler en équipe avec les soignants.\n\nHoraires : roulement du lundi au dimanche, en poste du matin (6h-13h) ou d'après-midi (13h-20h), un week-end sur deux. Contrats proposés : CDI à temps plein ou à temps partiel de 28 heures. Taux horaire selon la convention collective de la propreté, majoration dimanches et jours fériés, prime de panier, mutuelle d'entreprise et tenue fournie. Formation interne aux produits et au matériel dès l'arrivée.",
+  "requirements": [
+    {
+      "name": "bionettoyage",
+      "importance": "must"
+    },
+    {
+      "name": "DASRI",
+      "importance": "must"
+    },
+    {
+      "name": "CAP Agent de propreté",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      15
+    ]
+  }
+}

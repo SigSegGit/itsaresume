@@ -1,0 +1,34 @@
+{
+  "id": "fr-offtrack-jardinier",
+  "language": "fr",
+  "offer": "Jardinier paysagiste (H/F) - CDI - Couronne lyonnaise\n\nEntreprise familiale de création et d'entretien d'espaces verts, nous intervenons depuis vingt ans chez des particuliers, des copropriétés et quelques collectivités de l'est lyonnais. Notre équipe de douze personnes cherche un jardinier paysagiste autonome pour renforcer le pôle entretien.\n\nVos missions au quotidien :\n- Tonte, taille de haies et d'arbustes, désherbage manuel et thermique\n- Plantation de massifs, engazonnement, paillage\n- Petits travaux de maçonnerie paysagère : bordures, dallages, murets en pierre sèche\n- Entretien courant du matériel (débroussailleuse, taille-haie, tondeuse autoportée)\n- Conseil aux clients sur le choix des végétaux et l'arrosage\n\nProfil recherché :\nVous êtes titulaire d'un CAPa Jardinier paysagiste ou d'un Bac pro Aménagements paysagers, et vous justifiez d'au moins deux ans d'expérience sur le terrain. Le permis B est obligatoire, nos chantiers étant répartis sur une trentaine de communes. Le permis BE (remorque) serait un plus apprécié. La connaissance des végétaux locaux et des techniques de gestion différenciée est souhaitée. Le CACES R482 pour la mini-pelle est un atout.\n\nNous attendons de la rigueur, le goût du travail soigné et une bonne condition physique : le poste s'exerce en extérieur, par tous les temps, avec port de charges.\n\nConditions : 35 heures annualisées, horaires d'été 7h-14h, véhicule de service, panier repas, tenue fournie. Rémunération selon la convention collective du paysage et l'expérience. Prise de poste au printemps.",
+  "requirements": [
+    {
+      "name": "CAPa",
+      "importance": "must"
+    },
+    {
+      "name": "Bac pro",
+      "importance": "must"
+    },
+    {
+      "name": "permis B",
+      "importance": "must"
+    },
+    {
+      "name": "permis BE",
+      "importance": "nice"
+    },
+    {
+      "name": "CACES R482",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

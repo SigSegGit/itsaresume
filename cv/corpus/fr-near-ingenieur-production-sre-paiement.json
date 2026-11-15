@@ -1,0 +1,70 @@
+{
+  "id": "fr-near-ingenieur-production-sre-paiement",
+  "language": "fr",
+  "offer": "Ingénieur de production / SRE - Plateforme de paiement (H/F)\n\nNous exploitons la plateforme de paiement d'un établissement financier européen : autorisations par carte, virements instantanés et monétique, avec un engagement de disponibilité de 99,99 %. L'équipe production compte dix ingénieurs, en lien étroit avec les équipes de développement et de sécurité.\n\nVotre mission : que les paiements passent, de jour comme de nuit.\n\n- Exploiter et maintenir en condition opérationnelle les environnements de production sous Linux (Red Hat et Debian).\n- Administrer les clusters PostgreSQL en haute disponibilité avec Patroni, leurs sauvegardes et leurs bascules.\n- Automatiser le provisionnement et la configuration avec Terraform, Ansible et Puppet, ce dernier sur le parc historique.\n- Faire vivre la supervision et l'observabilité : Prometheus, Grafana, la pile ELK et ITRS Geneos pour la supervision métier.\n- Gérer les incidents et les crises, rédiger les post-mortems et suivre les actions correctives.\n- Préparer et réaliser les mises en production, les tests de bascule de site et les exercices de reprise.\n- Participer à l'astreinte, une semaine sur cinq.\n\nProfil :\nAu moins cinq ans d'expérience en production ou en SRE sur des systèmes critiques. La maîtrise de Linux, de PostgreSQL et d'Ansible est indispensable. Une pratique de Terraform et de Prometheus est exigée. Puppet et ITRS Geneos seraient de vrais plus. Des scripts en Python ou en Bash font partie de votre quotidien. La connaissance de Kubernetes serait appréciée pour les nouveaux services. Anglais professionnel requis.\n\nCDI à Paris La Défense, deux jours de télétravail, prime d'astreinte, 60 à 75 k euros.",
+  "requirements": [
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "PostgreSQL",
+      "importance": "must"
+    },
+    {
+      "name": "Patroni",
+      "importance": "must"
+    },
+    {
+      "name": "Terraform",
+      "importance": "must"
+    },
+    {
+      "name": "Ansible",
+      "importance": "must"
+    },
+    {
+      "name": "Puppet",
+      "importance": "nice"
+    },
+    {
+      "name": "Prometheus",
+      "importance": "must"
+    },
+    {
+      "name": "Grafana",
+      "importance": "must"
+    },
+    {
+      "name": "ELK",
+      "importance": "must"
+    },
+    {
+      "name": "ITRS Geneos",
+      "importance": "nice"
+    },
+    {
+      "name": "Python",
+      "importance": "must"
+    },
+    {
+      "name": "Bash",
+      "importance": "must"
+    },
+    {
+      "name": "Kubernetes",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "high",
+    "score": [
+      65,
+      100
+    ]
+  }
+}

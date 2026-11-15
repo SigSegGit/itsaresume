@@ -1,0 +1,42 @@
+{
+  "id": "fr-mid-chef-projet-infrastructure",
+  "language": "fr",
+  "offer": "Chef de projet infrastructure (H/F) - Industrie pharmaceutique\n\nPour la direction informatique d'un laboratoire pharmaceutique de 2 000 salariés répartis sur trois sites de production, nous recherchons un chef de projet infrastructure qui pilotera les projets techniques du programme de modernisation : renouvellement du parc de virtualisation, consolidation des datacenters et ouverture maîtrisée vers le cloud public.\n\nVous serez chargé de cadrer les projets avec les métiers et la sécurité, de rédiger les cahiers des charges, de consulter et choisir les prestataires, puis de piloter les plannings, les budgets et les risques jusqu'à la mise en service. Vous animerez les comités de suivi et rendrez compte au directeur des infrastructures. Vous veillerez au respect des exigences réglementaires du secteur, notamment les bonnes pratiques de fabrication et la validation des systèmes informatisés.\n\nProfil attendu : formation d'ingénieur ou équivalent, au moins six ans d'expérience dont trois en gestion de projets d'infrastructure. Une solide culture technique est demandée sur VMware, le stockage et les réseaux. Une connaissance d'Azure est souhaitée pour les projets cloud. La maîtrise des méthodes de gestion de projet et d'ITIL est attendue ; une certification PMP ou Prince2 serait appréciée. Une expérience en environnement GxP serait un vrai plus. Anglais professionnel exigé pour échanger avec le groupe.\n\nPoste en CDI près de Lyon, statut cadre, déplacements ponctuels entre sites, 60 à 70 k euros.",
+  "requirements": [
+    {
+      "name": "VMware",
+      "importance": "must"
+    },
+    {
+      "name": "Azure",
+      "importance": "nice"
+    },
+    {
+      "name": "ITIL",
+      "importance": "must"
+    },
+    {
+      "name": "PMP",
+      "importance": "nice"
+    },
+    {
+      "name": "Prince2",
+      "importance": "nice"
+    },
+    {
+      "name": "GxP",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      25,
+      60
+    ]
+  }
+}

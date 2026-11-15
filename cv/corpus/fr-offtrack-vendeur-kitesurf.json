@@ -1,0 +1,34 @@
+{
+  "id": "fr-offtrack-vendeur-kitesurf",
+  "language": "fr",
+  "offer": "Vendeur conseil glisse - Spécialiste kitesurf et wingfoil (H/F) - Saison avril à octobre\n\nBoutique indépendante de sports de glisse installée face au spot, nous vendons et louons du matériel de kitesurf, de wingfoil et de stand-up paddle, et organisons des sessions de découverte avec une école partenaire.\n\nAvec nous, vous :\n- accueillez et conseillez une clientèle de pratiquants débutants comme confirmés ;\n- présentez les nouveautés des marques, réglez le matériel et faites tester les ailes sur la plage ;\n- gérez la location, l'état des lieux du matériel et les petites réparations (boudins, lignes, dérives) ;\n- tenez la caisse, réceptionnez les livraisons et participez à l'inventaire ;\n- animez notre page Instagram avec des photos et vidéos des sessions.\n\nProfil recherché :\nVous êtes pratiquant régulier de kitesurf, avec un niveau autonome confirmé ; la pratique du wingfoil est un vrai plus. Une première expérience de vente en magasin de sport est souhaitée. Le BPJEPS glisse aérotractée serait apprécié pour encadrer ponctuellement des initiations, mais n'est pas obligatoire. Vous parlez anglais avec la clientèle étrangère de l'été ; l'allemand est un atout. Vous êtes souriant, pédagogue et disponible les week-ends et jours fériés, avec des horaires calés sur la météo.\n\nContrat saisonnier de sept mois, 35 heures modulées, logement possible à proximité, réductions sur le matériel et accès libre au matériel de test hors heures d'ouverture. Rémunération au SMIC plus commission sur les ventes.",
+  "requirements": [
+    {
+      "name": "kitesurf",
+      "importance": "must"
+    },
+    {
+      "name": "wingfoil",
+      "importance": "nice"
+    },
+    {
+      "name": "BPJEPS",
+      "importance": "nice"
+    },
+    {
+      "name": "anglais",
+      "importance": "must"
+    },
+    {
+      "name": "Instagram",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      15
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "fr-offtrack-architecte-dplg",
+  "language": "fr",
+  "offer": "Architecte DPLG / DE-HMONP - Chef de projet logements (H/F)\n\nAgence d'architecture de quinze personnes basée à Nantes, nous concevons des logements collectifs, des équipements scolaires et des opérations de réhabilitation thermique pour des maîtres d'ouvrage publics et des bailleurs sociaux. Notre approche privilégie les matériaux biosourcés et la construction bois.\n\nRattaché à l'associé en charge du pôle logement, vous pilotez des projets de la phase esquisse jusqu'à la réception des travaux. Vous animez une petite équipe de deux ou trois collaborateurs, vous préparez les dossiers de permis de construire, vous coordonnez les bureaux d'études structure, fluides et thermique, et vous représentez l'agence en réunion de chantier.\n\nNous cherchons un architecte diplômé, DPLG ou DE avec habilitation HMONP, inscrit ou pouvant s'inscrire à l'Ordre des architectes. Une expérience d'au moins cinq ans en agence, dont une partie significative en suivi de chantier, est demandée. La maîtrise de Revit est indispensable, celle d'ArchiCAD est un plus. Vous connaissez la loi MOP et la réglementation RE2020. La maîtrise de la suite Adobe est attendue pour la production des rendus de concours.\n\nNous apprécierons votre sensibilité aux questions environnementales, votre aisance rédactionnelle et votre capacité à défendre un projet devant un jury ou un comité d'usagers.\n\nPoste en CDI, statut cadre, rémunération selon expérience et grille de la convention des entreprises d'architecture, deux jours de télétravail possibles hors phase chantier, locaux en centre-ville accessibles en tramway.",
+  "requirements": [
+    {
+      "name": "HMONP",
+      "importance": "must"
+    },
+    {
+      "name": "Revit",
+      "importance": "must"
+    },
+    {
+      "name": "ArchiCAD",
+      "importance": "nice"
+    },
+    {
+      "name": "RE2020",
+      "importance": "must"
+    },
+    {
+      "name": "loi MOP",
+      "importance": "must"
+    },
+    {
+      "name": "Adobe",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

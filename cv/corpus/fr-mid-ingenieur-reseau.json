@@ -1,0 +1,50 @@
+{
+  "id": "fr-mid-ingenieur-reseau",
+  "language": "fr",
+  "offer": "Ingénieur réseau et sécurité (H/F) - Intégrateur\n\nIntégrateur spécialisé dans les infrastructures réseau des établissements de santé et des collectivités, nous recherchons un ingénieur réseau pour intervenir sur des projets de refonte de cœurs de réseau et de sécurisation.\n\nVous intervenez sur l'ensemble du cycle des projets. En avant-vente, vous participez à l'étude des besoins et au dimensionnement des solutions. En phase projet, vous concevez les architectures, préparez les configurations et réalisez les déploiements chez nos clients : commutateurs Cisco, pare-feux Fortinet, bornes Wi-Fi Aruba. Vous migrez les plans d'adressage, mettez en place le routage dynamique avec OSPF et BGP, configurez les VPN IPsec entre sites et documentez les livrables. Après la mise en service, vous assurez le support de niveau 3 dans le cadre de nos contrats de maintenance.\n\nLe profil que nous recherchons : un diplôme d'ingénieur ou un master en réseaux, et quatre ans d'expérience en intégration ou en exploitation réseau. La maîtrise de Cisco et de Fortinet est indispensable, tout comme celle des protocoles OSPF et BGP. La certification CCNP est exigée ou doit être obtenue dans l'année. Des notions de Linux et d'automatisation avec Python ou Ansible seraient un plus pour nos travaux d'industrialisation. La connaissance d'Aruba est appréciée.\n\nCDI à Nancy, déplacements réguliers dans le Grand Est, véhicule de service, 45 à 55 k euros.",
+  "requirements": [
+    {
+      "name": "Cisco",
+      "importance": "must"
+    },
+    {
+      "name": "Fortinet",
+      "importance": "must"
+    },
+    {
+      "name": "OSPF",
+      "importance": "must"
+    },
+    {
+      "name": "BGP",
+      "importance": "must"
+    },
+    {
+      "name": "CCNP",
+      "importance": "must"
+    },
+    {
+      "name": "Linux",
+      "importance": "nice"
+    },
+    {
+      "name": "Python",
+      "importance": "nice"
+    },
+    {
+      "name": "Ansible",
+      "importance": "nice"
+    },
+    {
+      "name": "Aruba",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "mid",
+    "score": [
+      20,
+      55
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "id": "fr-offtrack-plombier-chauffagiste",
+  "language": "fr",
+  "offer": "Plombier chauffagiste confirmé (H/F)\n\nNotre société de dépannage et de rénovation énergétique, installée en Gironde, accompagne les particuliers et les syndics depuis 2009. Nous recrutons un plombier chauffagiste pour notre activité d'installation et de maintenance.\n\n1. Installation de réseaux d'eau chaude et d'eau froide, en cuivre, multicouche et PER.\n2. Pose et raccordement d'appareils sanitaires, de ballons thermodynamiques et de chaudières gaz à condensation.\n3. Mise en service, réglage et entretien annuel des chaudières, avec rédaction des attestations.\n4. Recherche de fuites et dépannages en urgence chez les clients du secteur.\n5. Rédaction des comptes rendus d'intervention sur tablette.\n\nCe que nous attendons :\nUn CAP Installateur sanitaire ou un CAP Installateur thermique est exigé, avec au minimum trois ans d'expérience en chantier comme en dépannage. Le permis B est indispensable. Une attestation de capacité pour la manipulation des fluides frigorigènes serait un vrai plus pour intervenir sur les pompes à chaleur. Vous savez lire un plan, braser proprement et expliquer simplement votre intervention au client.\n\nVous aimez le contact, vous êtes ponctuel et vous laissez un chantier propre derrière vous. Une astreinte un week-end sur cinq est organisée et rémunérée.\n\nNous proposons un CDI à temps plein, un véhicule atelier équipé, un téléphone, une prime de dépannage, une mutuelle prise en charge à 70 % et des formations constructeurs régulières. Salaire de 2 300 à 2 800 euros bruts selon profil.",
+  "requirements": [
+    {
+      "name": "CAP Installateur sanitaire",
+      "importance": "must"
+    },
+    {
+      "name": "permis B",
+      "importance": "must"
+    },
+    {
+      "name": "attestation de capacité",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

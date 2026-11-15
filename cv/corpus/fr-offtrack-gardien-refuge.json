@@ -1,0 +1,31 @@
+{
+  "id": "fr-offtrack-gardien-refuge",
+  "language": "fr",
+  "offer": "Gardien(ne) de refuge de haute montagne - Saison estivale (H/F)\n\nUn club alpin associatif recherche un gardien ou une gardienne pour l'un de ses refuges situé à 2 600 mètres d'altitude dans le massif des Écrins. Le refuge compte 60 places, accessibles après trois heures de marche depuis le parking le plus proche, et accueille randonneurs, alpinistes et groupes encadrés de mi-juin à mi-septembre.\n\nLa gestion du refuge vous est confiée dans le cadre d'une convention avec le club. Vous assurez l'accueil des visiteurs et la gestion des réservations, la préparation des repas du soir et des petits déjeuners, l'approvisionnement par héliportage et portage, l'entretien courant du bâtiment, la gestion de l'eau, de l'énergie solaire et des déchets. Vous êtes aussi un relais d'information sur les conditions de montagne et vous participez à l'alerte en cas d'accident, en lien avec le peloton de gendarmerie de haute montagne.\n\nNous attendons une solide expérience de la montagne et de la vie en altitude, une première expérience en restauration ou en gestion d'hébergement collectif, et une formation aux premiers secours : le PSC1 est obligatoire et le PSE1 serait un plus. Le permis d'exploitation et le permis HACCP en hygiène alimentaire sont demandés ; ils peuvent être passés avant l'ouverture. Vous savez gérer une petite équipe d'aides-gardiens, tenir une comptabilité simple et garder votre calme par mauvais temps.\n\nRémunération sur le chiffre d'affaires de la restauration et des nuitées, logement et nourriture sur place.",
+  "requirements": [
+    {
+      "name": "PSC1",
+      "importance": "must"
+    },
+    {
+      "name": "PSE1",
+      "importance": "nice",
+      "known": true
+    },
+    {
+      "name": "permis d'exploitation",
+      "importance": "must"
+    },
+    {
+      "name": "HACCP",
+      "importance": "must"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      15
+    ]
+  }
+}

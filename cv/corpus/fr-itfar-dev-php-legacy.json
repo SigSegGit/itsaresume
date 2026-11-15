@@ -1,0 +1,38 @@
+{
+  "id": "fr-itfar-dev-php-legacy",
+  "language": "fr",
+  "offer": "Développeur PHP - Maintenance applicative (H/F)\n\nÉditeur d'un logiciel de gestion pour les auto-écoles, utilisé par plus de 1 500 établissements, nous maintenons une application historique développée il y a une douzaine d'années en PHP 5.6 avec le framework Zend Framework 1, ainsi qu'une base MySQL volumineuse. Une refonte est engagée, mais l'application actuelle restera en service plusieurs années.\n\nVotre quotidien sera fait de maintenance corrective et évolutive : analyse des tickets remontés par le support, correction des anomalies, développement de petites évolutions réglementaires, optimisation de requêtes lentes et sécurisation progressive du code existant. Vous serez aussi amené à écrire des scripts de reprise de données et à participer aux mises en production mensuelles, réalisées par FTP selon une procédure documentée que nous souhaitons automatiser.\n\nNous recherchons une personne patiente et méthodique qui aime comprendre du code ancien plutôt que le réécrire. Une expérience d'au moins trois ans en PHP est demandée, avec une vraie pratique de PHP 5 et de Zend Framework. La maîtrise de MySQL et du SQL est indispensable. Une connaissance de jQuery est attendue pour l'interface. Des notions de Symfony seraient un plus pour contribuer à la refonte, de même qu'une pratique de PHPUnit.\n\nPoste en CDI à Clermont-Ferrand, télétravail partiel possible, équipe de cinq développeurs, mutuelle et tickets restaurant. Rémunération de 34 à 40 k euros selon expérience.",
+  "requirements": [
+    {
+      "name": "PHP",
+      "importance": "must"
+    },
+    {
+      "name": "Zend Framework",
+      "importance": "must"
+    },
+    {
+      "name": "MySQL",
+      "importance": "must"
+    },
+    {
+      "name": "jQuery",
+      "importance": "must"
+    },
+    {
+      "name": "Symfony",
+      "importance": "nice"
+    },
+    {
+      "name": "PHPUnit",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      30
+    ]
+  }
+}

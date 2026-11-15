@@ -39,5 +39,12 @@
       "name": "Spanish",
       "importance": "nice"
     }
-  ]
+  ],
+  "expected": {
+    "band": "high",
+    "score": [
+      60,
+      100
+    ]
+  }
 }

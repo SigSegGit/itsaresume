@@ -1,0 +1,30 @@
+{
+  "id": "fr-offtrack-directeur-agence-bancaire",
+  "language": "fr",
+  "offer": "Directeur d'agence bancaire (H/F) - Réseau particuliers et professionnels\n\nBanque régionale coopérative implantée dans le Grand Est, nous recherchons un directeur d'agence pour notre point de vente de Colmar, qui compte sept collaborateurs et un portefeuille de 6 000 clients particuliers et professionnels.\n\nVos responsabilités\nVous managez et animez l'équipe commerciale : conseillers particuliers, conseiller professionnel et chargé d'accueil. Vous fixez les objectifs, accompagnez la montée en compétences et conduisez les entretiens annuels. Vous développez le fonds de commerce de l'agence par la conquête de nouveaux clients et l'équipement des clients existants en crédits, épargne, assurance et prévoyance. Vous êtes garant de la maîtrise des risques : conformité, lutte contre le blanchiment, qualité des dossiers de crédit et suivi des débiteurs. Vous représentez la banque auprès des acteurs économiques locaux.\n\nVotre profil\nDiplômé d'un bac+5 en banque, finance ou école de commerce, vous avez au moins cinq ans d'expérience en agence, dont une première expérience de management d'équipe. La certification AMF est obligatoire ; si vous ne l'avez pas encore, elle sera à obtenir dans les six mois. Une bonne maîtrise de l'analyse financière des professionnels et du crédit immobilier est attendue. La connaissance du marché des professionnels et de l'agriculture locale serait un plus, de même que la pratique de l'allemand pour notre clientèle frontalière.\n\nRémunération fixe sur treize mois, part variable, intéressement et participation, conditions bancaires préférentielles, véhicule de fonction.",
+  "requirements": [
+    {
+      "name": "certification AMF",
+      "importance": "must"
+    },
+    {
+      "name": "analyse financière",
+      "importance": "must"
+    },
+    {
+      "name": "crédit immobilier",
+      "importance": "must"
+    },
+    {
+      "name": "allemand",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "low",
+    "score": [
+      0,
+      20
+    ]
+  }
+}

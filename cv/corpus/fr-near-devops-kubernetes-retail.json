@@ -1,0 +1,70 @@
+{
+  "id": "fr-near-devops-kubernetes-retail",
+  "language": "fr",
+  "offer": "Ingénieur DevOps Kubernetes (H/F) - Plateforme omnicanale d'un distributeur\n\nNotre équipe plateforme met à disposition de trente équipes produit l'infrastructure qui fait tourner le site marchand, l'application mobile et les caisses connectées de 400 magasins.\n\nCe que vous allez faire\nVous faites évoluer nos clusters Kubernetes, hébergés sur AWS avec EKS et dans notre datacenter avec Rancher. Vous écrivez les modules Terraform qui décrivent nos comptes et nos réseaux, et vous maintenez les charts Helm de référence utilisés par les équipes. Vous améliorez nos pipelines GitLab CI et le déploiement continu avec Argo CD. Vous rendez les services observables avec Prometheus, Grafana et Loki, et vous accompagnez les équipes dans la définition de leurs SLO. Vous participez à l'astreinte de la plateforme.\n\nCe que nous attendons\nTrois ans d'expérience minimum sur un poste DevOps ou SRE. La maîtrise de Kubernetes, de Terraform et de Linux est obligatoire. Une solide pratique d'AWS est requise. Vous codez vos outils en Python ou en Go. Une expérience de Helm et d'Argo CD est attendue. La connaissance de Vault ou d'un autre gestionnaire de secrets serait un plus, tout comme une certification CKA.\n\nCe que nous proposons\nUn CDI à Villeneuve-d'Ascq, un rythme hybride de trois jours de télétravail, une équipe de huit ingénieurs bienveillante, une semaine par trimestre consacrée à la réduction de la dette technique, et un salaire de 52 à 65 k euros selon expérience.",
+  "requirements": [
+    {
+      "name": "Kubernetes",
+      "importance": "must"
+    },
+    {
+      "name": "AWS",
+      "importance": "must"
+    },
+    {
+      "name": "EKS",
+      "importance": "nice"
+    },
+    {
+      "name": "Terraform",
+      "importance": "must"
+    },
+    {
+      "name": "Linux",
+      "importance": "must"
+    },
+    {
+      "name": "Python",
+      "importance": "must"
+    },
+    {
+      "name": "Go",
+      "importance": "must"
+    },
+    {
+      "name": "Helm",
+      "importance": "must"
+    },
+    {
+      "name": "Argo CD",
+      "importance": "must"
+    },
+    {
+      "name": "GitLab CI",
+      "importance": "nice"
+    },
+    {
+      "name": "Prometheus",
+      "importance": "nice"
+    },
+    {
+      "name": "Grafana",
+      "importance": "nice"
+    },
+    {
+      "name": "Vault",
+      "importance": "nice"
+    },
+    {
+      "name": "CKA",
+      "importance": "nice"
+    }
+  ],
+  "expected": {
+    "band": "high",
+    "score": [
+      60,
+      100
+    ]
+  }
+}
