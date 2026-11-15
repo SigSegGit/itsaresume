@@ -111,7 +111,7 @@ export function runName(offer, now = new Date(), title = '') {
  * analysis ({attempt}), layout ({layouts}), pdf, ats, done ({dir}).
  * `startLayout` starts the layout engine (Word; tests fake it).
  */
-export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title, listingLlm = null, split = false, minScore = 0 }) {
+export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, startLayout = startLayoutEngine, onStep = () => {}, profileId = DEFAULT_PROFILE, title, listingLlm = null, split = false, minScore = 0, style = {} }) {
   const { full, profile, assessment, removed, texts } = loaded;
   const dir = join(outDir, runName(offer, new Date(), title));
   let result;
@@ -133,7 +133,7 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
   const below = minScore > 0 && analysis.fit.score < minScore;
   const { model, layout, ats, skipped } = below
     ? { model: { experiences: [] }, layout: null, ats: null, skipped: { reason: `no CV: the score ${analysis.fit.score} is below the threshold of ${minScore}`, failed: false } }
-    : await writeCv({ profile, analysis, dir, useWord, startLayout, onStep });
+    : await writeCv({ profile, analysis, dir, useWord, startLayout, onStep, style });
   const older = olderMentions(analysis, full, texts);
   const instructions = offerInstructions(offer);
   const text = report(analysis, profile, { backend, attempts, repairs, layout, ats, skipped, assessment, removed, older, rendered: model.experiences, instructions });
@@ -173,13 +173,13 @@ export function readRun(dir) {
  * be done is `skipped`: {reason, failed}, failed when Word or the check broke
  * rather than being absent or turned off.
  */
-async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep }) {
+async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep, style = {} }) {
   const docx = join(dir, 'cv.docx');
   const pdf = join(dir, 'cv.pdf');
   /** The CV as with --no-layout: not fitted to the page, no PDF, no ATS check. */
   const unfitted = (why, failed) => {
     const plain = buildModel(profile, analysis, { bullets: defaultBullets(profile, analysis) });
-    writeFileSync(docx, render(plain));
+    writeFileSync(docx, render(plain, style));
     return { model: plain, skipped: { reason: `layout, PDF and ATS check skipped: ${why}`, failed } };
   };
   if (!useWord) return unfitted('--no-layout', false);
@@ -191,7 +191,7 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep })
     const measure = async (bullets, skillCap) => {
       const file = join(scratch, `layout-${(count += 1)}.docx`);
       onStep('layout', { layouts: count });
-      writeFileSync(file, render(buildModel(profile, analysis, { bullets, skillCap })));
+      writeFileSync(file, render(buildModel(profile, analysis, { bullets, skillCap }), style));
       return (await word.measure(file)).pages;
     };
     let model;
@@ -200,7 +200,7 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep })
     try {
       const fitted = await fitToPage({ ranked: rankBullets(profile, analysis), measure });
       model = buildModel(profile, analysis, { bullets: fitted.bullets, skillCap: fitted.cap });
-      writeFileSync(docx, render(model));
+      writeFileSync(docx, render(model, style));
       onStep('pdf');
       final = await word.measure(docx, pdf);
       layouts = fitted.layouts;

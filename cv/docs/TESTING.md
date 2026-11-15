@@ -834,6 +834,7 @@ property it proves.
 | 4.7: the add-on origin and key may create jobs, and nothing else | Add-on (4.7): its key and job creation alone |
 | 4.11: a job carries its sources, links and threshold to tailor; bad ones refused first | — |
 | 4.11: a public visitor cannot send sources or links | Sources (4.11): never from a public visitor |
+| 4.12: a job carries its style to tailor; an unknown palette is refused | — |
 
 ## `test/split.test.js`
 
@@ -852,6 +853,13 @@ property it proves.
 |---|---|
 | stem: a short root is never cut below four letters | Stem: a root keeps four letters |
 | a requirement "Product ownership" is not stated by an offer that says production | Stem: endings, not a prefix |
+
+## `test/style.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| 4.12: one default template and palette, the template folder listed | Style (4.12): an unknown palette is refused |
+| 4.12: a palette recolours the template; the default leaves it as drawn | Style (4.12): a palette recolours the template |
 
 ## `test/tunnel.test.js`
 
@@ -934,6 +942,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**620 tests, 495 of them covered by at least one sabotage defence.**
+**623 tests, 497 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -71,7 +71,14 @@ function applyModels(models) {
 
 async function refreshStatus() {
   try {
-    const { profile, profiles, router, models, layout, public: open } = await api('/api/status');
+    const { profile, profiles, router, models, layout, public: open, styles } = await api('/api/status');
+    // 4.12: the CV's template and palette, the default selected.
+    if (styles) {
+      const fill = (id, names, chosen) => $(id).replaceChildren(...names.map((name) => h('option', { value: name, text: name, ...(name === chosen ? { selected: true } : {}) })));
+      fill('template', styles.templates, styles.default.template);
+      fill('palette', styles.palettes, styles.default.palette);
+      $('style-row').hidden = false;
+    }
     local = !open;
     $('questions-link').hidden = Boolean(open);
     applyModels(models);
@@ -296,7 +303,7 @@ function setupOffers() {
     const batch = offers.splice(0, offers.length);
     renderOffers();
     try {
-      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value, profile: $('profile-row').hidden ? undefined : $('profile').value, ...(await runSources()) });
+      await api('/api/jobs', { offers: batch.map(({ title, text }) => ({ title, text })), model: $('model').value, profile: $('profile-row').hidden ? undefined : $('profile').value, ...($('style-row').hidden ? {} : { style: { template: $('template').value, palette: $('palette').value } }), ...(await runSources()) });
       poll();
     } catch (error) {
       offers.push(...batch);

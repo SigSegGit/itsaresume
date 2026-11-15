@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { cleanName } from './guard.js';
 import { LINKEDIN_FILES } from './import.js';
 import { ID } from './profiles.js';
+import { resolveStyle } from './style.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { MODELS } from './qa.js';
 import { compareRuns, compareMarkdown, publicComparison } from './compare.js';
@@ -383,7 +384,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         };
         // Every model answer's tokens, kept on the job: a failed run spent them too.
         const onAnswer = (answer) => addTokens((job.tokens ??= {}), answer);
-        job.result = await deps.tailor({ offer: job.text, title: job.named, model: job.model, onStep, onAnswer, profile: job.profile, ...(job.sources ? { sources: job.sources, links: job.links, threshold: job.threshold } : {}) });
+        job.result = await deps.tailor({ offer: job.text, title: job.named, model: job.model, onStep, onAnswer, profile: job.profile, style: job.style, ...(job.sources ? { sources: job.sources, links: job.links, threshold: job.threshold } : {}) });
         // Renamed while it ran: the name joins the run once it has a folder.
         if (job.renamed) keepTitle(job);
         job.status = 'done';
@@ -593,6 +594,13 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         }
         if (links !== undefined && (!Array.isArray(links) || links.length > 5 || !links.every((link) => typeof link === 'string' && /^https?:\/\/\S+$/.test(link)))) throw new HttpError(400, 'links: at most 5 http(s) links');
         if (threshold !== undefined && (!Number.isInteger(threshold) || threshold < 0 || threshold > 100)) throw new HttpError(400, 'threshold: a whole number from 0 to 100');
+        // 4.12: the CV's template and palette, the defaults when none.
+        let style;
+        try {
+          style = resolveStyle(body.style ?? {});
+        } catch (error) {
+          throw new HttpError(400, error.message);
+        }
         const own = sources?.length || links?.length ? { sources: sources ?? [], links: links ?? [], threshold: threshold ?? 75 } : {};
         const created = offers.flatMap((offer) => {
           if (typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT) {
@@ -603,7 +611,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           }
           // 2.31a: the name typed for the offer, if any, also names its run.
           const named = cleanName(offer.title ?? '') ?? undefined;
-          const job = { text: offer.text, status: 'queued', steps: [], times: [], via, visitor, invite, profile, ...own };
+          const job = { text: offer.text, status: 'queued', steps: [], times: [], via, visitor, invite, profile, style, ...own };
           if (!compared) return [{ ...job, id: randomUUID(), title: named ?? 'Offre', named, model }];
           // The model leads the folder's name: two lanes may start in the same second.
           return compared.map((name) => ({ ...job, id: randomUUID(), title: `${named ?? 'Offre'} — ${name}`, named: `${name} ${named ?? 'offre'}`, model: name, group }));

@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "src/style.js",
     "src/sources.js",
     "src/import.js",
     "src/matrix.js",
@@ -196,8 +197,8 @@
     },
     "Profile: the job's profile reaches the generation": {
       "file": "src/server.js",
-      "live": "onStep, onAnswer, profile: job.profile, ...(job.sources",
-      "dead": "onStep, onAnswer, ...(job.sources",
+      "live": "onStep, onAnswer, profile: job.profile, style: job.style,",
+      "dead": "onStep, onAnswer, style: job.style,",
       "expect": [
         "a job may name a profile from the closed list; none is the default, an unknown one is 400"
       ]

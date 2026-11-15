@@ -5,8 +5,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
+import { join } from 'node:path';
+import { TEMPLATES_DIR, recolour, resolveStyle } from './style.js';
 
 export const TEMPLATE = fileURLToPath(new URL('../templates/two-column.docx', import.meta.url));
+const templatePath = (style) => join(TEMPLATES_DIR, `${resolveStyle(style).template}.docx`);
 
 /** `{a.b}` reads `scope.a.b`; `{.}` is the current item. */
 function dotted(tag) {
@@ -20,8 +23,8 @@ function dotted(tag) {
 
 /** Render `model` into a docx buffer. A missing field is an error, never an
  * "undefined" printed on a CV. */
-export function render(model, template = TEMPLATE) {
-  const doc = new Docxtemplater(new PizZip(readFileSync(template)), {
+export function render(model, style = {}) {
+  const doc = new Docxtemplater(new PizZip(readFileSync(typeof style === 'string' ? style : templatePath(style))), {
     paragraphLoop: true,
     linebreaks: true,
     parser: dotted,
@@ -34,6 +37,7 @@ export function render(model, template = TEMPLATE) {
   });
   doc.render(model);
   const zip = doc.getZip();
+  if (typeof style !== 'string') recolour(zip, resolveStyle(style).palette);
   setProperties(zip, model);
   return zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
