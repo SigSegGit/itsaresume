@@ -37,10 +37,10 @@
     }
   ],
   "expected": {
-    "band": "mid",
+    "band": "high",
     "score": [
-      35,
-      70
+      60,
+      100
     ]
   }
 }

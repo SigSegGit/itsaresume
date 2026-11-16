@@ -673,6 +673,12 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       }
     }
   }
+  // An offer far from the profile: the model may rightly select nothing. The
+  // main experiences stand in, with no bullet chosen, rather than a refusal.
+  if (order.length === 0) {
+    for (const experience of profile.experiences) if (kindOf(experience) === 'main') place(experience.id);
+    repairs.push('no experience selected: the main experiences of the profile stand in');
+  }
   // Profile v4, rule 3: a short mission or an R&D project earns its place by
   // backing a requirement the offer states (tailor.js enforces it; this says so).
   const backs = backsRequirement(profile, analysis);

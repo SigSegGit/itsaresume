@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { detectLanguage } from '../src/language.js';
-import { scoreOf } from '../src/score.js';
+import { scoreOf, CORE_MISSED_CAP } from '../src/score.js';
 import { normalize } from '../src/normalize.js';
 import { validateAnalysis } from '../src/analysis.js';
 import { buildPrompt } from '../src/prompt.js';
@@ -70,4 +70,16 @@ test('the report labels the model\'s own comment as unchecked', () => {
   assert.match(text, /# Fit: 50 \/ 100 — partial/);
   assert.match(text, /unchecked/i);
   assert.match(text, /Great fit\./);
+});
+
+// Corpus run 2026-11-15: COBOL, PHP 5.6 and helpdesk offers scored 48-52 on
+// generic rows (SQL, Git, incidents) while their own core was missed. More
+// than half the must-haves missed is no fit: the score stays in the low band.
+test('a score with more than half the must-haves missed is capped in the low band', () => {
+  const must = (match) => ({ importance: 'must', match });
+  const nice = (match) => ({ importance: 'nice', match });
+  const coreMissed = [must('no'), must('no'), must('yes'), ...Array(12).fill(nice('yes'))];
+  assert.equal(scoreOf(coreMissed), CORE_MISSED_CAP);
+  assert.equal(scoreOf([must('no'), must('yes'), nice('yes')]), 57);
+  assert.ok(CORE_MISSED_CAP < 35);
 });

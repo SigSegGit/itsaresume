@@ -80,6 +80,7 @@
     "test/rules.test.js",
     "test/schema.test.js",
     "test/scoring.test.js",
+    "test/normalize.test.js",
     "test/word.test.js",
     "src/links.js",
     "src/compare.js",
@@ -1990,6 +1991,22 @@
       "dead": "  const said = () => true;",
       "expect": [
         "4.9: a profile read from free text keeps only what the text says, word for word"
+      ]
+    },
+    "Score: more than half the must-haves missed caps the score low": {
+      "file": "src/score.js",
+      "live": "  return musts > 0 && missed / musts > CORE_MISSED ? Math.min(score, CORE_MISSED_CAP) : score;",
+      "dead": "  return score;",
+      "expect": [
+        "a score with more than half the must-haves missed is capped in the low band"
+      ]
+    },
+    "Normalize: no experience selected, the main experiences stand in": {
+      "file": "src/normalize.js",
+      "live": "    for (const experience of profile.experiences) if (kindOf(experience) === 'main') place(experience.id);",
+      "dead": "",
+      "expect": [
+        "an analysis that selects no experience gets the main experiences of the profile, not a refusal"
       ]
     },
     "Style (4.12): a palette recolours the template": {

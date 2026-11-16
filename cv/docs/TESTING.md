@@ -356,6 +356,7 @@ property it proves.
 | the score is computed from the requirements, not taken from the model | Honesty: must-haves weigh more; Honesty: the score is computed, not the model's |
 | an analysis without any requirement cannot be scored and is refused | Honesty: no requirement, no score |
 | the report labels the model's own comment as unchecked | — |
+| a score with more than half the must-haves missed is capped in the low band | Score: more than half the must-haves missed caps the score low |
 
 ## `test/hostile.test.js`
 
@@ -577,6 +578,7 @@ property it proves.
 | a requirement named like a skill's term only is left to the model, its skills kept | Names: a term does not name a requirement or a part |
 | a requirement whose every part names a profile skill is met by those skills; one unnamed part keeps it as is | Parts: every part naming a profile skill meets the requirement; Parts: one unnamed part leaves the requirement |
 | a part named only by a skill term does not meet the requirement | Names: a term does not name a requirement or a part |
+| an analysis that selects no experience gets the main experiences of the profile, not a refusal | Normalize: no experience selected, the main experiences stand in |
 
 ## `test/page.test.js`
 
@@ -942,6 +944,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**623 tests, 497 of them covered by at least one sabotage defence.**
+**625 tests, 499 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

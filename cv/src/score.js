@@ -11,6 +11,8 @@ export const MATCH_VALUE = { yes: 1, adjacent: 0.5, no: 0 };
 export const LAB_VALUE = 0.5;
 /** Profile v4, rule 9: the core of an offer is its must-haves; half of them missed is the core missed. */
 export const CORE_MISSED = 0.5;
+/** More than CORE_MISSED of the must-haves missed: the core is missed, the score stays low (corpus run 2026-11-15). */
+export const CORE_MISSED_CAP = 30;
 
 /** Whether a met requirement rests on lab skills only. */
 const labOnly = (requirement, lab) =>
@@ -32,13 +34,21 @@ const scored = (requirements) => requirements.filter((requirement) => requiremen
 export function scoreOf(requirements, { lab = new Set() } = {}) {
   let total = 0;
   let met = 0;
+  let musts = 0;
+  let missed = 0;
   for (const requirement of scored(requirements)) {
     const weight = IMPORTANCE_WEIGHT[requirement.importance] ?? IMPORTANCE_WEIGHT.nice;
     const value = MATCH_VALUE[requirement.match] ?? 0;
     total += weight;
     met += weight * (labOnly(requirement, lab) ? Math.min(value, LAB_VALUE) : value);
+    if (requirement.importance === 'must') {
+      musts += 1;
+      if (requirement.match === 'no') missed += 1;
+    }
   }
-  return total === 0 ? null : Math.round((100 * met) / total);
+  if (total === 0) return null;
+  const score = Math.round((100 * met) / total);
+  return musts > 0 && missed / musts > CORE_MISSED ? Math.min(score, CORE_MISSED_CAP) : score;
 }
 
 /**
