@@ -6,6 +6,8 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/style.test.js",
+    "src/style.js",
     "test/fit.test.js",
     "src/sources.js",
     "test/addon.test.js",
@@ -2005,6 +2007,22 @@
       "dead": "",
       "expect": [
         "an analysis that selects no experience gets the main experiences of the profile, not a refusal"
+      ]
+    },
+    "Style (4.12): a palette recolours the template": {
+      "file": "src/style.js",
+      "live": "  if (!target || target === DRAWN) return;",
+      "dead": "  return;",
+      "expect": [
+        "4.12: a palette recolours the template; the default leaves it as drawn"
+      ]
+    },
+    "Style (4.12): an unknown palette is refused": {
+      "file": "src/style.js",
+      "live": "  if (!PALETTES[palette]) throw new Error(",
+      "dead": "  if (false) throw new Error(",
+      "expect": [
+        "4.12: one default template and palette, the template folder listed"
       ]
     }
   }

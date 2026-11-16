@@ -20,6 +20,7 @@ import { ensureLocal, laptopAwake } from './wake.js';
 import { addAnswer } from './answers.js';
 import { pageQuestions } from './questions.js';
 import { blocked } from './evidence.js';
+import { DEFAULT_STYLE, PALETTES, listTemplates } from './style.js';
 import { listingOf, rankListed, rankProfiles } from './rank.js';
 import { fromJsonResume, fromLinkedInFiles, writeProfile } from './import.js';
 import { fileListingCache } from './listing.js';
@@ -114,7 +115,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
   // 4.1: the owner's profile, and the files of --profiles DIR (read at each use).
   const profiles = () => listProfiles({ profile: profilePath, profilesDir });
   const deps = {
-    status: () => status({ profilePath, url, useWord, out }),
+    status: async () => ({ ...(await status({ profilePath, url, useWord, out })), styles: { templates: listTemplates(), palettes: Object.keys(PALETTES), default: DEFAULT_STYLE } }),
     profiles: () => [...profiles().keys()],
     split: (text) => splitOffers({ text, llm }),
     // 5.2b: the default profile, the listing cache the analysis reads.
@@ -128,7 +129,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       return writeProfile(profilesDir, id, resume ? fromJsonResume(resume) : fromLinkedInFiles(linkedin));
     },
     rank: ({ offers, top }) => rankListed({ offers, profile: loadProfile(profiles().get(DEFAULT_PROFILE)).profile, top, llm: withModel(llm, 'auto'), cache: fileListingCache(join(out, '.listings')) }),
-    tailor: async ({ offer: given, title, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE, sources, links, threshold = 0 }) => {
+    tailor: async ({ offer: given, title, model = 'auto', onStep, onAnswer = () => {}, profile = DEFAULT_PROFILE, sources, links, threshold = 0, style = {} }) => {
       // 4.11: an offer given as a link is read (the owner's page only: no fetch for the public host).
       const offer = !publicMode && /^https?:\/\/\S+$/.test(given.trim()) ? await readOffer(given.trim()) : given;
       // 4.11: the run's own sources, in a temporary folder removed when the run ends: nothing kept.
@@ -153,7 +154,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       }
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep, warm: () => withModel(llm, 'local')({ system: 'Answer with OK.', prompt: 'OK' }) });
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold, style });
       return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.
