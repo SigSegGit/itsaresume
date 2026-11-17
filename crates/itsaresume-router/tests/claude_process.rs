@@ -662,3 +662,101 @@ fn a_large_answer_arrives_whole() {
         .expect("answer");
     assert_eq!(answer.text.len(), big.len());
 }
+
+/// The observed success, flagged as overage, its limit resetting at `resets_at`
+/// (unix seconds): written beside the scene for the fake to print.
+fn overage_env(scene: &Scene, resets_at: u64) -> Vec<(OsString, OsString)> {
+    let raw = std::fs::read_to_string(fixture("observed-success.verbose.json")).expect("fixture");
+    let mut messages: Vec<serde_json::Value> = serde_json::from_str(&raw).expect("array");
+    for message in &mut messages {
+        if message["type"] == "rate_limit_event" {
+            message["rate_limit_info"]["isUsingOverage"] = true.into();
+            message["rate_limit_info"]["resetsAt"] = resets_at.into();
+        }
+    }
+    let stdout = scene.record.with_file_name("overage.json");
+    std::fs::write(&stdout, serde_json::Value::Array(messages).to_string()).expect("written");
+    env_with(&[
+        (
+            "FAKE_CLAUDE_RECORD",
+            scene.record.to_str().expect("utf-8 path"),
+        ),
+        ("FAKE_CLAUDE_STDOUT", stdout.to_str().expect("utf-8 path")),
+    ])
+}
+
+fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("after 1970")
+        .as_secs()
+}
+
+/// The owner's ask (2026-11-17): an overage latch lifts by itself once the
+/// plan's limit resets (5-hour or weekly, whichever claude reported), with
+/// no hand on the VM; the latch file is gone then.
+#[test]
+fn an_overage_latch_lifts_by_itself_once_the_limit_has_reset() {
+    let scene = scene();
+    let marker = scene.workdir.with_file_name("billing-tripped");
+    let latched = backend(&scene).with_latch_file(&marker);
+
+    let first = latched.complete_with_env(&Request::new("p"), overage_env(&scene, now() - 1));
+    assert!(
+        matches!(&first, Err(BackendError::Other(m)) if m.starts_with("billing tripwire")),
+        "{first:?}"
+    );
+    assert!(marker.exists(), "the latch is written down");
+
+    let after_reset = latched.complete_with_env(&Request::new("p"), success_env(&scene));
+    assert!(after_reset.is_ok(), "{after_reset:?}");
+    assert!(!marker.exists(), "the lifted latch leaves no file");
+}
+
+/// Before the reset, the latch holds, across a restart too, and says until when.
+#[test]
+fn an_overage_latch_holds_until_the_reset_even_across_a_restart() {
+    let scene = scene();
+    let marker = scene.workdir.with_file_name("billing-tripped");
+    let reset = now() + 3600;
+    let latched = backend(&scene).with_latch_file(&marker);
+    let _ = latched.complete_with_env(&Request::new("p"), overage_env(&scene, reset));
+    std::fs::remove_file(scene.record.join("args.json")).expect("spawned once");
+
+    for backend in [latched, backend(&scene).with_latch_file(&marker)] {
+        let again = backend.complete_with_env(&Request::new("p"), success_env(&scene));
+        assert!(
+            matches!(&again, Err(BackendError::Other(m)) if m.contains("latched") && m.contains(&reset.to_string())),
+            "{again:?}"
+        );
+    }
+    assert!(
+        !scene.record.join("args.json").exists(),
+        "claude was never started again"
+    );
+
+    // In memory alone, the reset is kept too.
+    let in_memory = backend(&scene);
+    let _ = in_memory.complete_with_env(&Request::new("p"), overage_env(&scene, now() - 1));
+    assert!(
+        in_memory
+            .complete_with_env(&Request::new("p"), success_env(&scene))
+            .is_ok()
+    );
+}
+
+/// An overage with no reset time, or a per-token credential, is not lifted
+/// by the clock: it waits for a hand, as before.
+#[test]
+fn a_latch_without_a_reset_time_waits_for_a_hand() {
+    let scene = scene();
+    let marker = scene.workdir.with_file_name("billing-tripped");
+    std::fs::write(&marker, "the billing tripwire fired; see the journal\n").expect("old latch");
+    let restarted = backend(&scene).with_latch_file(&marker);
+    let again = restarted.complete_with_env(&Request::new("p"), success_env(&scene));
+    assert!(
+        matches!(&again, Err(BackendError::Other(m)) if m.contains("latched")),
+        "{again:?}"
+    );
+    assert!(marker.exists());
+}
