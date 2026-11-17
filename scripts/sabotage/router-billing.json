@@ -964,7 +964,7 @@
     "Billing latch: an overage latch holds until the plan's reset": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": "        if reset.is_some_and(|at| unix_now() >= at) {\n",
-      "dead": "        if reset.is_some() {\n",
+      "dead": "        if reset.is_some_and(|at| unix_now() + 7200 >= at) {\n",
       "expect": [
         "an_overage_latch_holds_until_the_reset_even_across_a_restart"
       ]
