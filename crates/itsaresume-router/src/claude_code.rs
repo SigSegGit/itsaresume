@@ -32,6 +32,23 @@ pub fn classify(stdout: &str) -> Result<Completion, BackendError> {
     classify_for(stdout, false)
 }
 
+/// Precedes the plan's reset (unix seconds) in an overage refusal, and in the
+/// latch file: the latch lifts by itself once that time has passed.
+const RESET_MARK: &str = "resets at unix ";
+
+/// The unix time after `RESET_MARK` in `text`, if any.
+fn reset_in(text: &str) -> Option<u64> {
+    let (_, after) = text.split_once(RESET_MARK)?;
+    let digits: String = after.chars().take_while(char::is_ascii_digit).collect();
+    digits.parse().ok()
+}
+
+fn unix_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |since| since.as_secs())
+}
+
 /// The keys of a `rate_limit_info` the journal keeps (8.32).
 const RATE_LIMIT_KEYS: [&str; 4] = ["status", "rateLimitType", "isUsingOverage", "overageStatus"];
 
@@ -95,12 +112,23 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
         .find(|message| message["type"] == "result")
         .is_none_or(|result| result["is_error"] != true);
     if overage && served {
-        return Err(BackendError::Other(
+        // The owner's ask (2026-11-17): name the plan's reset, so the latch
+        // lifts by itself then (`resetsAt`, unix seconds, number or string).
+        let reset = messages
+            .iter()
+            .filter(|message| message["type"] == "rate_limit_event")
+            .find_map(|message| {
+                let at = &message["rate_limit_info"]["resetsAt"];
+                at.as_u64().or_else(|| at.as_str()?.trim().parse().ok())
+            })
+            .map_or_else(String::new, |at| {
+                format!("; the plan's limit {RESET_MARK}{at}")
+            });
+        return Err(BackendError::Other(format!(
             "billing tripwire: claude reports this answer as extra usage (overage, \
              isUsingOverage), which is billed per token; itsaresume only uses the \
-             subscription (docs/HANDOVER.md §1). Turn extra usage off for the account"
-                .into(),
-        ));
+             subscription (docs/HANDOVER.md §1). Turn extra usage off for the account{reset}"
+        )));
     }
 
     // The plan's limits as reported with this answer, for the journal
@@ -244,6 +272,8 @@ pub struct ClaudeCodeBackend {
     workdir: PathBuf,
     /// Set when the billing tripwire fires: no request starts claude again.
     tripped: Arc<AtomicBool>,
+    /// When the plan's limit resets (unix seconds), the latch lifts; 0: by hand only.
+    reset_at: Arc<AtomicU64>,
     /// Where the latch is written down, so that a restart keeps it.
     latch_file: Option<PathBuf>,
 }
@@ -257,6 +287,7 @@ impl ClaudeCodeBackend {
             timeout: Duration::from_secs(300),
             workdir: std::env::temp_dir().join("itsaresume-claude"),
             tripped: Arc::new(AtomicBool::new(false)),
+            reset_at: Arc::new(AtomicU64::new(0)),
             latch_file: None,
         }
     }
@@ -439,28 +470,62 @@ impl ClaudeCodeBackend {
                 ))),
             }
         });
-        if matches!(&outcome, Err(BackendError::Other(message)) if message.starts_with("billing tripwire"))
+        if let Err(BackendError::Other(message)) = &outcome
+            && message.starts_with("billing tripwire")
         {
+            let reset = reset_in(message);
+            self.reset_at.store(reset.unwrap_or(0), Ordering::SeqCst);
             self.tripped.store(true, Ordering::SeqCst);
             if let Some(file) = &self.latch_file {
-                let _ = std::fs::write(file, "the billing tripwire fired; see the journal\n");
+                let until = reset.map_or_else(String::new, |at| format!("{RESET_MARK}{at}\n"));
+                let _ = std::fs::write(
+                    file,
+                    format!("the billing tripwire fired; see the journal\n{until}"),
+                );
             }
         }
         outcome
     }
 
     /// Latched: the billing tripwire fired, in this process or before a restart.
+    /// An overage latch lifts by itself once the plan's limit has reset
+    /// (the owner's ask, 2026-11-17); any other waits for a hand.
     fn latched(&self) -> Option<BackendError> {
-        let marked = self.latch_file.as_ref().is_some_and(|file| file.exists());
-        (self.tripped.load(Ordering::SeqCst) || marked).then(|| {
-            BackendError::Other(format!(
+        let marked = self
+            .latch_file
+            .as_ref()
+            .and_then(|file| std::fs::read_to_string(file).ok());
+        let tripped = self.tripped.load(Ordering::SeqCst);
+        if !tripped && marked.is_none() {
+            return None;
+        }
+        let reset = if tripped {
+            Some(self.reset_at.load(Ordering::SeqCst)).filter(|at| *at > 0)
+        } else {
+            marked.as_deref().and_then(reset_in)
+        };
+        if reset.is_some_and(|at| unix_now() >= at) {
+            self.tripped.store(false, Ordering::SeqCst);
+            self.reset_at.store(0, Ordering::SeqCst);
+            if let Some(file) = &self.latch_file {
+                let _ = std::fs::remove_file(file);
+            }
+            return None;
+        }
+        let file = self
+            .latch_file
+            .as_ref()
+            .map_or_else(|| "nothing".into(), |file| file.display().to_string());
+        Some(BackendError::Other(match reset {
+            Some(at) => format!(
+                "billing tripwire latched until unix {at}: claude reported extra usage, \
+                 so it is not started again before the plan's limit resets (or delete {file})"
+            ),
+            None => format!(
                 "billing tripwire latched: claude reported a per-token billing source earlier, \
-                 so it is not started again; fix the billing source, then delete {} and restart",
-                self.latch_file
-                    .as_ref()
-                    .map_or_else(|| "nothing".into(), |file| file.display().to_string())
-            ))
-        })
+                 so it is not started again; fix the billing source, then delete {file} and restart"
+            ),
+        }))
     }
 }
 

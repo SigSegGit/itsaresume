@@ -436,8 +436,8 @@
     },
     "Billing latch: written down for a restart": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
-      "live": "                let _ = std::fs::write(file, \"the billing tripwire fired; see the journal\\n\");\n",
-      "dead": "                let _ = file;\n",
+      "live": "                let _ = std::fs::write(\n                    file,\n",
+      "dead": "                let _ = (\n                    file,\n",
       "expect": [
         "a_fired_billing_tripwire_latches_even_across_a_restart",
         "a_fired_billing_tripwire_stops_the_next_process_too"
@@ -959,6 +959,31 @@
       "dead": "Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists && tries < 1 => {",
       "expect": [
         "a_name_left_by_an_earlier_run_is_skipped_and_left_alone"
+      ]
+    },
+    "Billing latch: an overage latch holds until the plan's reset": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "        if reset.is_some_and(|at| unix_now() >= at) {\n",
+      "dead": "        if reset.is_some() {\n",
+      "expect": [
+        "an_overage_latch_holds_until_the_reset_even_across_a_restart"
+      ]
+    },
+    "Billing latch: a latch without a reset time waits for a hand": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "            marked.as_deref().and_then(reset_in)\n",
+      "dead": "            marked.as_deref().and_then(reset_in).or(Some(0))\n",
+      "expect": [
+        "a_latch_without_a_reset_time_waits_for_a_hand"
+      ]
+    },
+    "Billing tripwire: an overage refusal names the plan's reset": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "                format!(\"; the plan's limit {RESET_MARK}{at}\")\n",
+      "dead": "                format!(\"; the plan's limit {at}\")\n",
+      "expect": [
+        "an_overage_refusal_names_the_limits_reset",
+        "an_overage_latch_lifts_by_itself_once_the_limit_has_reset"
       ]
     }
   }
