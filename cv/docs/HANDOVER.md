@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 2.25e
-TITLE: 4.12 merged (#186); 2.25e checked 2026-11-15, no VM run since the compact prompt, baseline written in §8; it waits for a real run (owner's go: Claude calls), like the corpus run
-WRITTEN-AT: 2026-11-15
+TITLE: 2.25e rerun 2026-11-17 with groq and bionic only (attempts and scores hold, input +4-5 %); claude waits for the owner to clear the VM's billing-tripwire latch (§10), gemini was 503
+WRITTEN-AT: 2026-11-17
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1502,6 +1502,19 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   7670 (score 98), gemini 9231 (98), groq 7354 over 2 calls (94), bionic
   6715-7738 (94-96). Rerun that offer once per model, or wait for the
   owner's next real runs; a run costs Claude calls, so not without his go.
+  **Rerun 2026-11-17** ("Comparer tous les modèles", owner's go; compact
+  prompt on, image of 2026-11-16): only groq and bionic were up. groq
+  7648 over 2 calls (score 96), bionic 8100 over 2 calls (96), one attempt
+  each. Attempts and scores hold (94 -> 96), so no rollback; but the input
+  did not drop (+4 to +5 %): the shortlist block outweighs what the compact
+  catalogue saves on this short offer. Still open: claude and gemini on the
+  same offer. Claude was stopped on the VM by the billing tripwire
+  (latched 2026-11-15 01:26: overage reported at the weekly limit; extra
+  usage off on the account since, checked 2026-11-17); the latch is the
+  owner's to clear (§10). Gemini answered 503 "high demand" (temporary).
+  When both are up, rerun the compare on that offer and close 2.25e; if
+  claude's input does not drop either, open a step to measure the
+  shortlist's cost per offer length.
 
 ## 9. Open on purpose
 
@@ -1565,6 +1578,14 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   offer could raise the score by at most that, never the qualification.
 
 ## 10. Waiting for the owner
+
+- **2026-11-17: clear the VM's billing-tripwire latch** (the router's
+  journal folder on the VM, file `journal.billing-tripped`, then restart
+  the router container). It latched on 2026-11-15 when claude reported
+  overage at the weekly limit; extra usage is off on the account. Until
+  then the VM generates with groq (and bionic when the laptop is on).
+  Clearing it was refused to Claude by the safety classifier: the
+  owner's act.
 
 - **2026-11-15: the corpus run** (27 offers of `corpus/`, about 54 Claude
   calls on the Pro quota): say go, then run them through `tailor --no-layout`
