@@ -84,6 +84,8 @@ function showPitch(profile) {
   $('sample').addEventListener('click', async () => {
     const { SAMPLE_OFFER } = await import('/sample-offer.js');
     $('paste').value = SAMPLE_OFFER;
+    // "auto" answers it from its past run: no model call after the first one.
+    if (!$('model').querySelector('option[value="auto"]')?.disabled) $('model').value = 'auto';
     renderOffers();
     $('generate').click();
   });

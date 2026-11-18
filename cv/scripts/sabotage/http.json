@@ -1310,6 +1310,14 @@
       "expect": [
         "the page greys the models the server says cannot answer, and refreshes the menu"
       ]
+    },
+    "Showcase (2.47): the sample runs on auto, served from its past run": {
+      "file": "web/app.js",
+      "live": "    if (!$('model').querySelector('option[value=\"auto\"]')?.disabled) $('model').value = 'auto';",
+      "dead": "",
+      "expect": [
+        "the page greys the models the server says cannot answer, and refreshes the menu"
+      ]
     }
   }
 }
