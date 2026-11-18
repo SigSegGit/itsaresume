@@ -236,6 +236,7 @@ property it proves.
 | the VM router is health-checked on the port it listens on | Deploy: the VM router is health-checked on its own port |
 | the VM queue holds a whole comparison | Deploy: the VM queue holds a whole comparison |
 | the VM generator mounts directories only, never a file alone | Deploy: the VM generator mounts its profile as a folder |
+| the VM caps leave room for a day of demos | Deploy: the VM caps leave room for a day of demos |
 
 ## `test/equivalent.test.js`
 
@@ -808,7 +809,7 @@ property it proves.
 | outside public mode the owner still sees the repairs and the real error | — |
 | a reloaded public page is the same visitor, and sees its running job | Public: a reload keeps the visitor; Public: the visitor cookie is set; Public: the visitor cookie is HttpOnly, Secure, Strict |
 | a public page opened before a restart can still post after it | Public: a token is adopted after a restart only with its own cookie; Public: a page opened before a restart is adopted again |
-| compare: one job per available model, counted as that many, one comparison for its page alone | Compare: a comparison is its page's alone; Compare: each model counts in the public quotas; Compare: only models that can answer |
+| compare: one job per available model, counted once in the quotas, one comparison for its page alone | Compare: a comparison is its page's alone; Compare: only models that can answer; Compare: a comparison counts once in the quotas |
 | compare: refused for several offers at once, and when fewer than two models can answer | Compare: two models at least; Compare: one offer at a time |
 | compare: the owner gets the full comparison, kept once, a failed model included | Compare: waits for every model |
 | public mode bans an IP and its visitors for 24 hours after more than ten requests in an hour | Ban: more than banAfter attempts bans; Ban: the default threshold is ten; Ban: a banned client is refused; Ban: a ban expires; Ban: attempts are counted per IP |
@@ -846,6 +847,7 @@ property it proves.
 | an unreadable public state starts empty, never a crash | Public state: a broken store is memory only |
 | a visitor finds its finished CVs again after a restart | Public state: a finished CV is written down; Public state: a CV whose folder is gone is skipped |
 | the public page pitches the tool to a recruiter, with its source and a sample offer | Showcase (2.47): the public status names the role; Showcase (2.47): the sample offer is served; Showcase (2.47): the page has its demo button; Showcase (2.47): the source link is the real one |
+| compare: the queue still holds one place per model | Compare: the queue holds one place per model |
 
 ## `test/split.test.js`
 
@@ -953,6 +955,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**634 tests, 508 of them covered by at least one sabotage defence.**
+**636 tests, 510 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

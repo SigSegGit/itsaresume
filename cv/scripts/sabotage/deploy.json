@@ -7,7 +7,8 @@
   ],
   "files": [
     "deploy/vm-generator/compose.yaml",
-    "test/deploy.test.js"
+    "test/deploy.test.js",
+    "src/qa.js"
   ],
   "defences": {
     "Deploy: the VM router is health-checked on its own port": {
@@ -28,10 +29,18 @@
     },
     "Deploy: the VM queue holds a whole comparison": {
       "file": "deploy/vm-generator/compose.yaml",
-      "live": "--max-queued 4",
-      "dead": "--max-queued 3",
+      "live": "--max-queued 12",
+      "dead": "--max-queued 5",
       "expect": [
         "the VM queue holds a whole comparison"
+      ]
+    },
+    "Deploy: the VM caps leave room for a day of demos": {
+      "file": "deploy/vm-generator/compose.yaml",
+      "live": "--per-day 150 --per-hour 40",
+      "dead": "--per-day 20 --per-hour 10",
+      "expect": [
+        "the VM caps leave room for a day of demos"
       ]
     }
   }

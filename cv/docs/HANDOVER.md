@@ -1630,6 +1630,19 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   partial (scores 38-75), none the other way. 2 tests, 2 defences, one
   retargeted.
 
+- [x] **2.49** (2026-11-18) **A comparison always fits the VM's queue.**
+  The comparison of the CFM offer was refused: five models answered
+  available (openai too, "unknown" since the restart), the queue held
+  four. `--max-queued 6` in `deploy/vm-generator/compose.yaml`; the test
+  ties it to `MODELS` (every model but auto, and one visitor more).
+  Then (the owner: "very insufficient, even for my own tests"): the VM
+  caps are 150 CVs a day, 40 per visitor per hour, 12 in the queue
+  (`the VM caps leave room for a day of demos`), and a comparison counts
+  once in the quotas while it holds one queue place per model
+  (`admit(request, count, counted)`). The CFM offer, run on each model
+  by hand: claude 71, gemini 74, groq 52, all partial (2.48); the local
+  model failed after 647 s, Bionic answering HTTP 400 "terminated".
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in

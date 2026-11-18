@@ -6,6 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { MODELS } from '../src/qa.js';
 
 const compose = readFileSync(new URL('../deploy/vm-generator/compose.yaml', import.meta.url), 'utf8');
 
@@ -19,7 +20,10 @@ test('the VM router is health-checked on the port it listens on', () => {
 
 // 2.31b: a comparison is one job per model: a queue of three refused it always.
 test('the VM queue holds a whole comparison', () => {
-  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) >= 4, 'claude, gemini, openai, local');
+  // 2.49 (seen 2026-11-18): five models answered, the queue held four, the
+  // comparison was refused. It holds every model of the menu, and one more.
+  const models = MODELS.filter((model) => model !== 'auto').length;
+  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) > models, `${models} models and one visitor more`);
 });
 
 // A file mounted alone keeps the inode it was mounted with: when the owner
@@ -33,4 +37,12 @@ test('the VM generator mounts directories only, never a file alone', () => {
   for (const [, source, target] of mounts) assert.ok(!/\.\w+$/.test(source), `${source} -> ${target} is a file`);
   const profile = generator.match(/ITSACV_PROFILE: (\S+)/)?.[1];
   assert.ok(mounts.some(([, , target]) => profile.startsWith(`${target}/`)), 'the profile is read inside a mounted directory');
+});
+
+// 2.49 (the owner, 2026-11-18: "very insufficient, even for my own tests"):
+// the public caps leave room for a day of demos and of the owner's tests.
+test('the VM caps leave room for a day of demos', () => {
+  assert.ok(Number(compose.match(/--per-day (\d+)/)?.[1]) >= 100, 'per day');
+  assert.ok(Number(compose.match(/--per-hour (\d+)/)?.[1]) >= 30, 'per visitor per hour');
+  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) >= 12, 'two comparisons at once');
 });
