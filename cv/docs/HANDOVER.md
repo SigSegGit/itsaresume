@@ -1585,7 +1585,9 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   overage at the weekly limit; extra usage is off on the account. Until
   then the VM generates with groq (and bionic when the laptop is on).
   Clearing it was refused to Claude by the safety classifier: the
-  owner's act.
+  owner's act, once: from router 8.58 (2026-11-18) an overage latch lifts
+  by itself at the plan's reset, but this one was written before and
+  holds no reset time.
 
 - **2026-11-15: the corpus run** (27 offers of `corpus/`, about 54 Claude
   calls on the Pro quota): say go, then run them through `tailor --no-layout`

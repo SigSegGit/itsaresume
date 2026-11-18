@@ -403,3 +403,26 @@ fn the_success_observed_in_docker_is_an_answer_on_the_subscription() {
     );
     assert!(answer.usage.is_some_and(|usage| usage.output > 0));
 }
+
+/// The owner's ask (2026-11-17): the overage refusal names when the plan's
+/// limit resets (claude's `resetsAt`, unix seconds, a number or a numeric
+/// string), so the latch can lift by itself then.
+#[test]
+fn an_overage_refusal_names_the_limits_reset() {
+    for resets in [json!(1794922351_u64), json!("1794922351")] {
+        let mut messages: Vec<Value> =
+            serde_json::from_str(&with_overage(json!(true))).expect("array");
+        for message in &mut messages {
+            if message["type"] == "rate_limit_event" {
+                message["rate_limit_info"]["resetsAt"] = resets.clone();
+            }
+        }
+        match classify(&Value::Array(messages).to_string()) {
+            Err(BackendError::Other(message)) => {
+                assert!(message.starts_with("billing tripwire"), "{message}");
+                assert!(message.contains("resets at unix 1794922351"), "{message}");
+            }
+            other => panic!("expected the billing tripwire, got {other:?}"),
+        }
+    }
+}

@@ -2,8 +2,8 @@
 
 <!-- ITSARESUME-STATE
 NEXT: done
-TITLE: 8.57 done, Bionic benched (197 s against Claude's 18 s, same verdicts); no router step open: the next is cv's 2.30 (OpenJev spike)
-WRITTEN-AT: 2026-10-31
+TITLE: 8.58 done, the overage latch lifts by itself at the plan's reset; no router step open
+WRITTEN-AT: 2026-11-18
 BASE: edc32d8
 -->
 
@@ -726,6 +726,22 @@ branch with the local gates of §3 green.
   `an_openai_error_names_openai_never_lm_studio` (HTTP 429 and an
   unreachable port); two defences in `router-gemini.json` put the
   constant back.
+- [x] **8.58** **The overage latch lifts by itself at the plan's reset**
+  (the owner, 2026-11-17: "que le verrou se lève automatiquement au
+  reset, sessions de 5 h ou hebdo"). Seen on the VM: claude latched on
+  2026-11-15 at the weekly limit and stayed stopped two days after the
+  reset. Now the overage refusal names claude's `resetsAt` (unix seconds,
+  number or string: "resets at unix N"); the latch keeps it, in memory
+  and in its file, and the first request after it removes the latch and
+  runs. A per-token credential (`apiKeySource`) or an overage without a
+  reset time still waits for a hand, as do latch files written before
+  this (no reset in them). Tests `an_overage_refusal_names_the_limits_reset`,
+  `an_overage_latch_lifts_by_itself_once_the_limit_has_reset`,
+  `an_overage_latch_holds_until_the_reset_even_across_a_restart`,
+  `a_latch_without_a_reset_time_waits_for_a_hand`; 3 defences
+  (`router-billing.json`), one retargeted. Unverified: the real
+  `resetsAt` format at an overage (the fixtures redact it; seen as a
+  number in the CLI's events); without it the latch stays manual.
 
 ## 9. Deliberately open
 
