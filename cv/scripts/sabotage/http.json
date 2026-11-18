@@ -132,8 +132,8 @@
     },
     "Server: a reused offer is outside the caps": {
       "file": "src/server.js",
-      "live": "if (publicMode) admit(request, reused.filter((result) => !result).length);",
-      "dead": "if (publicMode) admit(request, reused.length);",
+      "live": "        const fresh = reused.filter((result) => !result).length;",
+      "dead": "        const fresh = reused.length;",
       "expect": [
         "in public mode an offer already answered is reused at once, with no model call and outside the caps"
       ]
@@ -559,15 +559,15 @@
     },
     "Public: the hourly cap per visitor": {
       "file": "src/server.js",
-      "live": ".length + count > publicMode.perVisitorPerHour) {",
-      "dead": ".length + count > Infinity) {",
+      "live": ".length + counted > publicMode.perVisitorPerHour) {",
+      "dead": ".length + counted > Infinity) {",
       "expect": [
         "in public mode generations are capped per visitor per hour and per day, and the queue is bounded"
       ]
     },
     "Public: the daily cap": {
       "file": "src/server.js",
-      "live": "if (accepted.length + count > publicMode.perDay) {",
+      "live": "if (accepted.length + counted > publicMode.perDay) {",
       "dead": "if (false) {",
       "expect": [
         "in public mode generations are capped per visitor per hour and per day, and the queue is bounded"
@@ -1086,14 +1086,6 @@
         "compare: one job per available model, counted as that many, one comparison for its page alone"
       ]
     },
-    "Compare: each model counts in the public quotas": {
-      "file": "src/server.js",
-      "live": "if (publicMode) admit(request, reused.filter((result) => !result).length);",
-      "dead": "if (publicMode) admit(request, Math.min(1, reused.filter((result) => !result).length));",
-      "expect": [
-        "compare: one job per available model, counted as that many, one comparison for its page alone"
-      ]
-    },
     "Compare: only models that can answer": {
       "file": "src/server.js",
       "live": "name !== 'auto' && menu?.options?.[name]?.available);",
@@ -1216,8 +1208,8 @@
     },
     "Public state: the daily cap is written down": {
       "file": "src/server.js",
-      "live": "    for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });\n    persist();",
-      "dead": "    for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });",
+      "live": "    for (let i = 0; i < counted; i += 1) accepted.push({ at: now, client });\n    persist();",
+      "dead": "    for (let i = 0; i < counted; i += 1) accepted.push({ at: now, client });",
       "expect": [
         "the public caps, bans and visitors survive a restart"
       ]
@@ -1317,6 +1309,22 @@
       "dead": "",
       "expect": [
         "the page greys the models the server says cannot answer, and refreshes the menu"
+      ]
+    },
+    "Compare: a comparison counts once in the quotas": {
+      "file": "src/server.js",
+      "live": "if (publicMode) admit(request, fresh, group ? Math.min(fresh, 1) : fresh);",
+      "dead": "if (publicMode) admit(request, fresh, fresh);",
+      "expect": [
+        "compare: one job per available model, counted once in the quotas, one comparison for its page alone"
+      ]
+    },
+    "Compare: the queue holds one place per model": {
+      "file": "src/server.js",
+      "live": "    if (inFlight() + count > publicMode.maxQueued) {",
+      "dead": "    if (inFlight() + counted > publicMode.maxQueued) {",
+      "expect": [
+        "compare: the queue still holds one place per model"
       ]
     }
   }

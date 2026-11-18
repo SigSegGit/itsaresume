@@ -280,20 +280,21 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   const readerOf = (request) => visitorOf(request) ?? cookieOf(request);
   // The proxy sets X-Forwarded-For to the client's address; the last entry is its own.
   const clientOf = (request) => String(request.headers['x-forwarded-for'] ?? '').split(',').pop().trim() || request.socket.remoteAddress;
-  function admit(request, count) {
+  /** `count` places in the queue; `counted` CVs in the quotas (2.49: a comparison is one). */
+  function admit(request, count, counted = count) {
     const now = publicMode.now();
     while (accepted.length && accepted[0].at <= now - DAY) accepted.shift();
     const client = clientOf(request);
     if (inFlight() + count > publicMode.maxQueued) {
       throw new HttpError(429, 'Trop de CV en cours de génération : réessaie dans quelques minutes.');
     }
-    if (accepted.filter((entry) => entry.client === client && entry.at > now - HOUR).length + count > publicMode.perVisitorPerHour) {
+    if (accepted.filter((entry) => entry.client === client && entry.at > now - HOUR).length + counted > publicMode.perVisitorPerHour) {
       throw new HttpError(429, `Au plus ${publicMode.perVisitorPerHour} CV par heure et par visiteur : réessaie plus tard.`);
     }
-    if (accepted.length + count > publicMode.perDay) {
+    if (accepted.length + counted > publicMode.perDay) {
       throw new HttpError(429, `Le plafond de ${publicMode.perDay} CV par jour est atteint aujourd’hui : réessaie demain.`);
     }
-    for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });
+    for (let i = 0; i < counted; i += 1) accepted.push({ at: now, client });
     persist();
   }
 
@@ -677,7 +678,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         // An offer already answered is answered from its run: no model call, not counted.
         // A model chosen by hand is a measure: it always runs.
         const reused = created.map((job) => (publicMode && deps.reuse && job.model === 'auto' ? deps.reuse(job.text) : null));
-        if (publicMode) admit(request, reused.filter((result) => !result).length);
+        const fresh = reused.filter((result) => !result).length;
+        if (publicMode) admit(request, fresh, group ? Math.min(fresh, 1) : fresh);
         if (group) groups.set(group, { id: group, title: cleanName(offers[0].title ?? '') ?? 'Offre', visitor, jobs: created, comparison: null });
         created.forEach((job, index) => {
           jobs.set(job.id, job);
