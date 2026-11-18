@@ -112,3 +112,32 @@ test('loop markers leave no empty paragraph behind', () => {
   const rendered = documentXml(render(buildModel(profile(), analysis())));
   assert.equal(empties(rendered), empties(template));
 });
+
+// 2.50 (the owner, 2026-11-18): how the CV was made goes in the page footer,
+// full width, not in the narrow column; the body keeps its height.
+test('made_by is the docx footer, in the bottom margin, in the CV language', () => {
+  const owner = { ...profile(), made_by: { fr: 'Adapté par itsaresume, mon outil IA', en: 'Tailored by itsaresume, my AI tool' } };
+  for (const [language, text] of [['en', 'Tailored by itsaresume, my AI tool'], ['fr', 'Adapté par itsaresume, mon outil IA']]) {
+    const model = buildModel(owner, analysis(language));
+    assert.equal(model.made_by, text);
+    const zip = new PizZip(render(model));
+    const footer = zip.file('word/footer1.xml')?.asText() ?? '';
+    assert.ok(visibleText(footer).includes(text), `${language}: the footer says it`);
+    const xml = zip.file('word/document.xml').asText();
+    assert.match(xml, /<w:footerReference w:type="default" r:id="rIdMadeBy"\/>/);
+    assert.match(xml, /w:footer="100"/, 'the footer sits inside the bottom margin');
+    assert.match(zip.file('word/_rels/document.xml.rels').asText(), /Id="rIdMadeBy"[^>]*Target="footer1.xml"/);
+    assert.match(zip.file('[Content_Types].xml').asText(), /PartName="\/word\/footer1.xml"/);
+    assert.ok(!visibleText(xml).includes(text), 'not in the body');
+  }
+  const plain = new PizZip(render(buildModel(profile(), analysis())));
+  assert.equal(plain.file('word/footer1.xml'), null, 'no made_by, no footer');
+  assert.equal(buildModel(profile(), analysis()).made_by, '');
+});
+
+test('made_by needs both languages, and never names what the profile never claims', async () => {
+  const { validateProfile } = await import('../src/profile.js');
+  const base = profile();
+  assert.deepEqual(validateProfile({ ...base, made_by: { fr: 'Adapté par itsaresume', en: 'Tailored by itsaresume' } }).errors, []);
+  assert.ok(validateProfile({ ...base, made_by: { fr: 'Adapté par itsaresume' } }).errors.some((error) => /made_by/.test(error)));
+});
