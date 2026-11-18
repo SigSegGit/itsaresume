@@ -120,6 +120,21 @@ pub struct Router {
     /// A backend's own check period, longer than the server's (a free-tier
     /// key allows fewer requests a day than 96 checks).
     check_periods: HashMap<String, Duration>,
+    /// 8.59: the pause before an overloaded backend is tried once more;
+    /// zero, never.
+    overload_retry: Duration,
+}
+
+/// Whether an outage is a model overloaded for a moment (503, "high
+/// demand"), worth one more try after a pause, not a backend gone.
+fn overloaded(error: &BackendError) -> bool {
+    let BackendError::Unreachable(message) = error else {
+        return false;
+    };
+    let message = message.to_lowercase();
+    ["high demand", "overloaded", "503", "unavailable"]
+        .iter()
+        .any(|needle| message.contains(needle))
 }
 
 /// A backend's last answer: when (Unix seconds), and its error if it failed.
@@ -165,7 +180,20 @@ impl Router {
             journal,
             seen: Mutex::new(HashMap::new()),
             check_periods: HashMap::new(),
+            overload_retry: Duration::ZERO,
         })
+    }
+
+    /// Pause `pause` and try an overloaded backend once more (8.59).
+    #[must_use]
+    pub fn with_overload_retry(mut self, pause: Duration) -> Self {
+        self.overload_retry = pause;
+        self
+    }
+
+    /// The pause before an overloaded backend is tried again; zero, never.
+    pub fn overload_retry(&self) -> Duration {
+        self.overload_retry
     }
 
     /// Check `backend` every `period` instead of the server's period.
@@ -337,7 +365,15 @@ impl Router {
             };
         }
         for backend in serving {
-            let error = match backend.complete(request) {
+            let mut first = backend.complete(request);
+            if let Err(error) = &first
+                && !self.overload_retry.is_zero()
+                && overloaded(error)
+            {
+                std::thread::sleep(self.overload_retry);
+                first = backend.complete(request);
+            }
+            let error = match first {
                 Ok(completion) => {
                     let usage = completion
                         .rate_limit

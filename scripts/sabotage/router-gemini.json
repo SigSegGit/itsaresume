@@ -226,6 +226,39 @@
       "expect": [
         "a_status_code_inside_a_longer_number_is_not_that_status"
       ]
+    },
+    "Overload (8.59): only an overload is tried again": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "                && overloaded(error)\n",
+      "dead": "                && !overloaded(error)\n",
+      "expect": [
+        "an_overloaded_backend_is_tried_once_more_after_a_pause",
+        "only_an_overload_is_retried_and_only_when_configured"
+      ]
+    },
+    "Overload (8.59): a quota is no overload": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "    let BackendError::Unreachable(message) = error else {",
+      "dead": "    let (BackendError::Unreachable(message) | BackendError::QuotaExceeded(message)) = error else {",
+      "expect": [
+        "only_an_overload_is_retried_and_only_when_configured"
+      ]
+    },
+    "Overload (8.59): the retry waits its pause": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "                std::thread::sleep(self.overload_retry);\n",
+      "dead": "                let _ = self.overload_retry;\n",
+      "expect": [
+        "an_overloaded_backend_is_tried_once_more_after_a_pause"
+      ]
+    },
+    "Overload (8.59): serve pauses 15 s by default": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "            self.overload_retry_secs.unwrap_or(OVERLOAD_RETRY_SECS),",
+      "dead": "            self.overload_retry_secs.unwrap_or(0),",
+      "expect": [
+        "the_overload_pause_is_fifteen_seconds_unless_set"
+      ]
     }
   }
 }
