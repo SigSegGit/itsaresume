@@ -20,6 +20,7 @@ import { LINKEDIN_FILES } from './import.js';
 import { ID } from './profiles.js';
 import { resolveStyle } from './style.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
+import { OFFER_FILES } from './sources.js';
 import { MODELS } from './qa.js';
 import { compareRuns, compareMarkdown, publicComparison } from './compare.js';
 import { addTokens } from './llm.js';
@@ -561,6 +562,22 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         } catch (error) {
           throw new HttpError(400, String(error.message ?? error));
         }
+      }
+      // 2.53: an offer dropped as a pdf or docx, read by the server (no model call).
+      if (path === '/api/offer-text') {
+        const name = body?.name;
+        const kind = typeof name === 'string' ? (/\.[a-z0-9]+$/i.exec(name)?.[0] ?? '').toLowerCase() : '';
+        if (typeof name !== 'string' || !/^[^\\/:*?"<>|]{1,160}$/.test(name) || !OFFER_FILES.includes(kind)) {
+          throw new HttpError(400, `name: a file name ending in ${OFFER_FILES.join(', ')}`);
+        }
+        if (typeof body?.data !== 'string' || !body.data) throw new HttpError(400, 'data: the file, base64');
+        let text;
+        try {
+          text = await deps.offerText(name, Buffer.from(body.data, 'base64'));
+        } catch (error) {
+          throw new HttpError(422, publicMode ? 'ce fichier ne se lit pas : colle le texte de l’offre' : `the file cannot be read: ${error.message}`);
+        }
+        return send(response, 200, { text: String(text ?? '').slice(0, MAX_TEXT) });
       }
       if (path === '/api/split') {
         // A free text sent to the model on the owner's quota: the owner's alone.

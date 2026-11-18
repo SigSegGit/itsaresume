@@ -1665,6 +1665,17 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   PL/SQL, Control-M)", alias ETL (his precisions of 2026-11-18). 1 test,
   4 defences.
 
+- [x] **2.53** (the owner, 2026-11-18: "je ne peux pas utiliser de pdf pour
+  une offre, pourquoi ?!") **An offer dropped as a pdf or docx.** The page
+  sends it base64 to `POST /api/offer-text` (local and public; name with
+  no path, `.pdf .docx .txt .md`, 180 KB at most on the page);
+  `offerFromFile` (`src/sources.js`) reads a docx's paragraphs or a pdf
+  through `tools/pdftext.py`, no model call; the text goes into the offer
+  list. Also: the page refused a pasted real offer as "plusieurs offres"
+  because "Compétences attendues :" came once per domain; that heading no
+  longer counts (the other section headings still catch two offers in one
+  text). 3 tests, 5 defences.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in

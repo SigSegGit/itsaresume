@@ -4,8 +4,9 @@
 // pages. Structured sources compile by code; free text goes through the
 // model, then code keeps only what the text says word for word.
 
-import { readFileSync, statSync } from 'node:fs';
-import { extname } from 'node:path';
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { extname, join } from 'node:path';
 import PizZip from 'pizzip';
 import { fromJsonResume, linkedInToJsonResume } from './import.js';
 import { validateProfile } from './profile.js';
@@ -58,6 +59,27 @@ export async function readSource(spec, { fetchText = defaultFetch } = {}) {
   if (kind === '.docx') return { name: spec, text: docxText(readFileSync(spec)) };
   if (kind === '.pdf') return { name: spec, text: lines(pdfText(spec)) };
   return { name: spec, text: lines(readFileSync(spec, 'utf8').replace(/\r/g, '')) };
+}
+
+/** 2.53: the kinds of file an offer may be dropped as on the page. */
+export const OFFER_FILES = ['.pdf', '.docx', '.txt', '.md'];
+
+/** 2.53: a dropped offer's text, from its name (kind) and bytes; no model call. */
+export async function offerFromFile(name, buffer) {
+  const kind = extname(String(name)).toLowerCase();
+  if (!OFFER_FILES.includes(kind)) throw new Error(`${name}: an offer file is pdf, docx, txt or md`);
+  if (kind === '.docx') return docxText(buffer);
+  if (kind === '.pdf') {
+    const dir = mkdtempSync(join(tmpdir(), 'itsacv-offer-'));
+    try {
+      const file = join(dir, 'offer.pdf');
+      writeFileSync(file, buffer);
+      return lines(pdfText(file));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+  return lines(buffer.toString('utf8').replace(/\r/g, ''));
 }
 
 /** An offer: a file, a link, or the text itself. */

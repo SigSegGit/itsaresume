@@ -159,7 +159,8 @@ function firstLine(text) {
  * Section headings an offer has once; twice in one text means two offers
  * pasted together, which would give one CV scored against both.
  */
-const HEADINGS = [/^contexte\b/, /^missions? principales?\b/, /^responsabilit[ée]s\b/, /^profil (recherch[ée]|&)/, /^comp[ée]tences (attendues|recherch[ée]es|requises)\b/, /^description du poste\b/, /^informations mission\b/];
+// 2.53: no skills heading here: one offer repeats "Compétences attendues" per domain.
+const HEADINGS = [/^contexte\b/, /^missions? principales?\b/, /^responsabilit[ée]s\b/, /^profil (recherch[ée]|&)/, /^description du poste\b/, /^informations mission\b/];
 
 function repeatedHeading(text) {
   const lines = text.split('\n').map((line) => line.trim().toLowerCase().replace(/^[^\p{L}]+/u, ''));
@@ -229,11 +230,26 @@ function renderOffers() {
 
 async function readFiles(fileList) {
   for (const file of fileList) {
-    if (file.size > MAX_TEXT * 4) {
+    // 2.53: a pdf or docx goes base64 in one request (256 KB at most).
+    if (file.size > (/\.(pdf|docx)$/i.test(file.name) ? 180 * 1024 : MAX_TEXT * 4)) {
       showError(`${file.name} : fichier trop gros.`);
       continue;
     }
-    addOffer(await file.text(), file.name.replace(/\.(txt|md)$/i, ''));
+    const title = file.name.replace(/\.(txt|md|pdf|docx)$/i, '');
+    // 2.53: a pdf or docx is read by the server, its text comes back.
+    if (/\.(pdf|docx)$/i.test(file.name)) {
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        let binary = '';
+        for (let at = 0; at < bytes.length; at += 0x8000) binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
+        const { text } = await api('/api/offer-text', { name: file.name, data: btoa(binary) });
+        addOffer(text, title);
+      } catch (error) {
+        showError(`${file.name} : ${error.message}`);
+      }
+      continue;
+    }
+    addOffer(await file.text(), title);
   }
 }
 
