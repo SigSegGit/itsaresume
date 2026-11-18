@@ -37,7 +37,20 @@
     "src/coverage.js",
     "src/compare.js",
     "src/listing.js",
-    "web/sample-offer.js"
+    "web/sample-offer.js",
+    "src/analysis.js",
+    "src/answers.js",
+    "src/ats.js",
+    "src/fit.js",
+    "src/language.js",
+    "src/libre.js",
+    "src/pipeline.js",
+    "src/prompt.js",
+    "src/render.js",
+    "src/report.js",
+    "src/run.js",
+    "src/sources.js",
+    "src/word.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {

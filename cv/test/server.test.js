@@ -281,7 +281,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
@@ -293,6 +293,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       ...(profiles ? { profiles } : {}),
       ...(state ? { state } : {}),
       ...(restore ? { restore } : {}),
+      ...(offerText ? { offerText } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer }) => {
@@ -1306,4 +1307,29 @@ test('compare: the queue still holds one place per model', async (t) => {
   const answer = await visitor.post('/api/jobs', { model: 'compare', offers: [{ title: 'Fintech', text: PUBLIC_OFFER('Senior SRE') }] });
   assert.equal(answer.status, 429);
   assert.match(JSON.parse(answer.text).error, /en cours de génération/);
+});
+
+// 2.53 (the owner, 2026-11-18: "je ne peux pas utiliser de pdf pour une
+// offre, pourquoi ?!"): a dropped .pdf or .docx offer is read by the server
+// (no model call) and comes back as text for the page.
+test('a pdf or docx offer is read as text, in local and public mode', async (t) => {
+  const seen = [];
+  const offerText = async (name, buffer) => {
+    seen.push([name, buffer.toString('utf8')]);
+    return `text of ${name}`;
+  };
+  const app = await start({ offerText });
+  t.after(() => { app.server.closeAllConnections(); app.server.close(); });
+  const data = Buffer.from('fake bytes').toString('base64');
+  const answer = await post(app, '/api/offer-text', { name: 'Offre CFM.pdf', data });
+  assert.equal(answer.status, 200, answer.text);
+  assert.deepEqual(JSON.parse(answer.text), { text: 'text of Offre CFM.pdf' });
+  assert.deepEqual(seen, [['Offre CFM.pdf', 'fake bytes']]);
+  assert.equal((await post(app, '/api/offer-text', { name: 'offre.docx', data })).status, 200);
+  for (const bad of [{ name: 'virus.exe', data }, { name: 'offre.pdf' }, { name: '../x.pdf', data }, { data }]) {
+    assert.equal((await post(app, '/api/offer-text', bad)).status, 400, JSON.stringify(bad));
+  }
+  const pub = await startPublic(t, { offerText });
+  const visitor = await pub.visit();
+  assert.equal((await visitor.post('/api/offer-text', { name: 'offre.docx', data })).status, 200);
 });

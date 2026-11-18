@@ -147,6 +147,17 @@ test('a text holding two offers is not added as one', async () => {
   page.close();
 });
 
+// 2.53 (a real offer, 2026-11-18): "Compétences attendues :" once per domain
+// of one offer is no second offer; it was refused as "plusieurs offres".
+test('a skills heading repeated per domain is one offer', async () => {
+  const page = pageWith([]);
+  await page.settle();
+  page.$('paste').value = 'Ingénieur DevOps / SRE Senior\nContexte\nPlateforme de paiement.\nKubernetes\nCompétences attendues :\nHelm.\nObservabilité\nCompétences attendues :\nPrometheus.\nSécurité\nCompétences attendues :\nVault.';
+  page.$('add').click();
+  assert.equal(page.$('offers').childNodes.length, 1);
+  page.close();
+});
+
 test('a match the profile does not name is shown as the model reading, to verify, in French', async () => {
   const requirements = [
     { name: 'Cycles de delivery', importance: 'must', match: 'adjacent', judged: true, never: false, note: 'CI/CD et GitOps en production', skills: [{ name: 'GitOps', lab: false }], kind: 'skill' },

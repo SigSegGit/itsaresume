@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createApp } from './server.js';
 import { loadedFrom, loadProfile, readRun, runName, tailorOffer } from './run.js';
-import { profileFromSources, readOffer } from './sources.js';
+import { offerFromFile, profileFromSources, readOffer } from './sources.js';
 import { pageData } from './tailor.js';
 import { appendQaLog, SPLIT, withModel } from './qa.js';
 import { splitOffers } from './split.js';
@@ -193,6 +193,8 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       writeFileSync(join(dir, 'compare.json'), `${JSON.stringify(comparison, null, 2)}\n`);
     },
     invites: () => loadInvites(out),
+    // 2.53: an offer dropped as a document, its text.
+    offerText: (name, buffer) => offerFromFile(name, buffer),
     // 2.44: the public caps, bans and visitors, so a deploy does not reset them.
     state: publicMode
       ? {

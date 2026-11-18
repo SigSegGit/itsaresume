@@ -585,6 +585,13 @@ property it proves.
 | a part named only by a skill term does not meet the requirement | Names: a term does not name a requirement or a part |
 | an analysis that selects no experience gets the main experiences of the profile, not a refusal | Normalize: no experience selected, the main experiences stand in |
 
+## `test/offer-file.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a docx offer is its paragraphs, one per line | Offer files (2.53): a docx offer is its paragraphs |
+| a text offer is read as UTF-8; other kinds are refused | — |
+
 ## `test/page.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -853,6 +860,7 @@ property it proves.
 | a visitor finds its finished CVs again after a restart | Public state: a finished CV is written down; Public state: a CV whose folder is gone is skipped |
 | the public page pitches the tool to a recruiter, with its source and a sample offer | Showcase (2.47): the public status names the role; Showcase (2.47): the sample offer is served; Showcase (2.47): the page has its demo button; Showcase (2.47): the source link is the real one |
 | compare: the queue still holds one place per model | Compare: the queue holds one place per model |
+| a pdf or docx offer is read as text, in local and public mode | Offer files (2.53): only pdf, docx, txt, md are read; Offer files (2.53): no path in the file name; Offer files (2.53): the data is required |
 
 ## `test/split.test.js`
 
@@ -922,6 +930,7 @@ property it proves.
 | the status pill says the router answers, not that the model does | Page: the pill names the router |
 | a personal quality is never shown as a failed requirement | Page: qualities are listed apart; Page: an unbacked quality is for the interview, not a no |
 | a text holding two offers is not added as one | Page: two offers in one text are refused |
+| a skills heading repeated per domain is one offer | Offer headings (2.53): a skills heading is no second offer |
 | a match the profile does not name is shown as the model reading, to verify, in French | Page: gap labels in French; Page: a judged match shows its note, to verify |
 | the page sends its token with every call, reads included (in public mode it names the visitor) | Page: the token goes with reads |
 | in public mode the page offers one offer at a time, with no email splitting | Page: public mode hides splitting |
@@ -960,6 +969,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**641 tests, 515 of them covered by at least one sabotage defence.**
+**645 tests, 518 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

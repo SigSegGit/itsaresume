@@ -93,7 +93,8 @@
     "test/listing-model.test.js",
     "src/qa.js",
     "test/qa.test.js",
-    "test/page.test.js"
+    "test/page.test.js",
+    "test/offer-file.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2185,6 +2186,14 @@
       "dead": "render(buildModel(profile, analysis, { bullets, skillCap }), style)",
       "expect": [
         "the page is measured without the made_by footer, the final CV keeps it"
+      ]
+    },
+    "Offer files (2.53): a docx offer is its paragraphs": {
+      "file": "src/sources.js",
+      "live": "  if (kind === '.docx') return docxText(buffer);",
+      "dead": "  if (kind === '.docx') return buffer.toString('utf8');",
+      "expect": [
+        "a docx offer is its paragraphs, one per line"
       ]
     }
   }

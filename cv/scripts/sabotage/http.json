@@ -1326,6 +1326,38 @@
       "expect": [
         "compare: the queue still holds one place per model"
       ]
+    },
+    "Offer files (2.53): only pdf, docx, txt, md are read": {
+      "file": "src/server.js",
+      "live": "!OFFER_FILES.includes(kind)) {",
+      "dead": "false) {",
+      "expect": [
+        "a pdf or docx offer is read as text, in local and public mode"
+      ]
+    },
+    "Offer files (2.53): no path in the file name": {
+      "file": "src/server.js",
+      "live": "!/^[^\\\\/:*?\"<>|]{1,160}$/.test(name)",
+      "dead": "!/^.{1,160}$/.test(name)",
+      "expect": [
+        "a pdf or docx offer is read as text, in local and public mode"
+      ]
+    },
+    "Offer files (2.53): the data is required": {
+      "file": "src/server.js",
+      "live": "if (typeof body?.data !== 'string' || !body.data) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a pdf or docx offer is read as text, in local and public mode"
+      ]
+    },
+    "Offer headings (2.53): a skills heading is no second offer": {
+      "file": "web/app.js",
+      "live": "const HEADINGS = [/^contexte\\b/, /^missions? principales?\\b/, /^responsabilit[ée]s\\b/, /^profil (recherch[ée]|&)/, /^description du poste\\b/, /^informations mission\\b/];",
+      "dead": "const HEADINGS = [/^contexte\\b/, /^missions? principales?\\b/, /^responsabilit[ée]s\\b/, /^profil (recherch[ée]|&)/, /^comp[ée]tences (attendues|recherch[ée]es|requises)\\b/, /^description du poste\\b/, /^informations mission\\b/];",
+      "expect": [
+        "a skills heading repeated per domain is one offer"
+      ]
     }
   }
 }
