@@ -601,8 +601,11 @@ const groupDone = async (read, id) => {
   throw new Error('the comparison never finished');
 };
 
-test('compare: one job per available model, counted as that many, one comparison for its page alone', async (t) => {
-  const app = await startPublic(t, { status: statusWith(MENU), perVisitorPerHour: 3, maxQueued: 3 });
+// 2.49 (the owner, 2026-11-18: a visitor wants to try each model of one
+// offer): a comparison is one CV in the visitor's and the day's quotas; in
+// the queue it holds one place per model.
+test('compare: one job per available model, counted once in the quotas, one comparison for its page alone', async (t) => {
+  const app = await startPublic(t, { status: statusWith(MENU), perVisitorPerHour: 2, maxQueued: 10 });
   const alice = await app.visit('203.0.113.7');
   const bob = await app.visit('198.51.100.9');
   const answer = await alice.post('/api/jobs', { model: 'compare', offers: [{ title: 'Fintech', text: PUBLIC_OFFER('Senior SRE') }] });
@@ -612,7 +615,10 @@ test('compare: one job per available model, counted as that many, one comparison
   assert.deepEqual(jobs.map((job) => job.title).sort(), ['Fintech — claude', 'Fintech — gemini', 'Fintech — local']);
   assert.equal(new Set(jobs.map((job) => job.group)).size, 1);
   const id = jobs[0].group;
-  assert.equal((await alice.post('/api/jobs', { offers: [{ title: 'one more', text: PUBLIC_OFFER('DevOps') }] })).status, 429, 'three runs were counted');
+  assert.equal((await alice.post('/api/jobs', { offers: [{ title: 'one more', text: PUBLIC_OFFER('DevOps') }] })).status, 202, 'the comparison was counted once');
+  const third = await alice.post('/api/jobs', { offers: [{ title: 'and another', text: PUBLIC_OFFER('Platform engineer') }] });
+  assert.equal(third.status, 429, 'two CVs this hour: the comparison and one more');
+  assert.match(JSON.parse(third.text).error, /par heure/);
   const group = await groupDone(alice.get, id);
   assert.equal(group.comparison.models.length, 3);
   assert.ok(group.comparison.models.every((model) => !('dir' in model)), 'the public page reads the public comparison');
@@ -1292,4 +1298,12 @@ test('the public page pitches the tool to a recruiter, with its source and a sam
   const { SAMPLE_OFFER } = await import('../web/sample-offer.js');
   assert.ok(looksLikeOffer(SAMPLE_OFFER), 'the sample passes the public intake');
   assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'Exemple', text: SAMPLE_OFFER }] })).status, 202);
+});
+
+test('compare: the queue still holds one place per model', async (t) => {
+  const app = await startPublic(t, { status: statusWith(MENU), perVisitorPerHour: 10, maxQueued: 2 });
+  const visitor = await app.visit();
+  const answer = await visitor.post('/api/jobs', { model: 'compare', offers: [{ title: 'Fintech', text: PUBLIC_OFFER('Senior SRE') }] });
+  assert.equal(answer.status, 429);
+  assert.match(JSON.parse(answer.text).error, /en cours de génération/);
 });

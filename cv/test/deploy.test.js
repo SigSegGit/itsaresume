@@ -38,3 +38,11 @@ test('the VM generator mounts directories only, never a file alone', () => {
   const profile = generator.match(/ITSACV_PROFILE: (\S+)/)?.[1];
   assert.ok(mounts.some(([, , target]) => profile.startsWith(`${target}/`)), 'the profile is read inside a mounted directory');
 });
+
+// 2.49 (the owner, 2026-11-18: "very insufficient, even for my own tests"):
+// the public caps leave room for a day of demos and of the owner's tests.
+test('the VM caps leave room for a day of demos', () => {
+  assert.ok(Number(compose.match(/--per-day (\d+)/)?.[1]) >= 100, 'per day');
+  assert.ok(Number(compose.match(/--per-hour (\d+)/)?.[1]) >= 30, 'per visitor per hour');
+  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) >= 12, 'two comparisons at once');
+});
