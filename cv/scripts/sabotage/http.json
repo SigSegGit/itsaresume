@@ -1083,7 +1083,7 @@
       "live": "if (!group || (publicMode && group.visitor !== readerOf(request))) throw",
       "dead": "if (!group) throw",
       "expect": [
-        "compare: one job per available model, counted as that many, one comparison for its page alone"
+        "compare: one job per available model, counted once in the quotas, one comparison for its page alone"
       ]
     },
     "Compare: only models that can answer": {
@@ -1091,7 +1091,7 @@
       "live": "name !== 'auto' && menu?.options?.[name]?.available);",
       "dead": "name !== 'auto');",
       "expect": [
-        "compare: one job per available model, counted as that many, one comparison for its page alone"
+        "compare: one job per available model, counted once in the quotas, one comparison for its page alone"
       ]
     },
     "Compare: two models at least": {
