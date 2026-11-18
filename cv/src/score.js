@@ -95,6 +95,9 @@ export function qualification(all, { lab = new Set(), never = [] } = {}) {
     else if (labOnly(requirement, lab)) gaps.push(`${requirement.name} (lab only)`);
     else if (requirement.judged === true) gaps.push(`${requirement.name} (to verify)`);
   }
-  const level = gaps.length === 0 ? 'qualified' : gaps.length / musts.length >= CORE_MISSED ? 'not-qualified' : 'partial';
+  // 2.48: a row to verify is a doubt, not a lack: only the missing ones
+  // (no, never claimed, lab only) make the CV not qualified.
+  const missing = gaps.filter((gap) => !gap.endsWith(' (to verify)')).length;
+  const level = gaps.length === 0 ? 'qualified' : missing / musts.length >= CORE_MISSED ? 'not-qualified' : 'partial';
   return { level, gaps };
 }

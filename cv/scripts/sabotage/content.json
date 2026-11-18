@@ -953,7 +953,7 @@
     },
     "Rules: half the musts missed is the core missed": {
       "file": "src/score.js",
-      "live": "gaps.length / musts.length >= CORE_MISSED ? 'not-qualified' : 'partial'",
+      "live": "missing / musts.length >= CORE_MISSED ? 'not-qualified' : 'partial'",
       "dead": "false ? 'not-qualified' : 'partial'",
       "expect": [
         "qualification: every must met, some missed, or the core missed",
@@ -2095,6 +2095,22 @@
       "dead": "      cap: null,",
       "expect": [
         "normalize caps a senior profile on a junior title, and says why"
+      ]
+    },
+    "Qualification (2.48): a row to verify is no missing must": {
+      "file": "src/score.js",
+      "live": "  const missing = gaps.filter((gap) => !gap.endsWith(' (to verify)')).length;",
+      "dead": "  const missing = gaps.length;",
+      "expect": [
+        "rows to verify make a CV partial, only missing must-haves make it not qualified"
+      ]
+    },
+    "Qualities (2.48): problem solving, independence, continuous learning": {
+      "file": "src/text.js",
+      "live": "  .concat(['problem solving', 'r\u00e9solution probl\u00e8m', 'independen', 'ind\u00e9pendan', 'continuous learning', 'apprentissage continu'])",
+      "dead": "  .concat([])",
+      "expect": [
+        "problem solving, working independently and continuous learning are personal qualities"
       ]
     }
   }
