@@ -334,3 +334,21 @@ td .chip { margin: 0 4px 2px 0; }
 .questions .status { margin: 4px 0 0; }
 @media (max-width: 600px) { .questions .yes-fields { grid-template-columns: 1fr; } }
 .questions-link { align-self: center; }
+
+/* 2.47: the public page's pitch to a recruiter. */
+.pitch {
+  max-width: 1280px;
+  margin: 0 auto 1.25rem;
+}
+.pitch h2 {
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+.pitch-points {
+  margin: 0.75rem 0 1rem;
+  padding-left: 1.2rem;
+  line-height: 1.55;
+}
+.pitch-points li + li {
+  margin-top: 0.4rem;
+}

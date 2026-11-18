@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { loadPage } from './fixtures/page.js';
+import { SOURCE_URL } from '../src/server.js';
 
 const web = (name) => readFileSync(new URL(`../web/${name}`, import.meta.url), 'utf8');
 
@@ -23,8 +24,14 @@ test('the page holds no inline script, style or handler, and loads nothing from 
   assert.ok(!/<script(?![^>]*\bsrc=)[^>]*>/.test(html), 'inline script');
   assert.ok(!/\sstyle=/.test(html), 'inline style');
   assert.ok(!/\son[a-z]+=/.test(html), 'inline handler');
-  const urls = [...html.matchAll(/\b(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/questions.html', '/style.css']);
+  const urls = [...html.matchAll(/<(?!a\b)[a-z]+\b[^>]*\b(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/style.css']);
+  // 2.47: links are not loads; one leaves the site, the source, opened apart.
+  const links = [...html.matchAll(/<a\b[^>]*>/g)].map((match) => match[0]);
+  const away = links.filter((link) => /href="https?:/.test(link));
+  assert.deepEqual(away.map((link) => /href="([^"]+)"/.exec(link)[1]), [SOURCE_URL]);
+  assert.ok(away.every((link) => /rel="noopener"/.test(link) && /target="_blank"/.test(link)));
+  assert.ok(links.some((link) => link.includes('href="/questions.html"')));
   assert.ok(!/@import|url\(\s*['"]?https?:/.test(web('style.css')), 'no remote stylesheet or font');
 });
 
@@ -246,7 +253,8 @@ test('the page greys the models the server says cannot answer, and refreshes the
   // greyed with its reason, so its absence reads as temporary.
   assert.doesNotMatch(app, /option\.hidden =/);
   assert.match(app, /option\.textContent = state\.note \?/);
-  assert.match(app, /button\.disabled = offers\.length === 0 \|\| !modelsReady;/);
+  // 2.47: a pasted offer is enough to generate, still never with no model.
+  assert.match(app, /button\.disabled = \(offers\.length === 0 && !\$\('paste'\)\.value\.trim\(\)\) \|\| !modelsReady;/);
   assert.match(app, /setInterval\?\.\(\(\) => document\.hidden \|\| refreshStatus\(\), \d+\)/);
   assert.match(app, /\$\('model'\)\.addEventListener\('focus', refreshStatus\)/);
 });

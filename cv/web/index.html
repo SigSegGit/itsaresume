@@ -36,6 +36,17 @@
     </ul>
   </header>
 
+  <section class="pitch card" id="pitch" hidden aria-labelledby="pitch-title">
+    <h2 id="pitch-title">Recruteur ? Collez votre offre, recevez le CV de <span id="pitch-name">ce candidat</span> adapté, en deux minutes.</h2>
+    <p class="meta" id="pitch-role" hidden></p>
+    <ul class="pitch-points">
+      <li><strong>Rien d’inventé.</strong> Chaque ligne du CV vient de son profil vérifié ; l’IA choisit, le code contrôle et refuse le reste.</li>
+      <li><strong>Une évaluation honnête.</strong> Le score dit ce qui est couvert, ce qui manque, et pourquoi il est plafonné quand le cœur du poste n’est pas là.</li>
+      <li><strong>Un outil qu’il a conçu et construit.</strong> Routeur d’IA en Rust, générateur en Node.js, plus de 700 tests et des tests de sabotage, déployé sur son propre serveur. <a id="source-link" href="https://github.com/SigSegGit/itsaresume" target="_blank" rel="noopener">Voir le code source</a></li>
+    </ul>
+    <button type="button" class="secondary" id="sample">Essayer avec une offre exemple</button>
+  </section>
+
   <main class="grid">
     <section class="card" id="sources-card" aria-label="Profil du candidat">
       <div role="tablist">
@@ -102,7 +113,7 @@
   </main>
 
   <footer class="foot">
-    <span>L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours · aucune candidature envoyée · zéro facturation au token</span>
+    <span id="foot-owner">L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours · aucune candidature envoyée · zéro facturation au token</span>
     <span>Chaque ligne du CV provient de ton profil v4 ; les compétences <em>lab</em> et <em>jamais</em> sont appliquées par le code.</span>
   </footer>
 </body>

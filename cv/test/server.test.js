@@ -1284,8 +1284,8 @@ test('the public page pitches the tool to a recruiter, with its source and a sam
   const visitor = await app.visit();
   const shown = JSON.parse((await visitor.get('/api/status')).text);
   assert.equal(shown.profile.title, 'SRE senior');
-  assert.equal(shown.source, SOURCE_URL);
-  assert.match(SOURCE_URL, /^https:\/\/github\.com\//);
+  assert.equal(shown.source, undefined, 'no link in the status (hostile.test.js)');
+  assert.ok(page.text.includes(`href="${SOURCE_URL}"`), 'the page links the source');
   const script = await call(app.port, { path: '/sample-offer.js', headers: app.host });
   assert.equal(script.status, 200);
   assert.match(script.headers['content-type'], /javascript/);

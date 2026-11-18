@@ -95,6 +95,8 @@ async function status({ profilePath, url, useWord, out }) {
     for (const entry of loaded.assessment ?? []) verdicts[entry.verdict] = (verdicts[entry.verdict] ?? 0) + 1;
     profile = {
       name: loaded.full.identity.name,
+      // 2.47: the first headline title, for the public page's pitch.
+      title: loaded.full.titles?.[0]?.fr ?? null,
       skills: loaded.full.skills.length,
       lab: loaded.full.skills.filter((skill) => skill.level === 'lab').length,
       never: (loaded.full.never ?? []).length,
