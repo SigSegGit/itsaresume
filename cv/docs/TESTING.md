@@ -920,7 +920,7 @@ property it proves.
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 | an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
 | the page offers a profile choice only when the status lists several, and sends the one chosen | — |
-| the page greys the models the server says cannot answer, and refreshes the menu | Menu (2.34): an unavailable model stays in sight; Models: the page greys what cannot answer; Showcase (2.47): a pasted offer is enough to generate |
+| the page greys the models the server says cannot answer, and refreshes the menu | Menu (2.34): an unavailable model stays in sight; Models: the page greys what cannot answer; Showcase (2.47): a pasted offer is enough to generate; Showcase (2.47): the sample runs on auto, served from its past run |
 | the page shows a queued job its place in the queue | Web: the page shows the place in the queue |
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
