@@ -1665,6 +1665,12 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   PL/SQL, Control-M)", alias ETL (his precisions of 2026-11-18). 1 test,
   4 defences.
 
+- [x] **2.52** (2026-11-18, the first CV with the footer) **The page is
+  measured without the footer.** The footer sits at the very bottom
+  (y 830 of 842 pt): every measured layout read as a full page and the
+  skills column fell to two per group. `run.js` measures with `made_by`
+  empty; the final docx and PDF carry it. 1 test, 1 defence.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in
