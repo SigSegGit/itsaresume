@@ -159,3 +159,14 @@ test('a layout that only just fills the page is not accepted', async () => {
   const result = await fitToPage({ ranked: ranked(0, 20), measure });
   assert.equal(result.bullets.size, 10);
 });
+
+// 2.52 (seen 2026-11-18): the made_by footer sits at the very bottom of the
+// page; measured with it, every layout read as a full page and the skills
+// column was cut to two per group. The page is measured without the footer
+// (it lives in the bottom margin), the final CV carries it.
+test('the page is measured without the made_by footer, the final CV keeps it', async () => {
+  const { readFileSync } = await import('node:fs');
+  const run = readFileSync(new URL('../src/run.js', import.meta.url), 'utf8');
+  assert.match(run, /render\(\{ \.\.\.buildModel\(profile, analysis, \{ bullets, skillCap \}\), made_by: '' \}, style\)/);
+  assert.match(run, /model = buildModel\(profile, analysis, \{ bullets: fitted\.bullets, skillCap: fitted\.cap \}\);\n\s+writeFileSync\(docx, render\(model, style\)\);/);
+});
