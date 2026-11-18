@@ -36,7 +36,8 @@
     "src/links.js",
     "src/coverage.js",
     "src/compare.js",
-    "src/listing.js"
+    "src/listing.js",
+    "web/sample-offer.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {
