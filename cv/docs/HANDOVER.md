@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: done
-TITLE: 2.43-2.46 and router 8.59 in one PR; the corpus is in band (35/35, two after one rerun); section 8 has no step left: the next comes from the owner (his next real runs, a new ask)
+TITLE: 2.47 the public page as a showcase for recruiters (pitch, source link, sample offer, one-click generate); section 8 has no step left: the next comes from the owner
 WRITTEN-AT: 2026-11-18
 -->
 
@@ -1594,6 +1594,23 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   adjacent -> no, no cap) and `fr-near-ingenieur-production-sre-paiement`
   refused (an invalid analysis twice); rerun once each: 63 and 93, in
   band. The model's spread, not the caps.
+
+- [x] **2.47** (the owner, 2026-11-18: "montrer le site aux recruteurs
+  ASAP, un argument d'emploi") **The public page as a showcase.** A pitch
+  above the form (public mode only, `#pitch` in `web/index.html`, shown
+  by `showPitch` in `web/app.js`): whose CV and his first title (the
+  status now carries `profile.title`, `serve.js`), three points (nothing
+  invented, an honest score that says why it is capped, a tool he built:
+  Rust router, Node generator, tests and sabotage, his own server) and a
+  link to the source (`SOURCE_URL`, in the page only: the status carries
+  no link, `hostile.test.js`). "Essayer avec une offre exemple" pastes
+  `web/sample-offer.js` (fictional, admitted by the public intake, a test
+  says so) and generates. Generate works on the pasted text, no "add"
+  step; "Ajouter tel quel" and the router and layout pills are hidden in
+  public; the templates and palettes have readable names; the footer
+  speaks to a visitor. Unavailable models stay greyed (2.34). Tests: one
+  in `server.test.js`, `web.test.js` tells links from loads (one link
+  leaves the site, the source, `noopener`). 6 defences (http.json).
 
 ## 9. Open on purpose
 

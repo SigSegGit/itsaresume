@@ -26,10 +26,10 @@ test('the page holds no inline script, style or handler, and loads nothing from 
   assert.ok(!/\son[a-z]+=/.test(html), 'inline handler');
   const urls = [...html.matchAll(/<(?!a\b)[a-z]+\b[^>]*\b(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/style.css']);
-  // 2.47: links are not loads; one leaves the site, the source, opened apart.
+  // 2.47: links are not loads; two leave the site, the source and its CI, opened apart.
   const links = [...html.matchAll(/<a\b[^>]*>/g)].map((match) => match[0]);
   const away = links.filter((link) => /href="https?:/.test(link));
-  assert.deepEqual(away.map((link) => /href="([^"]+)"/.exec(link)[1]), [SOURCE_URL]);
+  assert.deepEqual(away.map((link) => /href="([^"]+)"/.exec(link)[1]), [SOURCE_URL, `${SOURCE_URL}/actions`]);
   assert.ok(away.every((link) => /rel="noopener"/.test(link) && /target="_blank"/.test(link)));
   assert.ok(links.some((link) => link.includes('href="/questions.html"')));
   assert.ok(!/@import|url\(\s*['"]?https?:/.test(web('style.css')), 'no remote stylesheet or font');
