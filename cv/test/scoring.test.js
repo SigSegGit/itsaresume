@@ -289,3 +289,24 @@ test('normalize caps a senior profile on a junior title, and says why', () => {
   assert.equal(plain.fit.cap, undefined, 'a profile under eight years is not senior');
   assert.ok(plain.fit.score > CORE_MISSED_CAP);
 });
+
+// Seen 2026-11-18 on a real English offer (a data reliability post): soft
+// skills read as unmet skills made the CV "not qualified" at 70/100.
+test('problem solving, working independently and continuous learning are personal qualities', () => {
+  const names = ['Problem-solving skills', 'Ability to work independently', 'Continuous learning', 'Résolution de problèmes', 'Travailler de manière indépendante', 'Apprentissage continu'];
+  const offer = `Data reliability engineer. Must have: PostgreSQL. ${names.join(', ')}.`;
+  const requirements = [row('PostgreSQL', 'yes', ['postgresql']), ...names.map((name) => row(name, 'adjacent'))];
+  const { analysis } = normalize(answer({ requirements }), v4(), { offer });
+  assert.deepEqual(analysis.requirements.filter((r) => r.kind === 'quality').map((r) => r.name), names);
+  assert.equal(analysis.fit.qualification.level, 'qualified');
+});
+
+test('rows to verify make a CV partial, only missing must-haves make it not qualified', () => {
+  const must = (match, extra = {}) => ({ name: `R${Math.random()}`, importance: 'must', match, skills: ['x'], ...extra });
+  const judged = [must('yes'), must('adjacent', { judged: true }), must('adjacent', { judged: true })];
+  assert.equal(qualification(judged).level, 'partial', 'two rows to verify of three: partial, not a refusal');
+  assert.equal(qualification(judged).gaps.length, 2);
+  assert.equal(qualification([must('yes'), must('no'), must('no')]).level, 'not-qualified');
+  assert.equal(qualification([must('yes'), must('no'), must('adjacent', { judged: true })]).level, 'partial', 'one missing of three is under the half');
+  assert.equal(qualification([must('no'), must('adjacent', { judged: true })]).level, 'not-qualified', 'one missing of two is the half');
+});
