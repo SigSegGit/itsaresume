@@ -5,6 +5,7 @@ use itsaresume_router::{
 };
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Duration;
 
 /// A backend that always gives the same reply and counts how often it was asked.
 struct Scripted {
@@ -316,4 +317,80 @@ fn a_backend_with_its_own_period_is_checked_less_often() {
         ),
         (2, 1)
     );
+}
+
+/// Fails with `first` on its first call, then answers.
+struct FlakyOnce {
+    first: BackendError,
+    calls: Arc<AtomicUsize>,
+}
+
+impl Backend for FlakyOnce {
+    fn name(&self) -> &str {
+        "g"
+    }
+
+    fn complete(&self, _request: &Request) -> Result<Completion, BackendError> {
+        if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+            return Err(self.first.clone());
+        }
+        Ok(Completion {
+            text: "second time".into(),
+            rate_limit: None,
+            usage: None,
+        })
+    }
+}
+
+fn flaky(first: BackendError) -> (Box<dyn Backend>, Arc<AtomicUsize>) {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let backend = FlakyOnce {
+        first,
+        calls: Arc::clone(&calls),
+    };
+    (Box::new(backend), calls)
+}
+
+/// 8.59 (seen 2026-11-17 and 18: gemini answered 503 "high demand" twice in
+/// a row of real runs, the model asked for by hand, so no fallback): an
+/// overloaded backend is tried once more after a pause before the next one.
+#[test]
+fn an_overloaded_backend_is_tried_once_more_after_a_pause() {
+    let (g, calls) = flaky(BackendError::Unreachable(
+        "gemini: empty response: 503 This model is currently experiencing high demand".into(),
+    ));
+    let (router, _dir) = router(vec![g]);
+    let router = router.with_overload_retry(Duration::from_millis(20));
+    let started = std::time::Instant::now();
+    let outcome = router.complete(&request());
+    assert_eq!(outcome.result.expect("answered").text, "second time");
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
+    assert!(started.elapsed() >= Duration::from_millis(20), "it paused");
+}
+
+/// Any other outage, or no pause configured, is not retried.
+#[test]
+fn only_an_overload_is_retried_and_only_when_configured() {
+    let (g, calls) = flaky(BackendError::Unreachable("gemini: ECONNREFUSED".into()));
+    let (built, _dir) = router(vec![g]);
+    let retrying = built.with_overload_retry(Duration::from_millis(1));
+    assert!(retrying.complete(&request()).result.is_err());
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+
+    let (g, calls) = flaky(BackendError::Unreachable("gemini: 503 overloaded".into()));
+    let (built, _dir) = router(vec![g]);
+    assert!(built.complete(&request()).result.is_err());
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        1,
+        "no pause configured: no retry"
+    );
+
+    let (g, calls) = flaky(BackendError::QuotaExceeded(
+        "gemini: 429 high demand".into(),
+    ));
+    let (built, _dir) = router(vec![g]);
+    let retrying = built.with_overload_retry(Duration::from_millis(1));
+    assert!(retrying.complete(&request()).result.is_err());
+    assert_eq!(calls.load(Ordering::SeqCst), 1, "a quota is no overload");
 }

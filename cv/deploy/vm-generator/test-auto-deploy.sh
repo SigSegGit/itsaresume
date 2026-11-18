@@ -55,7 +55,8 @@ upstream() {
     git -C "$work/seed" commit -qam "$1" && git -C "$work/seed" push -q origin main
 }
 deploy() { bash "$work/vm/cv/deploy/vm-generator/auto-deploy.sh" >"$work/out" 2>&1; }
-calls() { [ -f "$work/docker-calls" ] && wc -l < "$work/docker-calls" || echo 0; }
+# Builds only: a prune after a deploy is counted apart (2.44).
+calls() { [ -f "$work/docker-calls" ] && grep -c "compose" "$work/docker-calls" || echo 0; }
 
 # 1. A new commit on origin/main: fast-forwarded, then built and started.
 fresh; deploy; rm -f "$work/docker-calls"; upstream two
@@ -71,13 +72,48 @@ deploy || fail "an up-to-date checkout is an error: $(cat "$work/out")"
 [ "$(calls)" -eq 0 ] || fail "docker ran with nothing to deploy"
 report nothing_new_deploys_nothing
 
-# 3. A failed build is tried again at the next run.
+# 3. A failed build is tried again, once its wait is over (2.44: five
+# minutes after a first failure, not at every run of the timer).
+export ITSACV_NOW=1000000
 fresh; upstream two; touch "$work/docker-fails"
 deploy && fail "a failed compose was reported as success"
 rm -f "$work/docker-fails" "$work/docker-calls"
-deploy || fail "the retry failed: $(cat "$work/out")"
-[ "$(calls)" -eq 1 ] || fail "the failed deploy was not retried"
+deploy || fail "a waiting retry is an error: $(cat "$work/out")"
+[ "$(calls)" -eq 0 ] || fail "the failed build was retried at once"
+ITSACV_NOW=1000301 deploy || fail "the retry failed: $(cat "$work/out")"
+[ "$(calls)" -eq 1 ] || fail "the failed deploy was not retried after its wait"
 report a_failed_build_is_retried
+
+# 3b. Each failure doubles the wait (5, 10, 20 minutes... at most 6 hours).
+fresh; upstream two; touch "$work/docker-fails"
+ITSACV_NOW=1000000 deploy
+ITSACV_NOW=1000301 deploy
+rm -f "$work/docker-calls"
+ITSACV_NOW=1000700 deploy
+[ "$(calls)" -eq 0 ] || fail "the second wait was not doubled"
+ITSACV_NOW=1000902 deploy
+[ "$(calls)" -eq 1 ] || fail "the build was not retried after the doubled wait"
+rm -f "$work/docker-fails"
+report each_failure_doubles_the_wait
+
+# 3c. A new commit after a failure is built at once: it may be the fix.
+fresh; upstream two; touch "$work/docker-fails"
+ITSACV_NOW=1000000 deploy
+rm -f "$work/docker-fails" "$work/docker-calls"; upstream three
+ITSACV_NOW=1000010 deploy || fail "the fix was not deployed: $(cat "$work/out")"
+[ "$(calls)" -eq 1 ] || fail "a new commit waited behind an old failure"
+report a_new_commit_is_built_despite_a_failure
+
+# 3d. A deploy that succeeded prunes the dangling images (the disk filled
+# with a failed build's layers, retried every 5 minutes); a failed one does not.
+fresh; upstream two; touch "$work/docker-fails"
+ITSACV_NOW=1000000 deploy
+grep -q "image prune" "$work/docker-calls" && fail "a failed build pruned"
+rm -f "$work/docker-fails" "$work/docker-calls"
+ITSACV_NOW=1000301 deploy
+grep -q -- "image prune -f" "$work/docker-calls" 2>/dev/null || fail "no prune after a deploy: $(cat "$work/docker-calls" 2>/dev/null)"
+report a_deploy_prunes_dangling_images
+unset ITSACV_NOW
 
 # 4. Local changes on the VM, even in a file origin did not touch (git would
 # fast-forward over it): refused, untouched, no docker.

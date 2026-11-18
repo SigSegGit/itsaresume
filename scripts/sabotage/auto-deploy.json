@@ -36,8 +36,8 @@
     },
     "Auto-deploy: a failed build is not recorded as deployed": {
       "file": "cv/deploy/vm-generator/auto-deploy.sh",
-      "live": "docker compose -f \"$compose\" up -d --build\n",
-      "dead": "docker compose -f \"$compose\" up -d --build || true\n",
+      "live": "if ! docker compose -f \"$compose\" up -d --build; then",
+      "dead": "if ! { docker compose -f \"$compose\" up -d --build || true; }; then",
       "expect": [
         "a_failed_build_is_retried"
       ]
@@ -56,6 +56,38 @@
       "dead": "if false; then",
       "expect": [
         "a_busy_generator_defers_the_deploy"
+      ]
+    },
+    "Auto-deploy: a failed build waits before its retry": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "    if [ \"$now\" -lt $((failed_at + wait)) ]; then",
+      "dead": "    if false; then",
+      "expect": [
+        "a_failed_build_is_retried"
+      ]
+    },
+    "Auto-deploy: each failure doubles the wait": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "    wait=$((300 << (failures - 1)))",
+      "dead": "    wait=300",
+      "expect": [
+        "each_failure_doubles_the_wait"
+      ]
+    },
+    "Auto-deploy: a new commit is built despite a failure": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "if [ \"${failed_head:-}\" = \"$head\" ]; then",
+      "dead": "if [ -n \"${failed_head:-}\" ]; then",
+      "expect": [
+        "a_new_commit_is_built_despite_a_failure"
+      ]
+    },
+    "Auto-deploy: a deploy prunes the dangling images": {
+      "file": "cv/deploy/vm-generator/auto-deploy.sh",
+      "live": "docker image prune -f > /dev/null || echo \"auto-deploy: the image prune failed\" >&2",
+      "dead": "true",
+      "expect": [
+        "a_deploy_prunes_dangling_images"
       ]
     }
   }

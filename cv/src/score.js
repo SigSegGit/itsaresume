@@ -14,6 +14,32 @@ export const CORE_MISSED = 0.5;
 /** More than CORE_MISSED of the must-haves missed: the core is missed, the score stays low (corpus run 2026-11-15). */
 export const CORE_MISSED_CAP = 30;
 
+/** A title for a first job or a first support level (2.43): no fit for a senior profile. */
+export const JUNIOR_TITLE = /(?<![\p{L}\p{N}])(?:junior|d[ée]butant(?:e|s|es)?|stagiaire|stage(?!\s+gate)|alternan(?:ce|t|te)|apprenti(?:e|ssage)?|niveau\s*1|N1|internship|intern|entry[- ]level|graduate)(?![\p{L}\p{N}])/iu;
+
+/** A title that also asks for seniority is contradictory: the junior word does not cap it. */
+export const SENIOR_TITLE = /(?<![\p{L}\p{N}])(?:lead|senior|s[ée]nior|confirm[ée]e?|exp[ée]riment[ée]e?|expert|principal|staff|head)(?![\p{L}\p{N}])/iu;
+
+/** The offer's first non-empty line: its title. */
+export const titleOf = (offer) => String(offer ?? '').split('\n').map((line) => line.trim()).find(Boolean) ?? '';
+
+/**
+ * Why the score is capped beyond the must-haves count (2.43, corpus run
+ * 2026-11-17), or null: the technology the title leads with (the must
+ * named first in it) missed, or a junior title for a senior profile.
+ */
+export function capOf(requirements, { offer, senior = false } = {}) {
+  const title = titleOf(offer);
+  if (!title) return null;
+  if (senior && JUNIOR_TITLE.test(title) && !SENIOR_TITLE.test(title)) return 'level: a junior or first-level post for a senior profile';
+  const lower = title.toLowerCase();
+  const lead = scored(requirements)
+    .filter((requirement) => requirement.importance === 'must' && mentions(title, String(requirement.name ?? '')))
+    .map((requirement) => ({ requirement, at: lower.indexOf(String(requirement.name).toLowerCase()) }))
+    .sort((a, b) => (a.at < 0 ? Infinity : a.at) - (b.at < 0 ? Infinity : b.at))[0]?.requirement;
+  return lead?.match === 'no' ? `core: ${lead.name}, the technology the title leads with, is missed` : null;
+}
+
 /** Whether a met requirement rests on lab skills only. */
 const labOnly = (requirement, lab) =>
   requirement.match !== 'no' && (requirement.skills ?? []).length > 0 && requirement.skills.every((id) => lab.has(id));
@@ -28,10 +54,12 @@ export const isNever = (requirement, never = []) =>
   (!requirement.members && never.some((entry) => [entry.name, ...(entry.aliases ?? [])].some((name) => mentions(String(requirement.name ?? ''), name))));
 
 /** The requirements that count: a personal quality is for the interview (normalize.js says which). */
-const scored = (requirements) => requirements.filter((requirement) => requirement.kind !== 'quality' && requirement.kind !== 'condition');
+function scored(requirements) {
+  return requirements.filter((requirement) => requirement.kind !== 'quality' && requirement.kind !== 'condition');
+}
 
-/** 0-100, or null when there is nothing to score. `lab`: ids of lab skills. */
-export function scoreOf(requirements, { lab = new Set() } = {}) {
+/** 0-100, or null when there is nothing to score. `lab`: ids of lab skills; `offer` and `senior`: see capOf. */
+export function scoreOf(requirements, { lab = new Set(), offer, senior = false } = {}) {
   let total = 0;
   let met = 0;
   let musts = 0;
@@ -48,7 +76,8 @@ export function scoreOf(requirements, { lab = new Set() } = {}) {
   }
   if (total === 0) return null;
   const score = Math.round((100 * met) / total);
-  return musts > 0 && missed / musts > CORE_MISSED ? Math.min(score, CORE_MISSED_CAP) : score;
+  const capped = (musts > 0 && missed / musts > CORE_MISSED) || capOf(requirements, { offer, senior }) !== null;
+  return capped ? Math.min(score, CORE_MISSED_CAP) : score;
 }
 
 /**

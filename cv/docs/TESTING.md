@@ -357,6 +357,8 @@ property it proves.
 | an analysis without any requirement cannot be scored and is refused | Honesty: no requirement, no score |
 | the report labels the model's own comment as unchecked | — |
 | a score with more than half the must-haves missed is capped in the low band | Score: more than half the must-haves missed caps the score low |
+| a missed lead technology of the title caps the score in the low band | Score: a missed lead technology of the title caps the score; Score: the lead is the title technology named first; Score: only a must in the title is the core |
+| a junior or first-level title caps a senior profile in the low band | Score: a junior title caps a senior profile only; Score: the junior title words; Score: a title that also says lead or senior is not capped |
 
 ## `test/hostile.test.js`
 
@@ -766,6 +768,7 @@ property it proves.
 | working in pairs is a personal quality, never a failed requirement | Quality: working in pairs is a quality |
 | an administrative condition the profile does not state is to confirm: not scored, not a gap, listed apart | Condition: not scored; Condition: the report lists conditions apart; Condition: an unstated administrative condition is to confirm |
 | alternatives the offer joins with "ou" are one requirement, met by any; items joined by "et" stay apart | Alternatives (2.26b): rows an "ou" joins are merged; Alternatives (2.26b): "et" ends a run; Alternatives (2.26b): a comma after "ou" ends a run |
+| normalize caps a senior profile on a junior title, and says why | Score: eight years make a senior profile; Score: the report says why the score is capped; Score: the page view carries the cap |
 
 ## `test/serve-contract.test.js`
 
@@ -837,6 +840,9 @@ property it proves.
 | 4.11: a job carries its sources, links and threshold to tailor; bad ones refused first | — |
 | 4.11: a public visitor cannot send sources or links | Sources (4.11): never from a public visitor |
 | 4.12: a job carries its style to tailor; an unknown palette is refused | — |
+| the public caps, bans and visitors survive a restart | Public state: the daily cap is written down; Public state: a ban is written down; Public state: a new visitor is written down |
+| an unreadable public state starts empty, never a crash | Public state: a broken store is memory only |
+| a visitor finds its finished CVs again after a restart | Public state: a finished CV is written down; Public state: a CV whose folder is gone is skipped |
 
 ## `test/split.test.js`
 
@@ -944,6 +950,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**625 tests, 499 of them covered by at least one sabotage defence.**
+**631 tests, 505 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

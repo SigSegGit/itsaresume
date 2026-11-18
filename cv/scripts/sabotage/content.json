@@ -153,10 +153,10 @@
     },
     "Degree: an engineering school is a degree": {
       "file": "src/normalize.js",
-      "live": "([ée]coles?\\s+d['’]\\s*ing[ée]nieurs?|engineering\\s+school|dipl",
+      "live": "([\u00e9e]coles?\\s+d['\u2019]\\s*ing[\u00e9e]nieurs?|engineering\\s+school|dipl",
       "dead": "(dipl",
       "expect": [
-        "a Bac+5 in the education meets \"école d'ingénieurs ou équivalent\""
+        "a Bac+5 in the education meets \"\u00e9cole d'ing\u00e9nieurs ou \u00e9quivalent\""
       ]
     },
     "Profile: bullet skills must exist": {
@@ -1939,8 +1939,8 @@
     },
     "Import (4.2): a bullet is a sentence of the file": {
       "file": "src/import.js",
-      "live": "    const sentences = highlights.length ? highlights : clean(job.summary) ? [clean(job.summary)] : [`${position} — ${org}`];",
-      "dead": "    const sentences = [`${position} — ${org}`];",
+      "live": "    const sentences = highlights.length ? highlights : clean(job.summary) ? [clean(job.summary)] : [`${position} \u2014 ${org}`];",
+      "dead": "    const sentences = [`${position} \u2014 ${org}`];",
       "expect": [
         "4.2: every bullet is a sentence of the file: a highlight, else the summary, else position and company"
       ]
@@ -1995,8 +1995,8 @@
     },
     "Score: more than half the must-haves missed caps the score low": {
       "file": "src/score.js",
-      "live": "  return musts > 0 && missed / musts > CORE_MISSED ? Math.min(score, CORE_MISSED_CAP) : score;",
-      "dead": "  return score;",
+      "live": "  const capped = (musts > 0 && missed / musts > CORE_MISSED) || capOf(requirements, { offer, senior }) !== null;",
+      "dead": "  const capped = capOf(requirements, { offer, senior }) !== null;",
       "expect": [
         "a score with more than half the must-haves missed is capped in the low band"
       ]
@@ -2023,6 +2023,78 @@
       "dead": "  if (false) throw new Error(",
       "expect": [
         "4.12: one default template and palette, the template folder listed"
+      ]
+    },
+    "Score: a missed lead technology of the title caps the score": {
+      "file": "src/score.js",
+      "live": "  return lead?.match === 'no' ? `core: ${lead.name}, the technology the title leads with, is missed` : null;",
+      "dead": "  return null;",
+      "expect": [
+        "a missed lead technology of the title caps the score in the low band"
+      ]
+    },
+    "Score: the lead is the title technology named first": {
+      "file": "src/score.js",
+      "live": "    .sort((a, b) => (a.at < 0 ? Infinity : a.at) - (b.at < 0 ? Infinity : b.at))[0]?.requirement;",
+      "dead": "    .sort((a, b) => b.at - a.at)[0]?.requirement;",
+      "expect": [
+        "a missed lead technology of the title caps the score in the low band"
+      ]
+    },
+    "Score: only a must in the title is the core": {
+      "file": "src/score.js",
+      "live": "    .filter((requirement) => requirement.importance === 'must' && mentions(title, String(requirement.name ?? '')))",
+      "dead": "    .filter((requirement) => mentions(title, String(requirement.name ?? '')))",
+      "expect": [
+        "a missed lead technology of the title caps the score in the low band"
+      ]
+    },
+    "Score: a junior title caps a senior profile only": {
+      "file": "src/score.js",
+      "live": "  if (senior && JUNIOR_TITLE.test(title) && !SENIOR_TITLE.test(title)) return",
+      "dead": "  if (JUNIOR_TITLE.test(title) && !SENIOR_TITLE.test(title)) return",
+      "expect": [
+        "a junior or first-level title caps a senior profile in the low band"
+      ]
+    },
+    "Score: the junior title words": {
+      "file": "src/score.js",
+      "live": "stage(?!\\s+gate)|",
+      "dead": "stage|",
+      "expect": [
+        "a junior or first-level title caps a senior profile in the low band"
+      ]
+    },
+    "Score: eight years make a senior profile": {
+      "file": "src/normalize.js",
+      "live": "  const senior = starts.length > 0 && new Date().getFullYear() - Math.min(...starts) >= SENIOR_YEARS;",
+      "dead": "  const senior = starts.length > 0;",
+      "expect": [
+        "normalize caps a senior profile on a junior title, and says why"
+      ]
+    },
+    "Score: a title that also says lead or senior is not capped": {
+      "file": "src/score.js",
+      "live": "(?:lead|senior|s[\u00e9e]nior|",
+      "dead": "(?:s[\u00e9e]nior|",
+      "expect": [
+        "a junior or first-level title caps a senior profile in the low band"
+      ]
+    },
+    "Score: the report says why the score is capped": {
+      "file": "src/report.js",
+      "live": "    ...(analysis.fit.cap ? ['', `Score capped",
+      "dead": "    ...(false ? ['', `Score capped",
+      "expect": [
+        "normalize caps a senior profile on a junior title, and says why"
+      ]
+    },
+    "Score: the page view carries the cap": {
+      "file": "src/view.js",
+      "live": "      cap: analysis.fit.cap ?? null,",
+      "dead": "      cap: null,",
+      "expect": [
+        "normalize caps a senior profile on a junior title, and says why"
       ]
     }
   }

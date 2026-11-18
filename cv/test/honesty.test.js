@@ -83,3 +83,33 @@ test('a score with more than half the must-haves missed is capped in the low ban
   assert.equal(scoreOf([must('no'), must('yes'), nice('yes')]), 57);
   assert.ok(CORE_MISSED_CAP < 35);
 });
+
+// Corpus run 2026-11-17: the COBOL, PHP and React offers stayed mid on generic
+// rows (SQL, Git, Windows) with fewer than half their musts missed. The
+// technology a title leads with is the job's core: missed, the score stays
+// low. A junior or first-level title is no fit for a senior profile either.
+test('a missed lead technology of the title caps the score in the low band', () => {
+  const row = (name, match, importance = 'must') => ({ name, importance, match });
+  const generic = [row('SQL', 'yes'), row('Git', 'yes'), row('Linux', 'yes'), row('ITIL', 'adjacent')];
+  const cobol = [row('DB2', 'adjacent'), row('COBOL', 'no'), ...generic];
+  assert.equal(scoreOf(cobol, { offer: 'Développeur Mainframe COBOL / DB2 confirmé (H/F)\n\nmissions' }), CORE_MISSED_CAP);
+  assert.ok(scoreOf(cobol) > CORE_MISSED_CAP, 'without the offer, no title, no cap');
+  // The title's first technology leads: PostgreSQL met, Oracle missed, no cap.
+  const dba = [row('Oracle', 'no'), row('PostgreSQL', 'yes'), ...generic];
+  assert.ok(scoreOf(dba, { offer: '\n  Administrateur PostgreSQL / Oracle (H/F)\nOracle et COBOL' }) > CORE_MISSED_CAP);
+  // A nice-to-have in the title is not the core; nor is a row the title does not name.
+  assert.ok(scoreOf([row('COBOL', 'no', 'nice'), ...generic], { offer: 'Développeur COBOL' }) > CORE_MISSED_CAP);
+  assert.ok(scoreOf(cobol, { offer: 'Ingénieur de production\nCOBOL' }) > CORE_MISSED_CAP);
+});
+
+test('a junior or first-level title caps a senior profile in the low band', () => {
+  const rows = [{ name: 'Windows', importance: 'must', match: 'yes' }, { name: 'Active Directory', importance: 'must', match: 'yes' }];
+  for (const title of ['Technicien support helpdesk niveau 1 (H/F)', 'Développeur fullstack junior React', 'Support N1', 'Alternance DevOps', 'Stagiaire SRE', 'Entry-level cloud engineer']) {
+    assert.equal(scoreOf(rows, { offer: title, senior: true }), CORE_MISSED_CAP, title);
+    assert.equal(scoreOf(rows, { offer: title }), 100, `${title}: a junior profile is not capped`);
+  }
+  // A title that also says lead or senior (a real one, 2026-10) is contradictory: not capped.
+  for (const title of ['Ingénieur SRE senior', 'Administrateur N2/N3', 'Chef de projet stage gate', 'Lead Architecte SecOps Junior (H/F/NB)', 'DevOps junior à confirmé']) {
+    assert.equal(scoreOf(rows, { offer: title, senior: true }), 100, title);
+  }
+});

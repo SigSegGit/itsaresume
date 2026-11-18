@@ -5,6 +5,7 @@
 // and table cells escape their pipes.
 
 import { mentions } from './text.js';
+import { CORE_MISSED_CAP } from './score.js';
 
 /** The model's text on one line. */
 const line = (text) => String(text ?? '').replace(/\s*[\r\n]+\s*/g, ' ');
@@ -69,6 +70,8 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
     '',
     'Computed from the requirement table below (must ×3, nice ×1; yes 1, adjacent ½, no 0; met by lab skills only ½).',
     ...describeQualification(analysis.fit),
+    // 2.45: a cap beyond the must-haves count says why (score.js capOf).
+    ...(analysis.fit.cap ? ['', `Score capped at ${CORE_MISSED_CAP}: ${analysis.fit.cap}.`] : []),
     '',
     `**The model's own comment (unchecked):** ${line(analysis.fit.rationale ?? '—')}` +
       (Number.isInteger(analysis.fit.model_score) ? ` It scored ${analysis.fit.model_score}/100 itself.` : ''),

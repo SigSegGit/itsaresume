@@ -2,7 +2,7 @@
 
 <!-- ITSARESUME-STATE
 NEXT: done
-TITLE: 8.58 done, the overage latch lifts by itself at the plan's reset; no router step open
+TITLE: 8.59 done, an overloaded backend is tried once more after 15 s; no router step open
 WRITTEN-AT: 2026-11-18
 BASE: edc32d8
 -->
@@ -742,6 +742,17 @@ branch with the local gates of §3 green.
   (`router-billing.json`), one retargeted. Unverified: the real
   `resetsAt` format at an overage (the fixtures redact it; seen as a
   number in the CLI's events); without it the latch stays manual.
+- [x] **8.59** **An overloaded backend is tried once more after a pause**
+  (2026-11-18; gemini answered 503 "high demand" on two real runs in a
+  row, asked for by hand, so with no fallback). In `route`, an
+  `Unreachable` whose message says 503, "high demand", "overloaded" or
+  "unavailable" is retried once on the same backend after
+  `overload_retry_secs` (config, 15 s by default, 0 never); a refused
+  connection or a quota is not. Tests
+  `an_overloaded_backend_is_tried_once_more_after_a_pause`,
+  `only_an_overload_is_retried_and_only_when_configured`,
+  `the_overload_pause_is_fifteen_seconds_unless_set`; 4 defences
+  (`router-gemini.json`).
 
 ## 9. Deliberately open
 

@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { v4 } from './fixtures/v4.js';
 import { normalize } from '../src/normalize.js';
 import { report } from '../src/report.js';
+import { jobView } from '../src/view.js';
 import { CORE_MISSED_CAP, qualification } from '../src/score.js';
 import { validateAnalysis } from '../src/analysis.js';
 import { listRequirements } from '../src/listing.js';
@@ -269,4 +270,22 @@ test('alternatives the offer joins with "ou" are one requirement, met by any; it
     // Ansible: same family as the expert Terraform, to verify (2.28b); Podman beside a lab Docker stays no.
     ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'], ['Podman', 'no'], ['Ansible', 'adjacent'],
   ]);
+});
+
+test('normalize caps a senior profile on a junior title, and says why', () => {
+  const since = (start) => {
+    const profile = v4();
+    return { ...profile, experiences: profile.experiences.map((experience) => ({ ...experience, start })) };
+  };
+  const senior = since('2008');
+  const offer = 'Administrateur PostgreSQL junior\n\nMust have: PostgreSQL.';
+  const { analysis } = normalize(answer(), senior, { offer });
+  assert.equal(analysis.fit.score, CORE_MISSED_CAP);
+  assert.match(analysis.fit.cap ?? '', /junior|level/i);
+  // 2.45: the report says why, so the owner can check the cap.
+  assert.match(report(analysis, senior, { backend: 'b', attempts: 1 }), /Score capped at 30: level: a junior/);
+  assert.equal(jobView({ analysis, dir: '.', older: [], repairs: [], backend: 'b', attempts: 1 }, { full: { skills: [], sources: [] }, assessment: [] }).fit.cap, analysis.fit.cap);
+  const { analysis: plain } = normalize(answer(), since(String(new Date().getFullYear() - 4)), { offer });
+  assert.equal(plain.fit.cap, undefined, 'a profile under eight years is not senior');
+  assert.ok(plain.fit.score > CORE_MISSED_CAP);
 });

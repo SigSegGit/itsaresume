@@ -24,6 +24,8 @@ export function jobView(result, loaded) {
       model_score: analysis.fit.model_score ?? null,
       qualification: analysis.fit.qualification ?? null,
       rationale: analysis.fit.rationale ?? '',
+      // 2.45: why the score is capped (score.js capOf), or null.
+      cap: analysis.fit.cap ?? null,
     },
     headline: analysis.headline,
     summary: analysis.summary,

@@ -409,3 +409,20 @@ fn one_backend_can_be_checked_less_often_and_only_a_named_one() {
     };
     assert!(error.to_string().contains("gemini"), "{error}");
 }
+
+/// 8.59: `serve` pauses 15 s before trying an overloaded backend once more;
+/// `overload_retry_secs = 0` turns it off.
+#[test]
+fn the_overload_pause_is_fifteen_seconds_unless_set() {
+    let base = "journal = \"j.jsonl\"\n[[backend]]\nkind = \"lm-studio\"\nbase_url = \"http://127.0.0.1:1/v1\"\nmodel = \"m\"\n";
+    let router = Config::parse(base)
+        .expect("valid")
+        .router()
+        .expect("router");
+    assert_eq!(router.overload_retry(), std::time::Duration::from_secs(15));
+    let off = Config::parse(&format!("overload_retry_secs = 0\n{base}"))
+        .expect("valid")
+        .router()
+        .expect("router");
+    assert_eq!(off.overload_retry(), std::time::Duration::ZERO);
+}

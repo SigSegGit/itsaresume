@@ -45,7 +45,7 @@ for (const entry of corpus) {
     saved[entry.id] = Object.fromEntries(requirements.map((r) => [r.name.toLowerCase(), r.match]));
     total.found += found;
     total.retried += attempts > 1 ? 1 : 0;
-    line = `${attempts} attempt(s), labels ${found}/${entry.requirements.length}, yes ${count('yes')} adjacent ${count('adjacent')} no ${count('no')}, score ${scoreOf(requirements, { lab })}`;
+    line = `${attempts} attempt(s), labels ${found}/${entry.requirements.length}, yes ${count('yes')} adjacent ${count('adjacent')} no ${count('no')}, score ${analysis.fit?.score ?? scoreOf(requirements, { lab })}${analysis.fit?.cap ? ` (cap: ${analysis.fit.cap})` : ''}`;
     if (before?.[entry.id]) {
       const shared = Object.keys(saved[entry.id]).filter((name) => name in before[entry.id]);
       const same = shared.filter((name) => before[entry.id][name] === saved[entry.id][name]).length;

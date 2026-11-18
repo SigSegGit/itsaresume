@@ -45,6 +45,29 @@ if printf '%s' "$status" | grep -Eq '"busy":[1-9]'; then
     echo "auto-deploy: $head waits: a CV is being generated"
     exit 0
 fi
-docker compose -f "$compose" up -d --build
+# 2.44: a failed build waits before the next try, 5 minutes doubled at
+# each failure of the same commit (6 hours at most); a new commit is built
+# at once. The record: "<commit> <failures> <unix time of the last one>".
+failed="$state.failed"
+now=${ITSACV_NOW:-$(date +%s)}
+read -r failed_head failures failed_at < "$failed" 2>/dev/null || true
+if [ "${failed_head:-}" = "$head" ]; then
+    wait=$((300 << (failures - 1)))
+    [ "$wait" -gt 21600 ] && wait=21600
+    if [ "$now" -lt $((failed_at + wait)) ]; then
+        echo "auto-deploy: $head failed $failures time(s): next try in $((failed_at + wait - now)) s"
+        exit 0
+    fi
+else
+    failures=0
+fi
+if ! docker compose -f "$compose" up -d --build; then
+    echo "$head $((failures + 1)) $now" > "$failed"
+    echo "auto-deploy: building $head failed (failure $((failures + 1)))" >&2
+    exit 1
+fi
+rm -f "$failed"
 echo "$head" > "$state"
 echo "auto-deploy: deployed $head"
+# The layers of replaced images (dangling) only fill the disk.
+docker image prune -f > /dev/null || echo "auto-deploy: the image prune failed" >&2

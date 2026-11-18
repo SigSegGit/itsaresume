@@ -6,7 +6,7 @@
 // guess. It never touches the headline or the summary: the free text is where
 // invention lives, and it is either valid as written or refused.
 
-import { isNever, qualification, scoreOf } from './score.js';
+import { capOf, CORE_MISSED_CAP, isNever, qualification, scoreOf } from './score.js';
 import { identityNames, kindOf, LANGUAGES, skillNames } from './profile.js';
 import { blocked } from './evidence.js';
 import { backsRequirement } from './tailor.js';
@@ -23,6 +23,8 @@ const STRICTNESS = { no: 0, adjacent: 1, yes: 2 };
 const ASKS_EXPERIENCE = /(?<![\p{L}])(?:exp[ée]riment[ée]e?s?|experienced|s[ée]niors?|s[ée]niorit[ée]|seniority|\d+\s*\+?\s*(?:ans|years))(?![\p{L}])/iu;
 /** A text stating a number of years ("15 ans", "10 years"). */
 const STATES_YEARS = /\d+\s*\+?\s*(?:ans|years)(?![\p{L}])/iu;
+/** 2.43: a profile whose first experience is this many years old or more is senior. */
+export const SENIOR_YEARS = 8;
 /** 2.40: the years a requirement asks for ("3 ans d'expérience DevOps"), or null. */
 export function yearsAsked(name) {
   const found = /(?<![\p{L}\p{N}])(\d{1,2})\s*\+?\s*(?:ans|years?)(?![\p{L}])/iu.exec(String(name ?? ''));
@@ -828,11 +830,17 @@ export function normalize(input, profile, { assessment, offer } = {}) {
   // own figure is kept alongside, for comparison only.
   const fit = analysis.fit ?? {};
   const lab = new Set(profile.skills.filter((skill) => skill.level === 'lab').map((skill) => skill.id));
-  const score = scoreOf(analysis.requirements ?? [], { lab });
+  // 2.43: eight years of experience or more is a senior profile.
+  const starts = (profile.experiences ?? []).map((experience) => yearOf(experience.start, false)).filter((year) => year !== null);
+  const senior = starts.length > 0 && new Date().getFullYear() - Math.min(...starts) >= SENIOR_YEARS;
+  const score = scoreOf(analysis.requirements ?? [], { lab, offer, senior });
+  const cap = capOf(analysis.requirements ?? [], { offer, senior });
+  if (cap) repairs.push(`score capped at ${CORE_MISSED_CAP}: ${cap}`);
   analysis.fit = {
     ...fit,
     model_score: fit.score,
     score,
+    ...(cap ? { cap } : {}),
     verdict: score === null ? undefined : verdictFor(score),
     qualification: qualification(analysis.requirements ?? [], { lab, never: profile.never }),
   };

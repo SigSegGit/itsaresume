@@ -19,6 +19,9 @@ pub const DEFAULT_TIMEOUT_SECS: u64 = 300;
 /// timeout`, which panics on overflow for a huge value.
 pub const MAX_TIMEOUT_SECS: u64 = 86_400;
 
+/// 8.59: the default pause before an overloaded backend is tried again.
+pub const OVERLOAD_RETRY_SECS: u64 = 15;
+
 /// The whole file.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -35,6 +38,9 @@ pub struct Config {
     /// free-tier key allows fewer requests a day than the checks would spend.
     #[serde(default)]
     pub check_every_backend_secs: std::collections::BTreeMap<String, u64>,
+    /// 8.59: the pause before an overloaded backend (503, "high demand") is
+    /// tried once more; absent, 15 s; 0, never.
+    pub overload_retry_secs: Option<u64>,
 }
 
 /// One backend. The list of kinds is closed, and no kind has a credential.
@@ -332,6 +338,9 @@ impl Config {
             .collect();
         let router = Router::new(backends, Journal::new(&self.journal))
             .map_err(|error| ConfigError(format!("invalid configuration: {error}")))?;
+        let router = router.with_overload_retry(Duration::from_secs(
+            self.overload_retry_secs.unwrap_or(OVERLOAD_RETRY_SECS),
+        ));
         Ok(self
             .check_every_backend_secs
             .iter()
