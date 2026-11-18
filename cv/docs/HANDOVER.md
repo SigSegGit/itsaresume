@@ -1618,6 +1618,18 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   method). Not shown yet in a real browser from outside: the Pi that
   routes 443 was down that morning (private notes).
 
+- [x] **2.48** (2026-11-18, a real English offer the owner sent: a data
+  support and reliability post) **A report that does not contradict
+  itself.** It came out 70/100 "good" and "not qualified": eight musts
+  "to verify" (adjacent, judged) counted as missing, three of them soft
+  skills. `qualification` (`src/score.js`) now counts only the missing
+  musts (no, never claimed, lab only) towards "not qualified"; rows to
+  verify make it partial. `QUALITIES` (`src/text.js`) gains problem
+  solving, independence and continuous learning (French and English).
+  Replayed on the VM's 46 real runs: 7 move from not qualified to
+  partial (scores 38-75), none the other way. 2 tests, 2 defences, one
+  retargeted.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in
