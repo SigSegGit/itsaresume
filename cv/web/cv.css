@@ -34,3 +34,11 @@ body { margin: 0; padding: 16px; background: #e8e8e8; color: #111; }
   .a4 { margin: 0; box-shadow: none; }
 }
 .a4 .content { display: flow-root; }
+
+/* 2.50: how the CV was made, at the foot of the A4 page. */
+.made-by {
+  margin-top: 4mm;
+  text-align: center;
+  font-size: 6.5pt;
+  color: #7f7f7f;
+}

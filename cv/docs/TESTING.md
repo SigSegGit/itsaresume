@@ -592,6 +592,7 @@ property it proves.
 | a main mission always shows: its first bullets are a must, the rest are not | Page: must is the docx's floor, not every item |
 | a bullet the ranking leaves out never reaches the page | — |
 | 2.24b: the page names its reference experience and what the docx does with an empty one | Page: an empty short mission is dropped, as in the docx |
+| the A4 page data carries made_by in the CV language | Footer (2.50): made_by in the CV language |
 
 ## `test/pipeline.test.js`
 
@@ -709,6 +710,8 @@ property it proves.
 | an experience without an environment line gets none | — |
 | a model missing a field makes rendering fail instead of printing "undefined" | Render: a missing field fails |
 | loop markers leave no empty paragraph behind | Render: loop markers removed |
+| made_by is the docx footer, in the bottom margin, in the CV language | Footer (2.50): made_by becomes the docx footer; Footer (2.50): the footer sits inside the bottom margin; Footer (2.50): made_by in the CV language |
+| made_by needs both languages, and never names what the profile never claims | Footer (2.50): made_by needs both languages |
 
 ## `test/replay.test.js`
 
@@ -955,6 +958,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**636 tests, 510 of them covered by at least one sabotage defence.**
+**639 tests, 513 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

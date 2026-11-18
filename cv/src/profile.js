@@ -132,6 +132,10 @@ export function validateProfile(profile) {
   }
   for (const fact of profile.profile_facts ?? []) neverIn(`fact ${fact.id}`, fact.fr, fact.en);
   (profile.glance ?? []).forEach((line, index) => neverIn(`glance line ${index + 1}`, line.fr, line.en));
+  if (profile.made_by) {
+    need(bilingual(profile.made_by), 'made_by: needs fr and en');
+    neverIn('made_by', profile.made_by.fr, profile.made_by.en);
+  }
   (profile.certifications ?? []).forEach((line, index) => neverIn(`certification ${index + 1}`, line.fr, line.en));
 
   for (const [list, name] of [

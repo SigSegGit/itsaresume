@@ -92,7 +92,8 @@
     "test/degree.test.js",
     "test/listing-model.test.js",
     "src/qa.js",
-    "test/qa.test.js"
+    "test/qa.test.js",
+    "test/page.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2111,6 +2112,39 @@
       "dead": "  .concat([])",
       "expect": [
         "problem solving, working independently and continuous learning are personal qualities"
+      ]
+    },
+    "Footer (2.50): made_by becomes the docx footer": {
+      "file": "src/render.js",
+      "live": "  if (model.made_by) addFooter(zip, model.made_by);\n",
+      "dead": "",
+      "expect": [
+        "made_by is the docx footer, in the bottom margin, in the CV language"
+      ]
+    },
+    "Footer (2.50): the footer sits inside the bottom margin": {
+      "file": "src/render.js",
+      "live": "    .replace(/w:footer=\"\\d+\"/, 'w:footer=\"100\"'));",
+      "dead": "    .replace(/w:footer=\"\\d+\"/, 'w:footer=\"708\"'));",
+      "expect": [
+        "made_by is the docx footer, in the bottom margin, in the CV language"
+      ]
+    },
+    "Footer (2.50): made_by in the CV language": {
+      "file": "src/tailor.js",
+      "live": "    made_by: profile.made_by ? t(profile.made_by) : '',",
+      "dead": "    made_by: profile.made_by ? profile.made_by.fr : '',",
+      "expect": [
+        "made_by is the docx footer, in the bottom margin, in the CV language",
+        "the A4 page data carries made_by in the CV language"
+      ]
+    },
+    "Footer (2.50): made_by needs both languages": {
+      "file": "src/profile.js",
+      "live": "    need(bilingual(profile.made_by), 'made_by: needs fr and en');",
+      "dead": "",
+      "expect": [
+        "made_by needs both languages, and never names what the profile never claims"
       ]
     }
   }

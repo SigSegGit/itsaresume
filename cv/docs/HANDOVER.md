@@ -1643,6 +1643,15 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   by hand: claude 71, gemini 74, groq 52, all partial (2.48); the local
   model failed after 647 s, Bionic answering HTTP 400 "terminated".
 
+- [x] **2.50** (the owner, 2026-11-18) **How the CV was made, in its
+  footer.** A long line in the narrow "at a glance" column cost the body
+  its room. The profile's optional `made_by` ({fr, en}, checked like a
+  glance line) becomes the docx footer (`addFooter` in `src/render.js`:
+  footer1.xml, its relation and content type, the section's reference;
+  footer distance 100 twips, one 6.5 pt grey line inside the 280 bottom
+  margin, so the body keeps its height) and the A4 page's
+  (`web/cv.js`, `.made-by`). None: no footer. 3 tests, 4 defences.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in
