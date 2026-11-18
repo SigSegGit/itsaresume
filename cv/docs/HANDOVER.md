@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.25e
-TITLE: 2.25e rerun 2026-11-17 with groq and bionic only (attempts and scores hold, input +4-5 %); claude waits for the owner to clear the VM's billing-tripwire latch (§10), gemini was 503
-WRITTEN-AT: 2026-11-17
+NEXT: 2.46
+TITLE: 2.43-2.45 in one PR (score capped by the title's core and level, the cap explained, public state and CVs across deploys, deploy backoff); next 2.46: the whole corpus rerun with the caps
+WRITTEN-AT: 2026-11-18
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,7 +11,15 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-11-06)
+## 0. Where things stand (2026-11-18)
+
+- **2026-11-18, one PR for 2.43-2.45**: the score is capped at 30 when
+  the title's lead technology is missed or the post is junior for a
+  senior profile (the four far-IT corpus offers went from 36-52 to 30,
+  nothing else moved on the VM's 22 real titles), and says why; the
+  public site keeps its caps, bans, visitors and their finished CVs
+  across a deploy; a failed VM build backs off and images are pruned.
+  The compact prompt is measured and stays on (2.25e closed).
 
 - **2026-11-06, cv.<domain> repaired twice**: the VM mounted `profile.json`
   alone, so a replaced profile was never seen and every run failed its quote
@@ -1556,7 +1564,29 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   prunes the dangling images. Tests: 2 in `server.test.js`, 3 cases in
   `test-auto-deploy.sh` (one rewritten); 6 defences (http.json), 4
   (auto-deploy.json), one retargeted. The visitors' job lists still die
-  with the jobs (in memory): a restart shows an empty list.
+  with the jobs (in memory): a restart shows an empty list (2.45).
+
+- [x] **2.45** (2026-11-18) **The cap says why; a visitor's CVs survive a
+  restart.** `fit.cap` reaches the job view (`src/view.js`), the report
+  ("Score capped at 30: ...") and the page (`capLabel` in `web/app.js`,
+  in French: the lead technology missed, or a junior post for a senior
+  profile). The public state also keeps each finished job (id, visitor,
+  title, model, run folder; at most `maxJobs`); at start
+  `deps.restore(dir)` (`serve.js`: the run read back as `reuse` does)
+  rebuilds it on its visitor's page; a folder gone is skipped. Tests: the
+  junior-title test reads the report and the view; `a visitor finds its
+  finished CVs again after a restart`. 4 defences. The page's French
+  label is untested (no browser harness).
+
+- [ ] **2.46** **The whole corpus again, with the caps of 2.43.** Start
+  the laptop router (copy the binary first, `sonnet-qwen.local.toml`,
+  `--listen 127.0.0.1:18789`), then from `cv/`: `node
+  scripts/measure-analysis.mjs --url http://127.0.0.1:18789 --profile
+  ~/.itsaresume/profile.json > ~/.itsaresume/out/corpus-run-4.txt`, then
+  `node scripts/corpus-check.mjs ~/.itsaresume/out/corpus-run-4.txt`.
+  Done when every offer is in its band, or each one out is named with its
+  cause (a row the model read differently, the spread of +-7). About 70
+  Claude calls.
 
 ## 9. Open on purpose
 

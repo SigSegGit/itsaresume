@@ -1206,11 +1206,14 @@ test('the public caps, bans and visitors survive a restart', async (t) => {
     return { start, kept: () => kept };
   };
 
-  // The daily cap: two CVs, then a restart, then refused.
+  // The daily cap: two CVs, then a restart, then refused. They fail (the
+  // fake backend's "boom"): a finished CV writes the state too, a failed
+  // one does not, so only the admission's own write is tested here.
+  const failing = { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE boom') }] };
   const capped = scene();
   const alice = await (await capped.start()).visit('203.0.113.7');
-  assert.equal((await alice.post('/api/jobs', one)).status, 202);
-  assert.equal((await alice.post('/api/jobs', one)).status, 202);
+  assert.equal((await alice.post('/api/jobs', failing)).status, 202);
+  assert.equal((await alice.post('/api/jobs', failing)).status, 202);
   const daily = await (await (await capped.start(1)).visit('192.0.2.1')).post('/api/jobs', one);
   assert.equal(daily.status, 429);
   assert.match(JSON.parse(daily.text).error, /aujourd/);
