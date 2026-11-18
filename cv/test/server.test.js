@@ -281,9 +281,10 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
+  const dirs = new Map();
   const app = createApp({
     deps: {
       status: status ?? (async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false } })),
@@ -296,10 +297,11 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       ...(offerText ? { offerText } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
-      tailor: async ({ offer }) => {
+      tailor: async ({ offer, onStep }) => {
         calls.tailored += 1;
         if (offer.includes('boom')) throw new Error('router http://10.0.0.5:54321 refused: model qwen3 not loaded');
         const result = fakeResult(offer);
+        dirs.set('last', result.dir);
         writeFileSync(join(result.dir, 'report.md'), '# private notes');
         result.view = {
           ...result.view,
@@ -313,7 +315,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
         return result;
       },
     },
-    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), ...(maxJobs ? { maxJobs } : {}), now: () => clock.now },
+    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), ...(maxJobs ? { maxJobs } : {}), ...(service ? { service, serviceTtlMs } : {}), now: () => clock.now },
   });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   t.after(() => { app.server.closeAllConnections(); app.server.close(); });
@@ -333,7 +335,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       follow: (path) => call(port, { path, headers: { ...host, 'X-Forwarded-For': ip, Cookie: cookie ?? String(page.headers['set-cookie'] ?? '').split(';')[0] } }),
     };
   };
-  return { ...app, port, clock, calls, host, visit };
+  return { ...app, port, clock, calls, host, visit, dirs };
 }
 
 test('public mode answers to its public name and origin, not to another', async (t) => {
@@ -1332,4 +1334,41 @@ test('a pdf or docx offer is read as text, in local and public mode', async (t) 
   const pub = await startPublic(t, { offerText });
   const visitor = await pub.visit();
   assert.equal((await visitor.post('/api/offer-text', { name: 'offre.docx', data })).status, 200);
+});
+
+// 6.1 (the owner, 2026-11-18: a "service" mode beside his own page): in
+// public mode with `service`, a run may carry the candidate's own profile
+// files (never links: the server fetches nothing for a visitor); its CV is
+// not kept: removed after serviceTtlMs, never reused, never in the state.
+test('service mode: a visitor brings a profile, the CV is served then removed, nothing kept', async (t) => {
+  let kept = null;
+  const state = { load: () => kept, save: (value) => { kept = JSON.parse(JSON.stringify(value)); } };
+  const seen = [];
+  const app = await startPublic(t, { state, service: true, serviceTtlMs: 150, perVisitorPerHour: 10 });
+  const visitor = await app.visit();
+  const sources = [{ name: 'Profile.csv', data: Buffer.from('First Name,Last Name\nSam,Doe').toString('base64') }];
+  const answer = await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }], sources });
+  assert.equal(answer.status, 202, answer.text);
+  const [job] = JSON.parse(answer.text);
+  let detail;
+  for (let i = 0; i < 100; i += 1) {
+    detail = JSON.parse((await visitor.get(`/api/jobs/${job.id}`)).text);
+    if (detail.status === 'done') break;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  assert.equal(detail.status, 'done');
+  assert.equal(detail.service, true);
+  assert.equal((await visitor.follow(`/api/jobs/${job.id}/files/cv.pdf`)).status, 200, 'served while it lives');
+  assert.ok(!(kept?.jobs ?? []).some((saved) => saved.id === job.id), 'never in the public state');
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  assert.equal((await visitor.follow(`/api/jobs/${job.id}/files/cv.pdf`)).status, 404, 'removed after its time');
+  assert.equal(existsSync(app.dirs.get('last')), false, 'its folder is gone');
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }], links: ['https://example.org/me'] })).status, 403, 'no link fetched for a visitor');
+});
+
+test('without service mode a visitor cannot bring a profile', async (t) => {
+  const app = await startPublic(t);
+  const visitor = await app.visit();
+  const sources = [{ name: 'cv.txt', data: Buffer.from('Sam Doe, SRE').toString('base64') }];
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }], sources })).status, 403);
 });
