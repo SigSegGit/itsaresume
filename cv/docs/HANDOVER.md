@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.46
-TITLE: 2.43-2.45 in one PR (score capped by the title's core and level, the cap explained, public state and CVs across deploys, deploy backoff); next 2.46: the whole corpus rerun with the caps
+NEXT: done
+TITLE: 2.43-2.46 and router 8.59 in one PR; the corpus is in band (35/35, two after one rerun); section 8 has no step left: the next comes from the owner (his next real runs, a new ask)
 WRITTEN-AT: 2026-11-18
 -->
 
@@ -1578,7 +1578,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   finished CVs again after a restart`. 4 defences. The page's French
   label is untested (no browser harness).
 
-- [ ] **2.46** **The whole corpus again, with the caps of 2.43.** Start
+- [x] **2.46** **The whole corpus again, with the caps of 2.43.** Start
   the laptop router (copy the binary first, `sonnet-qwen.local.toml`,
   `--listen 127.0.0.1:18789`), then from `cv/`: `node
   scripts/measure-analysis.mjs --url http://127.0.0.1:18789 --profile
@@ -1587,6 +1587,13 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   Done when every offer is in its band, or each one out is named with its
   cause (a row the model read differently, the spread of +-7). About 70
   Claude calls.
+  **Done 2026-11-18** (`~/.itsaresume/out/corpus-run-4.txt`): 33 of 35
+  in band, no refusal but one; the four far-IT offers capped at 30 by
+  2.43, two off-track ones capped too (architect DPLG 14, kitesurf 10,
+  already low). Out: `en-platform-startup` 57 (63 before, one row
+  adjacent -> no, no cap) and `fr-near-ingenieur-production-sre-paiement`
+  refused (an invalid analysis twice); rerun once each: 63 and 93, in
+  band. The model's spread, not the caps.
 
 ## 9. Open on purpose
 
