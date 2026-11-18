@@ -270,3 +270,17 @@ test('alternatives the offer joins with "ou" are one requirement, met by any; it
     ['AWS / Azure / GCP', 'yes'], ['Linux', 'no'], ['Terraform', 'yes'], ['Kubernetes / OpenShift', 'no'], ['Podman', 'no'], ['Ansible', 'adjacent'],
   ]);
 });
+
+test('normalize caps a senior profile on a junior title, and says why', () => {
+  const senior = { ...v4, experiences: v4.experiences.map((experience, index) => (index === 0 ? { ...experience, start: '2008' } : experience)) };
+  const answer = {
+    language: 'en', summary: [], experiences: [], skill_groups: [],
+    requirements: [{ name: 'Linux', importance: 'must', match: 'yes', skills: [] }],
+    fit: { score: 90, rationale: 'x' },
+  };
+  const { analysis } = normalize(structuredClone(answer), senior, { offer: 'Junior Linux administrator\n\nLinux.' });
+  assert.equal(analysis.fit.score, CORE_MISSED_CAP);
+  assert.match(analysis.fit.cap ?? '', /junior|level/i);
+  const { analysis: young } = normalize(structuredClone(answer), v4, { offer: 'Junior Linux administrator\n\nLinux.' });
+  assert.equal(young.fit.cap, undefined, 'a profile under eight years is not senior');
+});
