@@ -334,6 +334,13 @@ const MATCH = { yes: ['ok', 'oui'], adjacent: ['warn', 'proche'], no: ['bad', 'n
 /** The code's gap labels, in the page's language. */
 const GAP_LABELS = [[/ \(never claimed\)$/, ' (jamais revendiqué)'], [/ \(lab only\)$/, ' (lab uniquement)'], [/ \(to verify\)$/, ' (à vérifier)']];
 const gapLabel = (gap) => GAP_LABELS.reduce((text, [pattern, label]) => text.replace(pattern, label), gap);
+/** 2.45: the cap's reason in French (score.js capOf writes it in English). */
+const capLabel = (cap) => {
+  const core = /^core: (.+), the technology the title leads with, is missed$/.exec(cap);
+  if (core) return `Score plafonné à 30 : ${core[1]}, la technologie en tête du titre, manque au profil.`;
+  if (cap.startsWith('level:')) return 'Score plafonné à 30 : poste junior ou de premier niveau, profil senior.';
+  return `Score plafonné à 30 : ${cap}`;
+};
 const details = new Map();
 const cards = new Map();
 
@@ -423,6 +430,8 @@ function resultOf(job, detail) {
       h('p', { class: 'headline', text: detail.headline }),
       h('ul', { class: 'summary' }, detail.summary.map((s) => h('li', { text: s }))),
       gaps.length ? h('p', { class: 'gaps', text: `Écarts sur l’essentiel : ${gaps.map(gapLabel).join(', ')}` }) : null,
+      // 2.45: why the score is capped (score.js capOf).
+      fit.cap ? h('p', { class: 'gaps', text: capLabel(fit.cap) }) : null,
       detail.offer_instructions ? h('p', { class: 'gaps', text: "Cette offre contient des consignes adressées au candidat ou à une IA : elles n'ont pas été appliquées." }) : null,
       detail.skipped ? h('p', { class: 'gaps', text: `Non fait : ${detail.skipped.reason}` }) : null)),
     h('div', { class: 'downloads' }, downloads),

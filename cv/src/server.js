@@ -330,7 +330,12 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
   function persist() {
     if (!publicMode || !deps.state) return;
     try {
-      deps.state.save({ accepted, bans: [...bans], visitors: [...visitors.keys()].map((visitor) => [visitor, invited.get(visitor) ?? null]) });
+      // 2.45: a visitor's finished CVs, by their run folder, read back at start.
+      const done = [...jobs.values()]
+        .filter((job) => job.status === 'done' && job.visitor && job.result?.dir)
+        .slice(-(publicMode.maxJobs ?? MAX_JOBS))
+        .map((job) => ({ id: job.id, visitor: job.visitor, title: job.title, model: job.model, via: job.via, dir: job.result.dir }));
+      deps.state.save({ accepted, bans: [...bans], visitors: [...visitors.keys()].map((visitor) => [visitor, invited.get(visitor) ?? null]), jobs: done });
     } catch (error) {
       process.stderr.write(`itsacv serve: the public state cannot be written: ${error.message ?? error}\n`);
     }
@@ -345,6 +350,19 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (!/^[0-9a-f]{48}$/.test(visitor)) continue;
         visitors.set(visitor, new Set());
         if (code) invited.set(visitor, code);
+      }
+      for (const saved_ of saved?.jobs ?? []) {
+        if (!deps.restore || !visitors.has(saved_.visitor) || jobs.has(saved_.id)) continue;
+        let result = null;
+        try {
+          result = deps.restore(saved_.dir);
+        } catch {
+          result = null;
+        }
+        if (!result) continue;
+        const { id, visitor, title, model, via } = saved_;
+        jobs.set(id, { id, visitor, title, model, via, status: 'done', steps: [], times: [], result, restored: true });
+        visitors.get(visitor).add(id);
       }
     } catch (error) {
       process.stderr.write(`itsacv serve: the public state cannot be read: ${error.message ?? error}\n`);
@@ -423,6 +441,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (job.renamed) keepTitle(job);
         job.status = 'done';
         job.endedAt = clock();
+        persist();
       } catch (error) {
         job.status = 'failed';
         job.endedAt = clock();

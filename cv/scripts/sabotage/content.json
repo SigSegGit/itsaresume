@@ -2080,6 +2080,22 @@
       "expect": [
         "a junior or first-level title caps a senior profile in the low band"
       ]
+    },
+    "Score: the report says why the score is capped": {
+      "file": "src/report.js",
+      "live": "    ...(analysis.fit.cap ? ['', `Score capped",
+      "dead": "    ...(false ? ['', `Score capped",
+      "expect": [
+        "normalize caps a senior profile on a junior title, and says why"
+      ]
+    },
+    "Score: the page view carries the cap": {
+      "file": "src/view.js",
+      "live": "      cap: analysis.fit.cap ?? null,",
+      "dead": "      cap: null,",
+      "expect": [
+        "normalize caps a senior profile on a junior title, and says why"
+      ]
     }
   }
 }

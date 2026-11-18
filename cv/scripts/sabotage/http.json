@@ -1244,6 +1244,22 @@
       "expect": [
         "an unreadable public state starts empty, never a crash"
       ]
+    },
+    "Public state: a finished CV is written down": {
+      "file": "src/server.js",
+      "live": "        job.endedAt = clock();\n        persist();",
+      "dead": "        job.endedAt = clock();",
+      "expect": [
+        "a visitor finds its finished CVs again after a restart"
+      ]
+    },
+    "Public state: a CV whose folder is gone is skipped": {
+      "file": "src/server.js",
+      "live": "        if (!result) continue;\n        const { id, visitor, title, model, via } = saved_;",
+      "dead": "        const { id, visitor, title, model, via } = saved_;",
+      "expect": [
+        "a visitor finds its finished CVs again after a restart"
+      ]
     }
   }
 }

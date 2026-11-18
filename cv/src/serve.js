@@ -117,6 +117,12 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
   if (problem) throw new Error(problem);
   // 4.1: the owner's profile, and the files of --profiles DIR (read at each use).
   const profiles = () => listProfiles({ profile: profilePath, profilesDir });
+  /** A past run as a job's result: its files, the view and the A4 page. */
+  const fromRun = (dir) => {
+    const result = readRun(dir);
+    const loaded = loadProfile(profilePath);
+    return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
+  };
   const deps = {
     status: async () => ({ ...(await status({ profilePath, url, useWord, out })), styles: { templates: listTemplates(), palettes: Object.keys(PALETTES), default: DEFAULT_STYLE } }),
     profiles: () => [...profiles().keys()],
@@ -164,12 +170,11 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     reuse: publicMode
       ? (offer) => {
           const run = findReusable(offer, loadRuns(out));
-          if (!run) return null;
-          const result = readRun(run.dir);
-          const loaded = loadProfile(profilePath);
-          return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
+          return run ? fromRun(run.dir) : null;
         }
       : undefined,
+    // 2.45: a visitor's finished CV, read back from its folder after a restart.
+    restore: publicMode ? (dir) => (existsSync(join(dir, 'analysis.json')) ? fromRun(dir) : null) : undefined,
     // 2.22c: the owner's questions over every run, and his answers beside
     // the profile; the server never offers these on the public host.
     questions: publicMode ? undefined : () => pageQuestions({ loaded: loadProfile(profilePath), profilePath, out }),
