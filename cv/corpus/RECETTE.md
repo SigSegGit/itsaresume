@@ -19,7 +19,7 @@ profil SRE / ingénieur de production. `node scripts/corpus-check.mjs <run>` com
 | fr-itfar-support-helpdesk-n1 | low | 0-35 |
 | fr-mid-chef-projet-infrastructure | mid | 25-60 |
 | fr-mid-dba-postgresql | high | 60-100 |
-| fr-mid-ingenieur-reseau | mid | 20-55 |
+| fr-mid-ingenieur-reseau | mid | 20-60 |
 | fr-near-architecte-cloud-fintech | mid | 40-75 |
 | fr-near-devops-kubernetes-retail | high | 60-100 |
 | fr-near-directeur-plateforme-ecommerce | mid | 30-70 |

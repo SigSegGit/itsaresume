@@ -406,7 +406,7 @@ Traps met, each cost time once:
     without him typing) The VM follows `main` by itself:
     `deploy/vm-generator/auto-deploy.sh` (fast-forward only, then `docker
     compose up -d --build`; refuses local edits, local commits, another
-    branch; a failed build is retried at the next run) under a systemd
+    branch; a failed build is retried after a doubling wait, 2.44) under a systemd
     user timer (`deploy/vm-generator/systemd/`, every 5 min). Pull, not
     push: no key or address of the VM leaves it, nothing in CI or a
     cloud session. Six cases in `test-auto-deploy.sh` (real git, fake
@@ -1489,7 +1489,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   retargeted (a `compact` alone keeps the shortlist off). Deploying `main`
   turns it on for the VM too.
 
-- [ ] **2.25e** **The first real runs with the compact prompt.** After the
+- [x] **2.25e** **The first real runs with the compact prompt.** After the
   VM deploys `main`, read the next real entries of `qa-log.jsonl` there
   (`tail -n 10`, fields `model`, `tokens`, `attempts`, `fit.score`; never
   the whole log) against the same models' entries before 2026-11-12: the
@@ -1515,6 +1515,48 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   When both are up, rerun the compare on that offer and close 2.25e; if
   claude's input does not drop either, open a step to measure the
   shortlist's cost per offer length.
+  **Closed 2026-11-18**: claude on the same offer 7244 input + cache
+  tokens against 7670 (-6 %), score 96 (98), one attempt; gemini answered
+  503 "high demand" twice (left: it is no regression of ours). Attempts
+  hold everywhere, no score fell: the compact prompt stays on. The
+  shortlist's cost on short offers (groq, bionic +4-5 %) is not worth a
+  step now.
+
+- [x] **2.43** (the corpus run of 2026-11-17, its proposal approved by the
+  owner on 2026-11-18: "avance fort") **The job's core and level weigh in
+  the score.** The COBOL, PHP, React and helpdesk offers stayed mid on
+  generic rows (SQL, Git, Windows, ITIL). `capOf` (`src/score.js`) caps
+  the score at `CORE_MISSED_CAP` when the technology the title leads with
+  (the must named first in the offer's first line) is missed, or when the
+  title is junior or first-level (`JUNIOR_TITLE`: junior, débutant,
+  stagiaire, alternance, niveau 1, N1, entry-level...) for a senior
+  profile (first experience `SENIOR_YEARS` = 8 years ago or more) and does
+  not also ask for seniority (`SENIOR_TITLE`: lead, senior, confirmé...).
+  `normalize` passes the offer, writes `fit.cap` and a repair saying why.
+  Replayed on the 22 distinct real titles of the VM: no core cap; one
+  junior cap ("Lead Architecte SecOps Junior"), removed by `SENIOR_TITLE`.
+  4 tests, 8 defences (content.json), 3 retargeted. **Measured
+  2026-11-18** on the six offers it concerns (`measure-analysis.mjs
+  --only`, 6 Claude calls): COBOL 39 -> 30 (core: COBOL), PHP 52 -> 30
+  (core: PHP), fullstack junior 36 -> 30 and helpdesk N1 51 -> 30 (level),
+  all in their band now; the DBA offer stays high (78), the network one
+  56, its band widened to 20-60 (a mid band, the measured spread is +-7).
+  `measure-analysis.mjs` prints the normalised score and its cap.
+
+- [x] **2.44** (2026-11-18, the 2026-10-05 redteam's open items, §9)
+  **The public site survives a deploy, a failed build does not hammer.**
+  The daily cap, the per-visitor hour, the bans and the visitors' tokens
+  (with their invitation) are written down at each change
+  (`deps.state`, `out/.public-state.json`, mode 600, renamed into place)
+  and read back at start: a deploy no longer resets the cap nor logs a
+  page out; entries past a day, bans past their end are dropped;
+  unreadable or unwritable, memory only, never a crash. `auto-deploy.sh`:
+  a failed build of a commit waits 5 minutes, doubled at each failure
+  (6 hours at most), a new commit is built at once; a successful deploy
+  prunes the dangling images. Tests: 2 in `server.test.js`, 3 cases in
+  `test-auto-deploy.sh` (one rewritten); 6 defences (http.json), 4
+  (auto-deploy.json), one retargeted. The visitors' job lists still die
+  with the jobs (in memory): a restart shows an empty list.
 
 ## 9. Open on purpose
 
@@ -1540,10 +1582,9 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   evicted the visitors who owned CVs (empty ones go first now); an
   unreadable `invites.json` was a 500 (fails closed now); two live
   invitations could share a label; a backend named `constructor` reached
-  a prototype in the token sums. **Left open:** a failed build is retried
-  every 5 minutes with no backoff and no image prune (disk); the
-  visitors, caps and bans live in memory, so every deploy resets the
-  daily cap and loses visitors' lists; `createInvite`/`revokeInvite` run
+  a prototype in the token sums. **Left open:** (the backoff, the prune
+  and the caps, bans and visitors across a deploy: fixed by 2.44) the
+  visitors' job lists still die with a restart; `createInvite`/`revokeInvite` run
   at the same time can lose one update (no lock: the owner runs one at a
   time); calls that fail before an answer count no tokens.
   Fixed 2026-10-31: finished jobs were never dropped from memory (`jobs`
@@ -1579,22 +1620,6 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
 
 ## 10. Waiting for the owner
 
-- **2026-11-17: clear the VM's billing-tripwire latch** (the router's
-  journal folder on the VM, file `journal.billing-tripped`, then restart
-  the router container). It latched on 2026-11-15 when claude reported
-  overage at the weekly limit; extra usage is off on the account. Until
-  then the VM generates with groq (and bionic when the laptop is on).
-  Clearing it was refused to Claude by the safety classifier: the
-  owner's act, once: from router 8.58 (2026-11-18) an overage latch lifts
-  by itself at the plan's reset, but this one was written before and
-  holds no reset time.
-
-- **2026-11-15: the corpus run** (27 offers of `corpus/`, about 54 Claude
-  calls on the Pro quota): say go, then run them through `tailor --no-layout`
-  and check the scores against their expected bands with the corpus script.
-
-- **2026-11-12: log the laptop's `claude` in again** (`claude` then
-  `/login`, or `claude auth status` to check): it answered "OAuth session
-  expired"; 2.42b waits for it. The VM has its own token and runs on.
+Nothing in the repository waits for the owner.
 
 In `~/.itsaresume/HANDOVER-prive.md` (private).

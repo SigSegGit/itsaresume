@@ -1031,7 +1031,7 @@
     },
     "Public: a page opened before a restart is adopted again": {
       "file": "src/server.js",
-      "live": "    remember(given);\n    return given;",
+      "live": "    remember(given);\n    persist();\n    return given;",
       "dead": "    return null;",
       "expect": [
         "a public page opened before a restart can still post after it"
@@ -1211,6 +1211,38 @@
       "dead": "        if (false) throw new HttpError(403,",
       "expect": [
         "4.11: a public visitor cannot send sources or links"
+      ]
+    },
+    "Public state: the daily cap is written down": {
+      "file": "src/server.js",
+      "live": "    for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });\n    persist();",
+      "dead": "    for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });",
+      "expect": [
+        "the public caps, bans and visitors survive a restart"
+      ]
+    },
+    "Public state: a ban is written down": {
+      "file": "src/server.js",
+      "live": "      while (bans.size > MAX_VISITORS) bans.delete(bans.keys().next().value);\n      persist();",
+      "dead": "      while (bans.size > MAX_VISITORS) bans.delete(bans.keys().next().value);",
+      "expect": [
+        "the public caps, bans and visitors survive a restart"
+      ]
+    },
+    "Public state: a new visitor is written down": {
+      "file": "src/server.js",
+      "live": "    if (live) invited.set(fresh, live);\n    persist();",
+      "dead": "    if (live) invited.set(fresh, live);",
+      "expect": [
+        "the public caps, bans and visitors survive a restart"
+      ]
+    },
+    "Public state: a broken store is memory only": {
+      "file": "src/server.js",
+      "live": "    } catch (error) {\n      process.stderr.write(`itsacv serve: the public state cannot be written",
+      "dead": "    } finally {\n      process.stderr.write(`itsacv serve: the public state cannot be written",
+      "expect": [
+        "an unreadable public state starts empty, never a crash"
       ]
     }
   }

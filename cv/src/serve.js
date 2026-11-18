@@ -1,7 +1,7 @@
 // `itsacv serve`: the web server wired to the real profile, model and Word.
 
 import { request } from 'node:http';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createApp } from './server.js';
@@ -24,6 +24,9 @@ import { DEFAULT_STYLE, PALETTES, listTemplates } from './style.js';
 import { listingOf, rankListed, rankProfiles } from './rank.js';
 import { fromJsonResume, fromLinkedInFiles, writeProfile } from './import.js';
 import { fileListingCache } from './listing.js';
+
+/** 2.44: the public caps, bans and visitors, beside the runs (the owner's only). */
+const PUBLIC_STATE = '.public-state.json';
 
 /** Whether the router answers its health check within two seconds. */
 function routerUp(url) {
@@ -183,6 +186,17 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       writeFileSync(join(dir, 'compare.json'), `${JSON.stringify(comparison, null, 2)}\n`);
     },
     invites: () => loadInvites(out),
+    // 2.44: the public caps, bans and visitors, so a deploy does not reset them.
+    state: publicMode
+      ? {
+          load: () => (existsSync(join(out, PUBLIC_STATE)) ? JSON.parse(readFileSync(join(out, PUBLIC_STATE), 'utf8')) : null),
+          save: (value) => {
+            const file = join(out, PUBLIC_STATE);
+            writeFileSync(`${file}.tmp`, JSON.stringify(value), { mode: 0o600 });
+            renameSync(`${file}.tmp`, file);
+          },
+        }
+      : undefined,
   };
   const { server } = createApp({ deps, publicMode, addon });
   await new Promise((resolve, reject) => {

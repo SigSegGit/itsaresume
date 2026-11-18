@@ -712,8 +712,8 @@
     },
     "Honesty: the score is computed, not the model's": {
       "file": "src/normalize.js",
-      "live": "const score = scoreOf(analysis.requirements ?? [], { lab });",
-      "dead": "const score = fit.score ?? scoreOf(analysis.requirements ?? [], { lab });",
+      "live": "  const score = scoreOf(analysis.requirements ?? [], { lab, offer, senior });",
+      "dead": "  const score = fit.score ?? scoreOf(analysis.requirements ?? [], { lab, offer, senior });",
       "expect": [
         "the score is computed from the requirements, not taken from the model"
       ]
@@ -1145,8 +1145,8 @@
     },
     "Rules: normalisation scores with the lab skills": {
       "file": "src/normalize.js",
-      "live": "const score = scoreOf(analysis.requirements ?? [], { lab });",
-      "dead": "const score = scoreOf(analysis.requirements ?? []);",
+      "live": "  const score = scoreOf(analysis.requirements ?? [], { lab, offer, senior });",
+      "dead": "  const score = scoreOf(analysis.requirements ?? [], { offer, senior });",
       "expect": [
         "a requirement met by lab skills only counts half"
       ]

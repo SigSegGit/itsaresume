@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { request } from 'node:http';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp, MAX_BODY, MAX_OFFERS } from '../src/server.js';
@@ -280,7 +280,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const app = createApp({
@@ -290,6 +290,8 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       ...(invites ? { invites: typeof invites === 'function' ? invites : () => invites } : {}),
       ...(log ? { log } : {}),
       ...(profiles ? { profiles } : {}),
+      ...(state ? { state } : {}),
+      ...(restore ? { restore } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer }) => {
@@ -1185,4 +1187,84 @@ test('4.12: a job carries its style to tailor; an unknown palette is refused', a
   } finally {
     app.server.close();
   }
+});
+
+// 2.44 (from the 2026-10-05 redteam, left open): every deploy restarted the
+// generator and reset the daily cap, the bans and the visitors' tokens. They
+// are written down (deps.state) and read back at start.
+test('the public caps, bans and visitors survive a restart', async (t) => {
+  const one = { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] };
+  /** A store of its own, and a server started on it at `at` minutes. */
+  const scene = () => {
+    let kept = null;
+    const state = { load: () => kept, save: (value) => { kept = JSON.parse(JSON.stringify(value)); } };
+    const start = async (at = 0) => {
+      const app = await startPublic(t, { perDay: 2, perVisitorPerHour: 10, maxQueued: 10, banAfter: 3, state });
+      app.clock.now += at * 60 * 1000;
+      return app;
+    };
+    return { start, kept: () => kept };
+  };
+
+  // The daily cap: two CVs, then a restart, then refused.
+  const capped = scene();
+  const alice = await (await capped.start()).visit('203.0.113.7');
+  assert.equal((await alice.post('/api/jobs', one)).status, 202);
+  assert.equal((await alice.post('/api/jobs', one)).status, 202);
+  const daily = await (await (await capped.start(1)).visit('192.0.2.1')).post('/api/jobs', one);
+  assert.equal(daily.status, 429);
+  assert.match(JSON.parse(daily.text).error, /aujourd/);
+  // A day later the cap is free again.
+  assert.equal((await (await (await capped.start(25 * 60)).visit('192.0.2.1')).post('/api/jobs', one)).status, 202);
+
+  // A ban outlives the restart.
+  const hammered = scene();
+  const mallory = await (await hammered.start()).visit('198.51.100.66');
+  for (let i = 0; i < 4; i += 1) await mallory.post('/api/jobs', one);
+  assert.ok(banned(await (await (await hammered.start(1)).visit('198.51.100.66')).post('/api/jobs', one)));
+
+  // A page opened before the restart keeps its token.
+  const visited = scene();
+  const carol = await (await visited.start()).visit('203.0.113.9');
+  assert.ok(visited.kept(), 'the state is written down');
+  const back = await (await visited.start(1)).visit('203.0.113.9', '/', carol.cookie);
+  assert.equal(back.token, carol.token);
+});
+
+test('an unreadable public state starts empty, never a crash', async (t) => {
+  const state = { load: () => { throw new Error('corrupt'); }, save: () => { throw new Error('disk full'); } };
+  const app = await startPublic(t, { state });
+  const visitor = await app.visit();
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }] })).status, 202);
+});
+
+// 2.45: the visitors' finished CVs died with every restart (a deploy): the
+// page came back empty. A finished job is written down with its run folder
+// and read back from it (deps.restore); a folder gone is skipped.
+test('a visitor finds its finished CVs again after a restart', async (t) => {
+  let kept = null;
+  const state = { load: () => kept, save: (value) => { kept = JSON.parse(JSON.stringify(value)); } };
+  const restore = (dir) => (existsSync(dir) ? { ...fakeResult('restored'), dir } : null);
+  const one = { offers: [{ title: 'SRE banque', text: PUBLIC_OFFER('Senior SRE') }] };
+  const first = await startPublic(t, { state, restore, perVisitorPerHour: 10 });
+  const alice = await first.visit('203.0.113.7');
+  assert.equal((await alice.post('/api/jobs', one)).status, 202);
+  assert.equal((await alice.post('/api/jobs', one)).status, 202);
+  let list = [];
+  for (let i = 0; i < 200 && !(list.length === 2 && list.every((job) => job.status === 'done')); i += 1) {
+    list = JSON.parse((await alice.get('/api/jobs')).text);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  assert.equal(list.length, 2);
+  const gone = kept.jobs.find((job) => job.id === list[1].id);
+  rmSync(gone.dir, { recursive: true, force: true });
+
+  const second = await startPublic(t, { state, restore });
+  const back = await second.visit('203.0.113.7', '/', alice.cookie);
+  const again = JSON.parse((await back.get('/api/jobs')).text);
+  assert.deepEqual(again.map((job) => [job.id, job.status, job.title]), [[list[0].id, 'done', 'SRE banque']], 'the job whose folder is gone is skipped');
+  assert.equal(again[0].fit.score, 72);
+  assert.equal((await back.get(`/api/jobs/${list[0].id}`)).status, 200);
+  const other = await second.visit('198.51.100.9');
+  assert.deepEqual(JSON.parse((await other.get('/api/jobs')).text), [], 'another page does not see it');
 });

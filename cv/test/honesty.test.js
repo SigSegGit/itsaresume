@@ -108,7 +108,8 @@ test('a junior or first-level title caps a senior profile in the low band', () =
     assert.equal(scoreOf(rows, { offer: title, senior: true }), CORE_MISSED_CAP, title);
     assert.equal(scoreOf(rows, { offer: title }), 100, `${title}: a junior profile is not capped`);
   }
-  for (const title of ['Ingénieur SRE senior', 'Administrateur N2/N3', 'Chef de projet stage gate']) {
+  // A title that also says lead or senior (a real one, 2026-10) is contradictory: not capped.
+  for (const title of ['Ingénieur SRE senior', 'Administrateur N2/N3', 'Chef de projet stage gate', 'Lead Architecte SecOps Junior (H/F/NB)', 'DevOps junior à confirmé']) {
     assert.equal(scoreOf(rows, { offer: title, senior: true }), 100, title);
   }
 });

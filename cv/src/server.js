@@ -245,12 +245,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     const live = code && invitationOf(invites(), code) ? code : null;
     const kept = cookieOf(request);
     if (kept) {
-      if (live) invited.set(kept, live);
+      if (live) {
+        invited.set(kept, live);
+        persist();
+      }
       return { value: kept };
     }
     const fresh = randomBytes(24).toString('hex');
     remember(fresh);
     if (live) invited.set(fresh, live);
+    persist();
     return { value: fresh, cookie: `itsacv_visitor=${fresh}; Path=/; Max-Age=${VISITOR_DAYS * 24 * 3600}; HttpOnly; Secure; SameSite=Strict` };
   };
   const visitorOf = (request) => {
@@ -263,6 +267,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     // 2026-11-06, "a missing or wrong CSRF token").
     if (rawCookieOf(request) !== given) return null;
     remember(given);
+    persist();
     return given;
   };
   // A read: the page's header, or the cookie alone for a link it renders (a
@@ -284,6 +289,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       throw new HttpError(429, `Le plafond de ${publicMode.perDay} CV par jour est atteint aujourd’hui : réessaie demain.`);
     }
     for (let i = 0; i < count; i += 1) accepted.push({ at: now, client });
+    persist();
   }
 
   // Hammering is banned (public mode, memory only): more than banAfter attempts
@@ -313,7 +319,35 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     if (over) {
       for (const key of keys) bans.set(key, now + (publicMode.banHours ?? 24) * HOUR);
       while (bans.size > MAX_VISITORS) bans.delete(bans.keys().next().value);
+      persist();
       throw new HttpError(429, BAN_MESSAGE);
+    }
+  }
+
+  // 2.44: the caps, bans and visitors outlive a restart (every deploy is one):
+  // written down at each change (deps.state), read back here. Unreadable or
+  // unwritable: memory only, as before, never a crash.
+  function persist() {
+    if (!publicMode || !deps.state) return;
+    try {
+      deps.state.save({ accepted, bans: [...bans], visitors: [...visitors.keys()].map((visitor) => [visitor, invited.get(visitor) ?? null]) });
+    } catch (error) {
+      process.stderr.write(`itsacv serve: the public state cannot be written: ${error.message ?? error}\n`);
+    }
+  }
+  if (publicMode && deps.state) {
+    try {
+      const saved = deps.state.load();
+      const now = publicMode.now();
+      for (const entry of saved?.accepted ?? []) accepted.push({ at: entry.at, client: entry.client });
+      for (const [key, until] of saved?.bans ?? []) if (until > now) bans.set(key, until);
+      for (const [visitor, code] of (saved?.visitors ?? []).slice(-(publicMode.maxVisitors ?? MAX_VISITORS))) {
+        if (!/^[0-9a-f]{48}$/.test(visitor)) continue;
+        visitors.set(visitor, new Set());
+        if (code) invited.set(visitor, code);
+      }
+    } catch (error) {
+      process.stderr.write(`itsacv serve: the public state cannot be read: ${error.message ?? error}\n`);
     }
   }
 
