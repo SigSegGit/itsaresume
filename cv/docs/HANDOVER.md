@@ -1630,6 +1630,12 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   partial (scores 38-75), none the other way. 2 tests, 2 defences, one
   retargeted.
 
+- [x] **2.49** (2026-11-18) **A comparison always fits the VM's queue.**
+  The comparison of the CFM offer was refused: five models answered
+  available (openai too, "unknown" since the restart), the queue held
+  four. `--max-queued 6` in `deploy/vm-generator/compose.yaml`; the test
+  ties it to `MODELS` (every model but auto, and one visitor more).
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in
