@@ -11,7 +11,7 @@
 // The page itself only ever sets textContent (test/web.test.js checks it).
 
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, createReadStream, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, createReadStream, rmSync, writeFileSync } from 'node:fs';
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -140,7 +140,7 @@ function publicStatus(status) {
 function view(job, { detail = false, publicMode = null, position } = {}) {
   // Router text and paths are the owner's: a visitor only learns that it failed.
   const error = publicMode && job.status === 'failed' ? 'échec' : job.error ?? null;
-  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via, ...(job.group ? { group: job.group } : {}), ...(position ? { position } : {}) };
+  const base = { id: job.id, title: job.title, status: job.status, steps: job.steps, error, elapsed_ms: job.elapsed?.() ?? null, model: job.model, via: job.via, ...(job.group ? { group: job.group } : {}), ...(job.service ? { service: true } : {}), ...(position ? { position } : {}) };
   if (!job.result) return base;
   const { fit } = job.result.view;
   base.fit = { score: fit.score, verdict: fit.verdict, qualification: fit.qualification?.level ?? null };
@@ -339,7 +339,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     try {
       // 2.45: a visitor's finished CVs, by their run folder, read back at start.
       const done = [...jobs.values()]
-        .filter((job) => job.status === 'done' && job.visitor && job.result?.dir)
+        .filter((job) => job.status === 'done' && job.visitor && job.result?.dir && !job.service)
         .slice(-(publicMode.maxJobs ?? MAX_JOBS))
         .map((job) => ({ id: job.id, visitor: job.visitor, title: job.title, model: job.model, via: job.via, dir: job.result.dir }));
       deps.state.save({ accepted, bans: [...bans], visitors: [...visitors.keys()].map((visitor) => [visitor, invited.get(visitor) ?? null]), jobs: done });
@@ -374,6 +374,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
     } catch (error) {
       process.stderr.write(`itsacv serve: the public state cannot be read: ${error.message ?? error}\n`);
     }
+  }
+
+  // 6.1: a service CV is the visitor's: its folder goes after serviceTtlMs.
+  const SERVICE_TTL_MS = 30 * 60 * 1000;
+  function expire(job) {
+    setTimeout(() => {
+      if (job.result?.dir) rmSync(job.result.dir, { recursive: true, force: true });
+      job.result = null;
+      job.status = 'expired';
+    }, publicMode?.serviceTtlMs ?? SERVICE_TTL_MS).unref?.();
   }
 
   /** Manual QA: one line per run, kept by the owner (deps.log), never shown to visitors. */
@@ -449,6 +459,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         job.status = 'done';
         job.endedAt = clock();
         persist();
+        if (job.service) expire(job);
       } catch (error) {
         job.status = 'failed';
         job.endedAt = clock();
@@ -664,7 +675,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         const group = compared ? randomUUID() : undefined;
         // 4.11: the run's own sources (files as base64, links) and its threshold; the owner's page only.
         const { sources, links, threshold } = body;
-        if ((sources !== undefined || links !== undefined) && publicMode) throw new HttpError(403, 'les sources du run sont réservées à la page du propriétaire');
+        // 6.1: in public, the candidate's own files in service mode only, never links (no fetch for a visitor).
+        if (links !== undefined && publicMode) throw new HttpError(403, 'les liens ne sont pas lus en accès public : joins des fichiers');
+        if (sources !== undefined && publicMode && !publicMode.service) throw new HttpError(403, 'les sources du run sont réservées à la page du propriétaire');
         if (sources !== undefined && (!Array.isArray(sources) || sources.length > 10 || !sources.every((file) => typeof file?.name === 'string' && /^[^\\/:*?"<>|]{1,120}$/.test(file.name) && !file.name.startsWith('.') && typeof file.data === 'string' && file.data.length <= MAX_TEXT * 8))) {
           throw new HttpError(400, 'sources: at most 10 files { name, data (base64) }');
         }
@@ -677,7 +690,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         } catch (error) {
           throw new HttpError(400, error.message);
         }
-        const own = sources?.length || links?.length ? { sources: sources ?? [], links: links ?? [], threshold: threshold ?? 75 } : {};
+        const own = sources?.length || links?.length ? { sources: sources ?? [], links: links ?? [], threshold: threshold ?? 75, ...(publicMode ? { service: true } : {}) } : {};
         const created = offers.flatMap((offer) => {
           if (typeof offer?.text !== 'string' || !offer.text.trim() || offer.text.length > MAX_TEXT) {
             throw new HttpError(400, `offer text: a non-empty string of at most ${MAX_TEXT} characters`);
@@ -694,7 +707,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         });
         // An offer already answered is answered from its run: no model call, not counted.
         // A model chosen by hand is a measure: it always runs.
-        const reused = created.map((job) => (publicMode && deps.reuse && job.model === 'auto' ? deps.reuse(job.text) : null));
+        // 6.1: a service run is the visitor's own profile: never answered from another run.
+        const reused = created.map((job) => (publicMode && deps.reuse && job.model === 'auto' && !job.service ? deps.reuse(job.text) : null));
         const fresh = reused.filter((result) => !result).length;
         if (publicMode) admit(request, fresh, group ? Math.min(fresh, 1) : fresh);
         if (group) groups.set(group, { id: group, title: cleanName(offers[0].title ?? '') ?? 'Offre', visitor, jobs: created, comparison: null });

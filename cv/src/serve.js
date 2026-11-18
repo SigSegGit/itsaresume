@@ -165,7 +165,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       }
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep, warm: () => withModel(llm, 'local')({ system: 'Answer with OK.', prompt: 'OK' }) });
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold, style });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: sources && publicMode ? mkdtempSync(join(tmpdir(), 'itsacv-service-')) : out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold, style });
       return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.

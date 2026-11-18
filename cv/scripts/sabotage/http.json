@@ -231,8 +231,8 @@
     },
     "QA: a chosen model is never answered from a reused run": {
       "file": "src/server.js",
-      "live": "deps.reuse && job.model === 'auto' ?",
-      "dead": "deps.reuse ?",
+      "live": "deps.reuse && job.model === 'auto' && !job.service ?",
+      "dead": "deps.reuse && !job.service ?",
       "expect": [
         "in public mode the entry point is the VM, and a chosen model is never answered from a reused run"
       ]
@@ -1200,10 +1200,10 @@
     },
     "Sources (4.11): never from a public visitor": {
       "file": "src/server.js",
-      "live": "        if ((sources !== undefined || links !== undefined) && publicMode) throw new HttpError(403,",
-      "dead": "        if (false) throw new HttpError(403,",
+      "live": "if (sources !== undefined && publicMode && !publicMode.service) throw",
+      "dead": "if (false) throw",
       "expect": [
-        "4.11: a public visitor cannot send sources or links"
+        "without service mode a visitor cannot bring a profile"
       ]
     },
     "Public state: the daily cap is written down": {
@@ -1357,6 +1357,47 @@
       "dead": "const HEADINGS = [/^contexte\\b/, /^missions? principales?\\b/, /^responsabilit[ée]s\\b/, /^profil (recherch[ée]|&)/, /^comp[ée]tences (attendues|recherch[ée]es|requises)\\b/, /^description du poste\\b/, /^informations mission\\b/];",
       "expect": [
         "a skills heading repeated per domain is one offer"
+      ]
+    },
+    "Service (6.1): no link is fetched for a visitor": {
+      "file": "src/server.js",
+      "live": "if (links !== undefined && publicMode) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "service mode: a visitor brings a profile, the CV is served then removed, nothing kept",
+        "4.11: a public visitor cannot send sources or links"
+      ]
+    },
+    "Service (6.1): a service CV expires": {
+      "file": "src/server.js",
+      "live": "        if (job.service) expire(job);\n",
+      "dead": "",
+      "expect": [
+        "service mode: a visitor brings a profile, the CV is served then removed, nothing kept"
+      ]
+    },
+    "Service (6.1): a service CV is never in the public state": {
+      "file": "src/server.js",
+      "live": "job.result?.dir && !job.service)",
+      "dead": "job.result?.dir)",
+      "expect": [
+        "service mode: a visitor brings a profile, the CV is served then removed, nothing kept"
+      ]
+    },
+    "Service (6.1): the view says it is a service run": {
+      "file": "src/server.js",
+      "live": "...(job.service ? { service: true } : {}), ...(position",
+      "dead": "...(position",
+      "expect": [
+        "service mode: a visitor brings a profile, the CV is served then removed, nothing kept"
+      ]
+    },
+    "Service (6.1): the folder is removed on expiry": {
+      "file": "src/server.js",
+      "live": "      if (job.result?.dir) rmSync(job.result.dir, { recursive: true, force: true });",
+      "dead": "",
+      "expect": [
+        "service mode: a visitor brings a profile, the CV is served then removed, nothing kept"
       ]
     }
   }
