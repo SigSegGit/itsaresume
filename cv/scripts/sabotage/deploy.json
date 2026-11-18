@@ -7,7 +7,8 @@
   ],
   "files": [
     "deploy/vm-generator/compose.yaml",
-    "test/deploy.test.js"
+    "test/deploy.test.js",
+    "src/qa.js"
   ],
   "defences": {
     "Deploy: the VM router is health-checked on its own port": {
