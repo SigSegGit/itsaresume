@@ -17,7 +17,7 @@
 //   states what it asks ("Optimisation de requêtes").
 // - nothing (null): the profile is silent; the model's verdict stands.
 
-import { holders, key, siblings, spans } from './lexicon.js';
+import { familyHolders, holders, key, siblings, spans } from './lexicon.js';
 import { identityNames } from './profile.js';
 import { GENERIC, STOP, stem, wordsOf } from './text.js';
 
@@ -127,7 +127,7 @@ function contentStems(name) {
  * @param ctx  { index, placed: Map(skill id → concepts, terms included), named: the same by
  *              names and aliases only, skills: Map(id → skill), ruled: { same, near, no },
  *              experiences, usable(id) → whether a skill may be used }
- * @returns {{ match: 'yes'|'adjacent', skills: string[], judged: boolean, via: 'concept'|'vocabulary'|'sibling'|'experience', note: string } | null}
+ * @returns {{ match: 'yes'|'adjacent', skills: string[], judged: boolean, via: 'concept'|'vocabulary'|'sibling'|'family'|'experience', note: string } | null}
  */
 export function coverage(name, { index, placed, named = placed, skills, ruled = { same: [], near: [], no: [] }, experiences = [], usable = () => true }) {
   const ok = (id) => skills.has(id) && usable(id) && !ruled.no.includes(id);
@@ -180,6 +180,20 @@ export function coverage(name, { index, placed, named = placed, skills, ruled = 
       judged: true,
       via: 'sibling',
       note: `same family as the profile's ${ids.map((id) => skills.get(id).name).join(', ')} (${family?.en ?? kin[0].family}): to verify`,
+    };
+  }
+
+  // 2.51: a tool of a family the profile practises (Talend beside ETL pipelines).
+  const family = familyHolders(index, parts.flat(), named).filter((entry) => ok(entry.skill) && strong(entry.skill));
+  if (family.length) {
+    const ids = [...new Set(family.map(({ skill }) => skill))];
+    const label = index.byId.get(family[0].family);
+    return {
+      match: 'adjacent',
+      skills: ids,
+      via: 'family',
+      judged: true,
+      note: `a tool of the family the profile's ${ids.map((id) => skills.get(id).name).join(', ')} practises (${label?.en ?? family[0].family}): to verify`,
     };
   }
 

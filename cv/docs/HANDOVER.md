@@ -1652,6 +1652,19 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   margin, so the body keeps its height) and the A4 page's
   (`web/cv.js`, `.made-by`). None: no footer. 3 tests, 4 defences.
 
+- [x] **2.51** (the owner, 2026-11-18) **A known ETL product is near his
+  ETL pipelines.** `tech:etl` (`data/tech.json`, marked `"family": true`)
+  holds Informatica, DataStage, Talend, SSIS, ODI, Ab Initio, Pentaho,
+  NiFi, Glue, Data Factory, SAP Data Services, Fivetran, Airbyte,
+  Matillion, dbt. `familyHolders` (`src/lexicon.js`) and coverage: a tool
+  of a family a practised skill sits on is adjacent, to verify
+  (`via: 'family'`), never yes; a lab skill brings nothing. Only marked
+  families do (a monitoring skill does not bring Prometheus near). ODI
+  and Glue are reached first through Oracle and AWS (adjacent too). The
+  owner's profile skill is "ETL data pipelines (Kafka, CFT, MQ, TIBCO,
+  PL/SQL, Control-M)", alias ETL (his precisions of 2026-11-18). 1 test,
+  4 defences.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in

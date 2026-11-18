@@ -2146,6 +2146,38 @@
       "expect": [
         "made_by needs both languages, and never names what the profile never claims"
       ]
+    },
+    "Coverage (2.51): a tool of a practised family is adjacent": {
+      "file": "src/coverage.js",
+      "live": "  if (family.length) {",
+      "dead": "  if (false) {",
+      "expect": [
+        "a known ETL product is adjacent through ETL data pipelines, to verify"
+      ]
+    },
+    "Coverage (2.51): a family neighbour is to verify": {
+      "file": "src/coverage.js",
+      "live": "      via: 'family',\n      judged: true,",
+      "dead": "      via: 'family',\n      judged: false,",
+      "expect": [
+        "a known ETL product is adjacent through ETL data pipelines, to verify"
+      ]
+    },
+    "Coverage (2.51): only a marked family brings its tools near": {
+      "file": "src/lexicon.js",
+      "live": ".filter((parent) => index.byId.get(parent)?.family === true);",
+      "dead": ";",
+      "expect": [
+        "a skill placed by a term only is no sibling (\"Prometheus\" beside a skill whose term is Grafana)"
+      ]
+    },
+    "Coverage (2.51): the family neighbour must be practised": {
+      "file": "src/coverage.js",
+      "live": ".filter((entry) => ok(entry.skill) && strong(entry.skill));",
+      "dead": ";",
+      "expect": [
+        "a known ETL product is adjacent through ETL data pipelines, to verify"
+      ]
     }
   }
 }

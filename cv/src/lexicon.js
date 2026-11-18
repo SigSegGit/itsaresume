@@ -197,6 +197,24 @@ export function siblings(index, concepts, skills) {
 }
 
 /**
+ * 2.51: the owner's skills placed on the category of a tool the requirement
+ * names (an ETL product beside his ETL pipelines): the family, not the tool.
+ */
+export function familyHolders(index, concepts, skills) {
+  const isTool = (id) => index.byId.get(id)?.kind === 'Tool';
+  const found = [];
+  for (const asked of concepts.filter(isTool)) {
+    // Only a category marked as a family (tech.json "family": true) brings its tools near.
+    const parents = kinParents(index, asked).filter((parent) => index.byId.get(parent)?.family === true);
+    for (const [skill, owned] of skills) {
+      const family = parents.find((parent) => owned.has(parent));
+      if (family && !found.some((entry) => entry.skill === skill)) found.push({ skill, family });
+    }
+  }
+  return found;
+}
+
+/**
  * The owner's skills placed on a concept the requirement names and one of the
  * picked skills is placed on: other names of the same thing ("Shell" met
  * through KSH is Bash too). A shared category is not enough: "Python

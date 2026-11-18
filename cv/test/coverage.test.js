@@ -407,3 +407,22 @@ test('a skill name and term lift what its concept leaves near: Montées de versi
   const { row } = judge('Montées de version PostgreSQL', { profile: p });
   assert.deepEqual([row.match, row.skills], ['yes', ['postgresql']]);
 });
+
+// 2.51 (the owner, 2026-11-18): a known ETL product is near his ETL data
+// pipelines (Kafka, CFT, MQ, TIBCO, PL/SQL, Control-M at Ingenico and BNP):
+// adjacent, to verify, never yes; without such a skill, no.
+test('a known ETL product is adjacent through ETL data pipelines, to verify', () => {
+  const profile = withSkill({ id: 'pipes', name: 'Chaînes de données ETL', aliases: ['ETL'], level: 'working', group: 'db', where: ['acme'] });
+  for (const name of ['Informatica PowerCenter', 'Talend', 'IBM DataStage', 'SSIS', 'Ab Initio', 'Apache NiFi', 'Azure Data Factory', 'Pentaho']) {
+    const { row } = judge(name, { profile });
+    assert.equal(row.match, 'adjacent', `${name}: ${JSON.stringify(row)}`);
+    assert.equal(row.judged, true, name);
+    assert.ok(row.skills.includes('pipes'), `${name}: ${row.skills.join()}`);
+  }
+  assert.equal(judge('ETL', { profile }).row.match, 'yes');
+  // Named partly by a profile skill first (Oracle, AWS): adjacent too, through it.
+  for (const name of ['Oracle Data Integrator', 'AWS Glue']) assert.equal(judge(name, { profile }).row.match, 'adjacent', name);
+  assert.equal(judge('Talend').row.match, 'no', 'no ETL skill, no neighbour');
+  const lab = withSkill({ id: 'pipes', name: 'Chaînes de données ETL', aliases: ['ETL'], level: 'lab', group: 'db', where: ['acme'] });
+  assert.equal(judge('Talend', { profile: lab }).row.match, 'no', 'a lab ETL skill brings no product near');
+});
