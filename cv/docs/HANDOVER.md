@@ -1610,7 +1610,13 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   public; the templates and palettes have readable names; the footer
   speaks to a visitor. Unavailable models stay greyed (2.34). Tests: one
   in `server.test.js`, `web.test.js` tells links from loads (one link
-  leaves the site, the source, `noopener`). 6 defences (http.json).
+  leaves the site, the source and its CI, `noopener`). 7 defences
+  (http.json). The sample runs on "auto" (the one model a past run answers
+  again): ran once on the VM on 2026-11-18 (99, qualified), every later
+  click is served from that run with no model call. The README now opens
+  on what the project is and how it is built (CI badge, architecture,
+  method). Not shown yet in a real browser from outside: the Pi that
+  routes 443 was down that morning (private notes).
 
 ## 9. Open on purpose
 
