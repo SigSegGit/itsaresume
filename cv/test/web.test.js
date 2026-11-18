@@ -253,6 +253,9 @@ test('the page greys the models the server says cannot answer, and refreshes the
   // greyed with its reason, so its absence reads as temporary.
   assert.doesNotMatch(app, /option\.hidden =/);
   assert.match(app, /option\.textContent = state\.note \?/);
+  // 2.47: the sample runs on "auto", the one model whose answers are served
+  // again from a past run: a demo click spends no model call once it ran.
+  assert.match(app, /if \(!\$\('model'\)\.querySelector\('option\[value="auto"\]'\)\?\.disabled\) \$\('model'\)\.value = 'auto';/);
   // 2.47: a pasted offer is enough to generate, still never with no model.
   assert.match(app, /button\.disabled = \(offers\.length === 0 && !\$\('paste'\)\.value\.trim\(\)\) \|\| !modelsReady;/);
   assert.match(app, /setInterval\?\.\(\(\) => document\.hidden \|\| refreshStatus\(\), \d+\)/);
