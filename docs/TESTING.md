@@ -195,6 +195,9 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_response_is_the_answer_with_its_tokens` | `tests/gemini_cli.rs` | A JSON `response` is the answer; `stats` tokens become usage (cached split out) | — |
 | `a_quota_error_falls_back` | `tests/gemini_cli.rs` | 429, `RESOURCE_EXHAUSTED`, "quota" are `QuotaExceeded` | Gemini quota falls back |
 | `an_overloaded_model_falls_back` | `tests/gemini_cli.rs` | 503, `UNAVAILABLE`, "high demand", "overloaded" are `Unreachable` (seen on the VM 2026-10-14) | Gemini overload falls back |
+| `an_overloaded_backend_is_tried_once_more_after_a_pause` | `tests/router.rs` | An outage read as an overload (503, "high demand") is tried once more on the same backend after the configured pause | Overload (8.59): only an overload is tried again; Overload (8.59): the retry waits its pause |
+| `only_an_overload_is_retried_and_only_when_configured` | `tests/router.rs` | A refused connection, a quota, or no pause configured: one call only | Overload (8.59): only an overload is tried again; Overload (8.59): a quota is no overload |
+| `the_overload_pause_is_fifteen_seconds_unless_set` | `tests/config.rs` | A configuration without `overload_retry_secs` pauses 15 s; 0 turns it off | Overload (8.59): serve pauses 15 s by default |
 | `a_network_failure_falls_back_and_anything_else_stops` | `tests/gemini_cli.rs` | A network failure is `Unreachable`; no auth or garbage is `Other` | — |
 | `a_schema_answer_must_be_json_even_inside_a_fence` | `tests/gemini_cli.rs` | A schema answer is JSON, fenced or not; prose is `Other` | Gemini schema answer must be JSON |
 | `extract_json_takes_the_outermost_object` | `tests/gemini_cli.rs` | The first whole JSON object or array in the text | — |
