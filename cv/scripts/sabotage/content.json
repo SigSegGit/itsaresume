@@ -2180,6 +2180,14 @@
         "a known ETL product is adjacent through ETL data pipelines, to verify"
       ]
     },
+    "Footer (2.52): the page is measured without the footer": {
+      "file": "src/run.js",
+      "live": "render({ ...buildModel(profile, analysis, { bullets, skillCap }), made_by: '' }, style)",
+      "dead": "render(buildModel(profile, analysis, { bullets, skillCap }), style)",
+      "expect": [
+        "the page is measured without the made_by footer, the final CV keeps it"
+      ]
+    },
     "Offer files (2.53): a docx offer is its paragraphs": {
       "file": "src/sources.js",
       "live": "  if (kind === '.docx') return docxText(buffer);",
