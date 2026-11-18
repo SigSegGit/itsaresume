@@ -70,7 +70,8 @@
     "src/coverage.js",
     "test/naming.test.js",
     "test/compare.test.js",
-    "src/compare.js"
+    "src/compare.js",
+    "web/sample-offer.js"
   ],
   "defences": {
     "Menu (2.34): an unavailable model stays in sight": {
@@ -654,7 +655,7 @@
     },
     "Web: public status shows only the plain header": {
       "file": "src/server.js",
-      "live": ": { name: profile.name, skills: profile.skills, lab: profile.lab, never: profile.never };",
+      "live": ": { name: profile.name, title: profile.title, skills: profile.skills, lab: profile.lab, never: profile.never };",
       "dead": ": profile;",
       "expect": [
         "in public mode the status carries no verdicts, truth document or raw error"
@@ -1259,6 +1260,55 @@
       "dead": "        const { id, visitor, title, model, via } = saved_;",
       "expect": [
         "a visitor finds its finished CVs again after a restart"
+      ]
+    },
+    "Showcase (2.47): the public status names the role": {
+      "file": "src/server.js",
+      "live": "{ name: profile.name, title: profile.title, skills",
+      "dead": "{ name: profile.name, skills",
+      "expect": [
+        "the public page pitches the tool to a recruiter, with its source and a sample offer"
+      ]
+    },
+    "Showcase (2.47): the sample offer is served": {
+      "file": "src/server.js",
+      "live": "  '/sample-offer.js': ['sample-offer.js', 'text/javascript; charset=utf-8'],\n",
+      "dead": "",
+      "expect": [
+        "the public page pitches the tool to a recruiter, with its source and a sample offer"
+      ]
+    },
+    "Showcase (2.47): the page has its demo button": {
+      "file": "web/index.html",
+      "live": "id=\"sample\"",
+      "dead": "id=\"sample-gone\"",
+      "expect": [
+        "the public page pitches the tool to a recruiter, with its source and a sample offer"
+      ]
+    },
+    "Showcase (2.47): the source opens apart, without the page": {
+      "file": "web/index.html",
+      "live": "target=\"_blank\" rel=\"noopener\">Voir le code source",
+      "dead": "target=\"_blank\">Voir le code source",
+      "expect": [
+        "the page holds no inline script, style or handler, and loads nothing from elsewhere"
+      ]
+    },
+    "Showcase (2.47): the source link is the real one": {
+      "file": "web/index.html",
+      "live": "href=\"https://github.com/SigSegGit/itsaresume\"",
+      "dead": "href=\"https://example.org/\"",
+      "expect": [
+        "the public page pitches the tool to a recruiter, with its source and a sample offer",
+        "the page holds no inline script, style or handler, and loads nothing from elsewhere"
+      ]
+    },
+    "Showcase (2.47): a pasted offer is enough to generate": {
+      "file": "web/app.js",
+      "live": "  button.disabled = (offers.length === 0 && !$('paste').value.trim()) || !modelsReady;",
+      "dead": "  button.disabled = offers.length === 0 || !modelsReady;",
+      "expect": [
+        "the page greys the models the server says cannot answer, and refreshes the menu"
       ]
     }
   }

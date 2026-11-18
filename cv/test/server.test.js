@@ -9,7 +9,8 @@ import { request } from 'node:http';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createApp, MAX_BODY, MAX_OFFERS } from '../src/server.js';
+import { createApp, MAX_BODY, MAX_OFFERS, SOURCE_URL } from '../src/server.js';
+import { looksLikeOffer } from '../src/intake.js';
 import { jobView } from '../src/view.js';
 
 const TOKEN = 'a'.repeat(48);
@@ -1270,4 +1271,25 @@ test('a visitor finds its finished CVs again after a restart', async (t) => {
   assert.equal((await back.get(`/api/jobs/${list[0].id}`)).status, 200);
   const other = await second.visit('198.51.100.9');
   assert.deepEqual(JSON.parse((await other.get('/api/jobs')).text), [], 'another page does not see it');
+});
+
+// 2.47 (the owner, 2026-11-18: "montrer le site aux recruteurs, un argument
+// d'emploi"): the public page says what the tool is and who built it, links
+// its source, and offers a sample offer that is always admitted.
+test('the public page pitches the tool to a recruiter, with its source and a sample offer', async (t) => {
+  const status = async () => ({ profile: { name: 'Alex', title: 'SRE senior', skills: 3 }, router: { up: true }, layout: { word: false } });
+  const app = await startPublic(t, { status });
+  const page = await call(app.port, { headers: app.host });
+  for (const id of ['pitch', 'sample', 'source-link']) assert.match(page.text, new RegExp(`id="${id}"`), id);
+  const visitor = await app.visit();
+  const shown = JSON.parse((await visitor.get('/api/status')).text);
+  assert.equal(shown.profile.title, 'SRE senior');
+  assert.equal(shown.source, undefined, 'no link in the status (hostile.test.js)');
+  assert.ok(page.text.includes(`href="${SOURCE_URL}"`), 'the page links the source');
+  const script = await call(app.port, { path: '/sample-offer.js', headers: app.host });
+  assert.equal(script.status, 200);
+  assert.match(script.headers['content-type'], /javascript/);
+  const { SAMPLE_OFFER } = await import('../web/sample-offer.js');
+  assert.ok(looksLikeOffer(SAMPLE_OFFER), 'the sample passes the public intake');
+  assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'Exemple', text: SAMPLE_OFFER }] })).status, 202);
 });

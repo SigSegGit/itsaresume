@@ -843,6 +843,7 @@ property it proves.
 | the public caps, bans and visitors survive a restart | Public state: the daily cap is written down; Public state: a ban is written down; Public state: a new visitor is written down |
 | an unreadable public state starts empty, never a crash | Public state: a broken store is memory only |
 | a visitor finds its finished CVs again after a restart | Public state: a finished CV is written down; Public state: a CV whose folder is gone is skipped |
+| the public page pitches the tool to a recruiter, with its source and a sample offer | Showcase (2.47): the public status names the role; Showcase (2.47): the sample offer is served; Showcase (2.47): the page has its demo button; Showcase (2.47): the source link is the real one |
 
 ## `test/split.test.js`
 
@@ -902,7 +903,7 @@ property it proves.
 | Property (the test name) | Sabotage defences |
 |---|---|
 | the script never parses HTML nor evaluates code | Web: the script writes text only |
-| the page holds no inline script, style or handler, and loads nothing from elsewhere | Web: the page has no inline script |
+| the page holds no inline script, style or handler, and loads nothing from elsewhere | Web: the page has no inline script; Showcase (2.47): the source opens apart, without the page; Showcase (2.47): the source link is the real one |
 | the page is responsive | — |
 | an element hidden by its attribute stays hidden, whatever its class displays | Web: hidden beats a class display |
 | the footer never claims the analysis stays local: it names Claude and the local fallback | Web: the footer never claims the analysis stays local |
@@ -919,7 +920,7 @@ property it proves.
 | the page lets the owner pick the model, and sends the choice with the offers | QA: the page sends the chosen model |
 | an administrative condition is shown apart, to confirm, never as a failed requirement | Condition: the page lists conditions apart |
 | the page offers a profile choice only when the status lists several, and sends the one chosen | — |
-| the page greys the models the server says cannot answer, and refreshes the menu | Menu (2.34): an unavailable model stays in sight; Models: the page greys what cannot answer |
+| the page greys the models the server says cannot answer, and refreshes the menu | Menu (2.34): an unavailable model stays in sight; Models: the page greys what cannot answer; Showcase (2.47): a pasted offer is enough to generate |
 | the page shows a queued job its place in the queue | Web: the page shows the place in the queue |
 | a running job is asked about no more often than every 5 seconds | Web: a running job is asked about every 5 s at most |
 | a tab out of sight asks nothing, and asks again when it is back in sight | Web: a hidden tab asks nothing |
@@ -950,6 +951,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**631 tests, 505 of them covered by at least one sabotage defence.**
+**632 tests, 506 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

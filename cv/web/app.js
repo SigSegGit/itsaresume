@@ -69,12 +69,32 @@ function applyModels(models) {
   renderOffers();
 }
 
+/** 4.12: the templates and palettes as a person reads them. */
+const STYLE_LABELS = { 'two-column': 'Deux colonnes', marine: 'Marine', bordeaux: 'Bordeaux', foret: 'Forêt', ardoise: 'Ardoise', graphite: 'Graphite' };
+
+/** 2.47: the public page's pitch to a recruiter: whose CV, his role, a sample. */
+function showPitch(profile) {
+  if (!$('pitch').hidden) return;
+  $('pitch').hidden = false;
+  if (profile?.name) $('pitch-name').textContent = profile.name;
+  if (profile?.title) {
+    $('pitch-role').textContent = profile.title;
+    $('pitch-role').hidden = false;
+  }
+  $('sample').addEventListener('click', async () => {
+    const { SAMPLE_OFFER } = await import('/sample-offer.js');
+    $('paste').value = SAMPLE_OFFER;
+    renderOffers();
+    $('generate').click();
+  });
+}
+
 async function refreshStatus() {
   try {
     const { profile, profiles, router, models, layout, public: open, styles } = await api('/api/status');
     // 4.12: the CV's template and palette, the default selected.
     if (styles) {
-      const fill = (id, names, chosen) => $(id).replaceChildren(...names.map((name) => h('option', { value: name, text: name, ...(name === chosen ? { selected: true } : {}) })));
+      const fill = (id, names, chosen) => $(id).replaceChildren(...names.map((name) => h('option', { value: name, text: STYLE_LABELS[name] ?? name, ...(name === chosen ? { selected: true } : {}) })));
       fill('template', styles.templates, styles.default.template);
       fill('palette', styles.palettes, styles.default.palette);
       $('style-row').hidden = false;
@@ -94,7 +114,12 @@ async function refreshStatus() {
     }
     // Public mode: a recruiter pastes one offer; splitting an email is the owner's.
     if (open) {
+      showPitch(profile);
       $('split').hidden = true;
+      $('add').hidden = true;
+      $('status-router').hidden = true;
+      $('status-layout').hidden = true;
+      $('foot-owner').textContent = 'Aucune candidature envoyée, rien de conservé hors du CV généré · l’offre est analysée par une IA sous contrôle du code · zéro facturation au token';
       rankAllowed = false;
       $('import-row').hidden = true;
       $('sources-card').hidden = true;
@@ -195,7 +220,8 @@ function renderOffers() {
   $('rank').hidden = !rankAllowed || offers.length <= RANK_TOP;
   $('match').hidden = !rankAllowed || offers.length !== 1;
   const button = $('generate');
-  button.disabled = offers.length === 0 || !modelsReady;
+  // 2.47: a pasted offer is enough, no "add" step first.
+  button.disabled = (offers.length === 0 && !$('paste').value.trim()) || !modelsReady;
   button.textContent = offers.length > 1 ? `Générer les ${offers.length} CV` : 'Générer le CV';
 }
 
@@ -210,6 +236,8 @@ async function readFiles(fileList) {
 }
 
 function setupOffers() {
+  // 2.47: the Generate button follows what is pasted.
+  $('paste').addEventListener('input', renderOffers);
   $('add').addEventListener('click', () => {
     showError(null);
     addOffer($('paste').value);
@@ -300,6 +328,10 @@ function setupOffers() {
   };
   $('generate').addEventListener('click', async () => {
     showError(null);
+    if (!offers.length && $('paste').value.trim()) {
+      addOffer($('paste').value);
+      $('paste').value = '';
+    }
     const batch = offers.splice(0, offers.length);
     renderOffers();
     try {

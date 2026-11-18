@@ -33,8 +33,13 @@ export const MAX_TEXT = 60_000;
 export const MAX_RANKED = 20;
 
 const WEB = fileURLToPath(new URL('../web/', import.meta.url));
+/** 2.47: where the tool's code is, linked from the public page (index.html, never the status: no link there). */
+export const SOURCE_URL = 'https://github.com/SigSegGit/itsaresume';
+
 const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  // 2.47: the sample offer of the public page's demo button.
+  '/sample-offer.js': ['sample-offer.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],
   // 2.24b: the A4 page, filled in the browser (/cv.html?job=<id>).
   '/cv.html': ['cv.html', 'text/html; charset=utf-8'],
@@ -126,7 +131,7 @@ function publicStatus(status) {
   const { profile = {}, profiles: _others, ...rest } = status;
   const shown = profile.error !== undefined
     ? { error: 'profil indisponible' }
-    : { name: profile.name, skills: profile.skills, lab: profile.lab, never: profile.never };
+    : { name: profile.name, title: profile.title, skills: profile.skills, lab: profile.lab, never: profile.never };
   return { ...rest, profile: shown, public: true };
 }
 
