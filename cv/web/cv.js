@@ -127,6 +127,8 @@ function render(page, sheet) {
   if (page.education.length) section(page.labels.education, list(page.education.map((school) => [school.title, ...school.details].join(' — '))));
   if (page.certifications.length) section(page.labels.certifications, list(page.certifications));
   if (page.languages.length) section(page.labels.languages, list(page.languages));
+  // 2.50: how the CV was made, at the foot of the page.
+  if (page.made_by) root.append(element('footer', 'made-by', page.made_by));
   return {
     show: (id, on) => { items.get(id).hidden = !on; },
     // An experience with no item shown: what the docx does (when_empty).

@@ -1046,6 +1046,279 @@
     "tech:unix"
    ],
    "kind": "Tool"
+  },
+  {
+   "id": "tech:etl",
+   "fr": "ETL / intégration de données",
+   "en": "ETL / data integration",
+   "alt": {
+    "fr": [
+     "ETL",
+     "extract transform load",
+     "extraction transformation chargement",
+     "outils d'ETL",
+     "intégration de données"
+    ],
+    "en": [
+     "ETL",
+     "extract transform load",
+     "extract, transform, load",
+     "ETL tools",
+     "data integration"
+    ]
+   },
+   "broader": [],
+   "kind": "Category",
+   "family": true
+  },
+  {
+   "id": "tech:informatica",
+   "fr": "Informatica PowerCenter",
+   "en": "Informatica PowerCenter",
+   "alt": {
+    "fr": [
+     "Informatica",
+     "PowerCenter"
+    ],
+    "en": [
+     "Informatica",
+     "PowerCenter"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:datastage",
+   "fr": "IBM DataStage",
+   "en": "IBM DataStage",
+   "alt": {
+    "fr": [
+     "DataStage",
+     "InfoSphere DataStage"
+    ],
+    "en": [
+     "DataStage",
+     "InfoSphere DataStage"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:talend",
+   "fr": "Talend",
+   "en": "Talend",
+   "alt": {
+    "fr": [
+     "Talend Open Studio",
+     "Talend Data Integration"
+    ],
+    "en": [
+     "Talend Open Studio",
+     "Talend Data Integration"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:ssis",
+   "fr": "SSIS",
+   "en": "SSIS",
+   "alt": {
+    "fr": [
+     "SQL Server Integration Services"
+    ],
+    "en": [
+     "SQL Server Integration Services"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:odi",
+   "fr": "Oracle Data Integrator",
+   "en": "Oracle Data Integrator",
+   "alt": {
+    "fr": [
+     "ODI"
+    ],
+    "en": [
+     "ODI"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:abinitio",
+   "fr": "Ab Initio",
+   "en": "Ab Initio",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:pentaho",
+   "fr": "Pentaho",
+   "en": "Pentaho",
+   "alt": {
+    "fr": [
+     "Pentaho Data Integration",
+     "Kettle"
+    ],
+    "en": [
+     "Pentaho Data Integration",
+     "Kettle"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:nifi",
+   "fr": "Apache NiFi",
+   "en": "Apache NiFi",
+   "alt": {
+    "fr": [
+     "NiFi"
+    ],
+    "en": [
+     "NiFi"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:glue",
+   "fr": "AWS Glue",
+   "en": "AWS Glue",
+   "alt": {
+    "fr": [
+     "Glue"
+    ],
+    "en": [
+     "Glue"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:adf",
+   "fr": "Azure Data Factory",
+   "en": "Azure Data Factory",
+   "alt": {
+    "fr": [
+     "Data Factory"
+    ],
+    "en": [
+     "Data Factory"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:sap-ds",
+   "fr": "SAP Data Services",
+   "en": "SAP Data Services",
+   "alt": {
+    "fr": [
+     "SAP BODS",
+     "BusinessObjects Data Services"
+    ],
+    "en": [
+     "SAP BODS",
+     "BusinessObjects Data Services"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:fivetran",
+   "fr": "Fivetran",
+   "en": "Fivetran",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:airbyte",
+   "fr": "Airbyte",
+   "en": "Airbyte",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:matillion",
+   "fr": "Matillion",
+   "en": "Matillion",
+   "alt": {
+    "fr": [],
+    "en": []
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
+  },
+  {
+   "id": "tech:dbt",
+   "fr": "dbt",
+   "en": "dbt",
+   "alt": {
+    "fr": [
+     "data build tool"
+    ],
+    "en": [
+     "data build tool"
+    ]
+   },
+   "broader": [
+    "tech:etl"
+   ],
+   "kind": "Tool"
   }
  ]
 }

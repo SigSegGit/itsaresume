@@ -1643,6 +1643,28 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   by hand: claude 71, gemini 74, groq 52, all partial (2.48); the local
   model failed after 647 s, Bionic answering HTTP 400 "terminated".
 
+- [x] **2.50** (the owner, 2026-11-18) **How the CV was made, in its
+  footer.** A long line in the narrow "at a glance" column cost the body
+  its room. The profile's optional `made_by` ({fr, en}, checked like a
+  glance line) becomes the docx footer (`addFooter` in `src/render.js`:
+  footer1.xml, its relation and content type, the section's reference;
+  footer distance 100 twips, one 6.5 pt grey line inside the 280 bottom
+  margin, so the body keeps its height) and the A4 page's
+  (`web/cv.js`, `.made-by`). None: no footer. 3 tests, 4 defences.
+
+- [x] **2.51** (the owner, 2026-11-18) **A known ETL product is near his
+  ETL pipelines.** `tech:etl` (`data/tech.json`, marked `"family": true`)
+  holds Informatica, DataStage, Talend, SSIS, ODI, Ab Initio, Pentaho,
+  NiFi, Glue, Data Factory, SAP Data Services, Fivetran, Airbyte,
+  Matillion, dbt. `familyHolders` (`src/lexicon.js`) and coverage: a tool
+  of a family a practised skill sits on is adjacent, to verify
+  (`via: 'family'`), never yes; a lab skill brings nothing. Only marked
+  families do (a monitoring skill does not bring Prometheus near). ODI
+  and Glue are reached first through Oracle and AWS (adjacent too). The
+  owner's profile skill is "ETL data pipelines (Kafka, CFT, MQ, TIBCO,
+  PL/SQL, Control-M)", alias ETL (his precisions of 2026-11-18). 1 test,
+  4 defences.
+
 ## 9. Open on purpose
 
 - **Seen 2026-10-06 on a real offer (both models, private run in

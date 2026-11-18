@@ -88,3 +88,10 @@ test('2.24b: the page names its reference experience and what the docx does with
   assert.deepEqual(lab.when_empty, { title: 'R&D project', env: '' }, 'an R&D project with no bullet is sober');
   assert.ok(gig.items.length > 0 && lab.items.length > 0, 'both reach the page when ranked');
 });
+
+// 2.50: the A4 page carries made_by too, for its footer.
+test('the A4 page data carries made_by in the CV language', () => {
+  const profile = { ...load(), made_by: { fr: 'Adapté par itsaresume', en: 'Tailored by itsaresume' } };
+  assert.equal(pageData(profile, analysis()).made_by, analysis().language === 'fr' ? 'Adapté par itsaresume' : 'Tailored by itsaresume');
+  assert.equal(pageData(load(), analysis()).made_by, '');
+});

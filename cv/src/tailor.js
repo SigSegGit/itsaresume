@@ -167,6 +167,8 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
     contact: [identity.email, identity.phone].join('  |  '),
     company_line: [identity.company, t(identity.location)].filter(Boolean).join('  |  '),
     glance: (profile.glance ?? []).map(t),
+    // 2.50: how the CV was made, its footer; the owner's words, empty when none.
+    made_by: profile.made_by ? t(profile.made_by) : '',
     skill_groups: analysis.skill_groups
       .filter((choice) => (choice.skills ?? []).length > 0 && !groups.get(choice.id).hidden)
       .map((choice) => ({
