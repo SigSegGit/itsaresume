@@ -26,7 +26,7 @@ const USAGE = `usage:
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
   itsacv serve [--port PORT] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
-               [--ban-after N] [--ban-hours N] [--invite-only]]
+               [--ban-after N] [--ban-hours N] [--invite-only] [--service]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
   itsacv invite --list | --usage | --revoke <label|code> [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
@@ -96,7 +96,7 @@ else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
 const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--service': ['service', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -124,6 +124,7 @@ function parse(argv) {
     banAfter: '10',
     banHours: '24',
     inviteOnly: false,
+    service: false,
     list: false,
     usage: false,
     csv: false,
@@ -217,11 +218,12 @@ async function main() {
 
   if (options.command === 'serve') {
     if (options.inviteOnly && options.publicHost === null) fail(2, '--invite-only goes with --public-host');
+    if (options.service && options.publicHost === null) fail(2, '--service goes with --public-host');
     for (const key of ['perDay', 'perHour', 'maxQueued', 'banAfter', 'banHours']) {
       if (!/^[1-9]\d*$/.test(options[key])) fail(2, `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: a whole number, 1 or more`);
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
-    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, now: Date.now };
+    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, service: options.service, now: Date.now };
     // 4.7: the add-on's origin from --addon-origin, its key from $ITSACV_ADDON_KEY (48+ characters).
     let addon = null;
     if (options.addonOrigin) {

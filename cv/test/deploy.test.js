@@ -46,3 +46,8 @@ test('the VM caps leave room for a day of demos', () => {
   assert.ok(Number(compose.match(/--per-hour (\d+)/)?.[1]) >= 30, 'per visitor per hour');
   assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) >= 12, 'two comparisons at once');
 });
+
+// 6.1: the public instance runs the service mode (a visitor's own profile, nothing kept).
+test('the VM runs the service mode', () => {
+  assert.match(compose, /--max-queued \d+ --service /);
+});
