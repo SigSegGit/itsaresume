@@ -6,6 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { MODELS } from '../src/qa.js';
 
 const compose = readFileSync(new URL('../deploy/vm-generator/compose.yaml', import.meta.url), 'utf8');
 
@@ -19,7 +20,10 @@ test('the VM router is health-checked on the port it listens on', () => {
 
 // 2.31b: a comparison is one job per model: a queue of three refused it always.
 test('the VM queue holds a whole comparison', () => {
-  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) >= 4, 'claude, gemini, openai, local');
+  // 2.49 (seen 2026-11-18): five models answered, the queue held four, the
+  // comparison was refused. It holds every model of the menu, and one more.
+  const models = MODELS.filter((model) => model !== 'auto').length;
+  assert.ok(Number(compose.match(/--max-queued (\d+)/)?.[1]) > models, `${models} models and one visitor more`);
 });
 
 // A file mounted alone keeps the inode it was mounted with: when the owner
