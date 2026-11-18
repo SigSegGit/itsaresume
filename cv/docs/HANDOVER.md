@@ -1665,6 +1665,11 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   PL/SQL, Control-M)", alias ETL (his precisions of 2026-11-18). 1 test,
   4 defences.
 
+- [x] **2.52** (2026-11-18, the first CV with the footer) **The page is
+  measured without the footer.** The footer sits at the very bottom
+  (y 830 of 842 pt): every measured layout read as a full page and the
+  skills column fell to two per group. `run.js` measures with `made_by`
+  empty; the final docx and PDF carry it. 1 test, 1 defence.
 - [x] **2.53** (the owner, 2026-11-18: "je ne peux pas utiliser de pdf pour
   une offre, pourquoi ?!") **An offer dropped as a pdf or docx.** The page
   sends it base64 to `POST /api/offer-text` (local and public; name with

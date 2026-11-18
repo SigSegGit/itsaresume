@@ -191,7 +191,8 @@ async function writeCv({ profile, analysis, dir, useWord, startLayout, onStep, s
     const measure = async (bullets, skillCap) => {
       const file = join(scratch, `layout-${(count += 1)}.docx`);
       onStep('layout', { layouts: count });
-      writeFileSync(file, render(buildModel(profile, analysis, { bullets, skillCap }), style));
+      // 2.52: measured without the made_by footer: it sits in the bottom margin, not in the body.
+      writeFileSync(file, render({ ...buildModel(profile, analysis, { bullets, skillCap }), made_by: '' }, style));
       return (await word.measure(file)).pages;
     };
     let model;
