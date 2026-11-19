@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.56
-TITLE: 6.2 the add-on in service mode, 2.54 PromQL; next 2.55 Groq cut short, 2.56 service-minded rule, then 6.3 publish
+NEXT: 2.57
+TITLE: 6.2 the add-on in service mode, 2.54 PromQL; 2.55 Groq batches, 2.56 service-minded; next 2.57 (waits for the owner), a real Groq run, then 6.3 publish
 WRITTEN-AT: 2026-11-19
 -->
 
@@ -1694,13 +1694,13 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   choices call gets them all. Each batch is one Groq minute: about 4 min
   for 30 rows. Real run on the VM after the merge: to do. Gemini in the
   same comparison: 429, free quota spent (not a bug). 1 test, 2 defences.
-- [ ] **2.56** (the owner, 2026-11-19: "le sens du service, c'est un soft
-  skill de presta, évidemment que oui") **Service-minded, from the
-  record.** A rule in code, not in the profile: a requirement naming
-  "sens du service" (customer focus, service orientation) is met when the
-  profile holds N3 application support or consulting years; the evidence
-  cites that experience. Test with the fictional profile, sabotage, then
-  `rules-replay.mjs` on the real runs.
+- [x] **2.56** (the owner, 2026-11-19: "le sens du service, c'est un soft
+  skill de presta, évidemment que oui") **Service-minded is a personal
+  quality.** `QUALITIES` (`src/text.js`) gains "sens du service / du
+  client", "orientation client", customer focus, service-minded: met like
+  every quality (2026-10-14), shown for the interview. Replayed on the
+  386 requirement names of the VM's runs: only "Sens du service" changes.
+  1 test, 1 defence.
 - [ ] **2.57** (the owner, 2026-11-19) **Encryption in production at
   Ingenico**: he chose to add it to the v4; waiting for what it was (TLS,
   keys, HSM, card data at rest) — in the private notes. Then the v4, the

@@ -2262,6 +2262,14 @@
       "expect": [
         "2.54: PromQL asked is Prometheus owned"
       ]
+    },
+    "Quality (2.56): service-minded is a quality": {
+      "file": "src/text.js",
+      "live": "  .concat(['sens service', 'sens client', 'orient client', 'customer focus', 'customer orient', 'customer centric', 'service mind', 'service orient'])",
+      "dead": "",
+      "expect": [
+        "2.56: service-minded is a personal quality; a service mesh stays a skill"
+      ]
     }
   }
 }
