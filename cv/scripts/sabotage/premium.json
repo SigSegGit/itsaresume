@@ -11,7 +11,27 @@
     "premium/server.js",
     "premium/pricing.js",
     "premium/extension/linkedin.js",
-    "premium/test/premium.test.js"
+    "test/premium.test.js",
+    "src/analysis.js",
+    "src/coverage.js",
+    "src/evidence.js",
+    "src/guard.js",
+    "src/import.js",
+    "src/importance.js",
+    "src/instructions.js",
+    "src/language.js",
+    "src/lexicon.js",
+    "src/links.js",
+    "src/listing.js",
+    "src/llm.js",
+    "src/normalize.js",
+    "src/pipeline.js",
+    "src/profile.js",
+    "src/prompt.js",
+    "src/score.js",
+    "src/tailor.js",
+    "src/text.js",
+    "test/importance.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {

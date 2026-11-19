@@ -9,10 +9,10 @@ import { readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createContext, runInContext } from 'node:vm';
-import { PACKS, API_PRICES, RUN, costPerCv, unitPrice, marginPerCv } from '../pricing.js';
-import { createStore } from '../accounts.js';
-import { redact } from '../preview.js';
-import { createPremiumApp } from '../server.js';
+import { PACKS, API_PRICES, RUN, costPerCv, unitPrice, marginPerCv } from '../premium/pricing.js';
+import { createStore } from '../premium/accounts.js';
+import { redact } from '../premium/preview.js';
+import { createPremiumApp } from '../premium/server.js';
 
 test('packs: the price per CV falls with the pack size', () => {
   for (let i = 1; i < PACKS.length; i += 1) assert.ok(unitPrice(PACKS[i]) < unitPrice(PACKS[i - 1]), PACKS[i].id);
@@ -149,7 +149,7 @@ test('server: previews are limited per account per day', async () => {
 });
 
 test('extension: a LinkedIn profile page read into a JSON Resume, on the click only', () => {
-  const source = readFileSync(new URL('../extension/linkedin.js', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../premium/extension/linkedin.js', import.meta.url), 'utf8');
   const { linkedInProfile } = runInContext(`${source}\n;({ linkedInProfile });`, createContext({}));
   const node = (text, children = {}) => ({ innerText: text, querySelectorAll: (selector) => children[selector] ?? [], querySelector: (selector) => (children[selector] ?? [])[0] ?? null });
   const spans = (...texts) => ({ 'span[aria-hidden="true"]': texts.map((text) => node(text)) });

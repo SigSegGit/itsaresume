@@ -1727,7 +1727,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   free preview that never sends the CV's text, paid generation refunded on
   failure, cost model, LinkedIn add-on). Demo only; `premium/README.md` lists
   what going public needs (API adapter for the paid and preview modes, real
-  payment, legal texts). Tests `premium/test/`, plan `scripts/sabotage/premium.json`.
+  payment, legal texts). Tests `test/premium.test.js`, plan `scripts/sabotage/premium.json`.
 - [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
   are all at a learning or lab level (GCP "montée en compétence" read yes
   by Groq) shows as met: the code only ever raises a verdict. Decide
