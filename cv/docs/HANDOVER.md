@@ -1,5 +1,5 @@
 <!-- ITSACV-STATE
-NEXT: 2.55
+NEXT: 2.56
 TITLE: 6.2 the add-on in service mode, 2.54 PromQL; next 2.55 Groq cut short, 2.56 service-minded rule, then 6.3 publish
 WRITTEN-AT: 2026-11-19
 -->
@@ -1684,13 +1684,16 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   travaillais avec Prometheus") **PromQL is Prometheus.** `data/tech.json`
   gives Prometheus the alias PromQL (its query language): a requirement
   naming it is the same concept. 1 test, 1 defence.
-- [ ] **2.55** (seen 2026-11-18 on the public site, a comparison) **Groq
-  cut short.** gpt-oss-120b answered `finish_reason length` after 7.7 s
-  (router: `lm_studio.rs` sends no `max_completion_tokens`, so Groq's
-  default applies; `reasoning_effort` is low). Red test in
-  `crates/itsaresume-router/tests/openai.rs`: the Groq body carries
-  `max_completion_tokens` at the model's ceiling; then a real run. Gemini
-  in the same comparison: 429, free quota spent (not a bug).
+- [x] **2.55** (seen 2026-11-18 on the public site, a comparison) **Groq
+  cut short: a long listing in batches.** The router's journal: one Groq
+  call of 23 511 characters (about 6 000 of the minute's 8 000 tokens),
+  `finish_reason length` in 7 s; the offer listed about 30 requirements and
+  their rows did not fit in the rest. Past `REQUIREMENTS_BATCH` (12) listed
+  rows, a split analysis classifies them in batches (`buildSplitPrompts`
+  `batches`, ids kept global), each with the offer and the skills; the
+  choices call gets them all. Each batch is one Groq minute: about 4 min
+  for 30 rows. Real run on the VM after the merge: to do. Gemini in the
+  same comparison: 429, free quota spent (not a bug). 1 test, 2 defences.
 - [ ] **2.56** (the owner, 2026-11-19: "le sens du service, c'est un soft
   skill de presta, évidemment que oui") **Service-minded, from the
   record.** A rule in code, not in the profile: a requirement naming

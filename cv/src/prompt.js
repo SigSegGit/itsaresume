@@ -114,7 +114,7 @@ function experienceLines(profile) {
   return lines;
 }
 
-function listedLines(profile, listed, offered) {
+function listedLines(profile, listed, offered, start = 0) {
   if (!listed.length) return [];
   // 2.3b-ii: the candidates code finds for each requirement, offered first;
   // the model may still pick any other skill (not a lock, the owner 2026-10-06).
@@ -126,7 +126,7 @@ function listedLines(profile, listed, offered) {
   // 2.42: the id ties each answered row to its listed row, whatever its name.
   for (const [at, item] of listed.entries()) {
     const candidates = offered ? shortlist(profile, item.name, { index, placed }) : [];
-    lines.push(`- L${at + 1}: ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
+    lines.push(`- L${start + at + 1}: ${item.name} (${item.importance})${candidates.length ? ` — candidates: ${candidates.join(', ')}` : ''}`);
   }
   lines.push('');
   return lines;
@@ -180,15 +180,23 @@ ${ruled(false)}
 
 ${UNTRUSTED}`;
 
+/** 2.55: listed rows per requirements call, past which they are batched. */
+export const REQUIREMENTS_BATCH = 12;
+
 /**
  * 2.37: `requirements`, the first call's prompt; `choices(classified)`, the
- * second's, given the requirements the first classified.
+ * second's, given the requirements the first classified. 2.55: `batches`,
+ * the requirements call per batch of listed rows (one when few).
  */
 export function buildSplitPrompts(profile, offer, listed = [], { shortlist: offered = false } = {}) {
-  const requirements = {
+  const requirementsOf = (rows, start = 0) => ({
     system: REQUIREMENTS_SYSTEM,
-    prompt: ['CATALOGUE', '', ...skillLines(profile, true), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)].join('\n'),
-  };
+    prompt: ['CATALOGUE', '', ...skillLines(profile, true), ...offerLines(offer), ...listedLines(profile, rows, offered, start), languageLine(offer)].join('\n'),
+  });
+  const requirements = requirementsOf(listed);
+  const batches = listed.length > REQUIREMENTS_BATCH
+    ? Array.from({ length: Math.ceil(listed.length / REQUIREMENTS_BATCH) }, (_, at) => requirementsOf(listed.slice(at * REQUIREMENTS_BATCH, (at + 1) * REQUIREMENTS_BATCH), at * REQUIREMENTS_BATCH))
+    : [requirements];
   const choices = (classified) => {
     const groups = profile.skill_groups.map((group) => `- ${group.id} (${group.title.en}): ${profile.skills.filter((skill) => skill.group === group.id).map((skill) => skill.id).join(', ')}`);
     const rows = (classified ?? []).map((row) => `- ${row.name}: ${row.match}${row.skills?.length ? ` (${row.skills.join(', ')})` : ''}`);
@@ -197,7 +205,7 @@ export function buildSplitPrompts(profile, offer, listed = [], { shortlist: offe
       prompt: ['CATALOGUE', '', 'Skill ids by group:', ...groups, '', ...experienceLines(profile), ...offerLines(offer), 'Requirements, already classified (name: match (skill ids)):', ...rows, '', languageLine(offer)].join('\n'),
     };
   };
-  return { requirements, choices };
+  return { requirements, batches, choices };
 }
 
 /**
