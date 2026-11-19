@@ -88,6 +88,17 @@ daily purge: sessions 30 days, CVs 12 months, accounts without login 24
 months, orders 10 years without the address once the account is erased. No
 card is ever stored here: a saved card stays at the payment provider.
 
+## Paid features and recovery (6.4d)
+
+- Saving a profile needs a purchase (402 with the market's packs); a visitor
+  previews free with a profile sent along, never stored.
+- Profile chat: 20 messages with the first pack, then 1 credit = 20
+  messages. It suggests and asks; it never writes the profile.
+- Password recovery: a one-time link by mail, valid an hour; it closes the
+  old sessions; the same answer whether the address exists or not.
+- Contact on the privacy page: `--contact` or `PREMIUM_CONTACT`.
+- `test/premium-e2e.test.js` runs a whole customer journey in CI.
+
 ## Before going public (not done by the demo)
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is

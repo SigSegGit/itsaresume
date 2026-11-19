@@ -7,11 +7,10 @@
   ],
   "files": [
     "premium/accounts.js",
-    "premium/preview.js",
-    "premium/server.js",
-    "premium/pricing.js",
     "premium/extension/linkedin.js",
-    "test/premium.test.js",
+    "premium/preview.js",
+    "premium/pricing.js",
+    "premium/server.js",
     "src/analysis.js",
     "src/coverage.js",
     "src/evidence.js",
@@ -31,7 +30,9 @@
     "src/score.js",
     "src/tailor.js",
     "src/text.js",
-    "test/importance.test.js"
+    "test/importance.test.js",
+    "test/premium-e2e.test.js",
+    "test/premium.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -144,6 +145,38 @@
       "dead": "const order = store.buy(user, body.pack);",
       "expect": [
         "checkout: the order records its currency and local price; the credits are the same"
+      ]
+    },
+    "Pay: saving a profile needs a purchase": {
+      "file": "premium/server.js",
+      "live": "if (!store.hasPaid(user)) throw new HttpError(402, 'saving a profile comes with a pack of CVs: buy one first', offerPacks(request));",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Chat: the quota stops the chat": {
+      "file": "premium/server.js",
+      "live": "if (user.chat.left < 1) throw new HttpError(429, 'no message left', { refill: { credits: 1, messages: CHAT.perCredit } });",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Recovery: a reset link is used once": {
+      "file": "premium/accounts.js",
+      "live": "      delete data.resets[key];",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Recovery: a reset closes the old sessions": {
+      "file": "premium/accounts.js",
+      "live": "for (const [sessionKey, session] of Object.entries(data.sessions)) if (session.email === user.email) delete data.sessions[sessionKey];",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
       ]
     }
   }

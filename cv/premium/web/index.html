@@ -38,6 +38,12 @@
 
   <section id="account">
     <h2>Mon compte</h2>
+    <form id="reset-form" class="card" hidden>
+      <h3>Nouveau mot de passe</h3>
+      <label>Nouveau mot de passe (8 caractères min.) <input id="new-password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <button type="submit">Changer le mot de passe</button>
+    </form>
+    <p id="reset-msg" class="muted" hidden></p>
     <form id="auth" class="card">
       <label>Adresse e-mail <input id="email" type="email" autocomplete="email" required></label>
       <label>Mot de passe (8 caractères min.) <input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
@@ -46,6 +52,7 @@
         <button type="submit" data-action="login">Se connecter</button>
         <button type="submit" data-action="register" class="secondary">Créer un compte</button>
       </div>
+      <p><a href="#account" id="forgot">Mot de passe oublié ?</a></p>
       <p id="auth-error" class="error" hidden></p>
     </form>
 
@@ -70,6 +77,17 @@
           <p>Serveur : <code id="ext-url"></code></p>
           <p>Jeton : <code id="ext-token">connectez-vous à nouveau pour l'afficher</code></p>
         </details>
+      </div>
+
+      <div class="card">
+        <h3>Assistant de profil</h3>
+        <p id="chat-status" class="muted"></p>
+        <ul id="chat-log" class="chat"></ul>
+        <div class="row chat-row">
+          <input id="chat-input" placeholder="Ex. : comment présenter mes astreintes ?" maxlength="4000">
+          <button id="chat-send" type="button">Envoyer</button>
+        </div>
+        <button id="chat-refill" type="button" class="secondary" hidden></button>
       </div>
 
       <div class="card">

@@ -109,13 +109,13 @@ test('server: preview free on the subscription, generation paid by a credit on t
   try {
     const { json: { token } } = await call('/api/register', { body: { email: 'd@example.org', password: 'long enough', accept: true } });
     assert.equal((await call('/api/preview', { token, body: { offer: 'an offer' } })).status, 409, 'a profile first');
-    assert.equal((await call('/api/profile', { token, body: { resume: { basics: { name: 'D' } } } })).status, 200);
-    const preview = await call('/api/preview', { token, body: { offer: 'an offer' } });
+    assert.equal((await call('/api/profile', { token, body: { resume: { basics: { name: 'D' } } } })).status, 402, 'a purchase first (6.4d)');
+    const preview = await call('/api/preview', { token, body: { offer: 'an offer', resume: { basics: { name: 'D' } } } });
     assert.equal(preview.status, 200);
     assert.ok(!JSON.stringify(preview.json).includes('Tailored bullet'));
     assert.equal(calls.at(-1), 'preview');
-    assert.equal((await call('/api/generate', { token, body: { offer: 'an offer' } })).status, 402, 'no credit');
     assert.equal((await call('/api/checkout', { token, body: { pack: 'pack5' } })).json.credits, 5);
+    assert.equal((await call('/api/profile', { token, body: { resume: { basics: { name: 'D' } } } })).status, 200);
     const job = await call('/api/generate', { token, body: { offer: 'an offer' } });
     assert.equal(job.status, 202);
     assert.equal(calls.at(-1), 'paid');
@@ -139,9 +139,8 @@ test('server: previews are limited per account per day', async () => {
   const { server, call } = await serve();
   try {
     const { json: { token } } = await call('/api/register', { body: { email: 'f@example.org', password: 'long enough', accept: true } });
-    await call('/api/profile', { token, body: { resume: {} } });
     const statuses = [];
-    for (let i = 0; i < 4; i += 1) statuses.push((await call('/api/preview', { token, body: { offer: 'x' } })).status);
+    for (let i = 0; i < 4; i += 1) statuses.push((await call('/api/preview', { token, body: { offer: 'x', resume: {} } })).status);
     assert.deepEqual(statuses, [200, 200, 200, 429]);
   } finally {
     server.close();

@@ -9,12 +9,15 @@
 // demo sends it to the router too and says so (DEMO_PAID).
 
 import { createServer } from 'node:http';
-import { readFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, mkdirSync, appendFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENCIES, localPacks, currencyFor } from './pricing.js';
 import { redact } from './preview.js';
+import { CHAT } from './accounts.js';
+
+export { CHAT };
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
 const MAX_BODY = 300_000;
@@ -34,9 +37,10 @@ const FILES = {
 };
 
 class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, extra = null) {
     super(message);
     this.status = status;
+    this.extra = extra;
   }
 }
 
@@ -74,7 +78,8 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid = false }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false }) {
+  const offerPacks = (request) => ({ packs: localPacks(currencyFor(request.headers['accept-language'])) });
   const account = (request) => {
     const user = store.user(tokenOf(request));
     if (!user) throw new HttpError(401, 'log in first');
@@ -127,6 +132,10 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
         profile: user.profile ? { name: user.profile.identity?.name ?? user.profile.name, experiences: user.profile.experiences?.length ?? 0 } : null,
         jobs: user.jobs.map(({ page, ...job }) => job),
         demo_paid: demoPaid,
+        paid: store.hasPaid(user),
+        chat_left: user.chat?.left ?? 0,
+        chat_per_credit: CHAT.perCredit,
+        chat_history: (user.chat?.history ?? []).slice(-10),
       };
     },
     // 6.4c GDPR: access and portability, erasure.
@@ -145,9 +154,57 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
       store.deleteProfile(account(request));
       return { ok: true };
     },
+    // 6.4d: the profile chat, for those who bought a pack.
+    'POST /api/chat': async (request) => {
+      const user = account(request);
+      const message = String((await readJson(request)).message ?? '').trim().slice(0, 4000);
+      if (!message) throw new HttpError(400, 'an empty message');
+      if (!store.hasPaid(user)) throw new HttpError(402, 'the profile chat comes with a pack of CVs', offerPacks(request));
+      if (!chat) throw new HttpError(503, 'the chat is off');
+      if (user.chat.left < 1) throw new HttpError(429, 'no message left', { refill: { credits: 1, messages: CHAT.perCredit } });
+      let reply;
+      try {
+        reply = await chat({ profile: user.profile, history: user.chat.history, message });
+      } catch (error) {
+        throw new HttpError(502, `the chat failed: ${error.message}`);
+      }
+      store.chatSaid(user, message, reply);
+      return { reply, chat_left: user.chat.left };
+    },
+    'POST /api/chat/refill': async (request) => {
+      const user = account(request);
+      if (!store.hasPaid(user)) throw new HttpError(402, 'the profile chat comes with a pack of CVs', offerPacks(request));
+      try {
+        store.refillChat(user);
+      } catch {
+        throw new HttpError(402, 'no credit left: buy a pack', offerPacks(request));
+      }
+      return { chat_left: user.chat.left, credits: user.credits };
+    },
+    // Recovery: the same answer whether the address has an account or not.
+    'POST /api/password/forgot': async (request) => {
+      const body = await readJson(request);
+      const token = store.resetToken(body.email);
+      if (token) {
+        const link = `http://${request.headers.host}/#reset=${token}`;
+        await mailer.send({ to: String(body.email).trim().toLowerCase(), subject: 'itsaresume : nouveau mot de passe', text: `Pour choisir un nouveau mot de passe (lien valable une heure, une fois) : ${link}\nSi vous n'avez rien demandé, ignorez ce message.` });
+      }
+      return { ok: true };
+    },
+    'POST /api/password/reset': async (request) => {
+      const body = await readJson(request);
+      try {
+        store.resetPassword(body.token, body.password);
+      } catch (error) {
+        throw new HttpError(400, error.message);
+      }
+      return { ok: true };
+    },
     'POST /api/profile': async (request) => {
       const user = account(request);
       const body = await readJson(request);
+      // 6.4d: saving a profile comes with a purchase; the packs come with the refusal.
+      if (!store.hasPaid(user)) throw new HttpError(402, 'saving a profile comes with a pack of CVs: buy one first', offerPacks(request));
       let profile;
       try {
         profile = profileOf(body.resume ?? {});
@@ -172,16 +229,26 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
     },
     'POST /api/preview': async (request) => {
       const user = account(request);
-      const offer = offerOf(await readJson(request));
-      needProfile(user);
+      const body = await readJson(request);
+      const offer = offerOf(body);
+      // A visitor previews with a profile sent along, never stored.
+      let profile = user.profile;
+      if (!profile && body.resume) {
+        try {
+          profile = profileOf(body.resume);
+        } catch (error) {
+          throw new HttpError(400, error.message);
+        }
+      }
+      needProfile({ profile });
       if (!store.previewAllowed(user)) throw new HttpError(429, 'free previews used up for today');
       let analysis;
       try {
-        analysis = await analyse({ profile: user.profile, offer, mode: 'preview' });
+        analysis = await analyse({ profile, offer, mode: 'preview' });
       } catch (error) {
         throw new HttpError(502, `the preview failed: ${error.message}`);
       }
-      return redact(pageOf(user.profile, analysis), analysis);
+      return redact(pageOf(profile, analysis), analysis);
     },
     'POST /api/generate': async (request) => {
       const user = account(request);
@@ -224,7 +291,10 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
       if (request.method === 'GET' && FILES[url.pathname]) {
         const [file, type] = FILES[url.pathname];
         response.writeHead(200, { 'content-type': `${type}; charset=utf-8`, 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; style-src 'self'; img-src 'self' data:" });
-        return response.end(readFileSync(file));
+        const body = readFileSync(file);
+        // The privacy page names the configured contact (never written in the repository).
+        if (url.pathname === '/privacy.html') return response.end(body.toString('utf8').replaceAll('{{contact}}', contact.replace(/[<>&"]/g, '') || 'à compléter'));
+        return response.end(body);
       }
       const order = /^\/api\/orders\/([0-9a-f]{12})$/.exec(url.pathname);
       if (request.method === 'GET' && order) {
@@ -249,7 +319,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
       const [body, headers = {}, code = 200] = Array.isArray(result) ? result : [result];
       return send(response, code, body, headers);
     } catch (error) {
-      return send(response, error.status ?? 500, { error: error.status ? error.message : 'internal error' });
+      return send(response, error.status ?? 500, { error: error.status ? error.message : 'internal error', ...(error.extra ?? {}) });
     }
   });
 }
@@ -285,6 +355,17 @@ async function main(argv) {
       return profile;
     },
     demoPaid: true,
+    contact: option('contact', process.env.PREMIUM_CONTACT ?? ''),
+    // Demo mail: the console and the data folder's outbox.
+    mailer: { send: async (mail) => {
+      appendFileSync(join(data, 'outbox.log'), `${new Date().toISOString()} to ${mail.to}: ${mail.subject}\n${mail.text}\n\n`);
+      console.log(`[mail to ${mail.to}] ${mail.text}`);
+    } },
+    // The profile chat: helps to say what the profile holds, never invents.
+    chat: async ({ profile, history, message }) => (await llm({
+      system: 'You help a person improve their own professional profile for CVs. Ask about facts they have not written down, suggest clearer wording of what they said, never invent an employer, a skill, a level, a number or a result. Answer in the language of the message, briefly.',
+      prompt: `Profile (JSON):\n${JSON.stringify(profile ?? {}).slice(0, 12000)}\n\nRecent exchanges:\n${history.slice(-6).map((entry) => `User: ${entry.message}\nYou: ${entry.reply}`).join('\n')}\n\nUser: ${message}`,
+    })).text,
   });
   // 6.4c: the retention limits, applied daily.
   setInterval(() => accounts.purge(), 86400000).unref();

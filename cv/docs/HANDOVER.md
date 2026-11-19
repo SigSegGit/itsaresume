@@ -1748,6 +1748,16 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   6.4b: impulse packs (1.49 to 35.99 EUR, Haiku 5.5), one charm-priced grid per
   market (8 currencies), checkout and receipt pages. 6.4c: GDPR (notice accepted,
   export, erasure, retention purge, no card stored).
+  6.4d: a real use end to end in CI (`test/premium-e2e.test.js`); saving a
+  profile and the profile chat need a purchase (the packs come with the 402);
+  the chat: 20 messages with the first pack, then 1 credit = 20 messages;
+  password recovery by a one-time mail link (demo mail: console + outbox);
+  the privacy contact from `--contact` / `PREMIUM_CONTACT`, never in the repository.
+- [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
+  paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
+  session on the profile and a target offer, with a written plan. Price it
+  from the measured tokens of a session; keep the honesty rules (the coach
+  suggests, the profile is changed by the owner of the profile only).
 - [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
   are all at a learning or lab level (GCP "montée en compétence" read yes
   by Groq) shows as met: the code only ever raises a verdict. Decide

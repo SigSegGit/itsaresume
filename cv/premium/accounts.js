@@ -10,6 +10,10 @@ import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { PACKS } from './pricing.js';
 
 export const MIN_PASSWORD = 8;
+/** 6.4d: the profile chat: messages given with the first purchase, and per credit spent. */
+export const CHAT = { free: 20, perCredit: 20 };
+/** A password reset link lives an hour, once. */
+const RESET_MS = 3600000;
 export const PREVIEWS_PER_DAY = 3;
 /** The privacy notice's version a new account accepts (web/privacy.html). */
 export const PRIVACY_VERSION = '2026-11-19';
@@ -29,6 +33,7 @@ const day = (now) => new Date(now).toISOString().slice(0, 10);
 /** file: where the store lives, or null to keep it in memory (tests). */
 export function createStore(file) {
   const data = file && existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : { users: {}, sessions: {}, orders: [] };
+  data.resets ??= {};
   const save = () => {
     if (!file) return;
     writeFileSync(`${file}.tmp`, JSON.stringify(data, null, 2));
@@ -83,10 +88,49 @@ export function createStore(file) {
       const pack = PACKS.find((entry) => entry.id === packId);
       if (!pack) throw new Error('pack: unknown');
       user.credits += pack.credits;
+      user.chat ??= { left: CHAT.free, history: [] };
       const order = { id: randomBytes(6).toString('hex'), email: user.email, pack: pack.id, credits: pack.credits, currency: local?.currency ?? 'EUR', price: local?.price ?? pack.price, simulated: true, at: new Date().toISOString() };
       data.orders.push(order);
       save();
       return order;
+    },
+    hasPaid(user) {
+      return data.orders.some((order) => order.email === user.email);
+    },
+    /** One exchange of the profile chat; history capped at 40 entries. */
+    chatSaid(user, message, reply) {
+      user.chat.left -= 1;
+      user.chat.history.push({ at: new Date().toISOString(), message, reply });
+      user.chat.history.splice(0, Math.max(0, user.chat.history.length - 40));
+      save();
+    },
+    refillChat(user) {
+      if (user.credits <= 0) throw new Error('no credit left for the chat');
+      user.credits -= 1;
+      user.chat.left += CHAT.perCredit;
+      save();
+    },
+    /** A one-time reset token for an address; null when no account (said to nobody). */
+    resetToken(email, now = Date.now()) {
+      const user = data.users[String(email ?? '').trim().toLowerCase()];
+      if (!user) return null;
+      const token = randomBytes(24).toString('hex');
+      data.resets[tokenKey(token)] = { email: user.email, at: now };
+      save();
+      return token;
+    },
+    resetPassword(token, password, now = Date.now()) {
+      const key = tokenKey(token);
+      const reset = data.resets[key];
+      delete data.resets[key];
+      save();
+      if (!reset || now - reset.at > RESET_MS || !data.users[reset.email]) throw new Error('this link is invalid or expired');
+      if (String(password ?? '').length < MIN_PASSWORD) throw new Error(`password: ${MIN_PASSWORD} characters at least`);
+      const user = data.users[reset.email];
+      user.salt = randomBytes(16).toString('hex');
+      user.hash = hash(password, user.salt);
+      for (const [sessionKey, session] of Object.entries(data.sessions)) if (session.email === user.email) delete data.sessions[sessionKey];
+      save();
     },
     order(user, id) {
       return data.orders.find((entry) => entry.id === id && entry.email === user.email) ?? null;

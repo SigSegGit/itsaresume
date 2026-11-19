@@ -52,6 +52,10 @@ label.inline select { padding: 4px; }
 .summary td:last-child { text-align: right; font-weight: 600; }
 .total td { border-top: 1px solid #ddd; padding-top: 8px; font-size: 1.15rem; }
 .receipt { border-left: 4px solid var(--ok); }
+.chat { list-style: none; padding: 0; max-height: 320px; overflow-y: auto; }
+.chat li { margin: 6px 0; padding: 8px 10px; border-radius: 8px; background: #f0f2f6; white-space: pre-wrap; }
+.chat li.me { background: #e6ecf7; margin-left: 15%; }
+.chat-row input { flex: 1; min-width: 0; }
 button.danger { background: var(--no); }
 .consent { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; }
 .consent input { width: auto; margin-top: 4px; }
