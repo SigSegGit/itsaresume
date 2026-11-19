@@ -163,6 +163,10 @@ test('bullets backing a matched requirement are added after the model picks, up 
   a.experiences = [{ id: 'acme', bullets: ['acme-pg'] }];
   // Terraform is matched, Python is not: acme-iac comes in, acme-py stays out.
   assert.deepEqual(buildModel(load(), a).experiences[0].bullets, ['Ran a PostgreSQL fleet.', 'Industrialised with Terraform.']);
+  // Every bullet backing it, not only the one that anchors it (2.58).
+  const p = load();
+  p.experiences[0].bullets.push({ id: 'acme-tf2', fr: 'Modules Terraform.', en: 'Wrote Terraform modules.', skills: ['terraform'] });
+  assert.deepEqual(buildModel(p, a).experiences[0].bullets, ['Ran a PostgreSQL fleet.', 'Industrialised with Terraform.', 'Wrote Terraform modules.']);
 });
 
 test('a hidden skill group backs requirements but never shows in the sidebar', () => {

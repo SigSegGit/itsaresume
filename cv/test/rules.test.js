@@ -92,14 +92,15 @@ test('main missions come first, then short missions, then R&D, with one referenc
   assert.match(validateProfile(q).errors.join('\n'), /one reference experience, a main mission/);
 });
 
-test('the main missions are always on the CV, in order, before anything else', () => {
+// 2.59 (the owner, 2026-11-19): the founder's R&D first when it tells something.
+test('the main missions are always on the CV, in order, after the founder’s R&D', () => {
   const a = analysis({
     requirements: [{ name: 'Docker', importance: 'must', match: 'yes', skills: ['docker'], note: '' }],
     experiences: [{ id: 'rnd', bullets: ['rnd-docker'] }],
   });
   const model = buildModel(v4(), a);
-  assert.deepEqual(model.experiences.map((e) => e.title), ['Senior SRE', 'Application support', 'Founder / R&D']);
-  assert.ok(model.experiences[0].bullets.length >= 1);
+  assert.deepEqual(model.experiences.map((e) => e.title), ['Founder / R&D', 'Senior SRE', 'Application support']);
+  assert.ok(model.experiences[1].bullets.length >= 1);
 });
 
 /** Rule 3: a project or a short mission earns its place by backing a requirement the offer states. */

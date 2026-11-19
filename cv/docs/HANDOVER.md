@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 2.57
-TITLE: 6.2 the add-on in service mode, 2.54 PromQL; 2.55 Groq batches, 2.56 service-minded; next 2.57 (waits for the owner), a real Groq run, then 6.3 publish
+NEXT: 2.60
+TITLE: 2.58 skills told by bullets, 2.59 founder first, 2.55 verified on a real Groq run; next 2.60 (a lab "yes"), 2.57 waits for the owner, then 6.3 publish
 WRITTEN-AT: 2026-11-19
 -->
 
@@ -1692,7 +1692,7 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   rows, a split analysis classifies them in batches (`buildSplitPrompts`
   `batches`, ids kept global), each with the offer and the skills; the
   choices call gets them all. Each batch is one Groq minute: about 4 min
-  for 30 rows. Real run on the VM after the merge: to do. Gemini in the
+  for 30 rows. Real run on the VM (2026-11-19): Groq done, 81, 275 s. Gemini in the
   same comparison: 429, free quota spent (not a bug). 1 test, 2 defences.
 - [x] **2.56** (the owner, 2026-11-19: "le sens du service, c'est un soft
   skill de presta, évidemment que oui") **Service-minded is a personal
@@ -1705,6 +1705,27 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   Ingenico**: he chose to add it to the v4; waiting for what it was (TLS,
   keys, HSM, card data at rest) — in the private notes. Then the v4, the
   compile script, `check.mjs`.
+- [x] **2.58** (the owner, 2026-11-19, after a recruiter's feedback:
+  listing skills on the left is not enough, each must be told by what was
+  done, experience by experience) **A skill shown is told by a bullet.**
+  The bullets stay the profile's own sentences, chosen by code (no model
+  writes them: no padding from small models, no robotic tone). After the
+  picks and the per-experience limits, `defaultBullets` adds, for each
+  matched skill no selected bullet tells, its best-ranked bullet. The
+  report's "To anchor in the profile" lists the matched skills shown on
+  the left that no bullet of the CV tells: one sentence to add to the
+  profile when it matters, so the profile grows from real offers instead
+  of an exhaustive list written up front. 2 tests, 3 defences. Real run:
+  to measure (page fit, the bullets the layout cuts).
+- [x] **2.59** (the owner, 2026-11-19) **The founder's R&D first.** When
+  the R&D experience tells something (rule 3 of the profile still decides
+  whether it does), `buildModel` puts it first; the main missions follow
+  in order. Its title is the profile's (the compile script's), not code.
+  1 test, 2 defences; two order tests rewritten.
+- [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
+  are all at a learning or lab level (GCP "montée en compétence" read yes
+  by Groq) shows as met: the code only ever raises a verdict. Decide
+  whether such a "yes" is lowered to adjacent, measured on the real runs.
 
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own

@@ -97,7 +97,8 @@
     "test/offer-file.test.js",
     "addon/service.js",
     "addon/options.js",
-    "addon/popup.js"
+    "addon/popup.js",
+    "test/anchor.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -897,7 +898,7 @@
       "live": "if (kindOf(experience) === 'main' && ids.length < UNSELECTED_BULLETS) {",
       "dead": "if (false) {",
       "expect": [
-        "the main missions are always on the CV, in order, before anything else"
+        "the main missions are always on the CV, in order, after the founder\u2019s R&D"
       ]
     },
     "Rules: short missions with nothing to show are left out": {
@@ -2269,6 +2270,46 @@
       "dead": "",
       "expect": [
         "2.56: service-minded is a personal quality; a service mesh stays a skill"
+      ]
+    },
+    "Anchor (2.58): a matched skill gets its bullet": {
+      "file": "src/tailor.js",
+      "live": "    if (anchor) selected.add(anchor.id);",
+      "dead": "",
+      "expect": [
+        "2.58: a matched skill is told by a bullet even when the model picked others"
+      ]
+    },
+    "Anchor (2.58): only skills no bullet tells": {
+      "file": "src/tailor.js",
+      "live": "matched.has(id) && !told.has(id));",
+      "dead": "matched.has(id));",
+      "expect": [
+        "2.58: a skill shown that no bullet of the profile tells is listed to anchor"
+      ]
+    },
+    "Anchor (2.58): the report lists them": {
+      "file": "src/report.js",
+      "live": "    if (loose.length) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "2.58: a skill shown that no bullet of the profile tells is listed to anchor"
+      ]
+    },
+    "Founder (2.59): the R&D experience first": {
+      "file": "src/tailor.js",
+      "live": "  if (founder > 0) experiences.unshift(...experiences.splice(founder, 1));",
+      "dead": "",
+      "expect": [
+        "2.59: the founder\u2019s R&D experience comes first when it is shown"
+      ]
+    },
+    "Founder (2.59): only when it tells something": {
+      "file": "src/tailor.js",
+      "live": "=== 'rnd' && shown.bullet_ids.length > 0);",
+      "dead": "=== 'rnd');",
+      "expect": [
+        "2.59: the founder\u2019s R&D experience comes first when it is shown"
       ]
     }
   }
