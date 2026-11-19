@@ -115,7 +115,31 @@ export function defaultBullets(profile, analysis) {
       count.set(entry.experience, used + 1);
     }
   }
+  // 2.58: a matched skill the selection tells nowhere gets its best bullet,
+  // past the limits: a skill on the left is told by an experience.
+  const told = (id) => profileBullets(profile).some((bullet) => selected.has(bullet.id) && (bullet.skills ?? []).includes(id));
+  const ranked = rankBullets(profile, analysis);
+  const skillsOf = new Map(profileBullets(profile).map((bullet) => [bullet.id, bullet.skills ?? []]));
+  for (const id of matchedSkills(analysis)) {
+    if (told(id)) continue;
+    const anchor = ranked.find((entry) => skillsOf.get(entry.id).includes(id));
+    if (anchor) selected.add(anchor.id);
+  }
   return selected;
+}
+
+const profileBullets = (profile) => profile.experiences.flatMap((experience) => experience.bullets);
+
+/**
+ * 2.58: the matched skills the CV shows on the left that none of its
+ * bullets tells: one sentence to add to the profile, or a bullet the page cut.
+ */
+export function unanchored(profile, analysis, rendered) {
+  const shownBullets = new Set((rendered ?? []).flatMap((experience) => experience.bullet_ids ?? []));
+  const told = new Set(profileBullets(profile).filter((bullet) => shownBullets.has(bullet.id)).flatMap((bullet) => bullet.skills ?? []));
+  const matched = matchedSkills(analysis);
+  const shown = (analysis.skill_groups ?? []).flatMap((group) => group.skills ?? []);
+  return [...new Set(shown)].filter((id) => matched.has(id) && !told.has(id));
 }
 
 export function buildModel(profile, analysis, { bullets, skillCap = Infinity } = {}) {
@@ -154,6 +178,10 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
       has_env: env.length > 0,
     }];
   });
+
+  // 2.59: the founder's R&D experience, when it tells something, comes first.
+  const founder = experiences.findIndex((shown) => kindOf(profile.experiences.find((experience) => experience.id === shown.id)) === 'rnd' && shown.bullet_ids.length > 0);
+  if (founder > 0) experiences.unshift(...experiences.splice(founder, 1));
 
   const identity = profile.identity;
   return {

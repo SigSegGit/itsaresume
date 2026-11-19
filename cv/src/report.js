@@ -6,6 +6,7 @@
 
 import { mentions } from './text.js';
 import { CORE_MISSED_CAP } from './score.js';
+import { unanchored } from './tailor.js';
 
 /** The model's text on one line. */
 const line = (text) => String(text ?? '').replace(/\s*[\r\n]+\s*/g, ' ');
@@ -125,6 +126,12 @@ export function report(analysis, profile, { backend, attempts, repairs = [], lay
     // 2026-09-27: the model's picks were listed instead).
     lines.push('', '## Experiences on the CV', '');
     for (const shown of rendered) lines.push(`- **${line(shown.title)}** — ${line(shown.org)}: ${shown.bullets.length} bullet(s)`);
+    // 2.58: a skill on the left that no bullet of the CV tells.
+    const loose = unanchored(profile, analysis, rendered);
+    if (loose.length) {
+      lines.push('', '## To anchor in the profile', '', 'Shown on the left, told by no bullet of the CV: one sentence of the profile that says where and how, or a bullet the page cut.', '');
+      for (const id of loose) lines.push(`- ${line(skills.get(id)?.name ?? id)}`);
+    }
   } else {
     lines.push('', '## Experiences put forward', '');
     for (const choice of analysis.experiences) {

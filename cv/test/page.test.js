@@ -80,8 +80,9 @@ test('2.24b: the page names its reference experience and what the docx does with
   const a = analysis();
   a.experiences.push({ id: 'gig', bullets: ['gig-pg'] }, { id: 'lab', bullets: ['lab-pg'] });
   const page = pageData(profile, a);
-  assert.deepEqual(page.experiences.map((e) => e.reference), [true, false, false, false], 'the first main mission is the reference');
-  const [acme, bank, gig, lab] = page.experiences;
+  // 2.59: the founder's R&D, when it tells something, comes first.
+  assert.deepEqual(page.experiences.map((e) => e.reference), [false, true, false, false], 'the first main mission is the reference');
+  const [lab, acme, bank, gig] = page.experiences;
   assert.equal(acme.when_empty, undefined, 'a main mission is never empty');
   assert.equal(bank.when_empty, undefined);
   assert.equal(gig.when_empty, null, 'a short mission with no bullet is dropped');
