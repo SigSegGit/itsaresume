@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 2.60
-TITLE: 2.58 skills told by bullets, 2.59 founder first, 2.55 verified on a real Groq run; next 2.60 (a lab "yes"), 2.57 waits for the owner, then 6.3 publish
+TITLE: 2.61 the A4 page's options (layout, highlight, detail, pages); next 2.60 (a lab "yes"), 2.57 waits for the owner, then 6.3 publish
 WRITTEN-AT: 2026-11-19
 -->
 
@@ -11,7 +11,18 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-11-18)
+## 0. Where things stand (2026-11-19)
+
+- **2026-11-19, 2.61 the A4 page's options** (`web/cv.js`, the owner's ask
+  before publishing): a toolbar on `/cv.html` (and the same names in its
+  address: `layout=linear|columns`, `highlight=0-3`, `detail=1-3`,
+  `pages=1|2`) re-lays the page with no model call. Highlight bolds the
+  offer's keywords (`page.keywords`, profile names only): first on the page,
+  first per block, or everywhere (tinted). Detail 1 keeps two items per
+  experience and no Env line; 3 lifts the reference cap and adds a
+  "Keywords:" line of the offer keywords the experience already says.
+  Two pages only when one page leaves ranked items out, else a notice. The
+  docx is unchanged (two-column template, its own one-or-two-page rule).
 
 - **2026-11-18, one PR for 2.43-2.45**: the score is capped at 30 when
   the title's lead technology is missed or the post is junior for a
@@ -1722,6 +1733,12 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   whether it does), `buildModel` puts it first; the main missions follow
   in order. Its title is the profile's (the compile script's), not code.
   1 test, 2 defences; two order tests rewritten.
+- [x] **2.61** (2026-11-19, the owner) The A4 page's options: linear or
+  two columns, keyword highlight density 0-3, detail 1-3 (keywords reused
+  per experience at 3), one or two pages when content justifies it. Tests in
+  `test/a4.test.js` and `test/page.test.js`, six defences in `public.json`.
+  Open: the same options for the docx (a linear template) and a per-profile
+  default stored with the profile (multi-profile publishing, 6.3).
 - [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
   are all at a learning or lab level (GCP "montée en compétence" read yes
   by Groq) shows as met: the code only ever raises a verdict. Decide
