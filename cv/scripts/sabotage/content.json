@@ -2254,6 +2254,14 @@
       "expect": [
         "6.2: the profile is kept in chrome.storage.local only, never synced"
       ]
+    },
+    "Lexicon (2.54): PromQL is Prometheus": {
+      "file": "data/tech.json",
+      "live": "\"fr\": [\n     \"PromQL\"\n    ],\n    \"en\": [\n     \"PromQL\"\n    ]",
+      "dead": "\"fr\": [],\n    \"en\": []",
+      "expect": [
+        "2.54: PromQL asked is Prometheus owned"
+      ]
     }
   }
 }

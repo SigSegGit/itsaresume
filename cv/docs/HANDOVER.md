@@ -1680,6 +1680,10 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   because "Compétences attendues :" came once per domain; that heading no
   longer counts (the other section headings still catch two offers in one
   text). 3 tests, 5 defences.
+- [x] **2.54** (the owner, 2026-11-19: "PromQL manquant alors que je
+  travaillais avec Prometheus") **PromQL is Prometheus.** `data/tech.json`
+  gives Prometheus the alias PromQL (its query language): a requirement
+  naming it is the same concept. 1 test, 1 defence.
 
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own
