@@ -4,10 +4,12 @@
 
 /** Credit packs, cheaper per CV as the pack grows. */
 export const PACKS = [
-  { id: 'unit', label: '1 CV', credits: 1, price: 4.9 },
-  { id: 'pack5', label: '5 CV', credits: 5, price: 19.9 },
-  { id: 'pack15', label: '15 CV', credits: 15, price: 44.9 },
-  { id: 'pack40', label: '40 CV', credits: 40, price: 99 },
+  { id: 'unit', label: '1 CV', credits: 1, price: 1.49 },
+  { id: 'pack5', label: '5 CV', credits: 5, price: 4.99 },
+  { id: 'pack10', label: '10 CV', credits: 10, price: 6.99 },
+  { id: 'pack30', label: '30 CV', credits: 30, price: 15.99 },
+  { id: 'pack50', label: '50 CV', credits: 50, price: 24.99 },
+  { id: 'pack100', label: '100 CV', credits: 100, price: 35.99 },
 ];
 
 /** USD per million tokens. */
@@ -16,8 +18,8 @@ export const API_PRICES = {
   'claude-sonnet-5-5': { input: 2, output: 10, cacheRead: 0.1 },
   'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheRead: null },
 };
-/** The model a paid CV is made with (the owner's choice; Opus 5.5 by default). */
-export const PAID_MODEL = 'claude-opus-5-5';
+/** The model a paid CV is made with: the owner wants a cheap one (2026-11-19). */
+export const PAID_MODEL = 'claude-haiku-5-5';
 
 /**
  * One generation, measured on the local runs: up to 3 calls, prompts of

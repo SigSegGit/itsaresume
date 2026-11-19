@@ -84,8 +84,8 @@
     },
     "Premium: the price per CV falls with the pack": {
       "file": "premium/pricing.js",
-      "live": "  { id: 'pack40', label: '40 CV', credits: 40, price: 99 },",
-      "dead": "  { id: 'pack40', label: '40 CV', credits: 40, price: 199 },",
+      "live": "  { id: 'pack100', label: '100 CV', credits: 100, price: 35.99 },",
+      "dead": "  { id: 'pack100', label: '100 CV', credits: 100, price: 135.99 },",
       "expect": [
         "packs: the price per CV falls with the pack size"
       ]

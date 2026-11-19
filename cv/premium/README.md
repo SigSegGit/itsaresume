@@ -39,9 +39,24 @@ Then `http://127.0.0.1:18791`. Preview and generation need the router up.
 | claude-sonnet-5-5 | $2 / $10 | $0.18 |
 | claude-haiku-5-5 | $0.10 / $0.50 | $0.009 |
 
-Margin per CV after card fees (1.5 % + €0.25 per payment), API and hosting
-(€0.02): from €4.25 (1 CV) to €2.10 (40 CV) with Opus 5.5. Prices, fees and
-the exchange rate are assumptions to confirm before selling.
+Packs (2026-11-19, the owner: an impulse buy): 1 CV €1.49, 5 €4.99, 10
+€6.99, 30 €15.99, 50 €24.99, 100 €35.99. Paid model: claude-haiku-5-5.
+Margin per CV after card fees (1.5 % + €0.25 per payment), API (worst case)
+and hosting (€0.02), in EUR:
+
+| Pack | Per CV | Haiku 5.5 | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|---|---|
+| 1 | 1.49 | 1.19 | 1.04 | 0.89 |
+| 5 | 1.00 | 0.91 | 0.76 | 0.60 |
+| 10 | 0.70 | 0.64 | 0.49 | 0.33 |
+| 30 | 0.53 | 0.49 | 0.34 | 0.19 |
+| 50 | 0.50 | 0.46 | 0.31 | 0.16 |
+| 100 | 0.36 | 0.32 | 0.18 | 0.02 |
+
+The fixed €0.25 card fee is 17 % of the 1-CV pack; everything else is
+small. Haiku 5.5 on these prompts is not measured yet: run it on the real
+offers (rules-replay) before selling. Prices, fees and the exchange rate
+are assumptions to confirm.
 
 ## Before going public (not done by the demo)
 
