@@ -166,3 +166,59 @@ test('extension: a LinkedIn profile page read into a JSON Resume, on the click o
   assert.deepEqual(resume.work, [{ position: 'SRE', name: 'Acme', startDate: 'Jan 2020', endDate: 'Present', highlights: ['Ran PostgreSQL on-call.'] }]);
   assert.deepEqual(resume.skills, [{ name: 'LinkedIn', keywords: ['Terraform', 'Kafka'] }]);
 });
+
+// 6.4b (the owner, 2026-11-19): one grid per market, aggressive, each price a
+// local charm price from the EUR grid, the exchange rate and the market.
+import { CURRENCIES, localPacks, currencyFor, charm } from '../premium/pricing.js';
+
+test('currencies: every market keeps a falling price per CV and a margin on the paid model', () => {
+  for (const code of Object.keys(CURRENCIES)) {
+    const packs = localPacks(code);
+    assert.equal(packs.length, PACKS.length, code);
+    for (let i = 1; i < packs.length; i += 1) assert.ok(packs[i].price / packs[i].credits < packs[i - 1].price / packs[i - 1].credits, `${code} ${packs[i].id}`);
+    for (const pack of packs) assert.ok(pack.margin_eur > 0, `${code} ${pack.id}: ${pack.margin_eur}`);
+  }
+});
+
+test('currencies: charm prices (.49/.99, whole numbers where cents are not used)', () => {
+  assert.equal(charm(1.52, 2), 1.49);
+  assert.equal(charm(5.2, 2), 4.99);
+  assert.equal(charm(36.4, 2), 35.99);
+  assert.equal(charm(1133, 0), 1129);
+  for (const code of Object.keys(CURRENCIES)) {
+    for (const pack of localPacks(code)) {
+      const cents = Math.round((pack.price % 1) * 100);
+      assert.ok(CURRENCIES[code].decimals === 0 ? Number.isInteger(pack.price) && pack.price % 10 === 9 : [49, 99].includes(cents), `${code} ${pack.price}`);
+    }
+  }
+  assert.deepEqual(localPacks('EUR').map((pack) => pack.price), PACKS.map((pack) => pack.price), 'EUR is the grid itself');
+});
+
+test('currencies: the visitor\'s language picks the market, EUR otherwise', () => {
+  assert.equal(currencyFor('en-GB,en;q=0.9'), 'GBP');
+  assert.equal(currencyFor('en-US'), 'USD');
+  assert.equal(currencyFor('fr-CH,fr;q=0.8'), 'CHF');
+  assert.equal(currencyFor('pt-BR'), 'BRL');
+  assert.equal(currencyFor('fr-FR,fr;q=0.9'), 'EUR');
+  assert.equal(currencyFor(''), 'EUR');
+  assert.equal(currencyFor('xx'), 'EUR');
+});
+
+test('checkout: the order records its currency and local price; the credits are the same', async () => {
+  const { server, call } = await serve();
+  try {
+    const { json: { token } } = await call('/api/register', { body: { email: 'g@example.org', password: 'long enough' } });
+    const result = await call('/api/checkout', { token, body: { pack: 'pack10', currency: 'GBP' } });
+    assert.equal(result.json.credits, 10);
+    assert.equal(result.json.order.currency, 'GBP');
+    assert.equal(result.json.order.price, localPacks('GBP').find((pack) => pack.id === 'pack10').price);
+    assert.equal((await call('/api/checkout', { token, body: { pack: 'pack10', currency: 'XXX' } })).status, 400);
+    const packs = await call('/api/packs?currency=BRL');
+    assert.equal(packs.json.currency, 'BRL');
+    assert.equal(packs.json.packs[0].price, localPacks('BRL')[0].price);
+    const order = await call(`/api/orders/${result.json.order.id}`, { token });
+    assert.equal(order.json.pack, 'pack10');
+  } finally {
+    server.close();
+  }
+});
