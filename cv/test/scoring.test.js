@@ -310,3 +310,14 @@ test('rows to verify make a CV partial, only missing must-haves make it not qual
   assert.equal(qualification([must('yes'), must('no'), must('adjacent', { judged: true })]).level, 'partial', 'one missing of three is under the half');
   assert.equal(qualification([must('no'), must('adjacent', { judged: true })]).level, 'not-qualified', 'one missing of two is the half');
 });
+
+// 2.56 (the owner, 2026-11-19: "le sens du service, c'est un soft skill de
+// presta, évidemment que oui"): service-minded is a personal quality, met
+// like the others (2026-10-14); a service mesh or ServiceNow stays a skill.
+test('2.56: service-minded is a personal quality; a service mesh stays a skill', async () => {
+  const { namesQuality } = await import('../src/text.js');
+  for (const name of ['Sens du service', 'Sens du client', 'Orientation client', 'Orienté client', 'Customer focus', 'Customer-oriented', 'Service-minded', 'Service orientation']) {
+    assert.equal(namesQuality(name), true, name);
+  }
+  for (const name of ['Service mesh', 'ServiceNow', 'Client VPN', 'Gestion des services clients ITIL']) assert.equal(namesQuality(name), false, name);
+});
