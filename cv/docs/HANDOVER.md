@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
-NEXT: 6.x
-TITLE: 6.2 the add-on in service mode; next 6.3 publish (and a hand test in Chrome)
+NEXT: 2.55
+TITLE: 6.2 the add-on in service mode, 2.54 PromQL; next 2.55 Groq cut short, 2.56 service-minded rule, then 6.3 publish
 WRITTEN-AT: 2026-11-19
 -->
 
@@ -1684,6 +1684,24 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   travaillais avec Prometheus") **PromQL is Prometheus.** `data/tech.json`
   gives Prometheus the alias PromQL (its query language): a requirement
   naming it is the same concept. 1 test, 1 defence.
+- [ ] **2.55** (seen 2026-11-18 on the public site, a comparison) **Groq
+  cut short.** gpt-oss-120b answered `finish_reason length` after 7.7 s
+  (router: `lm_studio.rs` sends no `max_completion_tokens`, so Groq's
+  default applies; `reasoning_effort` is low). Red test in
+  `crates/itsaresume-router/tests/openai.rs`: the Groq body carries
+  `max_completion_tokens` at the model's ceiling; then a real run. Gemini
+  in the same comparison: 429, free quota spent (not a bug).
+- [ ] **2.56** (the owner, 2026-11-19: "le sens du service, c'est un soft
+  skill de presta, évidemment que oui") **Service-minded, from the
+  record.** A rule in code, not in the profile: a requirement naming
+  "sens du service" (customer focus, service orientation) is met when the
+  profile holds N3 application support or consulting years; the evidence
+  cites that experience. Test with the fictional profile, sabotage, then
+  `rules-replay.mjs` on the real runs.
+- [ ] **2.57** (the owner, 2026-11-19) **Encryption in production at
+  Ingenico**: he chose to add it to the v4; waiting for what it was (TLS,
+  keys, HSM, card data at rest) — in the private notes. Then the v4, the
+  compile script, `check.mjs`.
 
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own
