@@ -171,3 +171,12 @@ test('OpenAI with no credits is said so, and stays off after the hour', () => {
   assert.match(menu.options.openai.note, /crédit/);
   assert.doesNotMatch(menu.options.openai.note, /limite/);
 });
+
+test('6.5: Haiku is offered when a backend is named claude-haiku, never the default', () => {
+  const haiku = { name: 'claude-haiku', kind: 'claude-code', state: 'up', usage: 'allowed' };
+  const menu = modelMenu([claude('up', { usage: 'allowed' }), haiku], NOW);
+  assert.equal(menu.options.haiku.available, true);
+  assert.equal(menu.default, 'claude');
+  assert.equal(modelMenu([claude('up')], NOW).options.haiku.available, false);
+  assert.equal(modelMenu([haiku], NOW).options.compare.available, false, 'one model alone compares nothing');
+});

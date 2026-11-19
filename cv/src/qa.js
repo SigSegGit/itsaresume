@@ -9,7 +9,8 @@
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-export const MODELS = ['auto', 'claude', 'gemini', 'openai', 'groq', 'local'];
+// 6.5: haiku, Claude Code on Haiku (the subscription), a router backend named claude-haiku.
+export const MODELS = ['auto', 'claude', 'haiku', 'gemini', 'openai', 'groq', 'local'];
 // 2.37: models whose analysis goes in two calls (Groq's free tier: 8 000
 // tokens a minute, the whole analysis about 9 500). 2.37b: the local model
 // too, measured on two corpus offers: same verdicts and scores, no retry
@@ -17,7 +18,7 @@ export const MODELS = ['auto', 'claude', 'gemini', 'openai', 'groq', 'local'];
 export const SPLIT = new Set(['groq', 'local']);
 export const QA_LOG = 'qa-log.jsonl';
 
-const BACKENDS = { auto: undefined, claude: 'claude-code', gemini: 'gemini-cli', openai: 'openai', groq: 'groq', local: 'lm-studio' };
+const BACKENDS = { auto: undefined, claude: 'claude-code', haiku: 'claude-haiku', gemini: 'gemini-cli', openai: 'openai', groq: 'groq', local: 'lm-studio' };
 
 /** The router backend name for a model the page offers; undefined lets the router choose. */
 export function backendFor(model) {
