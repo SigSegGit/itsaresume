@@ -68,12 +68,9 @@ export const CURRENCIES = {
   GBP: { rate: 0.87, market: 1, decimals: 2, symbol: '£', locale: 'en-GB' },
   USD: { rate: 1.16, market: 1, decimals: 2, symbol: '$', locale: 'en-US' },
   CHF: { rate: 0.94, market: 1.1, decimals: 2, symbol: 'CHF', locale: 'fr-CH' },
-  CAD: { rate: 1.6, market: 0.95, decimals: 2, symbol: 'CA$', locale: 'fr-CA' },
-  AUD: { rate: 1.75, market: 0.95, decimals: 2, symbol: 'A$', locale: 'en-AU' },
-  BRL: { rate: 6.2, market: 0.45, decimals: 2, symbol: 'R$', locale: 'pt-BR' },
-  INR: { rate: 98, market: 0.3, decimals: 0, symbol: '₹', locale: 'en-IN' },
 };
-const REGIONS = { GB: 'GBP', UK: 'GBP', US: 'USD', CH: 'CHF', CA: 'CAD', AU: 'AUD', BR: 'BRL', IN: 'INR' };
+// 6.7 (the owner, 2026-11-20): four markets, each in its language (fr or en).
+const REGIONS = { GB: 'GBP', UK: 'GBP', US: 'USD', CH: 'CHF' };
 
 /** The highest x.49 / x.99 (or whole number ending in 9) not above the value. */
 export function charm(value, decimals = 2) {
@@ -96,11 +93,12 @@ export function localPacks(code) {
   });
 }
 
-/** The market of an Accept-Language header: its first known region, else EUR. */
+/** The market of an Accept-Language header: its first known region, else USD for English, else EUR. */
 export function currencyFor(acceptLanguage = '') {
-  for (const tag of String(acceptLanguage).split(',')) {
-    const region = /^[a-z]{2,3}-([a-z]{2})\b/i.exec(tag.trim())?.[1]?.toUpperCase();
+  const tags = String(acceptLanguage).split(',').map((tag) => tag.trim());
+  for (const tag of tags) {
+    const region = /^[a-z]{2,3}-([a-z]{2})\b/i.exec(tag)?.[1]?.toUpperCase();
     if (region && REGIONS[region]) return REGIONS[region];
   }
-  return 'EUR';
+  return /^en\b/i.test(tags[0]) ? 'USD' : 'EUR';
 }
