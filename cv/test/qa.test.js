@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MODELS, SPLIT, backendFor, withModel, appendQaLog, QA_LOG } from '../src/qa.js';
 test('auto lets the router choose; claude, gemini, openai and local name its backends', () => {
-  assert.deepEqual(MODELS, ['auto', 'claude', 'gemini', 'openai', 'groq', 'local']);
+  assert.deepEqual(MODELS, ['auto', 'claude', 'haiku', 'gemini', 'openai', 'groq', 'local']);
   assert.equal(backendFor('auto'), undefined);
   assert.equal(backendFor('claude'), 'claude-code');
   assert.equal(backendFor('gemini'), 'gemini-cli');
@@ -37,4 +37,8 @@ test('a chosen model goes with every call to the router; auto sends none', async
 test('2.37: Groq and the local model split their analysis in two calls', () => {
   assert.deepEqual([...SPLIT], ['groq', 'local']);
   assert.ok(MODELS.includes('groq'));
+});
+
+test('6.5: haiku names the router backend "claude-haiku" (Claude Code on Haiku, the subscription)', () => {
+  assert.equal(backendFor('haiku'), 'claude-haiku');
 });

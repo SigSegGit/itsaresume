@@ -212,8 +212,8 @@
     },
     "QA: claude and local name the router backends": {
       "file": "src/qa.js",
-      "live": "claude: 'claude-code', gemini: 'gemini-cli', openai: 'openai', groq: 'groq', local: 'lm-studio' };",
-      "dead": "claude: undefined, gemini: undefined, openai: undefined, groq: undefined, local: undefined };",
+      "live": "claude: 'claude-code', haiku: 'claude-haiku', gemini: 'gemini-cli', openai: 'openai', groq: 'groq', local: 'lm-studio' };",
+      "dead": "claude: undefined, haiku: undefined, gemini: undefined, openai: undefined, groq: undefined, local: undefined };",
       "expect": [
         "auto lets the router choose; claude, gemini, openai and local name its backends"
       ]

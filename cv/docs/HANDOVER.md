@@ -1758,6 +1758,17 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   session on the profile and a target offer, with a written plan. Price it
   from the measured tokens of a session; keep the honesty rules (the coach
   suggests, the profile is changed by the owner of the profile only).
+- [ ] **6.5** (2026-11-19, the owner) Haiku-first, code-first: a CV in
+  seconds on Haiku 5.5, most of it decided by code. (a) [x] the `haiku`
+  model: the router backend named `claude-haiku` (Claude Code on Haiku, the
+  subscription; a trivial call answers in 5.8 s, mostly the CLI's start).
+  (b) Measure on the real offers with "Comparer": time, attempts, validity,
+  requirement agreement against Sonnet (compare.js), then rules-replay.
+  (c) Move to code what the model still does: requirements listed from the
+  lexicon (ESCO + tech.json), the model only for phrases it leaves; bullets
+  already ranked by code (rankBullets); headline and summary assembled from
+  the profile's own sentences, the model picking among them. (d) Target: one
+  Haiku call of 5k tokens at most, under 10 s.
 - [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
   are all at a learning or lab level (GCP "montée en compétence" read yes
   by Groq) shows as met: the code only ever raises a verdict. Decide

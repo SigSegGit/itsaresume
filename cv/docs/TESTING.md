@@ -561,6 +561,7 @@ property it proves.
 | nothing able to answer leaves no default and auto off | — |
 | Claude at its limit waits for the reset time it gave, not an hour | Models (2.35): a limit waits for the reset it gave |
 | OpenAI with no credits is said so, and stays off after the hour | Models (2.35): no credits stays off |
+| 6.5: Haiku is offered when a backend is named claude-haiku, never the default | — |
 
 ## `test/must-stay-no.test.js`
 
@@ -703,6 +704,7 @@ property it proves.
 | each run appends one JSON line to the QA log, never rewriting it | QA: the log appends |
 | a chosen model goes with every call to the router; auto sends none | QA: every call of a run goes to the chosen backend |
 | 2.37: Groq and the local model split their analysis in two calls | Groq (2.37): Groq and the local model split |
+| 6.5: haiku names the router backend "claude-haiku" (Claude Code on Haiku, the subscription) | — |
 
 ## `test/questions.test.js`
 
@@ -1022,6 +1024,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**683 tests, 549 of them covered by at least one sabotage defence.**
+**685 tests, 549 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -3,6 +3,8 @@
 // a router reason (an address, a message).
 
 /** How long Claude at its limit stays off the menu: then it is tried again. */
+/** The router backend name of Claude Code on Haiku (6.5). */
+const HAIKU = 'claude-haiku';
 export const LIMIT_PAUSE_S = 60 * 60;
 
 const clock = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
@@ -71,15 +73,17 @@ function localOption(backend, awake) {
 export function modelMenu(backends, now = Date.now() / 1000, { awake = false } = {}) {
   if (backends === null) {
     const off = { available: false, note: 'routeur injoignable' };
-    return { default: null, options: { auto: off, claude: off, gemini: off, openai: off, groq: off, local: off } };
+    return { default: null, options: { auto: off, claude: off, haiku: off, gemini: off, openai: off, groq: off, local: off } };
   }
   if (!Array.isArray(backends)) {
     const open = { available: true, note: '' };
     const unknown = { available: false, note: 'non configuré' };
-    return { default: 'auto', options: { auto: open, claude: open, gemini: unknown, openai: unknown, groq: unknown, local: open } };
+    return { default: 'auto', options: { auto: open, claude: open, haiku: unknown, gemini: unknown, openai: unknown, groq: unknown, local: open } };
   }
-  const claudeBackend = backends.find((backend) => backend.kind === 'claude-code');
+  const claudeBackend = backends.find((backend) => backend.kind === 'claude-code' && backend.name !== HAIKU);
   const claude = cloudOption(claudeBackend, now);
+  // 6.5: Haiku through the subscription, offered, never the default.
+  const haiku = cloudOption(backends.find((backend) => backend.name === HAIKU), now);
   const gemini = cloudOption(backends.find((backend) => backend.kind === 'gemini-cli'), now);
   const openai = cloudOption(backends.find((backend) => backend.kind === 'openai'), now);
   // 2.36: Groq's free tier (OpenAI's open models), its own option.
@@ -92,6 +96,6 @@ export function modelMenu(backends, now = Date.now() / 1000, { awake = false } =
   const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')
     || (openai.available && 'openai') || (groq.available && 'groq') || (local.available && 'local') || fallback;
   // 2.31b: comparing needs two models that can answer.
-  const compare = { available: [claude, gemini, openai, groq, local].filter((model) => model.available).length >= 2, note: '' };
-  return { default: chosen, options: { auto, claude, gemini, openai, groq, local, compare } };
+  const compare = { available: [claude, haiku, gemini, openai, groq, local].filter((model) => model.available).length >= 2, note: '' };
+  return { default: chosen, options: { auto, claude, haiku, gemini, openai, groq, local, compare } };
 }
