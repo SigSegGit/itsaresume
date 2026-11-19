@@ -11,7 +11,7 @@ import { createPremiumApp } from '../premium/server.js';
 const people = (store) => {
   store.register('a@example.org', 'long enough');
   store.register('b@example.org', 'long enough');
-  const a = store.user(store.login('a@example.org', 'long enough'));
+  const a = store.user(store.login('a@example.org', 'long enough').token);
   store.buy(a, 'pack10', { currency: 'GBP', price: 5.99 });
   return a;
 };
@@ -82,7 +82,7 @@ async function serve(options = {}) {
     return { status: response.status, json, text };
   };
   store.register('boss@example.org', 'long enough');
-  return { server, call, store, boss: store.login('boss@example.org', 'long enough'), client: store.login('a@example.org', 'long enough') };
+  return { server, call, store, boss: store.login('boss@example.org', 'long enough').token, client: store.login('a@example.org', 'long enough').token };
 }
 
 test('admin routes: 401 without a session, 403 for a customer, open to a listed admin', async () => {

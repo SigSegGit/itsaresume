@@ -9,7 +9,7 @@
 // demo sends it to the router too and says so (DEMO_PAID).
 
 import { createServer } from 'node:http';
-import { readFileSync, mkdirSync, appendFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, appendFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,6 +29,11 @@ const FILES = {
   '/privacy.html': [join(HERE, 'web/privacy.html'), 'text/html'],
   '/checkout.html': [join(HERE, 'web/checkout.html'), 'text/html'],
   '/checkout.js': [join(HERE, 'web/checkout.js'), 'text/javascript'],
+  // 6.8: the founder's page (its API answers admins only).
+  '/admin.html': [join(HERE, 'web/admin.html'), 'text/html'],
+  '/admin.js': [join(HERE, 'web/admin.js'), 'text/javascript'],
+  // 6.7: both languages, shared with the generator's page.
+  '/i18n.js': [join(HERE, '../web/i18n.js'), 'text/javascript'],
   // The generator's A4 page, as is: it reads /api/jobs/:id/page.
   '/cv.html': [join(HERE, '../web/cv.html'), 'text/html'],
   '/cv.js': [join(HERE, '../web/cv.js'), 'text/javascript'],
@@ -78,12 +83,25 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null }) {
   const offerPacks = (request) => ({ packs: localPacks(currencyFor(request.headers['accept-language'])) });
   const account = (request) => {
     const user = store.user(tokenOf(request));
     if (!user) throw new HttpError(401, 'log in first');
     return user;
+  };
+  // 6.8: the admins are configured (PREMIUM_ADMINS), never in the repository.
+  const adminSet = new Set(admins.map((email) => String(email).trim().toLowerCase()).filter(Boolean));
+  const isAdmin = (user) => adminSet.has(user.email);
+  const admin = (request) => {
+    const user = account(request);
+    if (!isAdmin(user)) throw new HttpError(403, 'admins only');
+    return user;
+  };
+  const snapshotList = () => {
+    if (!snapshots || !existsSync(snapshots)) return [];
+    return readdirSync(snapshots).filter((name) => /^premium-\d{10}\.db$/.test(name)).sort().reverse()
+      .map((name) => ({ name, bytes: statSync(join(snapshots, name)).size }));
   };
   const offerOf = (body) => {
     const offer = String(body.offer ?? '').trim();
@@ -95,6 +113,42 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
   };
 
   const routes = {
+    'GET /api/admin/stats': (request) => {
+      admin(request);
+      return { stats: store.stats(), revenue: store.revenue(), integrity: store.verify() };
+    },
+    'GET /api/admin/users': (request, url) => {
+      admin(request);
+      return { users: store.adminUsers(url.searchParams.get('q') ?? '') };
+    },
+    'POST /api/admin/credits': async (request) => {
+      const user = admin(request);
+      const body = await readJson(request);
+      try {
+        return { credits: store.adjustCredits(user.email, String(body.email ?? '').trim().toLowerCase(), body.delta, body.reason) };
+      } catch (error) {
+        throw new HttpError(error.message === 'no such account' ? 404 : 400, error.message);
+      }
+    },
+    'GET /api/admin/log': (request) => {
+      admin(request);
+      return { log: store.adminLog() };
+    },
+    'GET /api/admin/snapshots': async (request) => {
+      admin(request);
+      const list = snapshotList();
+      let newest = null;
+      if (list.length) {
+        const { createStore } = await import('./accounts.js');
+        const copy = createStore(join(snapshots, list[0].name));
+        try {
+          newest = { name: list[0].name, integrity: copy.verify(), stats: copy.stats() };
+        } finally {
+          copy.close();
+        }
+      }
+      return { snapshots: list, newest };
+    },
     'GET /api/packs': (request, url) => {
       const asked = url.searchParams.get('currency');
       const currency = CURRENCIES[asked] ? asked : currencyFor(request.headers['accept-language']);
@@ -133,6 +187,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         jobs: user.jobs.map(({ page, ...job }) => job),
         demo_paid: demoPaid,
         paid: store.hasPaid(user),
+        admin: isAdmin(user),
         chat_left: user.chat?.left ?? 0,
         chat_per_credit: CHAT.perCredit,
         chat_history: (user.chat?.history ?? []).slice(-10),
@@ -300,7 +355,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         if (url.pathname === '/cv.html') body = Buffer.from(body.toString('utf8').replace(/(href|src)="\//g, '$1="'));
         if (url.pathname === '/cv.js') body = Buffer.from(body.toString('utf8').replaceAll('`/api/jobs/', '`api/jobs/'));
         // The privacy page names the configured contact (never written in the repository).
-        if (url.pathname === '/privacy.html') return response.end(body.toString('utf8').replaceAll('{{contact}}', contact.replace(/[<>&"]/g, '') || 'à compléter'));
+        if (url.pathname === '/privacy.html') return response.end(body.toString('utf8').replaceAll('{{contact}}', contact.replace(/[<>&"]/g, '') || 'à compléter / to be completed'));
         return response.end(body);
       }
       const order = /^\/api\/orders\/([0-9a-f]{12})$/.exec(url.pathname);
@@ -355,6 +410,9 @@ async function main(argv) {
   setInterval(() => accounts.backup(join(data, 'snapshots')), 3600000).unref();
   const app = createPremiumApp({
     store: accounts,
+    // 6.8: comma-separated admin addresses, from $DATA/.env (never the repository).
+    admins: option('admins', process.env.PREMIUM_ADMINS ?? '').split(','),
+    snapshots: join(data, 'snapshots'),
     // The demo has no API key: the paid mode goes to the router as well.
     analyse: async ({ profile, offer }) => (await analyse({ profile, offer, llm })).analysis,
     pageOf: pageData,

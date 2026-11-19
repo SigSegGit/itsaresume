@@ -23,7 +23,7 @@ async function start() {
     return;
   }
   const money = (value) => new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
-  $('what').textContent = `${pack.label} (${pack.credits} crédit${pack.credits > 1 ? 's' : ''})`;
+  $('what').textContent = globalThis.i18n.t('{label} ({count} crédit(s))', { label: pack.label, count: pack.credits });
   $('price').textContent = money(pack.price);
   $('per-cv').textContent = money(Math.round(pack.per_cv * 100) / 100);
   $('total').textContent = money(pack.price);
