@@ -22,6 +22,7 @@ export const LABELS = {
     profile: 'PROFILE',
     experience: 'EXPERIENCE',
     env: 'Env: ',
+    keywords: 'Keywords: ',
   },
   fr: {
     glance: 'EN BREF',
@@ -32,6 +33,7 @@ export const LABELS = {
     profile: 'PROFIL',
     experience: 'EXPÉRIENCES',
     env: 'Env : ',
+    keywords: 'Mots-clés : ',
   },
 };
 
@@ -229,7 +231,8 @@ export function pageData(profile, analysis) {
   const ranked = rankBullets(profile, analysis).map((entry) => entry.id);
   const all = buildModel(profile, analysis, { bullets: new Set(ranked) });
   const floor = new Set(buildModel(profile, analysis, { bullets: new Set() }).experiences.flatMap((e) => e.bullet_ids));
-  const { keywords, name_caps, company_line, glance, ...rest } = all;
+  // 2.61: keywords stay, the browser highlights them (profile names only).
+  const { name_caps, company_line, glance, ...rest } = all;
   const reference = profile.experiences.find((experience) => experience.reference) ?? profile.experiences.find((e) => kindOf(e) === 'main');
   return {
     ...rest,

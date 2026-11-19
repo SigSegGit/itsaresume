@@ -3,22 +3,82 @@
 // script only chooses how many of those items fit, and the line spacing.
 // It sets textContent only, never HTML. test/a4.test.js runs fill() over a
 // fake sheet; the DOM part below runs only in a browser.
+//
+// 2.61 (the owner, 2026-11-19): four options, read from the address and the
+// toolbar, applied with no new model call: a linear or two-column layout, a
+// highlight density for the offer's keywords, a detail level (how many items
+// per experience, and the keywords each one already says) and one or two
+// pages (two only when one page leaves ranked items out).
 
 const SPACING = { min: 1, start: 1.15, max: 1.5, step: 0.05 };
 const TARGET = 0.95;
+/** Items per experience at detail 1 (concise). */
+const CONCISE = 2;
+const DEFAULTS = { layout: 'linear', highlight: 1, detail: 2, pages: 1 };
+const CHOICES = { layout: ['linear', 'columns'], highlight: [0, 1, 2, 3], detail: [1, 2, 3], pages: [1, 2] };
 
 const round = (value) => Math.round(value * 100) / 100;
 
+/** The options from a query string; anything unknown falls back to its default. */
+function options(search) {
+  const params = new URLSearchParams(search);
+  const chosen = {};
+  for (const [name, values] of Object.entries(CHOICES)) {
+    const raw = params.get(name);
+    const value = typeof values[0] === 'number' ? Number(raw) : raw;
+    chosen[name] = raw !== null && values.includes(value) ? value : DEFAULTS[name];
+  }
+  return chosen;
+}
+
+const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** A keyword as matched in the text: its " (lab)" mark dropped. */
+const bare = (keyword) => keyword.replace(/ \(lab\)$/, '');
+const pattern = (keywords) => {
+  const words = [...new Set(keywords.map(bare).filter(Boolean))].sort((a, b) => b.length - a.length);
+  return words.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escape).join('|')})(?![\\p{L}\\p{N}])`, 'giu') : null;
+};
+
+/**
+ * The text cut into segments, `mark` on the offer's keywords: level 0 none,
+ * 1 and 2 a keyword's first occurrence not yet in `seen` (the caller keeps
+ * one `seen` for the page at 1, one per block at 2), 3 every occurrence.
+ * The segments always join back to the text.
+ */
+function marks(text, keywords, level, seen) {
+  const regex = level > 0 ? pattern(keywords) : null;
+  if (!regex) return [{ text, mark: false }];
+  const segments = [];
+  let last = 0;
+  for (const match of text.matchAll(regex)) {
+    const key = match[0].toLowerCase();
+    if (level < 3 && seen.has(key)) continue;
+    seen.add(key);
+    if (match.index > last) segments.push({ text: text.slice(last, match.index), mark: false });
+    segments.push({ text: match[0], mark: true });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) segments.push({ text: text.slice(last), mark: false });
+  return segments;
+}
+
+/** The offer keywords the texts already say, in the keywords' order. */
+function reused(texts, keywords) {
+  const joined = texts.join('\n');
+  return keywords.filter((keyword) => pattern([keyword])?.test(joined));
+}
+
 /**
  * Musts first (shrinking the spacing down to SPACING.min if they overflow),
- * then the other ranked items in rank order while the page holds them; an
- * item never makes its experience show more than the reference (the docx's
- * cap), it waits until the reference has grown. Rank 0 that is not a must
- * never shows. Then the spacing widens up to SPACING.max while the page is
- * under TARGET full. sheet: show(id, on), bare(index, on), spacing(value),
- * height(), box().
+ * then the other ranked items in rank order while the page holds them; at
+ * detail 2 an item never makes its experience show more than the reference
+ * (the docx's cap), it waits until the reference has grown; detail 1 keeps
+ * CONCISE items per experience, detail 3 lifts the reference cap. Rank 0 that
+ * is not a must never shows. Then, on one page, the spacing widens up to
+ * SPACING.max while the page is under TARGET full. `left`: the ranked items
+ * left out. sheet: show(id, on), bare(index, on), spacing(value), height(), box().
  */
-function fill(page, sheet) {
+function fill(page, sheet, { detail = DEFAULTS.detail, pages = DEFAULTS.pages } = {}) {
   const experiences = page.experiences.map((experience, index) => ({ ...experience, index, shown: new Set() }));
   const reference = experiences.find((experience) => experience.reference) ?? experiences[0];
   const set = (experience, item, on) => {
@@ -29,6 +89,11 @@ function fill(page, sheet) {
   };
   const fits = () => sheet.height() <= sheet.box();
   const ratio = () => round(sheet.height() / sheet.box());
+  const room = (experience) => {
+    if (detail === 1) return experience.shown.size < CONCISE;
+    if (detail === 3) return true;
+    return experience === reference || experience.shown.size < reference.shown.size;
+  };
 
   let spacing = SPACING.start;
   sheet.spacing(spacing);
@@ -36,29 +101,32 @@ function fill(page, sheet) {
     sheet.bare(experience.index, true);
     for (const item of experience.items) if (item.must) set(experience, item, true);
   }
+  const pending = experiences
+    .flatMap((experience) => experience.items.filter((item) => !item.must && item.rank > 0).map((item) => ({ experience, item })))
+    .sort((a, b) => a.item.rank - b.item.rank);
   let shrunk = false;
   while (!fits() && spacing > SPACING.min) {
     spacing = round(spacing - SPACING.step);
     sheet.spacing(spacing);
     shrunk = true;
   }
-  if (!fits()) return { spacing, shrunk: true, overflow: true, fill: ratio() };
+  if (!fits()) return { spacing, shrunk: true, overflow: true, fill: ratio(), left: pending.length };
 
-  const pending = experiences
-    .flatMap((experience) => experience.items.filter((item) => !item.must && item.rank > 0).map((item) => ({ experience, item })))
-    .sort((a, b) => a.item.rank - b.item.rank);
   for (;;) {
-    const next = pending.findIndex(({ experience }) => experience === reference || experience.shown.size < reference.shown.size);
+    const next = pending.findIndex(({ experience }) => room(experience));
     if (next < 0) break;
     const [{ experience, item }] = pending.splice(next, 1);
     set(experience, item, true);
     if (!fits()) {
       set(experience, item, false);
+      pending.unshift({ experience, item });
       break;
     }
   }
+  // detail 1 leaves items out by choice, not for lack of room.
+  const left = detail === 1 ? 0 : pending.length;
 
-  while (!shrunk && ratio() < TARGET && spacing < SPACING.max) {
+  while (pages === 1 && !shrunk && ratio() < TARGET && spacing < SPACING.max) {
     const wider = round(spacing + SPACING.step);
     sheet.spacing(wider);
     if (!fits()) {
@@ -67,7 +135,7 @@ function fill(page, sheet) {
     }
     spacing = wider;
   }
-  return { spacing, shrunk, overflow: false, fill: ratio() };
+  return { spacing, shrunk, overflow: false, fill: ratio(), left };
 }
 
 function element(tag, className, text) {
@@ -78,66 +146,94 @@ function element(tag, className, text) {
 }
 
 /** Lays the whole page out, every item hidden; fill() then shows some. */
-function render(page, sheet) {
+function render(page, sheet, chosen = DEFAULTS) {
   // The sheet's height is fixed, so its scrollHeight never drops below its
   // box: the fill is measured on an inner block that grows with the content.
   const root = element('div', 'content');
   sheet.replaceChildren(root);
+  sheet.classList.toggle('columns', chosen.layout === 'columns');
+  sheet.classList.toggle('pages-2', chosen.pages === 2);
+  sheet.classList.toggle('dense', chosen.highlight === 3);
   const padding = () => {
     const style = getComputedStyle(sheet);
     return parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
   };
+  const keywords = page.keywords ?? [];
+  const pageSeen = new Set();
+  /** A text node set, its keywords in <strong class="kw">, by textContent only. */
+  const said = (tag, className, text, seen = pageSeen) => {
+    const node = element(tag, className);
+    for (const segment of marks(text, keywords, chosen.highlight, chosen.highlight === 1 ? pageSeen : seen)) {
+      node.append(segment.mark ? element('strong', 'kw', segment.text) : document.createTextNode(segment.text));
+    }
+    return node;
+  };
   const items = new Map();
   const experiences = [];
-  const section = (label, ...children) => {
+  const header = element('header', 'top');
+  const main = element('div', 'main');
+  const side = element('aside', 'side');
+  const section = (parent, label, ...children) => {
     const block = element('section');
     block.append(element('h2', '', label), ...children);
-    root.append(block);
+    parent.append(block);
   };
   const list = (texts) => {
     const ul = element('ul');
     for (const text of texts) ul.append(element('li', '', text));
     return ul;
   };
-  root.replaceChildren(element('h1', '', page.name), element('p', 'headline', page.headline), element('p', 'contact', page.contact));
-  section(page.labels.profile, ...page.profile.map((text) => element('p', '', text)));
+  header.append(element('h1', '', page.name), element('p', 'headline', page.headline), element('p', 'contact', page.contact));
+  root.append(header, main);
+  if (chosen.layout === 'columns') root.append(side);
+  const rest = chosen.layout === 'columns' ? side : main;
+  const profileSeen = new Set();
+  section(main, page.labels.profile, ...page.profile.map((text) => said('p', '', text, profileSeen)));
   const skills = element('dl', 'skills');
   for (const group of page.skill_groups) skills.append(element('dt', '', group.title), element('dd', '', group.items.join(', ')));
-  section(page.labels.skills, skills);
+  // Columns: the skills lead the side column; linear: they follow the profile.
+  section(chosen.layout === 'columns' ? side : main, page.labels.skills, skills);
   const work = element('section');
   work.append(element('h2', '', page.labels.experience));
   for (const experience of page.experiences) {
+    const seen = new Set();
     const block = element('article', 'experience');
     const title = element('span', 'title', experience.title);
-    const env = element('p', 'env', experience.env ? page.labels.env + experience.env : '');
+    const env = chosen.detail === 1 || !experience.env ? element('p', 'env', '') : said('p', 'env', page.labels.env + experience.env, seen);
     const ul = element('ul');
     const head = element('div', 'head');
     head.append(title, element('span', 'org', ` — ${experience.org}`), element('span', 'dates', experience.dates));
     block.append(head, ul, env);
     for (const item of experience.items) {
-      const li = element('li', '', item.text);
+      const li = said('li', '', item.text, seen);
       li.hidden = true;
       items.set(item.id, li);
       ul.append(li);
     }
-    experiences.push({ experience, block, title, env });
+    // Detail 3: the offer's keywords this experience already says, said again.
+    const words = chosen.detail === 3 ? reused([...experience.items.map((item) => item.text), experience.env ?? ''], keywords) : [];
+    const tags = element('p', 'tags', words.length ? (page.labels.keywords ?? 'Keywords: ') + words.join(', ') : '');
+    tags.hidden = !words.length;
+    block.append(tags);
+    experiences.push({ experience, block, title, env, tags, words });
     work.append(block);
   }
-  root.append(work);
-  if (page.education.length) section(page.labels.education, list(page.education.map((school) => [school.title, ...school.details].join(' — '))));
-  if (page.certifications.length) section(page.labels.certifications, list(page.certifications));
-  if (page.languages.length) section(page.labels.languages, list(page.languages));
+  main.append(work);
+  if (page.education.length) section(rest, page.labels.education, list(page.education.map((school) => [school.title, ...school.details].join(' — '))));
+  if (page.certifications.length) section(rest, page.labels.certifications, list(page.certifications));
+  if (page.languages.length) section(rest, page.labels.languages, list(page.languages));
   // 2.50: how the CV was made, at the foot of the page.
   if (page.made_by) root.append(element('footer', 'made-by', page.made_by));
   return {
     show: (id, on) => { items.get(id).hidden = !on; },
     // An experience with no item shown: what the docx does (when_empty).
     bare: (index, on) => {
-      const { experience, block, title, env } = experiences[index];
+      const { experience, block, title, env, tags, words } = experiences[index];
       const empty = on ? experience.when_empty : undefined;
       block.hidden = empty === null;
       title.textContent = empty ? empty.title : experience.title;
-      env.hidden = Boolean(empty) || !experience.env;
+      env.hidden = Boolean(empty) || !experience.env || chosen.detail === 1;
+      tags.hidden = Boolean(empty) || !words.length;
     },
     spacing: (value) => sheet.style.setProperty('--spacing', String(value)),
     height: () => root.offsetHeight + padding(),
@@ -150,7 +246,7 @@ async function start() {
   const sheet = document.getElementById('sheet');
   const say = (text) => {
     notice.textContent = text;
-    notice.hidden = false;
+    notice.hidden = !text;
   };
   document.getElementById('print').addEventListener('click', () => window.print());
   const job = new URLSearchParams(location.search).get('job') ?? '';
@@ -158,9 +254,34 @@ async function start() {
   if (!response.ok) return say('CV introuvable : relancez la génération depuis la page d’accueil.');
   const page = await response.json();
   await document.fonts?.ready;
-  const result = fill(page, render(page, sheet));
-  if (result.overflow) say('Le contenu obligatoire dépasse la page, même à l’interligne minimal.');
-  else if (result.shrunk) say('Le contenu obligatoire ne tenait qu’en resserrant l’interligne.');
+  const controls = Object.fromEntries(Object.keys(CHOICES).map((name) => [name, document.getElementById(name)]));
+  const draw = () => {
+    const chosen = options(location.search);
+    for (const [name, control] of Object.entries(controls)) if (control) control.value = String(chosen[name]);
+    const notes = [];
+    let result;
+    if (chosen.pages === 2) {
+      // Two pages only when one page leaves ranked items out.
+      const one = fill(page, render(page, sheet, { ...chosen, pages: 1 }), { ...chosen, pages: 1 });
+      if (one.left === 0 && !one.overflow) {
+        result = one;
+        notes.push('Tout tient sur une page : la deuxième page n’apporterait rien.');
+      }
+    }
+    result ??= fill(page, render(page, sheet, chosen), chosen);
+    if (result.overflow) notes.push('Le contenu obligatoire dépasse la page, même à l’interligne minimal.');
+    else if (result.shrunk) notes.push('Le contenu obligatoire ne tenait qu’en resserrant l’interligne.');
+    say(notes.join(' '));
+  };
+  for (const [name, control] of Object.entries(controls)) {
+    control?.addEventListener('input', () => {
+      const params = new URLSearchParams(location.search);
+      params.set(name, control.value);
+      history.replaceState(null, '', `?${params}`);
+      draw();
+    });
+  }
+  draw();
 }
 
 if (typeof document !== 'undefined') start();

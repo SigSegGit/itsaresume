@@ -252,8 +252,8 @@
     },
     "A4: no experience shows more than the reference (docx cap)": {
       "file": "web/cv.js",
-      "live": "const next = pending.findIndex(({ experience }) => experience === reference || experience.shown.size < reference.shown.size);",
-      "dead": "const next = pending.findIndex(() => true);",
+      "live": "return experience === reference || experience.shown.size < reference.shown.size;",
+      "dead": "return true;",
       "expect": [
         "no experience shows more items than the reference (the docx cap)"
       ]
@@ -284,8 +284,8 @@
     },
     "A4: the spacing widens no further than its bound": {
       "file": "web/cv.js",
-      "live": "while (!shrunk && ratio() < TARGET && spacing < SPACING.max) {",
-      "dead": "while (!shrunk && ratio() < TARGET && spacing < 9) {",
+      "live": "while (pages === 1 && !shrunk && ratio() < TARGET && spacing < SPACING.max) {",
+      "dead": "while (pages === 1 && !shrunk && ratio() < TARGET && spacing < 9) {",
       "expect": [
         "the spacing widens within bounds until the page is 95 % full, never past the page"
       ]
@@ -304,6 +304,54 @@
       "dead": "        }",
       "expect": [
         "past the job cap the oldest finished job is dropped, from memory and from its visitor"
+      ]
+    },
+    "A4 2.61: detail 1 keeps CONCISE items per experience": {
+      "file": "web/cv.js",
+      "live": "if (detail === 1) return experience.shown.size < CONCISE;",
+      "dead": "if (detail === 1) return true;",
+      "expect": [
+        "detail 1 keeps two items per experience; detail 3 lifts the reference cap"
+      ]
+    },
+    "A4 2.61: two pages do not stretch the spacing": {
+      "file": "web/cv.js",
+      "live": "while (pages === 1 && !shrunk",
+      "dead": "while (!shrunk",
+      "expect": [
+        "fill says how many ranked items were left out: two pages only when some were"
+      ]
+    },
+    "A4 2.61: highlight levels 1-2 mark a keyword once": {
+      "file": "web/cv.js",
+      "live": "if (level < 3 && seen.has(key)) continue;",
+      "dead": "",
+      "expect": [
+        "highlight: off, first on the page, first per block, every one; whole words only"
+      ]
+    },
+    "A4 2.61: highlight on whole words only": {
+      "file": "web/cv.js",
+      "live": "return words.length ? new RegExp(`(?<![\\\\p{L}\\\\p{N}])(?:${words.map(escape).join('|')})(?![\\\\p{L}\\\\p{N}])`, 'giu') : null;",
+      "dead": "return words.length ? new RegExp(`(?:${words.map(escape).join('|')})`, 'giu') : null;",
+      "expect": [
+        "highlight: off, first on the page, first per block, every one; whole words only"
+      ]
+    },
+    "A4 2.61: unknown options fall back to defaults": {
+      "file": "web/cv.js",
+      "live": "chosen[name] = raw !== null && values.includes(value) ? value : DEFAULTS[name];",
+      "dead": "chosen[name] = raw !== null ? value : DEFAULTS[name];",
+      "expect": [
+        "options: defaults, and anything unknown falls back to them"
+      ]
+    },
+    "Page 2.61: keywords reach the page": {
+      "file": "src/tailor.js",
+      "live": "  const { name_caps, company_line, glance, ...rest } = all;",
+      "dead": "  const { keywords, name_caps, company_line, glance, ...rest } = all;",
+      "expect": [
+        "2.61: the page carries the offer keywords for highlighting, profile names only"
       ]
     }
   }

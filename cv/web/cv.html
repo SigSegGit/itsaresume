@@ -9,6 +9,23 @@
   <script src="/cv.js" defer></script>
 </head>
 <body>
+  <form id="options" class="options">
+    <label>Mise en page
+      <select id="layout"><option value="linear">Linéaire</option><option value="columns">Deux colonnes</option></select>
+    </label>
+    <label>Surlignage des mots-clés
+      <input id="highlight" type="range" min="0" max="3" step="1" value="1" list="highlight-steps">
+      <datalist id="highlight-steps"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option></datalist>
+      <small>aucun · 1re fois · par bloc · partout</small>
+    </label>
+    <label>Développement
+      <input id="detail" type="range" min="1" max="3" step="1" value="2">
+      <small>concis · standard · développé + mots-clés</small>
+    </label>
+    <label>Pages
+      <select id="pages"><option value="1">Une page</option><option value="2">Deux pages si le contenu le justifie</option></select>
+    </label>
+  </form>
   <p id="notice" hidden></p>
   <button id="print" type="button">Imprimer / PDF</button>
   <main id="sheet" class="a4"></main>

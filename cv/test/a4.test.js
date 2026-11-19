@@ -12,7 +12,7 @@ const SOURCE = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
 function load() {
   // const bindings stay in the script's scope: read them out at its end.
   return runInContext(`${SOURCE}
-;({ fill, SPACING });`, createContext({}));
+;({ fill, SPACING, marks, reused, options });`, createContext({ URLSearchParams }));
 }
 
 // heights: per item id; an experience costs `head` unless bare and dropped.
@@ -146,4 +146,67 @@ test('an experience reads title, organisation, then dates (no float before the t
   const script = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
   assert.match(script, /element\('div', 'head'\);\n\s*head\.append\(title, element\('span', 'org', [^\n]*\), element\('span', 'dates', experience\.dates\)\);/);
   assert.doesNotMatch(readFileSync(new URL('../web/cv.css', import.meta.url), 'utf8'), /float:/);
+});
+
+// 2.61 (the owner, 2026-11-19): the page's options, chosen in the browser
+// with no new model call: layout, highlight density, detail, one or two pages.
+
+test('options: defaults, and anything unknown falls back to them', () => {
+  const { options } = load();
+  assert.deepEqual({ ...options('') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1 });
+  assert.deepEqual({ ...options('?layout=columns&highlight=3&detail=1&pages=2') }, { layout: 'columns', highlight: 3, detail: 1, pages: 2 });
+  assert.deepEqual({ ...options('?layout=x&highlight=9&detail=-1&pages=3') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1 });
+});
+
+test('highlight: off, first on the page, first per block, every one; whole words only', () => {
+  const { marks } = load();
+  const keywords = ['SQL', 'PostgreSQL', 'Terraform (lab)', 'C'];
+  const text = 'PostgreSQL and SQL, then sql again; Terraform in CI.';
+  const strong = (segments) => [...segments.filter((s) => s.mark).map((s) => s.text)];
+  assert.deepEqual(strong(marks(text, keywords, 0, new Set())), []);
+  assert.equal(marks(text, keywords, 0, new Set()).map((s) => s.text).join(''), text);
+  assert.deepEqual(strong(marks(text, keywords, 3, new Set())), ['PostgreSQL', 'SQL', 'sql', 'Terraform']);
+  const seen = new Set();
+  assert.deepEqual(strong(marks(text, keywords, 1, seen)), ['PostgreSQL', 'SQL', 'Terraform']);
+  assert.deepEqual(strong(marks(text, keywords, 1, seen)), [], 'level 1: once on the whole page');
+  assert.equal(marks(text, keywords, 3, new Set()).map((s) => s.text).join(''), text, 'the text is never changed');
+});
+
+test('reused: the offer keywords an experience already says, none it does not', () => {
+  const { reused } = load();
+  assert.deepEqual([...reused(['Ran PostgreSQL on-call', 'Env: Terraform'], ['Terraform (lab)', 'Kafka', 'PostgreSQL'])], ['Terraform (lab)', 'PostgreSQL']);
+});
+
+test('detail 1 keeps two items per experience; detail 3 lifts the reference cap', () => {
+  const { fill } = load();
+  const data = page();
+  const concise = sheet(data, { heights: {}, box: 10000 });
+  fill(data, concise, { detail: 1 });
+  for (const experience of data.experiences) assert.ok(experience.items.filter((i) => concise.shown.has(i.id)).length <= 2);
+  const developed = sheet(data, { heights: {}, box: 10000 });
+  const result = fill(data, developed, { detail: 3 });
+  assert.ok(developed.shown.has('o4'), 'no reference cap');
+  assert.ok(!developed.shown.has('z'), 'rank 0 still never shows');
+  assert.equal(result.left, 0);
+});
+
+test('fill says how many ranked items were left out: two pages only when some were', () => {
+  const { fill, SPACING } = load();
+  const data = page();
+  assert.ok(fill(data, sheet(data, { heights: {}, box: 200 })).left > 0);
+  const two = sheet(data, { heights: {}, box: 10000 });
+  const result = fill(data, two, { pages: 2 });
+  assert.equal(result.spacing, SPACING.start, 'two pages: the spacing is not stretched to fill');
+});
+
+test('the page offers the four options and lays out columns, two pages and highlights', () => {
+  const read = (name) => readFileSync(new URL(`../web/${name}`, import.meta.url), 'utf8');
+  const html = read('cv.html');
+  for (const id of ['layout', 'highlight', 'detail', 'pages']) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(html, /id="highlight"[^>]*type="range"|type="range"[^>]*id="highlight"/);
+  const css = read('cv.css');
+  assert.match(css, /\.a4\.columns \.content\s*\{[^}]*grid-template-columns/);
+  assert.match(css, /\.a4\.pages-2\s*\{[^}]*height:\s*594mm/);
+  assert.match(css, /\.a4 strong\.kw/);
+  assert.doesNotMatch(read('cv.js'), /innerHTML/, 'text only, never HTML');
 });

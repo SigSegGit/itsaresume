@@ -32,6 +32,12 @@ property it proves.
 | the A4 page prints alone, from a button wired in cv.js | A4 page: the button prints; A4 page: print hides all but the sheet |
 | the fill is measured on the content, not on the fixed A4 box | A4 page: the fill is measured on the content |
 | an experience reads title, organisation, then dates (no float before the title) | A4 page: title before dates |
+| options: defaults, and anything unknown falls back to them | A4 2.61: unknown options fall back to defaults |
+| highlight: off, first on the page, first per block, every one; whole words only | A4 2.61: highlight levels 1-2 mark a keyword once; A4 2.61: highlight on whole words only |
+| reused: the offer keywords an experience already says, none it does not | — |
+| detail 1 keeps two items per experience; detail 3 lifts the reference cap | A4 2.61: detail 1 keeps CONCISE items per experience |
+| fill says how many ranked items were left out: two pages only when some were | A4 2.61: two pages do not stretch the spacing |
+| the page offers the four options and lays out columns, two pages and highlights | — |
 
 ## `test/addon.test.js`
 
@@ -616,6 +622,7 @@ property it proves.
 | a bullet the ranking leaves out never reaches the page | — |
 | 2.24b: the page names its reference experience and what the docx does with an empty one | Page: an empty short mission is dropped, as in the docx |
 | the A4 page data carries made_by in the CV language | Footer (2.50): made_by in the CV language |
+| 2.61: the page carries the offer keywords for highlighting, profile names only | Page 2.61: keywords reach the page |
 
 ## `test/pipeline.test.js`
 
@@ -1001,6 +1008,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**667 tests, 537 of them covered by at least one sabotage defence.**
+**674 tests, 542 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
