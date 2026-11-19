@@ -52,14 +52,18 @@ export function createStore(file) {
       return email ? data.users[email] : null;
     },
     /** Simulated payment: the order is recorded, the credits added. */
-    buy(user, packId) {
+    /** local: { currency, price } of the market grid; EUR by default. */
+    buy(user, packId, local = null) {
       const pack = PACKS.find((entry) => entry.id === packId);
       if (!pack) throw new Error('pack: unknown');
       user.credits += pack.credits;
-      const order = { id: randomBytes(6).toString('hex'), email: user.email, pack: pack.id, price: pack.price, simulated: true, at: new Date().toISOString() };
+      const order = { id: randomBytes(6).toString('hex'), email: user.email, pack: pack.id, credits: pack.credits, currency: local?.currency ?? 'EUR', price: local?.price ?? pack.price, simulated: true, at: new Date().toISOString() };
       data.orders.push(order);
       save();
       return order;
+    },
+    order(user, id) {
+      return data.orders.find((entry) => entry.id === id && entry.email === user.email) ?? null;
     },
     debit(user) {
       if (user.credits < 1) throw new Error('no credit left');

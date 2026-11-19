@@ -56,3 +56,51 @@ export const costTable = () => PACKS.map((pack) => ({
   per_cv: Math.round(unitPrice(pack) * 100) / 100,
   margin: Object.fromEntries(Object.keys(API_PRICES).map((model) => [model, Math.round(marginPerCv(pack, model) * 100) / 100])),
 }));
+
+/**
+ * 6.4b: one grid per market. A local price is the EUR price × the exchange
+ * rate × a market factor (what a CV is worth there: purchasing power and
+ * competitors' prices), cut down to a charm price. Rates and factors are
+ * assumptions of 2026-11: update the rates before launch.
+ */
+export const CURRENCIES = {
+  EUR: { rate: 1, market: 1, decimals: 2, symbol: '€', locale: 'fr-FR' },
+  GBP: { rate: 0.87, market: 1, decimals: 2, symbol: '£', locale: 'en-GB' },
+  USD: { rate: 1.16, market: 1, decimals: 2, symbol: '$', locale: 'en-US' },
+  CHF: { rate: 0.94, market: 1.1, decimals: 2, symbol: 'CHF', locale: 'fr-CH' },
+  CAD: { rate: 1.6, market: 0.95, decimals: 2, symbol: 'CA$', locale: 'fr-CA' },
+  AUD: { rate: 1.75, market: 0.95, decimals: 2, symbol: 'A$', locale: 'en-AU' },
+  BRL: { rate: 6.2, market: 0.45, decimals: 2, symbol: 'R$', locale: 'pt-BR' },
+  INR: { rate: 98, market: 0.3, decimals: 0, symbol: '₹', locale: 'en-IN' },
+};
+const REGIONS = { GB: 'GBP', UK: 'GBP', US: 'USD', CH: 'CHF', CA: 'CAD', AU: 'AUD', BR: 'BRL', IN: 'INR' };
+
+/** The highest x.49 / x.99 (or whole number ending in 9) not above the value. */
+export function charm(value, decimals = 2) {
+  if (decimals === 0) return Math.max(9, Math.floor((value + 1) / 10) * 10 - 1);
+  const floor = Math.floor(value);
+  const steps = [floor - 0.01, floor + 0.49, floor + 0.99].filter((candidate) => candidate <= value + 1e-9);
+  return Math.max(0.49, Math.round(steps[steps.length - 1] * 100) / 100);
+}
+
+/** The packs in a currency, each with its margin in EUR on the paid model. */
+export function localPacks(code) {
+  const currency = CURRENCIES[code];
+  if (!currency) throw new Error(`currency: one of ${Object.keys(CURRENCIES).join(', ')}`);
+  return PACKS.map((pack) => {
+    const price = code === 'EUR' ? pack.price : charm(pack.price * currency.rate * currency.market, currency.decimals);
+    const eur = price / currency.rate;
+    const fee = (eur * PAYMENT_FEE.rate + PAYMENT_FEE.fixed) / pack.credits;
+    const margin = eur / pack.credits - fee - costPerCv(PAID_MODEL) * EUR_PER_USD - HOSTING_PER_CV;
+    return { ...pack, currency: code, price, per_cv: price / pack.credits, margin_eur: Math.round(margin * 1000) / 1000 };
+  });
+}
+
+/** The market of an Accept-Language header: its first known region, else EUR. */
+export function currencyFor(acceptLanguage = '') {
+  for (const tag of String(acceptLanguage).split(',')) {
+    const region = /^[a-z]{2,3}-([a-z]{2})\b/i.exec(tag.trim())?.[1]?.toUpperCase();
+    if (region && REGIONS[region]) return REGIONS[region];
+  }
+  return 'EUR';
+}

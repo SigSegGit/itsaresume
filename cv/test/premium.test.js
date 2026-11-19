@@ -107,7 +107,7 @@ const until = async (check) => {
 test('server: preview free on the subscription, generation paid by a credit on the API, refunded on failure', async () => {
   const { server, call, calls } = await serve();
   try {
-    const { json: { token } } = await call('/api/register', { body: { email: 'd@example.org', password: 'long enough' } });
+    const { json: { token } } = await call('/api/register', { body: { email: 'd@example.org', password: 'long enough', accept: true } });
     assert.equal((await call('/api/preview', { token, body: { offer: 'an offer' } })).status, 409, 'a profile first');
     assert.equal((await call('/api/profile', { token, body: { resume: { basics: { name: 'D' } } } })).status, 200);
     const preview = await call('/api/preview', { token, body: { offer: 'an offer' } });
@@ -127,7 +127,7 @@ test('server: preview free on the subscription, generation paid by a credit on t
     const failed = await call('/api/generate', { token, body: { offer: 'FAIL' } });
     await until(async () => (await call(`/api/jobs/${failed.json.id}`, { token })).json.status === 'failed');
     assert.equal((await call('/api/me', { token })).json.credits, 4, 'refunded');
-    const { json: { token: other } } = await call('/api/register', { body: { email: 'e@example.org', password: 'long enough' } });
+    const { json: { token: other } } = await call('/api/register', { body: { email: 'e@example.org', password: 'long enough', accept: true } });
     assert.equal((await call(`/api/jobs/${job.json.id}/page`, { token: other })).status, 404, 'another account sees nothing');
     assert.equal((await call('/api/me')).status, 401);
   } finally {
@@ -138,7 +138,7 @@ test('server: preview free on the subscription, generation paid by a credit on t
 test('server: previews are limited per account per day', async () => {
   const { server, call } = await serve();
   try {
-    const { json: { token } } = await call('/api/register', { body: { email: 'f@example.org', password: 'long enough' } });
+    const { json: { token } } = await call('/api/register', { body: { email: 'f@example.org', password: 'long enough', accept: true } });
     await call('/api/profile', { token, body: { resume: {} } });
     const statuses = [];
     for (let i = 0; i < 4; i += 1) statuses.push((await call('/api/preview', { token, body: { offer: 'x' } })).status);
@@ -207,7 +207,7 @@ test('currencies: the visitor\'s language picks the market, EUR otherwise', () =
 test('checkout: the order records its currency and local price; the credits are the same', async () => {
   const { server, call } = await serve();
   try {
-    const { json: { token } } = await call('/api/register', { body: { email: 'g@example.org', password: 'long enough' } });
+    const { json: { token } } = await call('/api/register', { body: { email: 'g@example.org', password: 'long enough', accept: true } });
     const result = await call('/api/checkout', { token, body: { pack: 'pack10', currency: 'GBP' } });
     assert.equal(result.json.credits, 10);
     assert.equal(result.json.order.currency, 'GBP');
@@ -218,6 +218,72 @@ test('checkout: the order records its currency and local price; the credits are 
     assert.equal(packs.json.packs[0].price, localPacks('BRL')[0].price);
     const order = await call(`/api/orders/${result.json.order.id}`, { token });
     assert.equal(order.json.pack, 'pack10');
+  } finally {
+    server.close();
+  }
+});
+
+// 6.4c (the owner, 2026-11-19): GDPR. Access and portability (export),
+// erasure (profile, account), limited retention (sessions, CVs, inactive
+// accounts), the privacy notice accepted at registration. No card stored.
+import { RETENTION } from '../premium/accounts.js';
+
+const DAY = 86400000;
+
+test('GDPR: the export holds the account\'s data, never its password hash', () => {
+  const store = createStore(null);
+  const user = store.user(store.register('h@example.org', 'long enough').token);
+  store.setProfile(user, { identity: { name: 'H' } });
+  store.buy(user, 'pack5');
+  const exported = store.exportOf(user);
+  assert.equal(exported.account.email, 'h@example.org');
+  assert.equal(exported.profile.identity.name, 'H');
+  assert.equal(exported.orders.length, 1);
+  assert.ok(!JSON.stringify(exported).match(/"(hash|salt)"/));
+});
+
+test('GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'premium-'));
+  const store = createStore(join(dir, 'accounts.json'));
+  const { token } = store.register('i@example.org', 'long enough');
+  const user = store.user(token);
+  store.setProfile(user, { identity: { name: 'I' } });
+  store.buy(user, 'unit');
+  store.deleteProfile(user);
+  assert.equal(user.profile, null);
+  assert.throws(() => store.deleteAccount(user, 'wrong password'), /password/);
+  store.deleteAccount(user, 'long enough');
+  assert.equal(store.user(token), null);
+  const file = readFileSync(join(dir, 'accounts.json'), 'utf8');
+  assert.ok(!file.includes('i@example.org'), 'no address left');
+  assert.equal(JSON.parse(file).orders.length, 1, 'the order stays (accounting)');
+});
+
+test('GDPR: sessions expire, CVs and inactive accounts are purged on schedule', () => {
+  const store = createStore(null);
+  const start = Date.parse('2026-01-01T00:00:00Z');
+  const { token } = store.register('j@example.org', 'long enough', start);
+  const user = store.user(token, start);
+  store.addJob(user, { id: 'a'.repeat(16), status: 'done', created: new Date(start).toISOString(), page: { x: 1 } });
+  assert.equal(store.user(token, start + (RETENTION.sessionDays + 1) * DAY), null, 'session expired');
+  store.purge(start + (RETENTION.cvDays + 1) * DAY);
+  assert.equal(user.jobs.length, 0, 'old CVs dropped');
+  store.register('k@example.org', 'long enough', start);
+  store.purge(start + (RETENTION.inactiveDays + 1) * DAY);
+  assert.equal(store.exportOf({ email: 'k@example.org' }), null, 'inactive account erased');
+});
+
+test('GDPR: the server needs the notice accepted, and serves export and erasure', async () => {
+  const { server, call } = await serve();
+  try {
+    assert.equal((await call('/api/register', { body: { email: 'l@example.org', password: 'long enough' } })).status, 400);
+    const { json: { token } } = await call('/api/register', { body: { email: 'l@example.org', password: 'long enough', accept: true } });
+    const exported = await call('/api/me/export', { token });
+    assert.equal(exported.status, 200);
+    assert.ok(exported.json.account.accepted_at);
+    assert.equal((await call('/api/me/delete', { token, body: { password: 'nope nope' } })).status, 401);
+    assert.equal((await call('/api/me/delete', { token, body: { password: 'long enough' } })).status, 200);
+    assert.equal((await call('/api/me', { token })).status, 401);
   } finally {
     server.close();
   }

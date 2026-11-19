@@ -13,7 +13,7 @@ import { readFileSync, mkdirSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD } from './pricing.js';
+import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENCIES, localPacks, currencyFor } from './pricing.js';
 import { redact } from './preview.js';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -23,6 +23,8 @@ const FILES = {
   '/': [join(HERE, 'web/index.html'), 'text/html'],
   '/app.js': [join(HERE, 'web/app.js'), 'text/javascript'],
   '/style.css': [join(HERE, 'web/style.css'), 'text/css'],
+  '/checkout.html': [join(HERE, 'web/checkout.html'), 'text/html'],
+  '/checkout.js': [join(HERE, 'web/checkout.js'), 'text/javascript'],
   // The generator's A4 page, as is: it reads /api/jobs/:id/page.
   '/cv.html': [join(HERE, '../web/cv.html'), 'text/html'],
   '/cv.js': [join(HERE, '../web/cv.js'), 'text/javascript'],
@@ -87,7 +89,11 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
   };
 
   const routes = {
-    'GET /api/packs': () => ({ packs: costTable(), model: PAID_MODEL, run: RUN, cost_usd: costPerCv(PAID_MODEL), prices: API_PRICES, eur_per_usd: EUR_PER_USD, demo_paid: demoPaid }),
+    'GET /api/packs': (request, url) => {
+      const asked = url.searchParams.get('currency');
+      const currency = CURRENCIES[asked] ? asked : currencyFor(request.headers['accept-language']);
+      return { currency, symbol: CURRENCIES[currency].symbol, locale: CURRENCIES[currency].locale, currencies: Object.keys(CURRENCIES), packs: localPacks(currency), founder: costTable(), model: PAID_MODEL, run: RUN, cost_usd: costPerCv(PAID_MODEL), prices: API_PRICES, eur_per_usd: EUR_PER_USD, demo_paid: demoPaid };
+    },
     'POST /api/register': async (request) => {
       const body = await readJson(request);
       try {
@@ -136,7 +142,10 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
       const user = account(request);
       const body = await readJson(request);
       try {
-        const order = store.buy(user, body.pack);
+        const currency = body.currency ?? 'EUR';
+        if (!CURRENCIES[currency]) throw new Error('currency: unknown');
+        const local = localPacks(currency).find((pack) => pack.id === body.pack);
+        const order = store.buy(user, body.pack, local && { currency, price: local.price });
         return { order, credits: user.credits };
       } catch (error) {
         throw new HttpError(400, error.message);
@@ -198,6 +207,12 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
         response.writeHead(200, { 'content-type': `${type}; charset=utf-8`, 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; style-src 'self'; img-src 'self' data:" });
         return response.end(readFileSync(file));
       }
+      const order = /^\/api\/orders\/([0-9a-f]{12})$/.exec(url.pathname);
+      if (request.method === 'GET' && order) {
+        const found = store.order(account(request), order[1]);
+        if (!found) throw new HttpError(404, 'no such order');
+        return send(response, 200, found);
+      }
       const page = /^\/api\/jobs\/([0-9a-f]{16})\/page$/.exec(url.pathname);
       const status = /^\/api\/jobs\/([0-9a-f]{16})$/.exec(url.pathname);
       if (request.method === 'GET' && page) {
@@ -211,7 +226,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
       }
       const route = routes[`${request.method} ${url.pathname}`];
       if (!route) throw new HttpError(404, 'not found');
-      const result = await route(request);
+      const result = await route(request, url);
       const [body, headers = {}, code = 200] = Array.isArray(result) ? result : [result];
       return send(response, code, body, headers);
     } catch (error) {

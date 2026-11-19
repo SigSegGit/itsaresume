@@ -45,3 +45,10 @@ button.secondary { background: #fff; color: var(--ink); border: 1px solid var(--
 .jobs { padding-left: 1.2em; }
 dialog { border: 0; border-radius: 10px; max-width: 420px; width: calc(100% - 32px); }
 code { word-break: break-all; }
+label.inline { display: inline-flex; gap: 6px; align-items: center; margin-left: 12px; }
+label.inline select { padding: 4px; }
+.checkout { max-width: 520px; }
+.summary td { padding: 4px 0; }
+.summary td:last-child { text-align: right; font-weight: 600; }
+.total td { border-top: 1px solid #ddd; padding-top: 8px; font-size: 1.15rem; }
+.receipt { border-left: 4px solid var(--ok); }

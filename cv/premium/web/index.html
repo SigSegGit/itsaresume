@@ -27,7 +27,8 @@
 
   <section id="pricing">
     <h2>Tarifs</h2>
-    <p class="muted">Des crédits, sans abonnement. Plus le lot est grand, moins le CV coûte.</p>
+    <p class="muted">Des crédits, sans abonnement, sans date limite. Plus le lot est grand, moins le CV coûte.
+      <label class="inline">Devise <select id="currency"></select></label></p>
     <div id="packs" class="packs"></div>
     <details class="costs">
       <summary>Coûts opérationnels (vue fondateur)</summary>
@@ -100,16 +101,5 @@
     </div>
   </section>
 
-  <dialog id="checkout">
-    <form method="dialog">
-      <h3>Paiement simulé</h3>
-      <p id="checkout-what"></p>
-      <p class="muted">Démo : aucun paiement réel. En production, cette étape est confiée au prestataire de paiement.</p>
-      <div class="row">
-        <button value="cancel" class="secondary">Annuler</button>
-        <button id="checkout-pay" value="pay">Payer (simulé)</button>
-      </div>
-    </form>
-  </dialog>
 </body>
 </html>

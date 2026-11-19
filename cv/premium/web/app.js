@@ -23,14 +23,20 @@ function el(tag, text, className) {
 }
 
 let packs = [];
+let currency = new URLSearchParams(location.search).get('currency') ?? '';
 async function showPacks() {
-  const data = await api('/api/packs');
+  const data = await api(`/api/packs${currency ? `?currency=${encodeURIComponent(currency)}` : ''}`);
+  currency = data.currency;
   packs = data.packs;
+  const money = (value) => new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
+  const select = $('currency');
+  select.replaceChildren(...data.currencies.map((code) => Object.assign(el('option', code), { value: code, selected: code === data.currency })));
+  select.onchange = () => { currency = select.value; showPacks(); };
   const base = packs[0].per_cv;
   $('packs').replaceChildren(...packs.map((pack, index) => {
     const card = el('div', undefined, `pack${index === 2 ? ' best' : ''}`);
     if (index === 2) card.append(el('span', 'Le plus choisi', 'tag'));
-    card.append(el('h3', pack.label), el('p', euro(pack.price), 'price'), el('p', `${euro(pack.per_cv)} par CV`, 'muted'));
+    card.append(el('h3', pack.label), el('p', money(pack.price), 'price'), el('p', `${money(Math.round(pack.per_cv * 100) / 100)} par CV`, 'muted'));
     if (pack.per_cv < base) card.append(el('p', `−${Math.round((1 - pack.per_cv / base) * 100)} %`, 'save'));
     const buy = el('button', 'Acheter');
     buy.type = 'button';
@@ -41,36 +47,31 @@ async function showPacks() {
   const models = Object.keys(data.prices);
   const table = el('table');
   const head = el('tr');
-  head.append(el('th', 'Lot'), el('th', 'Prix / CV'), ...models.map((model) => el('th', `Marge / CV (${model})`)));
+  head.append(el('th', 'Lot'), el('th', `Prix (${data.currency})`), el('th', 'Marge / CV (€, modèle payant)'), ...models.map((model) => el('th', `Marge EUR / CV (${model})`)));
   table.append(head);
-  for (const pack of packs) {
+  packs.forEach((pack, index) => {
     const row = el('tr');
-    row.append(el('td', pack.label), el('td', euro(pack.per_cv)), ...models.map((model) => el('td', euro(pack.margin[model]))));
+    const founder = data.founder[index];
+    row.append(el('td', pack.label), el('td', money(pack.price)), el('td', pack.margin_eur.toFixed(2)), ...models.map((model) => el('td', founder.margin[model].toFixed(2))));
     table.append(row);
-  }
+  });
   const cost = (model) => ((data.run.calls * data.run.input * data.prices[model].input + data.run.calls * data.run.output * data.prices[model].output) / 1e6);
+  const list = el('ul');
+  list.append(...models.map((model) => el('li', `${model} : ${cost(model).toFixed(3)} $ par CV${model === data.model ? ' (modèle payant)' : ''}`)));
   $('costs').replaceChildren(
-    el('p', `Un CV, au pire : ${data.run.calls} appels × ${data.run.input / 1000}k tokens en entrée + ${data.run.output / 1000}k en sortie. Modèle payant : ${data.model}.`),
-    el('ul'),
+    el('p', `Un CV, au pire : ${data.run.calls} appels × ${data.run.input / 1000}k tokens en entrée + ${data.run.output / 1000}k en sortie.`),
+    list,
     table,
-    el('p', `Marge = prix − frais de carte (1,5 % + 0,25 € par paiement) − API (au taux ${data.eur_per_usd} €/$) − hébergement (0,02 €). L'aperçu gratuit passe par le forfait : 0 € d'API, limité à 3 par jour et par compte.`, 'muted'),
+    el('p', `Prix locaux = grille EUR × taux de change × facteur de marché, arrondis à un prix psychologique (.49/.99). Marge = prix − frais de carte (1,5 % + 0,25 €) − API (${data.eur_per_usd} €/$) − hébergement (0,02 €). Colonnes par modèle : grille EUR.`, 'muted'),
   );
-  $('costs').children[1].append(...models.map((model) => el('li', `${model} : ${cost(model).toFixed(3)} $ par CV`)));
 }
 
 function checkout(pack) {
-  if (!token && $('dashboard').hidden) {
+  if ($('dashboard').hidden) {
     location.hash = '#account';
     return say('auth-error', 'Créez un compte ou connectez-vous pour acheter.');
   }
-  $('checkout-what').textContent = `${pack.label} — ${euro(pack.price)}`;
-  $('checkout').returnValue = '';
-  $('checkout').showModal();
-  $('checkout').onclose = async () => {
-    if ($('checkout').returnValue !== 'pay') return;
-    const result = await api('/api/checkout', { pack: pack.id });
-    $('me-credits').textContent = String(result.credits);
-  };
+  location.href = `/checkout.html?pack=${encodeURIComponent(pack.id)}&currency=${encodeURIComponent(currency)}`;
 }
 
 function say(id, text) {
