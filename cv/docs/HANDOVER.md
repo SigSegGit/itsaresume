@@ -1756,6 +1756,13 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   6.4e: online at cv.<domain>/premium/ (Caddy strips the prefix, the pages
   are relative; compose service `premium` on the VM, port 18791, accounts in
   $DATA/premium, PREMIUM_CONTACT in $DATA/.env).
+  6.4f: SQLite (node:sqlite, no dependency), one file $DATA/premium/premium.db
+  in the premium container; secure_delete; hourly consistent snapshots
+  (VACUUM INTO) in $DATA/premium/snapshots, the last 48 kept.
+- [ ] **6.4g** (2026-11-19, the owner) Sync $DATA/premium/snapshots (never
+  the live premium.db) with ITSaNAS, under an ITSaNAS account of its own on
+  the VM, so the billing data has an off-machine copy. Then a restore test:
+  a snapshot opened by createStore() gives the same stats().
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it

@@ -685,9 +685,10 @@ property it proves.
 | currencies: the visitor's language picks the market, EUR otherwise | — |
 | checkout: the order records its currency and local price; the credits are the same | Currencies: the order is priced in its currency |
 | GDPR: the export holds the account's data, never its password hash | GDPR: the export never holds the password hash |
-| GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address | GDPR: erasure takes the address off the orders |
+| GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address | GDPR: erasure takes the address off the orders; Database: an erased row leaves no trace in the file |
 | GDPR: sessions expire, CVs and inactive accounts are purged on schedule | GDPR: a session expires; GDPR: old CVs are purged |
 | GDPR: the server needs the notice accepted, and serves export and erasure | GDPR: registration needs the notice accepted |
+| database: a snapshot is a whole, readable copy; only the last ones are kept | Database: old snapshots are dropped |
 
 ## `test/profiles.test.js`
 
@@ -1025,6 +1026,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**686 tests, 549 of them covered by at least one sabotage defence.**
+**687 tests, 550 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

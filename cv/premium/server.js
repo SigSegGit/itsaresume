@@ -276,7 +276,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
           job.error = error.message;
           store.refund(user);
         }
-        store.save();
+        store.saveJob(user, job);
       })();
       return [{ id: job.id, status: job.status }, {}, 202];
     },
@@ -348,8 +348,11 @@ async function main(argv) {
   const { fromJsonResume } = await import('../src/import.js');
   const { validateProfile } = await import('../src/profile.js');
   const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: router, system, prompt, schema, backend, kind });
-  const accounts = createStore(join(data, 'accounts.json'));
+  // 6.4f: one SQLite file; hourly snapshots in snapshots/, the folder a sync copies.
+  const accounts = createStore(join(data, 'premium.db'));
   accounts.purge();
+  accounts.backup(join(data, 'snapshots'));
+  setInterval(() => accounts.backup(join(data, 'snapshots')), 3600000).unref();
   const app = createPremiumApp({
     store: accounts,
     // The demo has no API key: the paid mode goes to the router as well.
