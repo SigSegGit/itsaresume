@@ -1,5 +1,9 @@
 // 6.4: accounts, sessions and credits, in one JSON file (a demo's store: one
 // process, no database). Passwords are scrypt hashes with their own salt.
+//
+// 6.4c GDPR: export (access, portability), erasure of the profile or the
+// whole account, retention limits applied by purge(). No payment method is
+// ever stored here: a saved card lives at the payment provider, as its token.
 
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
@@ -7,6 +11,15 @@ import { PACKS } from './pricing.js';
 
 export const MIN_PASSWORD = 8;
 export const PREVIEWS_PER_DAY = 3;
+/** The privacy notice's version a new account accepts (web/privacy.html). */
+export const PRIVACY_VERSION = '2026-11-19';
+/**
+ * Retention, in days: a session; a generated CV (its page); an account with
+ * no login (then erased). Orders: 10 years (French accounting law), without
+ * the address once the account is erased.
+ */
+export const RETENTION = { sessionDays: 30, cvDays: 365, inactiveDays: 730, orderYears: 10 };
+const DAY = 86400000;
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 
 const hash = (password, salt) => scryptSync(password, salt, 32).toString('hex');
@@ -21,38 +34,51 @@ export function createStore(file) {
     writeFileSync(`${file}.tmp`, JSON.stringify(data, null, 2));
     renameSync(`${file}.tmp`, file);
   };
-  const open = (email) => {
+  const open = (email, now) => {
     const token = randomBytes(24).toString('hex');
-    data.sessions[tokenKey(token)] = email;
+    data.sessions[tokenKey(token)] = { email, at: now };
+    data.users[email].last_login = new Date(now).toISOString();
     save();
     return { token };
   };
+  const checked = (user, password) => {
+    const given = Buffer.from(hash(String(password ?? ''), user?.salt ?? 'none'), 'hex');
+    return Boolean(user) && timingSafeEqual(given, Buffer.from(user.hash, 'hex'));
+  };
+  const erase = (email) => {
+    delete data.users[email];
+    for (const [key, session] of Object.entries(data.sessions)) if (session.email === email) delete data.sessions[key];
+    // The orders stay for the accounts, pseudonymous.
+    for (const order of data.orders) if (order.email === email) order.email = null;
+  };
   return {
-    register(email, password) {
+    register(email, password, now = Date.now()) {
       const key = String(email ?? '').trim().toLowerCase();
       if (!EMAIL.test(key)) throw new Error('email: not an address');
       if (String(password ?? '').length < MIN_PASSWORD) throw new Error(`password: ${MIN_PASSWORD} characters at least`);
       if (data.users[key]) throw new Error('an account exists for this address');
       const salt = randomBytes(16).toString('hex');
-      data.users[key] = { email: key, salt, hash: hash(password, salt), credits: 0, profile: null, previews: {}, jobs: [] };
-      return open(key);
+      data.users[key] = {
+        email: key, salt, hash: hash(password, salt), credits: 0, profile: null, previews: {}, jobs: [],
+        created_at: new Date(now).toISOString(), accepted_at: new Date(now).toISOString(), privacy_version: PRIVACY_VERSION,
+      };
+      return open(key, now);
     },
-    login(email, password) {
+    login(email, password, now = Date.now()) {
       const user = data.users[String(email ?? '').trim().toLowerCase()];
-      const given = Buffer.from(hash(String(password ?? ''), user?.salt ?? 'none'), 'hex');
-      if (!user || !timingSafeEqual(given, Buffer.from(user.hash, 'hex'))) throw new Error('wrong address or password');
-      return open(user.email);
+      if (!checked(user, password)) throw new Error('wrong address or password');
+      return open(user.email, now);
     },
     logout(token) {
       delete data.sessions[tokenKey(token)];
       save();
     },
-    user(token) {
-      const email = token ? data.sessions[tokenKey(token)] : undefined;
-      return email ? data.users[email] : null;
+    user(token, now = Date.now()) {
+      const session = token ? data.sessions[tokenKey(token)] : undefined;
+      if (!session || now - session.at > RETENTION.sessionDays * DAY) return null;
+      return data.users[session.email] ?? null;
     },
-    /** Simulated payment: the order is recorded, the credits added. */
-    /** local: { currency, price } of the market grid; EUR by default. */
+    /** Simulated payment. local: { currency, price } of the market grid; EUR by default. */
     buy(user, packId, local = null) {
       const pack = PACKS.find((entry) => entry.id === packId);
       if (!pack) throw new Error('pack: unknown');
@@ -87,6 +113,34 @@ export function createStore(file) {
     addJob(user, job) {
       user.jobs.unshift(job);
       user.jobs.splice(50);
+      save();
+    },
+    /** Everything held on the account, as JSON (GDPR art. 15 and 20); null when none. */
+    exportOf(user) {
+      const stored = data.users[user?.email];
+      if (!stored) return null;
+      const { hash: _hash, salt: _salt, profile, jobs, ...account } = stored;
+      return { account, profile, jobs, orders: data.orders.filter((order) => order.email === stored.email), retention: RETENTION, privacy_version: PRIVACY_VERSION };
+    },
+    deleteProfile(user) {
+      user.profile = null;
+      save();
+    },
+    /** Erasure (GDPR art. 17), the password asked again. */
+    deleteAccount(user, password) {
+      if (!checked(user, password)) throw new Error('wrong password');
+      erase(user.email);
+      save();
+    },
+    /** Applies the retention limits; run daily. */
+    purge(now = Date.now()) {
+      for (const [key, session] of Object.entries(data.sessions)) if (now - session.at > RETENTION.sessionDays * DAY) delete data.sessions[key];
+      for (const user of Object.values(data.users)) {
+        user.jobs = user.jobs.filter((job) => now - Date.parse(job.created) <= RETENTION.cvDays * DAY);
+        const seen = Date.parse(user.last_login ?? user.created_at);
+        if (now - seen > RETENTION.inactiveDays * DAY) erase(user.email);
+      }
+      data.orders = data.orders.filter((order) => now - Date.parse(order.at) <= RETENTION.orderYears * 366 * DAY);
       save();
     },
     save,

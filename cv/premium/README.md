@@ -58,6 +58,36 @@ small. Haiku 5.5 on these prompts is not measured yet: run it on the real
 offers (rules-replay) before selling. Prices, fees and the exchange rate
 are assumptions to confirm.
 
+## Markets (6.4b)
+
+One grid per currency: EUR price × exchange rate × market factor, cut to a
+charm price (.49/.99; whole numbers ending in 9 for INR). The visitor's
+language picks the market (en-GB → GBP, pt-BR → BRL…), a selector changes
+it. Every pack keeps a positive margin on Haiku 5.5, India's 100-CV pack
+included (€0.075 per CV). Rates are assumptions of 2026-11.
+
+| | 1 | 5 | 10 | 30 | 50 | 100 |
+|---|---|---|---|---|---|---|
+| EUR | 1.49 | 4.99 | 6.99 | 15.99 | 24.99 | 35.99 |
+| GBP | 0.99 | 3.99 | 5.99 | 13.49 | 21.49 | 30.99 |
+| USD | 1.49 | 5.49 | 7.99 | 18.49 | 28.49 | 41.49 |
+| CHF | 1.49 | 4.99 | 6.99 | 16.49 | 25.49 | 36.99 |
+| CAD | 1.99 | 7.49 | 10.49 | 23.99 | 37.49 | 54.49 |
+| AUD | 1.99 | 7.99 | 11.49 | 26.49 | 41.49 | 59.49 |
+| BRL | 3.99 | 13.49 | 19.49 | 44.49 | 69.49 | 99.99 |
+| INR | 39 | 139 | 199 | 469 | 729 | 1049 |
+
+Checkout: `/checkout.html` (summary, terms box, simulated payment, receipt).
+
+## Personal data (6.4c)
+
+`/privacy.html` (a draft to have checked), accepted at registration (its
+version recorded). "My data": export everything as JSON, delete the
+profile, delete the account (password asked again). Retention applied by a
+daily purge: sessions 30 days, CVs 12 months, accounts without login 24
+months, orders 10 years without the address once the account is erased. No
+card is ever stored here: a saved card stays at the payment provider.
+
 ## Before going public (not done by the demo)
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is

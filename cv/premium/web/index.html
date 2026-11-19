@@ -41,6 +41,7 @@
     <form id="auth" class="card">
       <label>Adresse e-mail <input id="email" type="email" autocomplete="email" required></label>
       <label>Mot de passe (8 caractères min.) <input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
+      <label class="consent"><input id="accept" type="checkbox"> J'ai lu la <a href="/privacy.html" target="_blank">politique de confidentialité</a> (nécessaire pour créer un compte).</label>
       <div class="row">
         <button type="submit" data-action="login">Se connecter</button>
         <button type="submit" data-action="register" class="secondary">Créer un compte</button>
@@ -97,9 +98,26 @@
       <div class="card">
         <h3>Mes CV</h3>
         <ul id="jobs" class="jobs"></ul>
+        <p class="muted">Conservés 12 mois, puis supprimés.</p>
+      </div>
+
+      <div class="card">
+        <h3>Mes données</h3>
+        <p class="muted">Aucun moyen de paiement n'est conservé ici. Détails : <a href="/privacy.html">confidentialité</a>.</p>
+        <div class="row">
+          <a id="export" href="/api/me/export" download="itsaresume-mes-donnees.json"><button type="button" class="secondary">Télécharger mes données</button></a>
+          <button id="delete-profile" type="button" class="secondary">Supprimer mon profil</button>
+        </div>
+        <details>
+          <summary>Supprimer mon compte</summary>
+          <p class="muted">Profil, CV et compte effacés tout de suite ; crédits restants perdus. Les commandes restent en comptabilité, sans votre adresse.</p>
+          <label>Mot de passe <input id="delete-password" type="password" autocomplete="current-password"></label>
+          <button id="delete-account" type="button" class="danger">Supprimer définitivement</button>
+          <p id="delete-error" class="error" hidden></p>
+        </details>
       </div>
     </div>
   </section>
-
+  <footer class="foot"><a href="/privacy.html">Confidentialité</a></footer>
 </body>
 </html>

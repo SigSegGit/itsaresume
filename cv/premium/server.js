@@ -23,6 +23,7 @@ const FILES = {
   '/': [join(HERE, 'web/index.html'), 'text/html'],
   '/app.js': [join(HERE, 'web/app.js'), 'text/javascript'],
   '/style.css': [join(HERE, 'web/style.css'), 'text/css'],
+  '/privacy.html': [join(HERE, 'web/privacy.html'), 'text/html'],
   '/checkout.html': [join(HERE, 'web/checkout.html'), 'text/html'],
   '/checkout.js': [join(HERE, 'web/checkout.js'), 'text/javascript'],
   // The generator's A4 page, as is: it reads /api/jobs/:id/page.
@@ -96,6 +97,8 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
     },
     'POST /api/register': async (request) => {
       const body = await readJson(request);
+      // 6.4c: the privacy notice (/privacy.html) accepted, its version recorded.
+      if (body.accept !== true) throw new HttpError(400, 'accept the privacy notice first');
       try {
         const { token } = store.register(body.email, body.password);
         return [{ token }, sessionCookie(token)];
@@ -125,6 +128,22 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, demoPaid =
         jobs: user.jobs.map(({ page, ...job }) => job),
         demo_paid: demoPaid,
       };
+    },
+    // 6.4c GDPR: access and portability, erasure.
+    'GET /api/me/export': (request) => [store.exportOf(account(request)), { 'content-disposition': 'attachment; filename="itsaresume-mes-donnees.json"' }],
+    'POST /api/me/delete': async (request) => {
+      const user = account(request);
+      const body = await readJson(request);
+      try {
+        store.deleteAccount(user, body.password);
+      } catch (error) {
+        throw new HttpError(401, error.message);
+      }
+      return [{ ok: true }, sessionCookie('', 0)];
+    },
+    'POST /api/profile/delete': async (request) => {
+      store.deleteProfile(account(request));
+      return { ok: true };
     },
     'POST /api/profile': async (request) => {
       const user = account(request);
@@ -252,8 +271,10 @@ async function main(argv) {
   const { fromJsonResume } = await import('../src/import.js');
   const { validateProfile } = await import('../src/profile.js');
   const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: router, system, prompt, schema, backend, kind });
+  const accounts = createStore(join(data, 'accounts.json'));
+  accounts.purge();
   const app = createPremiumApp({
-    store: createStore(join(data, 'accounts.json')),
+    store: accounts,
     // The demo has no API key: the paid mode goes to the router as well.
     analyse: async ({ profile, offer }) => (await analyse({ profile, offer, llm })).analysis,
     pageOf: pageData,
@@ -265,6 +286,8 @@ async function main(argv) {
     },
     demoPaid: true,
   });
+  // 6.4c: the retention limits, applied daily.
+  setInterval(() => accounts.purge(), 86400000).unref();
   app.listen(port, '127.0.0.1', () => console.log(`premium demo on http://127.0.0.1:${port} (router ${router}, data ${data})`));
 }
 

@@ -52,3 +52,9 @@ label.inline select { padding: 4px; }
 .summary td:last-child { text-align: right; font-weight: 600; }
 .total td { border-top: 1px solid #ddd; padding-top: 8px; font-size: 1.15rem; }
 .receipt { border-left: 4px solid var(--ok); }
+button.danger { background: var(--no); }
+.consent { display: flex; gap: 8px; align-items: flex-start; font-size: .9rem; }
+.consent input { width: auto; margin-top: 4px; }
+.legal table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: .9rem; }
+.legal th, .legal td { border-bottom: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
+.foot { text-align: center; padding: 24px 16px; font-size: .9rem; }

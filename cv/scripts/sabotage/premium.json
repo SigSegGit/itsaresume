@@ -44,8 +44,8 @@
     },
     "Premium: a wrong password is refused": {
       "file": "premium/accounts.js",
-      "live": "if (!user || !timingSafeEqual(given, Buffer.from(user.hash, 'hex'))) throw new Error('wrong address or password');",
-      "dead": "if (!user) throw new Error('wrong address or password');",
+      "live": "return Boolean(user) && timingSafeEqual(given, Buffer.from(user.hash, 'hex'));",
+      "dead": "return Boolean(user);",
       "expect": [
         "accounts: register, log in, wrong password and duplicates refused, no password stored"
       ]
@@ -88,6 +88,62 @@
       "dead": "  { id: 'pack100', label: '100 CV', credits: 100, price: 135.99 },",
       "expect": [
         "packs: the price per CV falls with the pack size"
+      ]
+    },
+    "GDPR: the export never holds the password hash": {
+      "file": "premium/accounts.js",
+      "live": "const { hash: _hash, salt: _salt, profile, jobs, ...account } = stored;",
+      "dead": "const { profile, jobs, ...account } = stored;",
+      "expect": [
+        "GDPR: the export holds the account's data, never its password hash"
+      ]
+    },
+    "GDPR: erasure takes the address off the orders": {
+      "file": "premium/accounts.js",
+      "live": "for (const order of data.orders) if (order.email === email) order.email = null;",
+      "dead": "",
+      "expect": [
+        "GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address"
+      ]
+    },
+    "GDPR: a session expires": {
+      "file": "premium/accounts.js",
+      "live": "if (!session || now - session.at > RETENTION.sessionDays * DAY) return null;",
+      "dead": "if (!session) return null;",
+      "expect": [
+        "GDPR: sessions expire, CVs and inactive accounts are purged on schedule"
+      ]
+    },
+    "GDPR: old CVs are purged": {
+      "file": "premium/accounts.js",
+      "live": "user.jobs = user.jobs.filter((job) => now - Date.parse(job.created) <= RETENTION.cvDays * DAY);",
+      "dead": "",
+      "expect": [
+        "GDPR: sessions expire, CVs and inactive accounts are purged on schedule"
+      ]
+    },
+    "GDPR: registration needs the notice accepted": {
+      "file": "premium/server.js",
+      "live": "if (body.accept !== true) throw new HttpError(400, 'accept the privacy notice first');",
+      "dead": "",
+      "expect": [
+        "GDPR: the server needs the notice accepted, and serves export and erasure"
+      ]
+    },
+    "Currencies: a local price is a charm price": {
+      "file": "premium/pricing.js",
+      "live": "const price = code === 'EUR' ? pack.price : charm(pack.price * currency.rate * currency.market, currency.decimals);",
+      "dead": "const price = code === 'EUR' ? pack.price : pack.price * currency.rate * currency.market;",
+      "expect": [
+        "currencies: charm prices (.49/.99, whole numbers where cents are not used)"
+      ]
+    },
+    "Currencies: the order is priced in its currency": {
+      "file": "premium/server.js",
+      "live": "const order = store.buy(user, body.pack, local && { currency, price: local.price });",
+      "dead": "const order = store.buy(user, body.pack);",
+      "expect": [
+        "checkout: the order records its currency and local price; the credits are the same"
       ]
     }
   }

@@ -1745,6 +1745,9 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   failure, cost model, LinkedIn add-on). Demo only; `premium/README.md` lists
   what going public needs (API adapter for the paid and preview modes, real
   payment, legal texts). Tests `test/premium.test.js`, plan `scripts/sabotage/premium.json`.
+  6.4b: impulse packs (1.49 to 35.99 EUR, Haiku 5.5), one charm-priced grid per
+  market (8 currencies), checkout and receipt pages. 6.4c: GDPR (notice accepted,
+  export, erasure, retention purge, no card stored).
 - [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
   are all at a learning or lab level (GCP "montée en compétence" read yes
   by Groq) shows as met: the code only ever raises a verdict. Decide

@@ -156,7 +156,7 @@ function wire() {
   $('auth').addEventListener('submit', async (event) => {
     event.preventDefault();
     try {
-      const result = await api(`/api/${action}`, { email: $('email').value, password: $('password').value });
+      const result = await api(`/api/${action}`, { email: $('email').value, password: $('password').value, accept: $('accept').checked });
       token = result.token;
       sessionStorage.setItem('premium_token', token);
       say('auth-error', '');
@@ -177,6 +177,22 @@ function wire() {
       await showMe();
     } catch (error) {
       $('profile-status').textContent = `Import refusé : ${error.message}`;
+    }
+  });
+  $('delete-profile').addEventListener('click', async () => {
+    if (!confirm('Supprimer votre profil importé ? Vos CV déjà générés restent.')) return;
+    await api('/api/profile/delete', {});
+    await showMe();
+  });
+  $('delete-account').addEventListener('click', async () => {
+    if (!confirm('Supprimer définitivement votre compte et vos données ?')) return;
+    try {
+      await api('/api/me/delete', { password: $('delete-password').value });
+      sessionStorage.removeItem('premium_token');
+      token = '';
+      await showMe();
+    } catch (error) {
+      say('delete-error', error.message);
     }
   });
   $('preview').addEventListener('click', () => run('preview'));
