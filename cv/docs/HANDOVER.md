@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 6.x
-TITLE: 6.1 service mode on the server (a visitor's own profile, nothing kept); next 6.2 the add-on in service mode, then 6.3 publish
-WRITTEN-AT: 2026-11-18
+TITLE: 6.2 the add-on in service mode; next 6.3 publish (and a hand test in Chrome)
+WRITTEN-AT: 2026-11-19
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1692,15 +1692,15 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     the CV goes to a temporary folder (`serve.js`), is never reused, never
     in the public state, and its folder goes after `serviceTtlMs`
     (30 min); the job view says `service: true`. 3 tests, 7 defences.
-  - [ ] **6.2** The add-on in service mode (`cv/addon/`): options take the
-    candidate's profile (a LinkedIn export's CSV files, a JSON Resume, an
-    old CV as pdf/docx/txt), kept in `chrome.storage.local` only (never
-    sync, never the server); the popup reads the offer of the open tab,
-    posts it with that profile to the public site (the page's visitor
-    token: open `/` first to get the cookie and CSRF token, or a
-    dedicated `POST /api/service-token`), polls the job, offers the PDF.
-    Tests: `test/addon.test.js` on the pure parts (offer extraction,
-    profile packing, request body); sabotage on each.
+  - [x] **6.2** (2026-11-19) The add-on in service mode (`cv/addon/`,
+    0.3.0): options take the candidate's profile (LinkedIn export `.zip`,
+    JSON Resume, old CV `.pdf .docx .txt .md`; `addon/service.js`
+    `packProfile`, as the server takes it), kept in `chrome.storage.local`
+    only; the popup reads the tab's offer, takes a fresh visitor token from
+    the public page's meta, posts offer + profile (`credentials: 'omit'`),
+    polls, offers the PDF. Server: in service mode a `chrome-extension://`
+    origin may create a job that brings a profile, nothing else. Not tried
+    in a real Chrome yet (6.3). 5 tests, 10 defences.
   - [ ] **6.3** Publish: the add-on zipped by CI as an artifact, a README
     section with screenshots, then the Chrome Web Store if the owner
     wants it (his account, his decision).

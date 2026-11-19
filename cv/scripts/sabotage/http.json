@@ -391,7 +391,7 @@
     },
     "Web: a POST comes from this origin": {
       "file": "src/server.js",
-      "live": "if (!origins.includes(request.headers.origin)) throw new HttpError(403, ",
+      "live": "if (!origins.includes(request.headers.origin) && !serviceAddon) throw new HttpError(403, ",
       "dead": "if (false) throw new HttpError(403, ",
       "expect": [
         "a POST from another origin, without the token, or not in JSON is refused"
@@ -1398,6 +1398,30 @@
       "dead": "",
       "expect": [
         "service mode: a visitor brings a profile, the CV is served then removed, nothing kept"
+      ]
+    },
+    "Service (6.2): the add-on only creates jobs": {
+      "file": "src/server.js",
+      "live": "      if (serviceAddon && path !== '/api/jobs') throw new HttpError(403, 'the add-on may only create jobs');",
+      "dead": "",
+      "expect": [
+        "service mode: the add-on may create a job with a profile, and only that"
+      ]
+    },
+    "Service (6.2): the add-on brings its own profile": {
+      "file": "src/server.js",
+      "live": "        if (serviceAddon && !(Array.isArray(sources) && sources.length)) throw new HttpError(403, 'the add-on brings its own profile');",
+      "dead": "",
+      "expect": [
+        "service mode: the add-on may create a job with a profile, and only that"
+      ]
+    },
+    "Service (6.2): an extension origin, no other site": {
+      "file": "src/server.js",
+      "live": "      const serviceAddon = Boolean(publicMode?.service) && ",
+      "dead": "      const serviceAddon = Boolean(publicMode?.service) && /^/.test('') || Boolean(publicMode?.service) && ",
+      "expect": [
+        "service mode: the add-on may create a job with a profile, and only that"
       ]
     }
   }
