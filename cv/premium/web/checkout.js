@@ -11,15 +11,15 @@ async function api(path, body) {
 
 async function start() {
   try {
-    await api('/api/me');
+    await api('api/me');
   } catch {
-    location.href = '/#account';
+    location.href = './#account';
     return;
   }
-  const data = await api(`/api/packs?currency=${encodeURIComponent(params.get('currency') ?? '')}`);
+  const data = await api(`api/packs?currency=${encodeURIComponent(params.get('currency') ?? '')}`);
   const pack = data.packs.find((entry) => entry.id === params.get('pack'));
   if (!pack) {
-    location.href = '/#pricing';
+    location.href = './#pricing';
     return;
   }
   const money = (value) => new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
@@ -31,7 +31,7 @@ async function start() {
   $('confirm').addEventListener('click', async () => {
     $('confirm').disabled = true;
     try {
-      const { order, credits } = await api('/api/checkout', { pack: pack.id, currency: data.currency });
+      const { order, credits } = await api('api/checkout', { pack: pack.id, currency: data.currency });
       $('r-id').textContent = order.id;
       $('r-pack').textContent = pack.label;
       $('r-amount').textContent = money(order.price);

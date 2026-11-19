@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>itsaresume — CV sur mesure</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css">
-  <script src="/app.js" defer></script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
   <header class="bar">
@@ -47,7 +47,7 @@
     <form id="auth" class="card">
       <label>Adresse e-mail <input id="email" type="email" autocomplete="email" required></label>
       <label>Mot de passe (8 caractères min.) <input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
-      <label class="consent"><input id="accept" type="checkbox"> J'ai lu la <a href="/privacy.html" target="_blank">politique de confidentialité</a> (nécessaire pour créer un compte).</label>
+      <label class="consent"><input id="accept" type="checkbox"> J'ai lu la <a href="privacy.html" target="_blank">politique de confidentialité</a> (nécessaire pour créer un compte).</label>
       <div class="row">
         <button type="submit" data-action="login">Se connecter</button>
         <button type="submit" data-action="register" class="secondary">Créer un compte</button>
@@ -121,9 +121,9 @@
 
       <div class="card">
         <h3>Mes données</h3>
-        <p class="muted">Aucun moyen de paiement n'est conservé ici. Détails : <a href="/privacy.html">confidentialité</a>.</p>
+        <p class="muted">Aucun moyen de paiement n'est conservé ici. Détails : <a href="privacy.html">confidentialité</a>.</p>
         <div class="row">
-          <a id="export" href="/api/me/export" download="itsaresume-mes-donnees.json"><button type="button" class="secondary">Télécharger mes données</button></a>
+          <a id="export" href="api/me/export" download="itsaresume-mes-donnees.json"><button type="button" class="secondary">Télécharger mes données</button></a>
           <button id="delete-profile" type="button" class="secondary">Supprimer mon profil</button>
         </div>
         <details>
@@ -136,6 +136,6 @@
       </div>
     </div>
   </section>
-  <footer class="foot"><a href="/privacy.html">Confidentialité</a></footer>
+  <footer class="foot"><a href="privacy.html">Confidentialité</a></footer>
 </body>
 </html>

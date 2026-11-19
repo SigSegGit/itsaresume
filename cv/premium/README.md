@@ -99,6 +99,15 @@ card is ever stored here: a saved card stays at the payment provider.
 - Contact on the privacy page: `--contact` or `PREMIUM_CONTACT`.
 - `test/premium-e2e.test.js` runs a whole customer journey in CI.
 
+## Database (6.4f)
+
+SQLite through Node's own `node:sqlite` (Node 22.13+), no dependency: one
+file, `premium.db`, in the premium container's data folder. Tables: users,
+sessions, resets, orders, jobs, chat. `secure_delete` so an erased account
+leaves no trace in the file. Every hour a consistent snapshot (`VACUUM
+INTO`) goes to `snapshots/`, the last 48 kept: sync those (ITSaNAS, 6.4g),
+never the live file, which a copy can catch half-written.
+
 ## Before going public (not done by the demo)
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is

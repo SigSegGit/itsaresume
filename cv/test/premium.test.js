@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, mkdtempSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createContext, runInContext } from 'node:vm';
@@ -253,9 +253,10 @@ test('GDPR: erasure: the profile alone, or the whole account; orders kept for th
   assert.throws(() => store.deleteAccount(user, 'wrong password'), /password/);
   store.deleteAccount(user, 'long enough');
   assert.equal(store.user(token), null);
-  const file = readFileSync(join(dir, 'accounts.json'), 'utf8');
-  assert.ok(!file.includes('i@example.org'), 'no address left');
-  assert.equal(JSON.parse(file).orders.length, 1, 'the order stays (accounting)');
+  store.close();
+  const file = readFileSync(join(dir, 'accounts.json')).toString('latin1');
+  assert.ok(!file.includes('i@example.org'), 'no address left, even in free pages (secure_delete)');
+  assert.equal(createStore(join(dir, 'accounts.json')).stats().orders, 1, 'the order stays (accounting)');
 });
 
 test('GDPR: sessions expire, CVs and inactive accounts are purged on schedule', () => {
@@ -266,7 +267,7 @@ test('GDPR: sessions expire, CVs and inactive accounts are purged on schedule', 
   store.addJob(user, { id: 'a'.repeat(16), status: 'done', created: new Date(start).toISOString(), page: { x: 1 } });
   assert.equal(store.user(token, start + (RETENTION.sessionDays + 1) * DAY), null, 'session expired');
   store.purge(start + (RETENTION.cvDays + 1) * DAY);
-  assert.equal(user.jobs.length, 0, 'old CVs dropped');
+  assert.equal(store.exportOf(user).jobs.length, 0, 'old CVs dropped');
   store.register('k@example.org', 'long enough', start);
   store.purge(start + (RETENTION.inactiveDays + 1) * DAY);
   assert.equal(store.exportOf({ email: 'k@example.org' }), null, 'inactive account erased');
@@ -286,4 +287,17 @@ test('GDPR: the server needs the notice accepted, and serves export and erasure'
   } finally {
     server.close();
   }
+});
+
+// 6.4f: SQLite, one file; the snapshots (VACUUM INTO) are what a sync copies.
+test('database: a snapshot is a whole, readable copy; only the last ones are kept', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'premium-'));
+  const store = createStore(join(dir, 'premium.db'));
+  const user = store.user(store.register('m@example.org', 'long enough').token);
+  store.buy(user, 'pack5');
+  const start = Date.parse('2026-01-01T00:00:00Z');
+  let path;
+  for (let hour = 0; hour < 50; hour += 1) path = store.backup(join(dir, 'snapshots'), start + hour * 3600000);
+  assert.equal(createStore(path).stats().orders, 1);
+  assert.equal(readdirSync(join(dir, 'snapshots')).length, 48);
 });

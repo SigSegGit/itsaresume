@@ -77,7 +77,7 @@
     },
     "Premium: previews are capped per day": {
       "file": "premium/accounts.js",
-      "live": "return user.previews[today] <= PREVIEWS_PER_DAY;",
+      "live": "return count <= PREVIEWS_PER_DAY;",
       "dead": "return true;",
       "expect": [
         "server: previews are limited per account per day"
@@ -101,7 +101,7 @@
     },
     "GDPR: erasure takes the address off the orders": {
       "file": "premium/accounts.js",
-      "live": "for (const order of data.orders) if (order.email === email) order.email = null;",
+      "live": "run('UPDATE orders SET email = NULL WHERE email = ?', email);",
       "dead": "",
       "expect": [
         "GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address"
@@ -117,7 +117,7 @@
     },
     "GDPR: old CVs are purged": {
       "file": "premium/accounts.js",
-      "live": "user.jobs = user.jobs.filter((job) => now - Date.parse(job.created) <= RETENTION.cvDays * DAY);",
+      "live": "run('DELETE FROM jobs WHERE created < ?', iso(now - RETENTION.cvDays * DAY));",
       "dead": "",
       "expect": [
         "GDPR: sessions expire, CVs and inactive accounts are purged on schedule"
@@ -165,7 +165,7 @@
     },
     "Recovery: a reset link is used once": {
       "file": "premium/accounts.js",
-      "live": "      delete data.resets[key];",
+      "live": "run('DELETE FROM resets WHERE key = ?', key);",
       "dead": "",
       "expect": [
         "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
@@ -173,10 +173,26 @@
     },
     "Recovery: a reset closes the old sessions": {
       "file": "premium/accounts.js",
-      "live": "for (const [sessionKey, session] of Object.entries(data.sessions)) if (session.email === user.email) delete data.sessions[sessionKey];",
+      "live": "run('DELETE FROM sessions WHERE email = ?', reset.email);",
       "dead": "",
       "expect": [
         "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Database: an erased row leaves no trace in the file": {
+      "file": "premium/accounts.js",
+      "live": "db.exec('PRAGMA secure_delete = ON; PRAGMA journal_mode = DELETE;');",
+      "dead": "db.exec('PRAGMA journal_mode = DELETE;');",
+      "expect": [
+        "GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address"
+      ]
+    },
+    "Database: old snapshots are dropped": {
+      "file": "premium/accounts.js",
+      "live": "for (const old of snapshots.slice(0, -RETENTION.snapshots)) rmSync(join(dir, old), { force: true });",
+      "dead": "",
+      "expect": [
+        "database: a snapshot is a whole, readable copy; only the last ones are kept"
       ]
     }
   }

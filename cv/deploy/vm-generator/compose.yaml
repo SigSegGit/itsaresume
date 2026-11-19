@@ -84,3 +84,19 @@ services:
     command: ["exec node bin/itsacv.js serve --port 18790 --url \"$${ROUTER_URL:-http://127.0.0.1:8789}\" --timeout 1800 --out /data/out --public-host \"$$CV_HOST\" --per-day 150 --per-hour 40 --max-queued 12 --service $${CV_FLAGS:-}"]
     init: true
     restart: unless-stopped
+
+  # 6.4e: the paid demo (simulated payment), behind Caddy at /premium/. Its
+  # accounts live in $DATA/premium; PREMIUM_CONTACT comes from $DATA/.env.
+  premium:
+    image: itsacv:vm
+    network_mode: host
+    depends_on: [router, generator]
+    env_file:
+      - path: ${DATA:-~/itsacv-data}/.env
+        required: false
+    volumes:
+      - ${DATA:-~/itsacv-data}/premium:/data/premium
+    entrypoint: ["sh", "-c"]
+    command: ["exec node premium/server.js --port 18791 --router \"$${ROUTER_URL:-http://127.0.0.1:8789}\" --data /data/premium --contact \"$${PREMIUM_CONTACT:-}\""]
+    init: true
+    restart: unless-stopped

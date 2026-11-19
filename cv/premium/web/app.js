@@ -25,7 +25,7 @@ function el(tag, text, className) {
 let packs = [];
 let currency = new URLSearchParams(location.search).get('currency') ?? '';
 async function showPacks() {
-  const data = await api(`/api/packs${currency ? `?currency=${encodeURIComponent(currency)}` : ''}`);
+  const data = await api(`api/packs${currency ? `?currency=${encodeURIComponent(currency)}` : ''}`);
   currency = data.currency;
   packs = data.packs;
   const money = (value) => new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
@@ -71,7 +71,7 @@ function checkout(pack) {
     location.hash = '#account';
     return say('auth-error', 'Créez un compte ou connectez-vous pour acheter.');
   }
-  location.href = `/checkout.html?pack=${encodeURIComponent(pack.id)}&currency=${encodeURIComponent(currency)}`;
+  location.href = `checkout.html?pack=${encodeURIComponent(pack.id)}&currency=${encodeURIComponent(currency)}`;
 }
 
 function say(id, text) {
@@ -82,7 +82,7 @@ function say(id, text) {
 async function showMe() {
   let me;
   try {
-    me = await api('/api/me');
+    me = await api('api/me');
   } catch {
     $('auth').hidden = false;
     $('dashboard').hidden = true;
@@ -104,14 +104,14 @@ async function showMe() {
   $('chat-refill').hidden = !me.paid || me.chat_left > 0;
   $('chat-refill').textContent = `Recharger : 1 crédit = ${me.chat_per_credit} messages`;
   $('chat-log').replaceChildren(...me.chat_history.flatMap((entry) => [el('li', entry.message, 'me'), el('li', entry.reply)]));
-  $('ext-url').textContent = location.origin;
+  $('ext-url').textContent = new URL('.', location.href).href.replace(/\/$/, '');
   if (token) $('ext-token').textContent = token;
   $('jobs').replaceChildren(...me.jobs.map((job) => {
     const li = el('li');
     li.append(el('span', job.title || 'Offre'), el('span', ` — ${new Date(job.created).toLocaleString('fr-FR')}`, 'muted'));
     if (job.status === 'done') {
       const link = el('a', `Ouvrir le CV${job.score != null ? ` (${job.score}/100)` : ''}`);
-      link.href = `/cv.html?job=${encodeURIComponent(job.id)}`;
+      link.href = `cv.html?job=${encodeURIComponent(job.id)}`;
       link.target = '_blank';
       link.rel = 'noopener';
       li.append(el('span', ' '), link);
@@ -148,10 +148,10 @@ async function run(kind) {
     if (kind === 'preview') {
       // Without a saved profile, the pasted one is sent along, never stored.
       const pasted = $('resume').value.trim();
-      showPreview(await api('/api/preview', pasted ? { offer, resume: JSON.parse(pasted) } : { offer }));
+      showPreview(await api('api/preview', pasted ? { offer, resume: JSON.parse(pasted) } : { offer }));
       say('work-status', '');
     } else {
-      await api('/api/generate', { offer });
+      await api('api/generate', { offer });
       say('work-status', 'CV en cours de rédaction : il apparaîtra dans « Mes CV ».');
       await showMe();
     }
@@ -167,7 +167,7 @@ function wire() {
   $('auth').addEventListener('submit', async (event) => {
     event.preventDefault();
     try {
-      const result = await api(`/api/${action}`, { email: $('email').value, password: $('password').value, accept: $('accept').checked });
+      const result = await api(`api/${action}`, { email: $('email').value, password: $('password').value, accept: $('accept').checked });
       token = result.token;
       sessionStorage.setItem('premium_token', token);
       say('auth-error', '');
@@ -177,14 +177,14 @@ function wire() {
     }
   });
   $('logout').addEventListener('click', async () => {
-    await api('/api/logout', {});
+    await api('api/logout', {});
     sessionStorage.removeItem('premium_token');
     token = '';
     await showMe();
   });
   $('save-resume').addEventListener('click', async () => {
     try {
-      await api('/api/profile', { resume: JSON.parse($('resume').value) });
+      await api('api/profile', { resume: JSON.parse($('resume').value) });
       await showMe();
     } catch (error) {
       if (error.status === 402) {
@@ -195,13 +195,13 @@ function wire() {
   });
   $('delete-profile').addEventListener('click', async () => {
     if (!confirm('Supprimer votre profil importé ? Vos CV déjà générés restent.')) return;
-    await api('/api/profile/delete', {});
+    await api('api/profile/delete', {});
     await showMe();
   });
   $('delete-account').addEventListener('click', async () => {
     if (!confirm('Supprimer définitivement votre compte et vos données ?')) return;
     try {
-      await api('/api/me/delete', { password: $('delete-password').value });
+      await api('api/me/delete', { password: $('delete-password').value });
       sessionStorage.removeItem('premium_token');
       token = '';
       await showMe();
@@ -214,7 +214,7 @@ function wire() {
     if (!message) return;
     $('chat-send').disabled = true;
     try {
-      await api('/api/chat', { message });
+      await api('api/chat', { message });
       $('chat-input').value = '';
     } catch (error) {
       $('chat-status').textContent = error.message;
@@ -223,7 +223,7 @@ function wire() {
   });
   $('chat-refill').addEventListener('click', async () => {
     try {
-      await api('/api/chat/refill', {});
+      await api('api/chat/refill', {});
     } catch (error) {
       $('chat-status').textContent = error.status === 402 ? 'Plus de crédit : choisissez un lot.' : error.message;
     }
@@ -232,7 +232,7 @@ function wire() {
   $('forgot').addEventListener('click', async (event) => {
     event.preventDefault();
     if (!$('email').value) return say('auth-error', 'Indiquez votre adresse e-mail.');
-    await api('/api/password/forgot', { email: $('email').value });
+    await api('api/password/forgot', { email: $('email').value });
     say('auth-error', 'Si un compte existe pour cette adresse, un e-mail avec un lien (valable une heure) vient de partir.');
   });
   const reset = /^#reset=([0-9a-f]+)$/.exec(location.hash)?.[1];
@@ -241,10 +241,10 @@ function wire() {
     $('reset-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       try {
-        await api('/api/password/reset', { token: reset, password: $('new-password').value });
+        await api('api/password/reset', { token: reset, password: $('new-password').value });
         say('reset-msg', 'Mot de passe changé : connectez-vous.');
         $('reset-form').hidden = true;
-        history.replaceState(null, '', '/#account');
+        history.replaceState(null, '', './#account');
       } catch (error) {
         say('reset-msg', error.message);
       }

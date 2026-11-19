@@ -186,7 +186,10 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       const body = await readJson(request);
       const token = store.resetToken(body.email);
       if (token) {
-        const link = `http://${request.headers.host}/#reset=${token}`;
+        // Behind the public proxy: its scheme and the path prefix it strips.
+        const proto = request.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+        const prefix = /^\/[a-z0-9-]{1,40}$/.test(request.headers['x-forwarded-prefix'] ?? '') ? request.headers['x-forwarded-prefix'] : '';
+        const link = `${proto}://${request.headers.host}${prefix}/#reset=${token}`;
         await mailer.send({ to: String(body.email).trim().toLowerCase(), subject: 'itsaresume : nouveau mot de passe', text: `Pour choisir un nouveau mot de passe (lien valable une heure, une fois) : ${link}\nSi vous n'avez rien demandé, ignorez ce message.` });
       }
       return { ok: true };
@@ -273,7 +276,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
           job.error = error.message;
           store.refund(user);
         }
-        store.save();
+        store.saveJob(user, job);
       })();
       return [{ id: job.id, status: job.status }, {}, 202];
     },
@@ -291,7 +294,11 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       if (request.method === 'GET' && FILES[url.pathname]) {
         const [file, type] = FILES[url.pathname];
         response.writeHead(200, { 'content-type': `${type}; charset=utf-8`, 'x-content-type-options': 'nosniff', 'content-security-policy': "default-src 'self'; style-src 'self'; img-src 'self' data:" });
-        const body = readFileSync(file);
+        let body = readFileSync(file);
+        // The generator's A4 page, reused: its links and its API made relative,
+        // so it reads this site's jobs under any prefix (6.4e).
+        if (url.pathname === '/cv.html') body = Buffer.from(body.toString('utf8').replace(/(href|src)="\//g, '$1="'));
+        if (url.pathname === '/cv.js') body = Buffer.from(body.toString('utf8').replaceAll('`/api/jobs/', '`api/jobs/'));
         // The privacy page names the configured contact (never written in the repository).
         if (url.pathname === '/privacy.html') return response.end(body.toString('utf8').replaceAll('{{contact}}', contact.replace(/[<>&"]/g, '') || 'à compléter'));
         return response.end(body);
@@ -341,8 +348,11 @@ async function main(argv) {
   const { fromJsonResume } = await import('../src/import.js');
   const { validateProfile } = await import('../src/profile.js');
   const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: router, system, prompt, schema, backend, kind });
-  const accounts = createStore(join(data, 'accounts.json'));
+  // 6.4f: one SQLite file; hourly snapshots in snapshots/, the folder a sync copies.
+  const accounts = createStore(join(data, 'premium.db'));
   accounts.purge();
+  accounts.backup(join(data, 'snapshots'));
+  setInterval(() => accounts.backup(join(data, 'snapshots')), 3600000).unref();
   const app = createPremiumApp({
     store: accounts,
     // The demo has no API key: the paid mode goes to the router as well.
