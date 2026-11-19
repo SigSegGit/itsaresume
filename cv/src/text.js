@@ -37,6 +37,8 @@ export const QUALITIES = `communica rigueur rigoureu rigor rigour organis organi
   .concat(['binôm', 'binom', 'pair work'])
   // 2.48 (a real English offer, 2026-11-18): problem solving, working alone, learning.
   .concat(['problem solving', 'résolution problèm', 'independen', 'indépendan', 'continuous learning', 'apprentissage continu'])
+  // 2.56 (the owner, 2026-11-19): service-minded, the consultant's quality.
+  .concat(['sens service', 'sens client', 'orient client', 'customer focus', 'customer orient', 'customer centric', 'service mind', 'service orient'])
   // 2.27: working with a team is the collaboration, not its technology.
   .concat(['travailler avec', 'travail avec', 'en lien avec', 'work with', 'working with', 'inter équipe']);
 

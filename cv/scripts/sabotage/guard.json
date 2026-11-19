@@ -1664,7 +1664,7 @@
     },
     "Prompt (2.42): the listed rows are numbered": {
       "file": "src/prompt.js",
-      "live": "    lines.push(`- L${at + 1}: ${item.name} (${item.importance})",
+      "live": "    lines.push(`- L${start + at + 1}: ${item.name} (${item.importance})",
       "dead": "    lines.push(`- ${item.name} (${item.importance})",
       "expect": [
         "the prompt numbers the listed rows and asks for their id"
@@ -1676,6 +1676,22 @@
       "dead": "  const asked = (given || '').split(',')",
       "expect": [
         "the compact catalogue and the shortlist are on by default (2.25d); ITSACV_PROMPT=off is the whole prompt"
+      ]
+    },
+    "Prompt (2.55): a long listing in batches": {
+      "file": "src/prompt.js",
+      "live": "  const batches = listed.length > REQUIREMENTS_BATCH",
+      "dead": "  const batches = false && listed.length > REQUIREMENTS_BATCH",
+      "expect": [
+        "2.55: a split analysis classifies a long listing in batches"
+      ]
+    },
+    "Prompt (2.55): batch ids stay global": {
+      "file": "src/prompt.js",
+      "live": "`- L${start + at + 1}: ",
+      "dead": "`- L${at + 1}: ",
+      "expect": [
+        "2.55: a split analysis classifies a long listing in batches"
       ]
     }
   }

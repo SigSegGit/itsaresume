@@ -94,7 +94,10 @@
     "src/qa.js",
     "test/qa.test.js",
     "test/page.test.js",
-    "test/offer-file.test.js"
+    "test/offer-file.test.js",
+    "addon/service.js",
+    "addon/options.js",
+    "addon/popup.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2194,6 +2197,78 @@
       "dead": "  if (kind === '.docx') return buffer.toString('utf8');",
       "expect": [
         "a docx offer is its paragraphs, one per line"
+      ]
+    },
+    "Add-on (6.2): the token only from the page\u2019s meta": {
+      "file": "addon/service.js",
+      "live": "  return /<meta name=\"csrf-token\" content=\"([0-9a-f]{48})\">/.exec(String(html))?.[1] ?? null;",
+      "dead": "  return /content=\"([^\"]+)\"/.exec(String(html))?.[1] ?? null;",
+      "expect": [
+        "6.2: the visitor token is read from the public page, nothing else"
+      ]
+    },
+    "Add-on (6.2): only the profile kinds": {
+      "file": "addon/service.js",
+      "live": "    if (!PROFILE_KINDS.includes(kind)) throw new Error(`${kind || name} : attendu ${PROFILE_KINDS.join(' ')}`);",
+      "dead": "",
+      "expect": [
+        "6.2: a profile is packed as the server takes it, and refused otherwise"
+      ]
+    },
+    "Add-on (6.2): no path in a file name": {
+      "file": "addon/service.js",
+      "live": "throw new Error(`nom de fichier refus\u00e9 : ${name}`);",
+      "dead": "void 0;",
+      "expect": [
+        "6.2: a profile is packed as the server takes it, and refused otherwise"
+      ]
+    },
+    "Add-on (6.2): a file the server takes": {
+      "file": "addon/service.js",
+      "live": "    if (bytes.length > MAX_BYTES) throw new Error(`${name} : trop gros (${Math.round(MAX_BYTES / 1000)} ko au plus)`);",
+      "dead": "",
+      "expect": [
+        "6.2: a profile is packed as the server takes it, and refused otherwise"
+      ]
+    },
+    "Add-on (6.2): https only": {
+      "file": "addon/service.js",
+      "live": "  if (url.protocol !== 'https:') throw new Error('le site du service doit \u00eatre en https');",
+      "dead": "",
+      "expect": [
+        "6.2: the request carries the offer, the profile and the token, to the site\u2019s own paths"
+      ]
+    },
+    "Add-on (6.2): no cookie": {
+      "file": "addon/service.js",
+      "live": "      credentials: 'omit',",
+      "dead": "",
+      "expect": [
+        "6.2: the request carries the offer, the profile and the token, to the site\u2019s own paths"
+      ]
+    },
+    "Add-on (6.2): the profile is never synced": {
+      "file": "addon/options.js",
+      "live": "    await chrome.storage.local.set({ profile, site: address });",
+      "dead": "    await chrome.storage.sync.set({ profile, site: address });",
+      "expect": [
+        "6.2: the profile is kept in chrome.storage.local only, never synced"
+      ]
+    },
+    "Lexicon (2.54): PromQL is Prometheus": {
+      "file": "data/tech.json",
+      "live": "\"fr\": [\n     \"PromQL\"\n    ],\n    \"en\": [\n     \"PromQL\"\n    ]",
+      "dead": "\"fr\": [],\n    \"en\": []",
+      "expect": [
+        "2.54: PromQL asked is Prometheus owned"
+      ]
+    },
+    "Quality (2.56): service-minded is a quality": {
+      "file": "src/text.js",
+      "live": "  .concat(['sens service', 'sens client', 'orient client', 'customer focus', 'customer orient', 'customer centric', 'service mind', 'service orient'])",
+      "dead": "",
+      "expect": [
+        "2.56: service-minded is a personal quality; a service mesh stays a skill"
       ]
     }
   }

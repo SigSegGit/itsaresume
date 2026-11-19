@@ -1372,3 +1372,24 @@ test('without service mode a visitor cannot bring a profile', async (t) => {
   const sources = [{ name: 'cv.txt', data: Buffer.from('Sam Doe, SRE').toString('base64') }];
   assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }], sources })).status, 403);
 });
+
+// 6.2: the add-on in service mode posts from its own origin
+// (chrome-extension://<id>) with the visitor token the public page issued;
+// that origin may create a job carrying a profile, and nothing else.
+test('service mode: the add-on may create a job with a profile, and only that', async (t) => {
+  const ADDON = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
+  const sources = [{ name: 'cv.txt', data: Buffer.from('Sam Doe, SRE').toString('base64') }];
+  const offers = [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }];
+  const fromAddon = (app, visitor, path, value) => call(app.port, { method: 'POST', path, headers: { ...app.host, 'X-Forwarded-For': '203.0.113.9', Origin: ADDON, 'X-CSRF-Token': visitor.token, 'Content-Type': 'application/json' }, body: JSON.stringify(value) });
+  const app = await startPublic(t, { service: true, serviceTtlMs: 5000, perVisitorPerHour: 10 });
+  const visitor = await app.visit();
+  assert.equal((await fromAddon(app, visitor, '/api/jobs', { offers, sources })).status, 202, 'a profile and an offer');
+  assert.equal((await fromAddon(app, visitor, '/api/jobs', { offers })).status, 403, 'never the owner’s profile');
+  assert.equal((await fromAddon(app, visitor, '/api/offer-text', { name: 'o.txt', data: Buffer.from('An offer').toString('base64') })).status, 403, 'job creation alone');
+  assert.equal((await fromAddon(app, { token: 'f'.repeat(48) }, '/api/jobs', { offers, sources })).status, 403, 'a token the page issued');
+  const elsewhere = await call(app.port, { method: 'POST', path: '/api/jobs', headers: { ...app.host, 'X-Forwarded-For': '203.0.113.9', Origin: 'https://cv.example.org.evil.test', 'X-CSRF-Token': visitor.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ offers, sources }) });
+  assert.equal(elsewhere.status, 403, 'an extension origin, no other site');
+  const closed = await startPublic(t);
+  const other = await closed.visit();
+  assert.equal((await fromAddon(closed, other, '/api/jobs', { offers, sources })).status, 403, 'not without service mode');
+});

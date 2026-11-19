@@ -63,13 +63,20 @@ export async function analyse({ profile, offer, llm: call, listingLlm = null, as
   const parts = split ? buildSplitPrompts(profile, offer, listed, options) : null;
   let previous = null;
   const askSplit = async () => {
-    const first = previous ? retryPrompt(parts.requirements.prompt, previous.requirements, errors) : parts.requirements.prompt;
-    const asked = await llm({ system: parts.requirements.system, prompt: first });
-    let classified;
-    try {
-      classified = extractJson(asked.text);
-    } catch {
-      return { text: asked.text, backend: asked.backend, parts: { requirements: asked.text, choices: '' } };
+    // 2.55: one call per batch of listed rows; their requirements joined.
+    const texts = [];
+    let classified = null;
+    for (const [at, batch] of parts.batches.entries()) {
+      const first = previous ? retryPrompt(batch.prompt, previous.requirements[at] ?? '', errors) : batch.prompt;
+      const asked = await llm({ system: batch.system, prompt: first });
+      texts.push(asked.text);
+      let part;
+      try {
+        part = extractJson(asked.text);
+      } catch {
+        return { text: asked.text, backend: asked.backend, parts: { requirements: texts, choices: '' } };
+      }
+      classified = classified ? { ...classified, requirements: [...(classified.requirements ?? []), ...(part.requirements ?? [])] } : part;
     }
     const choices = parts.choices(classified.requirements);
     const second = previous ? retryPrompt(choices.prompt, previous.choices, errors) : choices.prompt;
@@ -78,7 +85,7 @@ export async function analyse({ profile, offer, llm: call, listingLlm = null, as
     try {
       text = JSON.stringify({ ...extractJson(chosen.text), language: classified.language, requirements: classified.requirements });
     } catch { /* invalid: told below, and sent back */ }
-    return { text, backend: chosen.backend, parts: { requirements: asked.text, choices: chosen.text } };
+    return { text, backend: chosen.backend, parts: { requirements: texts, choices: chosen.text } };
   };
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     onStep('analysis', { attempt });

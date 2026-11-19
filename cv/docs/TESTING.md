@@ -40,6 +40,10 @@ property it proves.
 | 4.6: the add-on asks for the active tab on a click, nothing in the background | Add-on (4.6): no host permission |
 | 4.6: the selection first, else the job description block, else the page | Add-on (4.6): the selection first |
 | 4.7: the add-on may reach the generator only through hosts the user grants (optional) | — |
+| 6.2: the visitor token is read from the public page, nothing else | Add-on (6.2): the token only from the page’s meta |
+| 6.2: a profile is packed as the server takes it, and refused otherwise | Add-on (6.2): only the profile kinds; Add-on (6.2): no path in a file name; Add-on (6.2): a file the server takes |
+| 6.2: the request carries the offer, the profile and the token, to the site’s own paths | Add-on (6.2): https only; Add-on (6.2): no cookie |
+| 6.2: the profile is kept in chrome.storage.local only, never synced | Add-on (6.2): the profile is never synced |
 
 ## `test/answers.test.js`
 
@@ -474,6 +478,7 @@ property it proves.
 | the owner’s skills are placed on concepts by their names, aliases and terms, in either language | Lexicon: aliases and terms place a skill |
 | a requirement relates to a skill as the same concept, a near one (parent, child, sibling), a shared theme, or not at all | Lexicon: siblings are near; Lexicon: a theme only when nothing nearer |
 | a shared theme is a hint, never better than a nearer relation | Lexicon: a shared ancestor is a theme |
+| 2.54: PromQL asked is Prometheus owned | Lexicon (2.54): PromQL is Prometheus |
 
 ## `test/libre.test.js`
 
@@ -638,6 +643,7 @@ property it proves.
 | 2.26a: a second run of the same offer makes no listing call, its rows read from the cache | Listing cached per offer (2.26a): one offer is listed once |
 | a split analysis asks the requirements, then the choices given them, and merges both | Groq (2.37): a split model's analysis is two calls; Groq (2.37): the second call gets the first's requirements |
 | without split, the analysis is one call | — |
+| 2.55: a split analysis classifies a long listing in batches | Prompt (2.55): a long listing in batches; Prompt (2.55): batch ids stay global |
 
 ## `test/profiles.test.js`
 
@@ -785,6 +791,7 @@ property it proves.
 | normalize caps a senior profile on a junior title, and says why | Score: eight years make a senior profile; Score: the report says why the score is capped; Score: the page view carries the cap |
 | problem solving, working independently and continuous learning are personal qualities | Qualities (2.48): problem solving, independence, continuous learning |
 | rows to verify make a CV partial, only missing must-haves make it not qualified | Qualification (2.48): a row to verify is no missing must |
+| 2.56: service-minded is a personal quality; a service mesh stays a skill | Quality (2.56): service-minded is a quality |
 
 ## `test/serve-contract.test.js`
 
@@ -864,6 +871,7 @@ property it proves.
 | a pdf or docx offer is read as text, in local and public mode | Offer files (2.53): only pdf, docx, txt, md are read; Offer files (2.53): no path in the file name; Offer files (2.53): the data is required |
 | service mode: a visitor brings a profile, the CV is served then removed, nothing kept | Service (6.1): no link is fetched for a visitor; Service (6.1): a service CV expires; Service (6.1): a service CV is never in the public state; Service (6.1): the view says it is a service run; Service (6.1): the folder is removed on expiry |
 | without service mode a visitor cannot bring a profile | Sources (4.11): never from a public visitor |
+| service mode: the add-on may create a job with a profile, and only that | Service (6.2): the add-on only creates jobs; Service (6.2): the add-on brings its own profile; Service (6.2): an extension origin, no other site |
 
 ## `test/split.test.js`
 
@@ -972,6 +980,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**648 tests, 520 of them covered by at least one sabotage defence.**
+**656 tests, 528 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

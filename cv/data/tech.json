@@ -499,8 +499,12 @@
    "fr": "Prometheus",
    "en": "Prometheus",
    "alt": {
-    "fr": [],
-    "en": []
+    "fr": [
+     "PromQL"
+    ],
+    "en": [
+     "PromQL"
+    ]
    },
    "broader": [
     "tech:observability"

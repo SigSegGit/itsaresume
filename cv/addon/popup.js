@@ -2,6 +2,7 @@
 // With a key set in the options, post it to the generator as a job (the
 // owner's `serve --addon-origin`); without, copy it and open the generator.
 import { offerText } from './extract.js';
+import { tokenFromPage, serviceJob, jobUrl, pdfUrl } from './service.js';
 
 const DEFAULT_URL = 'http://127.0.0.1:18790/';
 const status = document.getElementById('status');
@@ -28,5 +29,43 @@ send.addEventListener('click', async () => {
   } catch (error) {
     status.textContent = `Échec : ${error.message}`;
     send.disabled = false;
+  }
+});
+
+// 6.2: service mode, with the candidate's profile from chrome.storage.local:
+// a fresh visitor token from the public page, the job, its progress, the PDF.
+const service = document.getElementById('service');
+const pdf = document.getElementById('pdf');
+const { site = '', profile = [] } = await chrome.storage.local.get(['profile', 'site']);
+service.hidden = !(site && profile.length);
+service.disabled = !text;
+service.addEventListener('click', async () => {
+  service.disabled = true;
+  try {
+    status.textContent = 'Connexion au service…';
+    const token = tokenFromPage(await (await fetch(new URL('/', site), { credentials: 'omit' })).text());
+    if (!token) throw new Error('le site ne répond pas comme le service attendu');
+    const { url: post, init } = serviceJob({ site, token, title: tab.title, text, sources: profile });
+    const answer = await fetch(post, init);
+    const body = await answer.json().catch(() => ({}));
+    if (!answer.ok) throw new Error(`${answer.status} ${body.error ?? ''}`);
+    const [{ id }] = body;
+    const read = { credentials: 'omit', headers: { 'X-CSRF-Token': token } };
+    for (let i = 0; i < 300; i += 1) {
+      const job = await (await fetch(jobUrl(site, id), read)).json();
+      if (job.status === 'done') {
+        pdf.href = URL.createObjectURL(await (await fetch(pdfUrl(site, id), read)).blob());
+        pdf.hidden = false;
+        status.textContent = 'CV prêt : il est effacé du serveur dans 30 minutes.';
+        return;
+      }
+      if (job.status !== 'queued' && job.status !== 'running') throw new Error(job.error ?? job.status);
+      status.textContent = `CV en préparation… ${job.position ? `(file : ${job.position})` : (job.steps ?? []).at(-1) ?? ''}`;
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+    throw new Error('trop long : réessaie plus tard');
+  } catch (error) {
+    status.textContent = `Échec : ${error.message}`;
+    service.disabled = false;
   }
 });

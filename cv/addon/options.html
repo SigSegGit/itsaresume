@@ -2,8 +2,14 @@
 <html lang="fr">
 <meta charset="utf-8">
 <title>itsaresume — options</title>
+<h3>Mon générateur</h3>
 <p><label>Adresse du générateur <input id="url" size="40" placeholder="http://127.0.0.1:18790/"></label></p>
 <p><label>Clé (ITSACV_ADDON_KEY du serveur, facultative) <input id="key" type="password" size="40"></label></p>
 <button id="save">Enregistrer</button> <span id="saved"></span>
-<script src="options.js"></script>
+<h3>Service : mon profil, un CV par offre</h3>
+<p><label>Site du service (https) <input id="site" size="40" placeholder="https://cv.example.org/"></label></p>
+<p><label>Mon profil : export LinkedIn (.zip), JSON Resume (.json), ancien CV (.pdf .docx .txt .md) <input id="files" type="file" multiple accept=".zip,.json,.pdf,.docx,.txt,.md"></label></p>
+<p>Le profil reste dans ce navigateur (jamais synchronisé) ; il n'est envoyé qu'au site du service, avec l'offre, le temps d'un CV.</p>
+<button id="keep">Enregistrer le profil</button> <button id="forget">Effacer le profil</button> <span id="kept"></span>
+<script type="module" src="options.js"></script>
 </html>

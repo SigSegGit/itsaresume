@@ -552,7 +552,12 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       }
 
       if (request.method !== 'POST') throw new HttpError(405, 'GET or POST only');
-      if (!origins.includes(request.headers.origin)) throw new HttpError(403, 'a request from another origin');
+      // 6.2: in service mode, the add-on (its own chrome-extension origin,
+      // with the visitor token the page issued) may create a job that brings
+      // its own profile, and nothing else.
+      const serviceAddon = Boolean(publicMode?.service) && /^chrome-extension:\/\/[a-p]{32}$/.test(String(request.headers.origin ?? ''));
+      if (!origins.includes(request.headers.origin) && !serviceAddon) throw new HttpError(403, 'a request from another origin');
+      if (serviceAddon && path !== '/api/jobs') throw new HttpError(403, 'the add-on may only create jobs');
       const visitor = publicMode ? visitorOf(request) : null;
       // 4.7: from the add-on, its key and job creation alone.
       const fromAddon = Boolean(addon) && !publicMode && request.headers.origin === addon.origin;
@@ -675,6 +680,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         const group = compared ? randomUUID() : undefined;
         // 4.11: the run's own sources (files as base64, links) and its threshold; the owner's page only.
         const { sources, links, threshold } = body;
+        if (serviceAddon && !(Array.isArray(sources) && sources.length)) throw new HttpError(403, 'the add-on brings its own profile');
         // 6.1: in public, the candidate's own files in service mode only, never links (no fetch for a visitor).
         if (links !== undefined && publicMode) throw new HttpError(403, 'les liens ne sont pas lus en accès public : joins des fichiers');
         if (sources !== undefined && publicMode && !publicMode.service) throw new HttpError(403, 'les sources du run sont réservées à la page du propriétaire');

@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildIndex, key, lookup, relate, skillConcepts } from '../src/lexicon.js';
+import { buildIndex, defaultIndex, key, lookup, relate, skillConcepts } from '../src/lexicon.js';
 
 /** A few ESCO-shaped concepts: two tools under one family, a theme above it. */
 const CONCEPTS = [
@@ -60,4 +60,14 @@ test('a requirement relates to a skill as the same concept, a near one (parent, 
 test('a shared theme is a hint, never better than a nearer relation', () => {
   const skills = skillConcepts(index, [{ id: 'pg', name: 'PostgreSQL' }]);
   assert.deepEqual(relate(index, 'Puppet', skills), [{ skill: 'pg', relation: 'theme', concept: 'puppet' }]);
+});
+
+// 2.54 (the owner, 2026-11-19: "PromQL manquant alors que je travaillais
+// avec Prometheus"): PromQL is Prometheus's own query language; a
+// requirement naming it is the Prometheus concept, not a missing skill.
+test('2.54: PromQL asked is Prometheus owned', () => {
+  const index = defaultIndex();
+  assert.deepEqual(lookup(index, 'PromQL'), lookup(index, 'Prometheus'));
+  const [best] = relate(index, 'Maîtrise de PromQL', [['Prometheus', lookup(index, 'Prometheus')]]);
+  assert.equal(best?.relation, 'same');
 });

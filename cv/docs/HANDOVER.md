@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 6.x
-TITLE: 6.1 service mode on the server (a visitor's own profile, nothing kept); next 6.2 the add-on in service mode, then 6.3 publish
-WRITTEN-AT: 2026-11-18
+NEXT: 2.57
+TITLE: 6.2 the add-on in service mode, 2.54 PromQL; 2.55 Groq batches, 2.56 service-minded; next 2.57 (waits for the owner), a real Groq run, then 6.3 publish
+WRITTEN-AT: 2026-11-19
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1680,6 +1680,31 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   because "Compétences attendues :" came once per domain; that heading no
   longer counts (the other section headings still catch two offers in one
   text). 3 tests, 5 defences.
+- [x] **2.54** (the owner, 2026-11-19: "PromQL manquant alors que je
+  travaillais avec Prometheus") **PromQL is Prometheus.** `data/tech.json`
+  gives Prometheus the alias PromQL (its query language): a requirement
+  naming it is the same concept. 1 test, 1 defence.
+- [x] **2.55** (seen 2026-11-18 on the public site, a comparison) **Groq
+  cut short: a long listing in batches.** The router's journal: one Groq
+  call of 23 511 characters (about 6 000 of the minute's 8 000 tokens),
+  `finish_reason length` in 7 s; the offer listed about 30 requirements and
+  their rows did not fit in the rest. Past `REQUIREMENTS_BATCH` (12) listed
+  rows, a split analysis classifies them in batches (`buildSplitPrompts`
+  `batches`, ids kept global), each with the offer and the skills; the
+  choices call gets them all. Each batch is one Groq minute: about 4 min
+  for 30 rows. Real run on the VM after the merge: to do. Gemini in the
+  same comparison: 429, free quota spent (not a bug). 1 test, 2 defences.
+- [x] **2.56** (the owner, 2026-11-19: "le sens du service, c'est un soft
+  skill de presta, évidemment que oui") **Service-minded is a personal
+  quality.** `QUALITIES` (`src/text.js`) gains "sens du service / du
+  client", "orientation client", customer focus, service-minded: met like
+  every quality (2026-10-14), shown for the interview. Replayed on the
+  386 requirement names of the VM's runs: only "Sens du service" changes.
+  1 test, 1 defence.
+- [ ] **2.57** (the owner, 2026-11-19) **Encryption in production at
+  Ingenico**: he chose to add it to the v4; waiting for what it was (TLS,
+  keys, HSM, card data at rest) — in the private notes. Then the v4, the
+  compile script, `check.mjs`.
 
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own
@@ -1692,15 +1717,15 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
     the CV goes to a temporary folder (`serve.js`), is never reused, never
     in the public state, and its folder goes after `serviceTtlMs`
     (30 min); the job view says `service: true`. 3 tests, 7 defences.
-  - [ ] **6.2** The add-on in service mode (`cv/addon/`): options take the
-    candidate's profile (a LinkedIn export's CSV files, a JSON Resume, an
-    old CV as pdf/docx/txt), kept in `chrome.storage.local` only (never
-    sync, never the server); the popup reads the offer of the open tab,
-    posts it with that profile to the public site (the page's visitor
-    token: open `/` first to get the cookie and CSRF token, or a
-    dedicated `POST /api/service-token`), polls the job, offers the PDF.
-    Tests: `test/addon.test.js` on the pure parts (offer extraction,
-    profile packing, request body); sabotage on each.
+  - [x] **6.2** (2026-11-19) The add-on in service mode (`cv/addon/`,
+    0.3.0): options take the candidate's profile (LinkedIn export `.zip`,
+    JSON Resume, old CV `.pdf .docx .txt .md`; `addon/service.js`
+    `packProfile`, as the server takes it), kept in `chrome.storage.local`
+    only; the popup reads the tab's offer, takes a fresh visitor token from
+    the public page's meta, posts offer + profile (`credentials: 'omit'`),
+    polls, offers the PDF. Server: in service mode a `chrome-extension://`
+    origin may create a job that brings a profile, nothing else. Not tried
+    in a real Chrome yet (6.3). 5 tests, 10 defences.
   - [ ] **6.3** Publish: the add-on zipped by CI as an artifact, a README
     section with screenshots, then the Chrome Web Store if the owner
     wants it (his account, his decision).

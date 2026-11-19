@@ -554,3 +554,28 @@ test('without split, the analysis is one call', async () => {
   await analyse({ profile: profile(), offer: OFFER, llm });
   assert.equal(calls, 1);
 });
+
+// 2.55 (seen 2026-11-18 on the public site): an offer of about 30
+// requirements, split for Groq, still cut the first answer ("finish_reason
+// length"): the prompt took 6 000 of the minute's 8 000 tokens, the 30 rows
+// needed more than the rest. Past REQUIREMENTS_BATCH listed rows, the
+// requirements are classified in batches, each with the offer and the
+// skills, the ids kept global; the choices call gets them all.
+test('2.55: a split analysis classifies a long listing in batches', async () => {
+  const names = ['PostgreSQL', 'Terraform', 'Kubernetes', 'Kafka', 'Ansible', 'Puppet', 'Docker', 'Helm', 'Prometheus', 'Grafana', 'Python', 'Bash', 'Go', 'Rust', 'Linux', 'AWS', 'GCP', 'Azure', 'Jenkins', 'GitLab', 'ArgoCD', 'Vault', 'Consul', 'Nginx', 'Redis', 'MongoDB'];
+  const offer = `Senior SRE wanted. Must: ${names.join(', ')}.`;
+  const { requirements, language, ...choices } = valid();
+  const asked = [];
+  const llm = async ({ system, prompt }) => {
+    if (system === LISTING_SYSTEM) return { text: JSON.stringify({ requirements: names.map((name) => ({ name, importance: 'must' })) }), backend: 'fake' };
+    if (prompt.includes('already classified')) return { text: JSON.stringify(choices), backend: 'groq' };
+    const rows = [...prompt.matchAll(/^- (L\d+): (.+) \(must\)/gm)].map(([, listed, name]) => ({ listed, name, importance: 'must', match: 'no', skills: [], note: '' }));
+    asked.push({ prompt, ids: rows.map((row) => row.listed) });
+    return { text: JSON.stringify({ language, requirements: rows }), backend: 'groq' };
+  };
+  const result = await analyse({ profile: profile(), offer, llm, split: true });
+  assert.deepEqual(asked.map((call) => call.ids.length), [12, 12, 2], 'three batches');
+  assert.deepEqual(asked[2].ids, ['L25', 'L26'], 'ids stay global');
+  assert.ok(asked.every((call) => call.prompt.includes(offer) && call.prompt.includes('postgresql')), 'each batch has the offer and the skills');
+  assert.equal(result.analysis.requirements.length, 26, 'every row classified');
+});
