@@ -110,3 +110,14 @@ test('e2e: preview, pay to save a profile, chat quota and refill, generate, expo
     server.close();
   }
 });
+
+test('6.4e: under a prefix (cv.<domain>/premium/): relative links, the reused A4 page reads this site', async () => {
+  const { server, call } = await start();
+  try {
+    for (const page of ['/', '/checkout.html', '/privacy.html', '/cv.html']) assert.doesNotMatch((await call(page)).text, /(href|src)="\/(?!\/)/, page);
+    assert.match((await call('/cv.js')).text, /`api\/jobs\//);
+    for (const script of ['/app.js', '/checkout.js']) assert.doesNotMatch((await call(script)).text, /['`]\/(api|cv\.html|checkout\.html|#)/, script);
+  } finally {
+    server.close();
+  }
+});

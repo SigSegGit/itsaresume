@@ -1753,6 +1753,9 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   the chat: 20 messages with the first pack, then 1 credit = 20 messages;
   password recovery by a one-time mail link (demo mail: console + outbox);
   the privacy contact from `--contact` / `PREMIUM_CONTACT`, never in the repository.
+  6.4e: online at cv.<domain>/premium/ (Caddy strips the prefix, the pages
+  are relative; compose service `premium` on the VM, port 18791, accounts in
+  $DATA/premium, PREMIUM_CONTACT in $DATA/.env).
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it

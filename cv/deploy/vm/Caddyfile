@@ -10,6 +10,13 @@
 	request_body {
 		max_size 300KB
 	}
+	# 6.4e: the paid demo (premium/server.js), its own server, under /premium/.
+	redir /premium /premium/
+	handle_path /premium/* {
+		reverse_proxy 127.0.0.1:18791 {
+			header_up X-Forwarded-Prefix /premium
+		}
+	}
 	# Caddy sets X-Forwarded-For to the client's address; itsacv caps per client on it.
 	reverse_proxy 127.0.0.1:18790
 	# Laptop off, or the tunnel down: say so, instead of a bare 502.
