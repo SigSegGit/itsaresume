@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <h1>itsaresume</h1>
+  <details id="settings">
+    <summary>Compte</summary>
+    <label>Serveur <input id="server" placeholder="http://127.0.0.1:18791"></label>
+    <label>Jeton <input id="token" placeholder="affiché dans « Mon compte »"></label>
+    <button id="save" type="button">Enregistrer</button>
+  </details>
+  <button id="import" type="button">Importer mon profil LinkedIn</button>
+  <p class="hint">Sur votre propre page de profil (linkedin.com/in/…), dépliée.</p>
+  <button id="preview" type="button">Aperçu de l'offre affichée</button>
+  <button id="generate" type="button">Générer le CV (1 crédit)</button>
+  <p id="status"></p>
+  <ul id="reqs"></ul>
+</body>
+</html>

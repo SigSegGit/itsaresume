@@ -661,6 +661,33 @@ property it proves.
 | without split, the analysis is one call | — |
 | 2.55: a split analysis classifies a long listing in batches | Prompt (2.55): a long listing in batches; Prompt (2.55): batch ids stay global |
 
+## `test/premium-e2e.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete | Pay: saving a profile needs a purchase; Chat: the quota stops the chat; Recovery: a reset link is used once; Recovery: a reset closes the old sessions |
+
+## `test/premium.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| packs: the price per CV falls with the pack size | Premium: the price per CV falls with the pack |
+| cost per CV: calls × tokens × the API price list | — |
+| accounts: register, log in, wrong password and duplicates refused, no password stored | Premium: a wrong password is refused |
+| credits: a pack adds its credits, a debit at zero is refused, a refund gives it back | Premium: a debit at zero credit is refused |
+| preview: the verdict and the shape, never the tailored text | Premium: the preview sends line lengths, not the text |
+| server: preview free on the subscription, generation paid by a credit on the API, refunded on failure | Premium: a failed generation refunds its credit; Premium: a job is found among the caller's own jobs only |
+| server: previews are limited per account per day | Premium: previews are capped per day |
+| extension: a LinkedIn profile page read into a JSON Resume, on the click only | — |
+| currencies: every market keeps a falling price per CV and a margin on the paid model | — |
+| currencies: charm prices (.49/.99, whole numbers where cents are not used) | Currencies: a local price is a charm price |
+| currencies: the visitor's language picks the market, EUR otherwise | — |
+| checkout: the order records its currency and local price; the credits are the same | Currencies: the order is priced in its currency |
+| GDPR: the export holds the account's data, never its password hash | GDPR: the export never holds the password hash |
+| GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address | GDPR: erasure takes the address off the orders |
+| GDPR: sessions expire, CVs and inactive accounts are purged on schedule | GDPR: a session expires; GDPR: old CVs are purged |
+| GDPR: the server needs the notice accepted, and serves export and erasure | GDPR: registration needs the notice accepted |
+
 ## `test/profiles.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -997,6 +1024,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**668 tests, 536 of them covered by at least one sabotage defence.**
+**685 tests, 549 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

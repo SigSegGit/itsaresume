@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paiement — itsaresume</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/checkout.js" defer></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="/">itsaresume</a>
+    <nav><a href="/#pricing">Tarifs</a><a href="/#account">Mon compte</a></nav>
+  </header>
+  <p class="demo-banner">Démo : paiement simulé. Aucune carte n'est demandée ni débitée.</p>
+
+  <section class="checkout">
+    <div id="pay" class="card">
+      <h2>Votre commande</h2>
+      <table class="summary">
+        <tr><td id="what"></td><td id="price"></td></tr>
+        <tr><td class="muted">Prix par CV</td><td id="per-cv" class="muted"></td></tr>
+        <tr class="total"><td>Total TTC</td><td id="total"></td></tr>
+      </table>
+      <p class="muted">Crédits sans date limite, utilisables pour tout CV depuis votre compte. Un crédit est rendu si la génération échoue.</p>
+      <p class="muted">En production : paiement par carte chez le prestataire de paiement, facture envoyée par e-mail, TVA du pays de l'acheteur incluse.</p>
+      <label class="consent"><input id="terms" type="checkbox"> J'accepte les conditions de vente et je demande l'exécution immédiate du service (droit de rétractation éteint à la première génération).</label>
+      <div class="row">
+        <a href="/#pricing">Retour</a>
+        <button id="confirm" type="button" disabled>Payer (simulé)</button>
+      </div>
+      <p id="error" class="error" hidden></p>
+    </div>
+
+    <div id="receipt" class="card receipt" hidden>
+      <h2>Paiement accepté (simulé)</h2>
+      <table class="summary">
+        <tr><td>Commande</td><td id="r-id"></td></tr>
+        <tr><td>Lot</td><td id="r-pack"></td></tr>
+        <tr><td>Montant</td><td id="r-amount"></td></tr>
+        <tr><td>Crédits disponibles</td><td id="r-credits"></td></tr>
+      </table>
+      <a href="/#account"><button type="button">Générer un CV</button></a>
+    </div>
+  </section>
+</body>
+</html>

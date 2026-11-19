@@ -1,0 +1,183 @@
+{
+  "surface": "premium",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "files": [
+    "premium/accounts.js",
+    "premium/extension/linkedin.js",
+    "premium/preview.js",
+    "premium/pricing.js",
+    "premium/server.js",
+    "src/analysis.js",
+    "src/coverage.js",
+    "src/evidence.js",
+    "src/guard.js",
+    "src/import.js",
+    "src/importance.js",
+    "src/instructions.js",
+    "src/language.js",
+    "src/lexicon.js",
+    "src/links.js",
+    "src/listing.js",
+    "src/llm.js",
+    "src/normalize.js",
+    "src/pipeline.js",
+    "src/profile.js",
+    "src/prompt.js",
+    "src/score.js",
+    "src/tailor.js",
+    "src/text.js",
+    "test/importance.test.js",
+    "test/premium-e2e.test.js",
+    "test/premium.test.js"
+  ],
+  "defences": {
+    "Premium: a debit at zero credit is refused": {
+      "file": "premium/accounts.js",
+      "live": "if (user.credits < 1) throw new Error('no credit left');",
+      "dead": "",
+      "expect": [
+        "credits: a pack adds its credits, a debit at zero is refused, a refund gives it back"
+      ]
+    },
+    "Premium: a wrong password is refused": {
+      "file": "premium/accounts.js",
+      "live": "return Boolean(user) && timingSafeEqual(given, Buffer.from(user.hash, 'hex'));",
+      "dead": "return Boolean(user);",
+      "expect": [
+        "accounts: register, log in, wrong password and duplicates refused, no password stored"
+      ]
+    },
+    "Premium: the preview sends line lengths, not the text": {
+      "file": "premium/preview.js",
+      "live": "lines: (experience.items ?? []).map((item) => item.text.length),",
+      "dead": "lines: (experience.items ?? []).map((item) => item.text),",
+      "expect": [
+        "preview: the verdict and the shape, never the tailored text"
+      ]
+    },
+    "Premium: a failed generation refunds its credit": {
+      "file": "premium/server.js",
+      "live": "          store.refund(user);",
+      "dead": "",
+      "expect": [
+        "server: preview free on the subscription, generation paid by a credit on the API, refunded on failure"
+      ]
+    },
+    "Premium: a job is found among the caller's own jobs only": {
+      "file": "premium/server.js",
+      "live": "const job = account(request).jobs.find((entry) => entry.id === id);",
+      "dead": "const job = [...Object.values(store)].length && null;",
+      "expect": [
+        "server: preview free on the subscription, generation paid by a credit on the API, refunded on failure"
+      ]
+    },
+    "Premium: previews are capped per day": {
+      "file": "premium/accounts.js",
+      "live": "return user.previews[today] <= PREVIEWS_PER_DAY;",
+      "dead": "return true;",
+      "expect": [
+        "server: previews are limited per account per day"
+      ]
+    },
+    "Premium: the price per CV falls with the pack": {
+      "file": "premium/pricing.js",
+      "live": "  { id: 'pack100', label: '100 CV', credits: 100, price: 35.99 },",
+      "dead": "  { id: 'pack100', label: '100 CV', credits: 100, price: 135.99 },",
+      "expect": [
+        "packs: the price per CV falls with the pack size"
+      ]
+    },
+    "GDPR: the export never holds the password hash": {
+      "file": "premium/accounts.js",
+      "live": "const { hash: _hash, salt: _salt, profile, jobs, ...account } = stored;",
+      "dead": "const { profile, jobs, ...account } = stored;",
+      "expect": [
+        "GDPR: the export holds the account's data, never its password hash"
+      ]
+    },
+    "GDPR: erasure takes the address off the orders": {
+      "file": "premium/accounts.js",
+      "live": "for (const order of data.orders) if (order.email === email) order.email = null;",
+      "dead": "",
+      "expect": [
+        "GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address"
+      ]
+    },
+    "GDPR: a session expires": {
+      "file": "premium/accounts.js",
+      "live": "if (!session || now - session.at > RETENTION.sessionDays * DAY) return null;",
+      "dead": "if (!session) return null;",
+      "expect": [
+        "GDPR: sessions expire, CVs and inactive accounts are purged on schedule"
+      ]
+    },
+    "GDPR: old CVs are purged": {
+      "file": "premium/accounts.js",
+      "live": "user.jobs = user.jobs.filter((job) => now - Date.parse(job.created) <= RETENTION.cvDays * DAY);",
+      "dead": "",
+      "expect": [
+        "GDPR: sessions expire, CVs and inactive accounts are purged on schedule"
+      ]
+    },
+    "GDPR: registration needs the notice accepted": {
+      "file": "premium/server.js",
+      "live": "if (body.accept !== true) throw new HttpError(400, 'accept the privacy notice first');",
+      "dead": "",
+      "expect": [
+        "GDPR: the server needs the notice accepted, and serves export and erasure"
+      ]
+    },
+    "Currencies: a local price is a charm price": {
+      "file": "premium/pricing.js",
+      "live": "const price = code === 'EUR' ? pack.price : charm(pack.price * currency.rate * currency.market, currency.decimals);",
+      "dead": "const price = code === 'EUR' ? pack.price : pack.price * currency.rate * currency.market;",
+      "expect": [
+        "currencies: charm prices (.49/.99, whole numbers where cents are not used)"
+      ]
+    },
+    "Currencies: the order is priced in its currency": {
+      "file": "premium/server.js",
+      "live": "const order = store.buy(user, body.pack, local && { currency, price: local.price });",
+      "dead": "const order = store.buy(user, body.pack);",
+      "expect": [
+        "checkout: the order records its currency and local price; the credits are the same"
+      ]
+    },
+    "Pay: saving a profile needs a purchase": {
+      "file": "premium/server.js",
+      "live": "if (!store.hasPaid(user)) throw new HttpError(402, 'saving a profile comes with a pack of CVs: buy one first', offerPacks(request));",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Chat: the quota stops the chat": {
+      "file": "premium/server.js",
+      "live": "if (user.chat.left < 1) throw new HttpError(429, 'no message left', { refill: { credits: 1, messages: CHAT.perCredit } });",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Recovery: a reset link is used once": {
+      "file": "premium/accounts.js",
+      "live": "      delete data.resets[key];",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    },
+    "Recovery: a reset closes the old sessions": {
+      "file": "premium/accounts.js",
+      "live": "for (const [sessionKey, session] of Object.entries(data.sessions)) if (session.email === user.email) delete data.sessions[sessionKey];",
+      "dead": "",
+      "expect": [
+        "e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete"
+      ]
+    }
+  }
+}

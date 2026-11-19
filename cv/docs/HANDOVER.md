@@ -1739,6 +1739,25 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   `test/a4.test.js` and `test/page.test.js`, six defences in `public.json`.
   Open: the same options for the docx (a linear template) and a per-profile
   default stored with the profile (multi-profile publishing, 6.3).
+- [x] **6.4** (2026-11-19, the owner) The paid part, apart from the local
+  generator: `premium/` (server, accounts, credit packs, simulated payment,
+  free preview that never sends the CV's text, paid generation refunded on
+  failure, cost model, LinkedIn add-on). Demo only; `premium/README.md` lists
+  what going public needs (API adapter for the paid and preview modes, real
+  payment, legal texts). Tests `test/premium.test.js`, plan `scripts/sabotage/premium.json`.
+  6.4b: impulse packs (1.49 to 35.99 EUR, Haiku 5.5), one charm-priced grid per
+  market (8 currencies), checkout and receipt pages. 6.4c: GDPR (notice accepted,
+  export, erasure, retention purge, no card stored).
+  6.4d: a real use end to end in CI (`test/premium-e2e.test.js`); saving a
+  profile and the profile chat need a purchase (the packs come with the 402);
+  the chat: 20 messages with the first pack, then 1 credit = 20 messages;
+  password recovery by a one-time mail link (demo mail: console + outbox);
+  the privacy contact from `--contact` / `PREMIUM_CONTACT`, never in the repository.
+- [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
+  paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
+  session on the profile and a target offer, with a written plan. Price it
+  from the measured tokens of a session; keep the honesty rules (the coach
+  suggests, the profile is changed by the owner of the profile only).
 - [ ] **6.5** (2026-11-19, the owner) Haiku-first, code-first: a CV in
   seconds on Haiku 5.5, most of it decided by code. (a) [x] the `haiku`
   model: the router backend named `claude-haiku` (Claude Code on Haiku, the
