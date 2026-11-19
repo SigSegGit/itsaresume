@@ -1763,6 +1763,18 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   the live premium.db) with ITSaNAS, under an ITSaNAS account of its own on
   the VM, so the billing data has an off-machine copy. Then a restore test:
   a snapshot opened by createStore() gives the same stats().
+- [ ] **6.7** (2026-11-20, the owner) Fewer markets, every page in their
+  language. (a) Four currencies only: EUR, GBP, USD, CHF (CAD, AUD, BRL, INR
+  dropped); an unknown region falls back by language: `en-*` → USD, else EUR.
+  (b) Two languages, French and English: `web/i18n.js` (one classic script,
+  served by both servers) holds both dictionaries and sets `textContent` /
+  attributes from `data-i18n` keys, `t(key)` for the scripts; the language
+  is `?lang=` > the stored choice > the browser's first fr/en, French when
+  none; a FR/EN switch on every page. (c) Every page translated: the
+  generator's page, the A4 page, the questions page, premium, checkout,
+  privacy. (d) Legal texts: the English privacy notice says the French
+  version prevails (the owner, 2026-11-20). Test: both dictionaries have the
+  same keys, no empty value, every `data-i18n` and `t('…')` key exists.
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it
