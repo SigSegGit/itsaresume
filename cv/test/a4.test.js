@@ -12,7 +12,7 @@ const SOURCE = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
 function load() {
   // const bindings stay in the script's scope: read them out at its end.
   return runInContext(`${SOURCE}
-;({ fill, SPACING, marks, reused, options });`, createContext({}));
+;({ fill, SPACING, marks, reused, options });`, createContext({ URLSearchParams }));
 }
 
 // heights: per item id; an experience costs `head` unless bare and dropped.
@@ -162,7 +162,7 @@ test('highlight: off, first on the page, first per block, every one; whole words
   const { marks } = load();
   const keywords = ['SQL', 'PostgreSQL', 'Terraform (lab)', 'C'];
   const text = 'PostgreSQL and SQL, then sql again; Terraform in CI.';
-  const strong = (segments) => segments.filter((s) => s.mark).map((s) => s.text);
+  const strong = (segments) => [...segments.filter((s) => s.mark).map((s) => s.text)];
   assert.deepEqual(strong(marks(text, keywords, 0, new Set())), []);
   assert.equal(marks(text, keywords, 0, new Set()).map((s) => s.text).join(''), text);
   assert.deepEqual(strong(marks(text, keywords, 3, new Set())), ['PostgreSQL', 'SQL', 'sql', 'Terraform']);

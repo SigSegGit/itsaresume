@@ -42,3 +42,25 @@ body { margin: 0; padding: 16px; background: #e8e8e8; color: #111; }
   font-size: 6.5pt;
   color: #7f7f7f;
 }
+
+/* 2.61: the page's options (web/cv.js): toolbar, two columns, two pages,
+   keyword highlights, the keywords an experience already says. */
+.options { display: flex; flex-wrap: wrap; gap: 8px 20px; max-width: 210mm; margin: 0 auto 12px; font: 13px system-ui, sans-serif; }
+.options label { display: flex; flex-direction: column; gap: 2px; }
+.options small { color: #555; }
+.a4 strong.kw { font-weight: 700; }
+.a4.dense strong.kw { background: #fff1b8; padding: 0 .3mm; }
+.a4 .tags { color: #333; font-size: 8.5pt; }
+.a4 .tags[hidden] { display: none; }
+.a4.columns .content { display: grid; grid-template-columns: 1fr 58mm; column-gap: 6mm; align-items: start; }
+.a4.columns .top, .a4.columns .made-by { grid-column: 1 / -1; }
+.a4.columns .side { border-left: 1px solid #ccc; padding-left: 4mm; }
+.a4.columns .side .skills { display: block; }
+.a4.columns .side .skills dd { margin-bottom: 1mm; }
+.a4.pages-2 { height: 594mm; }
+.a4.pages-2 li, .a4.pages-2 .head, .a4.pages-2 h2 { break-inside: avoid; break-after: avoid-page; }
+.a4.pages-2 li { break-after: auto; }
+@media print {
+  .options { display: none; }
+  .a4 .dense strong.kw, .a4.dense strong.kw { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
