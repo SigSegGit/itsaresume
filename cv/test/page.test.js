@@ -96,3 +96,11 @@ test('the A4 page data carries made_by in the CV language', () => {
   assert.equal(pageData(profile, analysis()).made_by, analysis().language === 'fr' ? 'Adapté par itsaresume' : 'Tailored by itsaresume');
   assert.equal(pageData(load(), analysis()).made_by, '');
 });
+
+test('2.61: the page carries the offer keywords for highlighting, profile names only', () => {
+  const profile = load();
+  const page = pageData(profile, analysis());
+  assert.ok(page.keywords.length > 0);
+  const names = new Set(profile.skills.map((skill) => skill.name));
+  for (const keyword of page.keywords) assert.ok(names.has(keyword.replace(/ \(lab\)$/, '')), keyword);
+});
