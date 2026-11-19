@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "itsaresume — CV sur mesure (compte)",
+  "version": "0.1.0",
+  "description": "Importe votre propre profil LinkedIn en un clic et prépare un CV pour l'offre affichée, avec votre compte itsaresume.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["http://127.0.0.1/*", "https://*/*"],
+  "action": { "default_popup": "popup.html", "default_title": "itsaresume" }
+}

@@ -1,0 +1,7 @@
+body { width: 300px; margin: 0; padding: 12px; font: 13px system-ui, sans-serif; color: #1d1d1f; }
+h1 { font-size: 15px; margin: 0 0 8px; color: #1b2a4a; }
+button { display: block; width: 100%; margin: 6px 0; padding: 7px; border: 0; border-radius: 6px; background: #1b2a4a; color: #fff; cursor: pointer; }
+input { width: 100%; box-sizing: border-box; padding: 5px; margin: 2px 0 6px; }
+.hint { margin: 0 0 8px; color: #5f6672; font-size: 11px; }
+#reqs { padding-left: 16px; }
+.yes { color: #2f7d4f; } .adjacent { color: #b07a12; } .no { color: #a33; }

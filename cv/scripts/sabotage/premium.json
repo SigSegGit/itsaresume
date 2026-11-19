@@ -1,0 +1,74 @@
+{
+  "surface": "premium",
+  "command": [
+    "node",
+    "--test",
+    "--test-reporter=tap"
+  ],
+  "files": [
+    "premium/accounts.js",
+    "premium/preview.js",
+    "premium/server.js",
+    "premium/pricing.js",
+    "premium/extension/linkedin.js",
+    "premium/test/premium.test.js"
+  ],
+  "defences": {
+    "Premium: a debit at zero credit is refused": {
+      "file": "premium/accounts.js",
+      "live": "if (user.credits < 1) throw new Error('no credit left');",
+      "dead": "",
+      "expect": [
+        "credits: a pack adds its credits, a debit at zero is refused, a refund gives it back"
+      ]
+    },
+    "Premium: a wrong password is refused": {
+      "file": "premium/accounts.js",
+      "live": "if (!user || !timingSafeEqual(given, Buffer.from(user.hash, 'hex'))) throw new Error('wrong address or password');",
+      "dead": "if (!user) throw new Error('wrong address or password');",
+      "expect": [
+        "accounts: register, log in, wrong password and duplicates refused, no password stored"
+      ]
+    },
+    "Premium: the preview sends line lengths, not the text": {
+      "file": "premium/preview.js",
+      "live": "lines: (experience.items ?? []).map((item) => item.text.length),",
+      "dead": "lines: (experience.items ?? []).map((item) => item.text),",
+      "expect": [
+        "preview: the verdict and the shape, never the tailored text"
+      ]
+    },
+    "Premium: a failed generation refunds its credit": {
+      "file": "premium/server.js",
+      "live": "          store.refund(user);",
+      "dead": "",
+      "expect": [
+        "server: preview free on the subscription, generation paid by a credit on the API, refunded on failure"
+      ]
+    },
+    "Premium: a job is found among the caller's own jobs only": {
+      "file": "premium/server.js",
+      "live": "const job = account(request).jobs.find((entry) => entry.id === id);",
+      "dead": "const job = [...Object.values(store)].length && null;",
+      "expect": [
+        "server: preview free on the subscription, generation paid by a credit on the API, refunded on failure"
+      ]
+    },
+    "Premium: previews are capped per day": {
+      "file": "premium/accounts.js",
+      "live": "return user.previews[today] <= PREVIEWS_PER_DAY;",
+      "dead": "return true;",
+      "expect": [
+        "server: previews are limited per account per day"
+      ]
+    },
+    "Premium: the price per CV falls with the pack": {
+      "file": "premium/pricing.js",
+      "live": "  { id: 'pack40', label: '40 CV', credits: 40, price: 99 },",
+      "dead": "  { id: 'pack40', label: '40 CV', credits: 40, price: 199 },",
+      "expect": [
+        "packs: the price per CV falls with the pack size"
+      ]
+    }
+  }
+}
