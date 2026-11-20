@@ -6,28 +6,30 @@
   <title>CV</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/cv.css">
+  <script src="/i18n.js" defer></script>
   <script src="/cv.js" defer></script>
 </head>
 <body>
   <form id="options" class="options">
-    <label>Mise en page
-      <select id="layout"><option value="linear">Linéaire</option><option value="columns">Deux colonnes</option></select>
+    <span id="lang-switch"></span>
+    <label><span data-i18n>Mise en page</span>
+      <select id="layout"><option value="linear" data-i18n>Linéaire</option><option value="columns" data-i18n>Deux colonnes</option></select>
     </label>
-    <label>Surlignage des mots-clés
+    <label><span data-i18n>Surlignage des mots-clés</span>
       <input id="highlight" type="range" min="0" max="3" step="1" value="1" list="highlight-steps">
       <datalist id="highlight-steps"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option></datalist>
-      <small>aucun · 1re fois · par bloc · partout</small>
+      <small data-i18n>aucun · 1re fois · par bloc · partout</small>
     </label>
-    <label>Développement
+    <label><span data-i18n>Développement</span>
       <input id="detail" type="range" min="1" max="3" step="1" value="2">
-      <small>concis · standard · développé + mots-clés</small>
+      <small data-i18n>concis · standard · développé + mots-clés</small>
     </label>
-    <label>Pages
-      <select id="pages"><option value="1">Une page</option><option value="2">Deux pages si le contenu le justifie</option></select>
+    <label><span data-i18n>Pages</span>
+      <select id="pages"><option value="1" data-i18n>Une page</option><option value="2" data-i18n>Deux pages si le contenu le justifie</option></select>
     </label>
   </form>
   <p id="notice" hidden></p>
-  <button id="print" type="button">Imprimer / PDF</button>
+  <button id="print" type="button" data-i18n>Imprimer / PDF</button>
   <main id="sheet" class="a4"></main>
 </body>
 </html>

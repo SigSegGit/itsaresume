@@ -193,11 +193,20 @@ test('currencies: charm prices (.49/.99, whole numbers where cents are not used)
   assert.deepEqual(localPacks('EUR').map((pack) => pack.price), PACKS.map((pack) => pack.price), 'EUR is the grid itself');
 });
 
+// 6.7 (the owner, 2026-11-20): four markets only, each with its language.
+test('currencies: four markets only, EUR GBP USD CHF', () => {
+  assert.deepEqual(Object.keys(CURRENCIES).sort(), ['CHF', 'EUR', 'GBP', 'USD']);
+});
+
 test('currencies: the visitor\'s language picks the market, EUR otherwise', () => {
   assert.equal(currencyFor('en-GB,en;q=0.9'), 'GBP');
   assert.equal(currencyFor('en-US'), 'USD');
   assert.equal(currencyFor('fr-CH,fr;q=0.8'), 'CHF');
-  assert.equal(currencyFor('pt-BR'), 'BRL');
+  assert.equal(currencyFor('de-CH'), 'CHF');
+  assert.equal(currencyFor('pt-BR'), 'EUR', 'a dropped market falls back');
+  assert.equal(currencyFor('en-AU,en;q=0.9'), 'USD', 'English elsewhere pays in USD');
+  assert.equal(currencyFor('en'), 'USD');
+  assert.equal(currencyFor('fr-CA'), 'EUR');
   assert.equal(currencyFor('fr-FR,fr;q=0.9'), 'EUR');
   assert.equal(currencyFor(''), 'EUR');
   assert.equal(currencyFor('xx'), 'EUR');
@@ -212,9 +221,9 @@ test('checkout: the order records its currency and local price; the credits are 
     assert.equal(result.json.order.currency, 'GBP');
     assert.equal(result.json.order.price, localPacks('GBP').find((pack) => pack.id === 'pack10').price);
     assert.equal((await call('/api/checkout', { token, body: { pack: 'pack10', currency: 'XXX' } })).status, 400);
-    const packs = await call('/api/packs?currency=BRL');
-    assert.equal(packs.json.currency, 'BRL');
-    assert.equal(packs.json.packs[0].price, localPacks('BRL')[0].price);
+    const packs = await call('/api/packs?currency=CHF');
+    assert.equal(packs.json.currency, 'CHF');
+    assert.equal(packs.json.packs[0].price, localPacks('CHF')[0].price);
     const order = await call(`/api/orders/${result.json.order.id}`, { token });
     assert.equal(order.json.pack, 'pack10');
   } finally {

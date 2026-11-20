@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
-NEXT: 2.60
-TITLE: 2.61 the A4 page's options (layout, highlight, detail, pages); next 2.60 (a lab "yes"), 2.57 waits for the owner, then 6.3 publish
-WRITTEN-AT: 2026-11-19
+NEXT: 6.4g
+TITLE: 6.7 four markets, every page in French and English; 6.8 admin page; 6.4g waits for the owner's run on the VM; then 2.60
+WRITTEN-AT: 2026-11-20
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,7 +11,16 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-11-19)
+## 0. Where things stand (2026-11-20)
+
+- **2026-11-20, one PR for 6.7, 6.8 and 6.4g's code**: four markets (EUR,
+  GBP, USD, CHF) and every page in French and English (`web/i18n.js`, the
+  French text is the key); the English privacy notice defers to the French.
+  An admin page on premium (`PREMIUM_ADMINS`): counts, integrity, revenue,
+  snapshots, accounts, logged credit changes. The snapshots' ITSaNAS
+  account is a script the owner runs on the VM (he types the passphrase,
+  keeps the 24 words); `premium/restore-check.js` proves a synced copy.
+  The public page links premium; the premium page puts the add-on forward.
 
 - **2026-11-19, 2.61 the A4 page's options** (`web/cv.js`, the owner's ask
   before publishing): a toolbar on `/cv.html` (and the same names in its
@@ -1761,8 +1770,35 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   (VACUUM INTO) in $DATA/premium/snapshots, the last 48 kept.
 - [ ] **6.4g** (2026-11-19, the owner) Sync $DATA/premium/snapshots (never
   the live premium.db) with ITSaNAS, under an ITSaNAS account of its own on
-  the VM, so the billing data has an off-machine copy. Then a restore test:
-  a snapshot opened by createStore() gives the same stats().
+  the VM, so the billing data has an off-machine copy. Then a restore test.
+  Done 2026-11-20 (code): `deploy/vm-generator/itsanas-premium.sh` (account
+  `itsaresume`, port 9800, the snapshots folder as its ITSaNAS folder; the
+  owner types the passphrase and keeps the 24 words, the script never writes
+  them), `premium/restore-check.js` (a copy opened, integrity, counts against
+  the live base; tested). **Left**: the owner runs the script on the VM, then
+  `restore-check.js` on a second machine of the account; tick when it says ok.
+- [x] **6.7** (2026-11-20, the owner) Fewer markets, every page in their
+  language. Four currencies (EUR, GBP, USD, CHF; `en-*` elsewhere → USD,
+  the rest → EUR). `web/i18n.js` (one classic script, both servers, loaded
+  first): the French text is the key, `EN` its English; `data-i18n`,
+  `data-i18n-attr`, `data-lang` blocks for prose; `?lang=` > stored > browser
+  > French; an English/Français link on every page. Every page translated
+  (generator, A4 page, questions, premium, checkout, admin, privacy); the
+  English privacy notice says the French prevails (the owner). Test
+  `test/i18n.test.js`: every marked key and `t('…')` has its English, no
+  French left outside `t()` in the page scripts. The link preview
+  (`og:description`) stays French: scrapers run no script. Also: a
+  "try itsaresume premium" link in the public page's pitch, and the add-on
+  put forward on the premium page (its own section, install steps, link).
+- [x] **6.8** (2026-11-20, the owner) Database management and an admin page,
+  first part: `premium/web/admin.html` (counts, integrity, revenue per
+  currency, snapshots with the newest checked, accounts search, credit
+  changes with a reason, logged in `admin_log`, never below zero). Admins:
+  `PREMIUM_ADMINS` in $DATA/.env, none = nobody. Tests
+  `test/premium-admin.test.js`, defences in `scripts/sabotage/premium.json`.
+  Next (6.8b): refunds of an order, an account's erasure from the page (with
+  the same log), CSV export of the orders for the accounts, and the admin's
+  view of a failed job.
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it

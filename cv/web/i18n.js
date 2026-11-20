@@ -1,0 +1,425 @@
+// 6.7 (the owner, 2026-11-20): every page in French and English. A classic
+// script, loaded first (defer) by every page of both servers; it sets
+// globalThis.i18n. The French text is the key: `t('Générer les CV')` gives
+// the English of EN, or the French itself. Pages mark their static text with
+// `data-i18n` (the element's own text is the key), attributes with
+// `data-i18n-attr="placeholder content"`, and whole blocks with
+// `data-lang="fr"` / `data-lang="en"` (the other one is hidden). Text only:
+// textContent and setAttribute, never HTML (test/i18n.test.js).
+(function () {
+  const LANGS = ['fr', 'en'];
+  const EN = {
+    // Shared.
+    'Français': 'French',
+    'English': 'English',
+    'Retour': 'Back',
+    'Erreur': 'Error',
+    "Le plus choisi": "Most chosen",
+    "{price} par CV": "{price} per CV",
+    "Acheter": "Buy",
+    "Lot": "Pack",
+    "Prix ({currency})": "Price ({currency})",
+    "Marge / CV (€, modèle payant)": "Margin / CV (€, paid model)",
+    "Marge EUR / CV ({model})": "EUR margin / CV ({model})",
+    "{model} : {cost} $ par CV": "{model}: ${cost} per CV",
+    " (modèle payant)": " (paid model)",
+    "Un CV, au pire : {calls} appels × {input}k tokens en entrée + {output}k en sortie.": "One CV, worst case: {calls} calls × {input}k input tokens + {output}k output.",
+    "Prix locaux = grille EUR × taux de change × facteur de marché, arrondis à un prix psychologique (.49/.99). Marge = prix − frais de carte (1,5 % + 0,25 €) − API ({rate} €/$) − hébergement (0,02 €). Colonnes par modèle : grille EUR.": "Local prices = EUR grid × exchange rate × market factor, rounded to a charm price (.49/.99). Margin = price − card fees (1.5 % + €0.25) − API (€{rate}/$) − hosting (€0.02). Per-model columns: EUR grid.",
+    "Créez un compte ou connectez-vous pour acheter.": "Create an account or log in to buy.",
+    "Profil importé : {name}, {count} expérience(s).": "Profile imported: {name}, {count} experience(s).",
+    "Aucun profil : importez-le depuis votre page LinkedIn avec l’add-on, ou collez un JSON Resume.": "No profile yet: import it from your LinkedIn page with the add-on, or paste a JSON Resume.",
+    "Aperçu gratuit possible tout de suite. Enregistrer votre profil et l’assistant sont inclus dès le premier lot de CV.": "Free preview right away. Saving your profile and the assistant come with your first CV pack.",
+    "{count} message(s) restant(s).": "{count} message(s) left.",
+    "Inclus avec un lot de CV : des messages offerts, puis 1 crédit = {count} messages.": "Included with a CV pack: free messages, then 1 credit = {count} messages.",
+    "Recharger : 1 crédit = {count} messages": "Top up: 1 credit = {count} messages",
+    "Offre": "Job offer",
+    "Ouvrir le CV": "Open the CV",
+    " — échec, crédit rendu": " — failed, credit returned",
+    " — en cours…": " — in progress…",
+    "Collez d’abord une offre.": "Paste a job offer first.",
+    "Analyse en cours (1 à 2 minutes)…": "Analysing (1 to 2 minutes)…",
+    "Génération lancée…": "Generation started…",
+    "CV en cours de rédaction : il apparaîtra dans « Mes CV ».": "The CV is being written: it will appear in “My CVs”.",
+    "Plus de crédit : choisissez un lot dans les tarifs.": "No credit left: pick a pack in the pricing.",
+    "Enregistrer un profil est inclus dès le premier lot : choisissez un lot ci-dessus.": "Saving a profile comes with the first pack: pick one above.",
+    "Import refusé : {error}": "Import refused: {error}",
+    "Supprimer votre profil importé ? Vos CV déjà générés restent.": "Delete your imported profile? The CVs already generated stay.",
+    "Supprimer définitivement votre compte et vos données ?": "Delete your account and your data for good?",
+    "Plus de crédit : choisissez un lot.": "No credit left: pick a pack.",
+    "Indiquez votre adresse e-mail.": "Enter your e-mail address.",
+    "Si un compte existe pour cette adresse, un e-mail avec un lien (valable une heure) vient de partir.": "If an account exists for this address, an e-mail with a link (valid one hour) is on its way.",
+    "Mot de passe changé : connectez-vous.": "Password changed: log in.",
+    "itsaresume — CV sur mesure": "itsaresume — tailored CVs",
+    "L'add-on": "The add-on",
+    "Tarifs": "Pricing",
+    "Mon compte": "My account",
+    "Démo : paiement simulé, aucune carte demandée ni débitée.": "Demo: simulated payment, no card asked for or charged.",
+    "Obtenir l'add-on": "Get the add-on",
+    "Des crédits, sans abonnement, sans date limite. Plus le lot est grand, moins le CV coûte.": "Credits, no subscription, no expiry. The bigger the pack, the cheaper the CV.",
+    "Devise": "Currency",
+    "Coûts opérationnels (vue fondateur)": "Operating costs (founder's view)",
+    "Nouveau mot de passe": "New password",
+    "Nouveau mot de passe (8 caractères min.)": "New password (8 characters min.)",
+    "Changer le mot de passe": "Change the password",
+    "Adresse e-mail": "E-mail address",
+    "Mot de passe (8 caractères min.)": "Password (8 characters min.)",
+    "J'ai lu la politique de confidentialité (nécessaire pour créer un compte) :": "I have read the privacy notice (needed to create an account):",
+    "confidentialité": "privacy",
+    "Se connecter": "Log in",
+    "Créer un compte": "Create an account",
+    "Mot de passe oublié ?": "Forgot your password?",
+    "Connecté :": "Logged in:",
+    "crédit(s)": "credit(s)",
+    "Se déconnecter": "Log out",
+    "1. Votre profil": "1. Your profile",
+    "Sans l'add-on : coller un JSON Resume": "Without the add-on: paste a JSON Resume",
+    "Importer": "Import",
+    "Connecter l'add-on de navigateur": "Connect the browser add-on",
+    "Collez ces deux valeurs dans les options de l'add-on.": "Paste these two values in the add-on's options.",
+    "Serveur :": "Server:",
+    "Jeton :": "Token:",
+    "connectez-vous à nouveau pour l'afficher": "log in again to show it",
+    "Assistant de profil": "Profile assistant",
+    "Ex. : comment présenter mes astreintes ?": "E.g.: how do I present my on-call duty?",
+    "Envoyer": "Send",
+    "2. L'offre": "2. The job offer",
+    "Collez le texte de l'offre d'emploi": "Paste the job offer's text",
+    "Aperçu gratuit": "Free preview",
+    "Générer le CV (1 crédit)": "Generate the CV (1 credit)",
+    "Aperçu": "Preview",
+    "Le CV complet est prêt à être rédigé.": "The full CV is ready to be written.",
+    "Accroche, résumé et points choisis pour cette offre.": "Headline, summary and points chosen for this offer.",
+    "Mes CV": "My CVs",
+    "Conservés 12 mois, puis supprimés.": "Kept 12 months, then deleted.",
+    "Mes données": "My data",
+    "Aucun moyen de paiement n'est conservé ici. Détails :": "No means of payment is kept here. Details:",
+    "Télécharger mes données": "Download my data",
+    "Supprimer mon profil": "Delete my profile",
+    "Supprimer mon compte": "Delete my account",
+    "Profil, CV et compte effacés tout de suite ; crédits restants perdus. Les commandes restent en comptabilité, sans votre adresse.": "Profile, CVs and account erased at once; remaining credits lost. Orders stay in the accounts, without your address.",
+    "Mot de passe": "Password",
+    "Supprimer définitivement": "Delete for good",
+    "Confidentialité": "Privacy",
+    "Paiement — itsaresume": "Payment — itsaresume",
+    "Démo : paiement simulé. Aucune carte n'est demandée ni débitée.": "Demo: simulated payment. No card is asked for or charged.",
+    "Votre commande": "Your order",
+    "Prix par CV": "Price per CV",
+    "Total TTC": "Total incl. VAT",
+    "Crédits sans date limite, utilisables pour tout CV depuis votre compte. Un crédit est rendu si la génération échoue.": "Credits with no expiry, for any CV from your account. A credit is returned if the generation fails.",
+    "En production : paiement par carte chez le prestataire de paiement, facture envoyée par e-mail, TVA du pays de l'acheteur incluse.": "In production: card payment with the payment provider, invoice sent by e-mail, the buyer's country VAT included.",
+    "J'accepte les conditions de vente et je demande l'exécution immédiate du service (droit de rétractation éteint à la première génération).": "I accept the terms of sale and ask for the service to start at once (the right of withdrawal ends at the first generation).",
+    "Payer (simulé)": "Pay (simulated)",
+    "Paiement accepté (simulé)": "Payment accepted (simulated)",
+    "Commande": "Order",
+    "Montant": "Amount",
+    "Crédits disponibles": "Credits available",
+    "Générer un CV": "Generate a CV",
+    "{label} ({count} crédit(s))": "{label} ({count} credit(s))",
+    "Confidentialité — itsaresume": "Privacy — itsaresume",
+    "Projet de politique (version 2026-11-19), à faire valider avant l'ouverture au public.": "Draft notice (version 2026-11-19), to be validated before the public opening.",
+    "Admin — itsaresume": "Admin — itsaresume",
+    "Base de données": "Database",
+    "Intégrité :": "Integrity:",
+    "Chiffre d'affaires par devise": "Revenue per currency",
+    "Sauvegardes": "Backups",
+    "Une copie cohérente par heure, les 48 dernières gardées ; c'est ce dossier que la synchronisation copie hors de la machine.": "One consistent copy an hour, the last 48 kept; this is the folder the sync copies off the machine.",
+    "Comptes": "Accounts",
+    "Rechercher une adresse": "Search an address",
+    "Rechercher": "Search",
+    "Ajuster des crédits": "Adjust credits",
+    "+5 ou -3": "+5 or -3",
+    "Motif (obligatoire, journalisé)": "Reason (required, logged)",
+    "Appliquer": "Apply",
+    "Journal des actions admin": "Admin actions log",
+    "Table": "Table",
+    "Lignes": "Rows",
+    "Commandes": "Orders",
+    "Total": "Total",
+    "Simulées": "Simulated",
+    "Dernière : {name}, intégrité {integrity}, {users} compte(s).": "Newest: {name}, integrity {integrity}, {users} account(s).",
+    "Aucune sauvegarde.": "No backup.",
+    "Adresse": "Address",
+    "Crédits": "Credits",
+    "CV": "CVs",
+    "Profil": "Profile",
+    "Créé": "Created",
+    "Dernière connexion": "Last login",
+    "oui": "yes",
+    "non": "no",
+    "Réservé aux administrateurs.": "Admins only.",
+    "Connectez-vous d’abord (Mon compte).": "Log in first (My account).",
+    "Nouveau solde : {credits} crédit(s).": "New balance: {credits} credit(s).",
+    "Claude seul": "Claude only",
+    "IA locale seule": "Local AI only",
+    "durée inconnue": "unknown duration",
+    "Deux colonnes": "Two columns",
+    "Marine": "Navy",
+    "Forêt": "Forest",
+    "Ardoise": "Slate",
+    "Aucune candidature envoyée, rien de conservé hors du CV généré · l’offre est analysée par une IA sous contrôle du code · zéro facturation au token": "No application sent, nothing kept but the generated CV · the offer is analysed by an AI under the code's control · zero per-token billing",
+    "Colle le texte d’une offre d’emploi : tu obtiens le CV de {v0} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.": "Paste the text of a job offer: you get {v0}'s CV tailored to it, and an honest assessment of the fit. One offer at a time; an offer already processed is served at once.",
+    "Profil invalide": "Invalid profile",
+    " · {v0} vérifiées": " · {v0} verified",
+    "{v0} · {v1} compétences{v2}": "{v0} · {v1} skills{v2}",
+    "Routeur joignable": "Router reachable",
+    "Routeur injoignable": "Router unreachable",
+    "Word : PDF et page pleine": "Word: PDF and full page",
+    "LibreOffice : PDF et page pleine": "LibreOffice: PDF and full page",
+    "Sans moteur de mise en page : DOCX seul": "No layout engine: DOCX only",
+    "Ce texte semble contenir plusieurs offres (une même rubrique y apparaît deux fois) : utilise « Détecter plusieurs offres », ou colle-les une par une.": "This text seems to hold several offers (the same heading appears twice): use “Detect several offers”, or paste them one by one.",
+    "Offre trop longue ({v0} caractères, {v1} au plus).": "Offer too long ({v0} characters, {v1} at most).",
+    "Nom de l’offre (facultatif)": "Offer name (optional)",
+    "Nom du run, modifiable : il nomme aussi son dossier": "The run's name, editable: it also names its folder",
+    "Nom de l’offre {n} (facultatif)": "Name of offer {n} (optional)",
+    "Retirer": "Remove",
+    "Retirer l’offre {n}": "Remove offer {n}",
+    "{v0} lignes · {v1} caractères": "{v0} lines · {v1} characters",
+    "Générer les {v0} CV": "Generate the {v0} CVs",
+    "Générer le CV": "Generate the CV",
+    "Colle d’abord le texte à découper.": "Paste the text to split first.",
+    "Détection…": "Detecting…",
+    "Découpage : {v0}.": "Split: {v0}.",
+    "Découpage impossible : {v0}": "Cannot split: {v0}",
+    "Détecter plusieurs offres": "Detect several offers",
+    "choisis un fichier .json ou les .csv de l’export LinkedIn": "choose a .json file or the .csv files of the LinkedIn export",
+    "Profil « {v0} » importé ; à confirmer : {v1} ligne(s). Recharge la page pour le choisir.": "Profile “{v0}” imported; to confirm: {v1} line(s). Reload the page to pick it.",
+    "ajoute au moins un fichier ou un lien du candidat": "add at least one file or link of the candidate",
+    "Génération refusée : {v0}": "Generation refused: {v0}",
+    "Classement des profils par couverture : {rows}": "Profiles ranked by coverage: {rows}",
+    "Classement des offres par couverture : {rows}": "Offers ranked by coverage: {rows}",
+    "Réveil de l’IA locale": "Waking the local AI",
+    "Lecture de l’offre": "Reading the offer",
+    "Analyse": "Analysis",
+    "Mise en page": "Layout",
+    "Contrôle ATS": "ATS check",
+    "Terminé": "Done",
+    "Qualifié": "Qualified",
+    "Partiellement qualifié": "Partly qualified",
+    "Non qualifié": "Not qualified",
+    "fort": "strong",
+    "bon": "good",
+    "partiel": "partial",
+    "faible": "weak",
+    "proche": "close",
+    " (jamais revendiqué)": " (never claimed)",
+    " (lab uniquement)": " (lab only)",
+    " (à vérifier)": " (to verify)",
+    "Score plafonné à 30 : {v0}, la technologie en tête du titre, manque au profil.": "Score capped at 30: {v0}, the technology leading the title, is missing from the profile.",
+    "Score plafonné à 30 : poste junior ou de premier niveau, profil senior.": "Score capped at 30: junior or entry-level role, senior profile.",
+    "Score plafonné à 30 : {v0}": "Score capped at 30: {v0}",
+    " (essai {n})": " (attempt {n})",
+    " ({n} mesures)": " ({n} measurements)",
+    "Adéquation {v0} sur 100": "Fit {v0} out of 100",
+    "jamais revendiqué": "never claimed",
+    "à vérifier : {v0}": "to verify: {v0}",
+    "rapprochement du modèle": "the model's match",
+    "requis": "required",
+    "souhaité": "wanted",
+    "Exigence": "Requirement",
+    "Importance": "Importance",
+    "Couverte": "Covered",
+    "Par": "By",
+    "{v0} — appuyé par : {v1}": "{v0} — backed by: {v1}",
+    "{v0} — à montrer en entretien : ton profil n’en dit rien encore": "{v0} — to show in the interview: your profile says nothing of it yet",
+    "{v0} ({v1}) : « {v2} »": "{v0} ({v1}): “{v2}”",
+    "{v0} : cité par {v1}, absent du profil — à confirmer, puis ajouter au profil si vrai": "{v0}: cited by {v1}, missing from the profile — to confirm, then add to the profile if true",
+    "mise en page non mesurée": "layout not measured",
+    "ATS : {v0} problème(s)": "ATS: {v0} problem(s)",
+    "ATS : texte lisible, dans l’ordre": "ATS: text readable, in order",
+    "Rapport": "Report",
+    "Page A4": "A4 page",
+    "Compléter le profil": "Complete the profile",
+    "adéquation {v0}": "fit {v0}",
+    "Écarts sur l’essentiel : {v0}": "Gaps on the essentials: {v0}",
+    "Cette offre contient des consignes adressées au candidat ou à une IA : elles n'ont pas été appliquées.": "This offer holds instructions aimed at the candidate or at an AI: they were not applied.",
+    "Exigences de l’offre ({v0})": "The offer's requirements ({v0})",
+    "Savoir-être, non notés ({v0})": "Soft skills, not scored ({v0})",
+    "Conditions à confirmer, non notées ({v0})": "Conditions to confirm, not scored ({v0})",
+    "{v0} — à confirmer : ton profil n’en dit rien": "{v0} — to confirm: your profile says nothing of it",
+    "À confirmer avant envoi ({v0})": "To confirm before sending ({v0})",
+    "Preuves des compétences affichées ({v0})": "Evidence for the skills shown ({v0})",
+    "Commentaire du modèle (non vérifié)": "The model's comment (not checked)",
+    "Modèle demandé : {v0}, via {v1} · répondu par {v2} en {v3} essai(s), {v4}.": "Model asked: {v0}, via {v1} · answered by {v2} in {v3} attempt(s), {v4}.",
+    "la VM": "the VM",
+    "le portable": "the laptop",
+    "en attente : prochain dans la file": "waiting: next in the queue",
+    "en attente : {n}e dans la file": "waiting: number {n} in the queue",
+    "en attente": "waiting",
+    "en cours": "in progress",
+    "prêt": "ready",
+    "échec": "failed",
+    "Renommer": "Rename",
+    "Renommer « {v0} »": "Rename “{v0}”",
+    "Comparaison : {title}": "Comparison: {title}",
+    "prête": "ready",
+    "Modèle": "Model",
+    "Statut": "Status",
+    "Score": "Score",
+    "Verdict": "Verdict",
+    "Durée (s)": "Duration (s)",
+    "Tokens": "Tokens",
+    "Tentatives": "Attempts",
+    "Réparations": "Repairs",
+    "Verdicts changés": "Verdicts changed",
+    "Désaccords": "Disagreements",
+    "Télécharger la comparaison": "Download the comparison",
+    "Renommage refusé : {v0}": "Rename refused: {v0}",
+    "CV sur mesure, vérifié ligne à ligne contre ton profil": "Tailored CVs, checked line by line against your profile",
+    "Questions sur ton profil": "Questions on your profile",
+    "Profil…": "Profile…",
+    "Modèle…": "Model…",
+    "Mise en page…": "Layout…",
+    "Recruteur ? Collez votre offre, recevez le CV de": "Recruiter? Paste your job offer, get the CV of",
+    "ce candidat": "this candidate",
+    "adapté, en deux minutes.": "tailored to it, in two minutes.",
+    "Rien d’inventé.": "Nothing made up.",
+    "Chaque ligne du CV vient de son profil vérifié ; l’IA choisit, le code contrôle et refuse le reste.": "Every line of the CV comes from his checked profile; the AI chooses, the code checks and refuses the rest.",
+    "Une évaluation honnête.": "An honest assessment.",
+    "Le score dit ce qui est couvert, ce qui manque, et pourquoi il est plafonné quand le cœur du poste n’est pas là.": "The score says what is covered, what is missing, and why it is capped when the core of the role is not there.",
+    "Un produit qu’il a conçu, développé et exploite.": "A product he designed, built and runs.",
+    "Architecture, routeur d’IA en Rust qui bascule entre plusieurs modèles sans jamais être facturé au token, générateur en Node.js, serveur et déploiement continu sur sa propre infrastructure.": "Architecture, an AI router in Rust that switches between several models without ever being billed per token, a generator in Node.js, server and continuous deployment on his own infrastructure.",
+    "L’IA comme outil d’ingénierie, sous contrôle.": "AI as an engineering tool, under control.",
+    "Développé avec des assistants IA, encadré par plus de 900 tests écrits avant le code et des tests de sabotage qui prouvent que chaque test détecte bien une régression ; chaque changement passe l’intégration continue (Linux et Windows) avant d’être fusionné puis déployé.": "Built with AI assistants, framed by more than 900 tests written before the code and sabotage tests that prove each test does catch a regression; every change passes continuous integration (Linux and Windows) before it is merged, then deployed.",
+    "Voir le code source": "See the source code",
+    "Voir l’intégration continue": "See the continuous integration",
+    "Essayer avec une offre exemple": "Try with a sample offer",
+    "Candidat ? Le même outil, sur votre propre profil LinkedIn, avec un add-on de navigateur :": "Job seeker? The same tool, on your own LinkedIn profile, with a browser add-on:",
+    "essayer itsaresume premium": "try itsaresume premium",
+    "Mon profil": "My profile",
+    "Sources du run": "The run's sources",
+    "Fichiers du candidat pour ce run seulement (rien n’est conservé) : export LinkedIn (.zip ou ses .csv), JSON Resume, ancien CV (.docx, .pdf), profil rédigé par une IA (.txt, .md).": "The candidate's files for this run only (nothing is kept): LinkedIn export (.zip or its .csv), JSON Resume, former CV (.docx, .pdf), profile written by an AI (.txt, .md).",
+    "Liens (un par ligne)": "Links (one per line)",
+    "CV généré à partir du score": "CV generated from the score",
+    "Offres": "Job offers",
+    "Colle une offre, ou un mail d'ESN qui en contient plusieurs": "Paste a job offer, or a consultancy's e-mail holding several",
+    "Ou dépose l’offre en .pdf, .docx, .txt ou .md": "Or drop the offer as .pdf, .docx, .txt or .md",
+    "Un fichier = une offre. L’offre et ton profil ne vont qu’au modèle : local, ou Claude via ton abonnement (Anthropic les reçoit alors). Rien n’est envoyé à un recruteur.": "One file = one offer. The offer and your profile go only to the model: local, or Claude through your subscription (Anthropic then receives them). Nothing is sent to a recruiter.",
+    "Ajouter tel quel": "Add as is",
+    "Auto : Claude, puis les autres en secours": "Auto: Claude, then the others as fallback",
+    "Claude Haiku (rapide, test)": "Claude Haiku (fast, test)",
+    "Gemini seul": "Gemini only",
+    "OpenAI seul": "OpenAI only",
+    "OpenAI gpt-oss via Groq (gratuit)": "OpenAI gpt-oss via Groq (free)",
+    "IA locale seule (lente)": "Local AI only (slow)",
+    "Comparer tous les modèles disponibles": "Compare every available model",
+    "Classer et garder les 3 meilleures": "Rank and keep the best 3",
+    "Classer les profils pour cette offre": "Rank the profiles for this offer",
+    "Importer un profil (JSON Resume ou export LinkedIn)": "Import a profile (JSON Resume or LinkedIn export)",
+    "Identifiant": "Identifier",
+    "Présentation": "Style",
+    "Générer les CV": "Generate the CVs",
+    "CV générés": "Generated CVs",
+    "Les CV apparaîtront ici, un par offre, avec leur rapport : qualification, exigences couvertes, preuves.": "The CVs will appear here, one per offer, with their report: qualification, requirements covered, evidence.",
+    "L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours · aucune candidature envoyée · zéro facturation au token": "The offer is analysed by Claude (Claude Code plan, so sent to Anthropic), or by a local AI as fallback · no application sent · zero per-token billing",
+    "Chaque ligne du CV provient de ton profil v4 ; les compétences lab et jamais sont appliquées par le code.": "Every line of the CV comes from your v4 profile; the lab and never skills are enforced by the code.",
+    "CV sur mesure, vérifié ligne à ligne contre le profil, pour chaque offre : colle une offre, reçois le CV et le rapport d’adéquation.": "A tailored CV, checked line by line against the profile, for every job offer: paste an offer, get the CV and the fit report.",
+    "État du système": "System status",
+    "Profil du candidat": "Candidate's profile",
+    "Architecte Solutions Infrastructure…": "Infrastructure Solutions Architect…",
+    "ex. sam-doe": "e.g. sam-doe",
+    "Palette de couleurs": "Colour palette",
+    "Linéaire": "Linear",
+    "Surlignage des mots-clés": "Keyword highlighting",
+    "aucun · 1re fois · par bloc · partout": "none · first time · per block · everywhere",
+    "Développement": "Detail",
+    "concis · standard · développé + mots-clés": "concise · standard · detailed + keywords",
+    "Pages": "Pages",
+    "Une page": "One page",
+    "Deux pages si le contenu le justifie": "Two pages if the content warrants it",
+    "Imprimer / PDF": "Print / PDF",
+    "CV introuvable : relancez la génération depuis la page d’accueil.": "CV not found: run the generation again from the home page.",
+    "Tout tient sur une page : la deuxième page n’apporterait rien.": "Everything fits on one page: a second page would add nothing.",
+    "Le contenu obligatoire dépasse la page, même à l’interligne minimal.": "The required content overflows the page, even at the tightest line spacing.",
+    "Le contenu obligatoire ne tenait qu’en resserrant l’interligne.": "The required content fitted only by tightening the line spacing.",
+    "Questions — profil": "Questions — profile",
+    "Ce que les offres demandent et que ton profil ne dit pas": "What the offers ask for and your profile does not say",
+    "Réponds avec tes mots : « oui » ajoute la compétence au profil, à ton niveau, citée telle quelle ; « non » ne l’ajoute pas et la question ne revient plus. Le prochain CV en tient compte.": "Answer in your own words: “yes” adds the skill to the profile, at your level, quoted as is; “no” does not add it and the question does not come back. The next CV takes it into account.",
+    "confirmé": "proficient",
+    "opérationnel": "working",
+    "en lab": "in a lab",
+    "Nom de la compétence": "Skill name",
+    "Où, quand, quoi — une phrase à toi": "Where, when, what — a sentence of your own",
+    "Ta phrase": "Your sentence",
+    "Refusé : {v0}": "Refused: {v0}",
+    "Ajouté au profil.": "Added to the profile.",
+    "Noté : la question ne reviendra pas.": "Noted: the question will not come back.",
+    "Oui, enregistrer": "Yes, save",
+    "Non": "No",
+    "Les questions ne sont disponibles que sur la page locale.": "The questions are available on the local page only.",
+    "Aucune question : le profil couvre ce que les offres demandent.": "No question: the profile covers what the offers ask for.",
+    "{n} ko": "{n} KB",
+  };
+
+  const store = (() => {
+    try {
+      return globalThis.localStorage ?? null;
+    } catch {
+      return null;
+    }
+  })();
+  const known = (value) => (LANGS.includes(value) ? value : null);
+
+  /** ?lang= > the stored choice > the browser's first fr/en > French. */
+  function pick() {
+    try {
+      const asked = known(new URLSearchParams(globalThis.location?.search ?? '').get('lang'));
+      if (asked) {
+        store?.setItem('lang', asked);
+        return asked;
+      }
+    } catch { /* no URL: French */ }
+    let stored = null;
+    try {
+      stored = known(store?.getItem('lang'));
+    } catch { /* storage refused */ }
+    if (stored) return stored;
+    for (const tag of globalThis.navigator?.languages ?? [globalThis.navigator?.language ?? '']) {
+      const base = known(String(tag).slice(0, 2).toLowerCase());
+      if (base) return base;
+    }
+    return 'fr';
+  }
+
+  const lang = pick();
+  const dict = lang === 'en' ? EN : {};
+
+  /** The text in the page's language; {name} filled from vars. */
+  function t(key, vars = {}) {
+    const text = dict[key] ?? key;
+    return text.replace(/\{(\w+)\}/g, (whole, name) => (name in vars ? String(vars[name]) : whole));
+  }
+
+  function apply(root = globalThis.document) {
+    if (!root?.querySelectorAll) return;
+    if (root.documentElement) root.documentElement.lang = lang;
+    for (const node of root.querySelectorAll('[data-i18n]')) {
+      const key = node.getAttribute('data-i18n') || node.textContent.trim().replace(/\s+/g, ' ');
+      node.setAttribute('data-i18n', key);
+      node.textContent = t(key);
+    }
+    for (const node of root.querySelectorAll('[data-i18n-attr]')) {
+      for (const name of node.getAttribute('data-i18n-attr').split(/\s+/).filter(Boolean)) {
+        const value = node.getAttribute(name);
+        if (value) node.setAttribute(name, t(value));
+      }
+    }
+    for (const node of root.querySelectorAll('[data-lang]')) node.hidden = node.getAttribute('data-lang') !== lang;
+    // The switch: a link to the other language, in #lang-switch, or in the corner.
+    const other = lang === 'fr' ? 'en' : 'fr';
+    if (root.getElementById && !root.getElementById('lang-link')) {
+      const link = root.createElement('a');
+      link.id = 'lang-link';
+      link.className = 'lang-link';
+      link.hreflang = other;
+      link.lang = other;
+      link.textContent = other === 'en' ? 'English' : 'Français';
+      const url = new URL(globalThis.location.href);
+      url.searchParams.set('lang', other);
+      link.href = url.pathname + url.search + url.hash;
+      (root.getElementById('lang-switch') ?? root.body)?.append(link);
+    }
+  }
+
+  globalThis.i18n = { lang, t, apply, EN, LANGS };
+  if (globalThis.document?.querySelectorAll) apply(globalThis.document);
+})();

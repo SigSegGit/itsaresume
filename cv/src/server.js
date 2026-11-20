@@ -39,6 +39,8 @@ export const SOURCE_URL = 'https://github.com/SigSegGit/itsaresume';
 
 const STATIC = {
   '/app.js': ['app.js', 'text/javascript; charset=utf-8'],
+  // 6.7: both languages, loaded first by every page.
+  '/i18n.js': ['i18n.js', 'text/javascript; charset=utf-8'],
   // 2.47: the sample offer of the public page's demo button.
   '/sample-offer.js': ['sample-offer.js', 'text/javascript; charset=utf-8'],
   '/style.css': ['style.css', 'text/css; charset=utf-8'],

@@ -3,139 +3,171 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>itsaresume — CV sur mesure</title>
+  <title data-i18n>itsaresume — CV sur mesure</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <script src="i18n.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <header class="bar">
     <strong class="brand">itsaresume</strong>
-    <nav><a href="#pricing">Tarifs</a><a href="#account" id="nav-account">Mon compte</a></nav>
+    <nav id="lang-switch"><a href="#addon" data-i18n>L'add-on</a><a href="#pricing" data-i18n>Tarifs</a><a href="#account" id="nav-account" data-i18n>Mon compte</a><a href="admin.html" id="nav-admin" hidden>Admin</a></nav>
   </header>
-  <p class="demo-banner">Démo : paiement simulé, aucune carte demandée ni débitée.</p>
+  <p class="demo-banner" data-i18n>Démo : paiement simulé, aucune carte demandée ni débitée.</p>
 
-  <section class="hero">
+  <section class="hero" data-lang="fr">
     <h1>Un CV taillé pour chaque offre, depuis votre profil LinkedIn.</h1>
     <p>Un clic sur votre profil LinkedIn pour l'importer, un clic sur une offre pour l'analyser. Le CV ne contient que ce que dit votre profil : rien d'inventé, chaque point vient de vous.</p>
     <ol class="steps">
-      <li><b>Importez</b> votre profil avec l'extension (ou un fichier JSON Resume).</li>
+      <li><b>Importez</b> votre profil avec l'add-on (ou un fichier JSON Resume).</li>
       <li><b>Aperçu gratuit</b> : score d'adéquation et exigences couvertes.</li>
       <li><b>Générez</b> le CV complet (1 crédit) : une page A4 réglable, à imprimer en PDF.</li>
     </ol>
   </section>
+  <section class="hero" data-lang="en" hidden>
+    <h1>A CV cut for every job offer, from your LinkedIn profile.</h1>
+    <p>One click on your LinkedIn profile to import it, one click on a job offer to analyse it. The CV holds only what your profile says: nothing made up, every point comes from you.</p>
+    <ol class="steps">
+      <li><b>Import</b> your profile with the add-on (or a JSON Resume file).</li>
+      <li><b>Free preview</b>: fit score and the requirements covered.</li>
+      <li><b>Generate</b> the full CV (1 credit): an adjustable A4 page, printable as PDF.</li>
+    </ol>
+  </section>
+
+  <section id="addon" class="card addon">
+    <div data-lang="fr">
+      <h2>L'add-on navigateur : deux clics, zéro copier-coller</h2>
+      <ul>
+        <li><b>Sur votre profil LinkedIn</b> : un clic l'importe dans votre compte, expériences et compétences comprises.</li>
+        <li><b>Sur une offre</b> (LinkedIn ou autre site) : un clic l'envoie à l'analyse, l'aperçu gratuit arrive ici.</li>
+        <li>Il ne lit que la page affichée, quand vous cliquez ; rien en arrière-plan, aucun autre site.</li>
+      </ul>
+      <p class="muted">Chrome ou Edge : téléchargez le dossier <code>premium/extension</code>, ouvrez <code>chrome://extensions</code>, activez le mode développeur, « Charger l'extension non empaquetée », puis collez le serveur et le jeton affichés dans « Mon compte ».</p>
+    </div>
+    <div data-lang="en" hidden>
+      <h2>The browser add-on: two clicks, no copy-paste</h2>
+      <ul>
+        <li><b>On your LinkedIn profile</b>: one click imports it into your account, experiences and skills included.</li>
+        <li><b>On a job offer</b> (LinkedIn or any site): one click sends it to the analysis; the free preview arrives here.</li>
+        <li>It reads only the page shown, when you click; nothing in the background, no other site.</li>
+      </ul>
+      <p class="muted">Chrome or Edge: download the <code>premium/extension</code> folder, open <code>chrome://extensions</code>, turn on developer mode, "Load unpacked", then paste the server and the token shown in "My account".</p>
+    </div>
+    <a class="button" href="https://github.com/SigSegGit/itsaresume/tree/main/cv/premium/extension" target="_blank" rel="noopener" data-i18n>Obtenir l'add-on</a>
+  </section>
 
   <section id="pricing">
-    <h2>Tarifs</h2>
-    <p class="muted">Des crédits, sans abonnement, sans date limite. Plus le lot est grand, moins le CV coûte.
-      <label class="inline">Devise <select id="currency"></select></label></p>
+    <h2 data-i18n>Tarifs</h2>
+    <p class="muted"><span data-i18n>Des crédits, sans abonnement, sans date limite. Plus le lot est grand, moins le CV coûte.</span>
+      <label class="inline"><span data-i18n>Devise</span> <select id="currency"></select></label></p>
     <div id="packs" class="packs"></div>
     <details class="costs">
-      <summary>Coûts opérationnels (vue fondateur)</summary>
+      <summary data-i18n>Coûts opérationnels (vue fondateur)</summary>
       <div id="costs"></div>
     </details>
   </section>
 
   <section id="account">
-    <h2>Mon compte</h2>
+    <h2 data-i18n>Mon compte</h2>
     <form id="reset-form" class="card" hidden>
-      <h3>Nouveau mot de passe</h3>
-      <label>Nouveau mot de passe (8 caractères min.) <input id="new-password" type="password" autocomplete="new-password" minlength="8" required></label>
-      <button type="submit">Changer le mot de passe</button>
+      <h3 data-i18n>Nouveau mot de passe</h3>
+      <label><span data-i18n>Nouveau mot de passe (8 caractères min.)</span> <input id="new-password" type="password" autocomplete="new-password" minlength="8" required></label>
+      <button type="submit" data-i18n>Changer le mot de passe</button>
     </form>
     <p id="reset-msg" class="muted" hidden></p>
     <form id="auth" class="card">
-      <label>Adresse e-mail <input id="email" type="email" autocomplete="email" required></label>
-      <label>Mot de passe (8 caractères min.) <input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
-      <label class="consent"><input id="accept" type="checkbox"> J'ai lu la <a href="privacy.html" target="_blank">politique de confidentialité</a> (nécessaire pour créer un compte).</label>
+      <label><span data-i18n>Adresse e-mail</span> <input id="email" type="email" autocomplete="email" required></label>
+      <label><span data-i18n>Mot de passe (8 caractères min.)</span> <input id="password" type="password" autocomplete="current-password" minlength="8" required></label>
+      <label class="consent"><input id="accept" type="checkbox"> <span data-i18n>J'ai lu la politique de confidentialité (nécessaire pour créer un compte) :</span> <a href="privacy.html" target="_blank" data-i18n>confidentialité</a></label>
       <div class="row">
-        <button type="submit" data-action="login">Se connecter</button>
-        <button type="submit" data-action="register" class="secondary">Créer un compte</button>
+        <button type="submit" data-action="login" data-i18n>Se connecter</button>
+        <button type="submit" data-action="register" class="secondary" data-i18n>Créer un compte</button>
       </div>
-      <p><a href="#account" id="forgot">Mot de passe oublié ?</a></p>
+      <p><a href="#account" id="forgot" data-i18n>Mot de passe oublié ?</a></p>
       <p id="auth-error" class="error" hidden></p>
     </form>
 
     <div id="dashboard" hidden>
       <div class="card row spread">
-        <span>Connecté : <b id="me-email"></b></span>
-        <span class="credits"><b id="me-credits">0</b> crédit(s)</span>
-        <button id="logout" class="secondary" type="button">Se déconnecter</button>
+        <span><span data-i18n>Connecté :</span> <b id="me-email"></b></span>
+        <span class="credits"><b id="me-credits">0</b> <span data-i18n>crédit(s)</span></span>
+        <button id="logout" class="secondary" type="button" data-i18n>Se déconnecter</button>
       </div>
 
       <div class="card">
-        <h3>1. Votre profil</h3>
+        <h3 data-i18n>1. Votre profil</h3>
         <p id="profile-status" class="muted"></p>
         <details>
-          <summary>Sans l'extension : coller un JSON Resume</summary>
+          <summary data-i18n>Sans l'add-on : coller un JSON Resume</summary>
           <textarea id="resume" rows="6" placeholder='{"basics":{"name":"..."},"work":[...]}'></textarea>
-          <button id="save-resume" type="button" class="secondary">Importer</button>
+          <button id="save-resume" type="button" class="secondary" data-i18n>Importer</button>
         </details>
-        <details>
-          <summary>Connecter l'extension de navigateur</summary>
-          <p class="muted">Collez ces deux valeurs dans les options de l'extension (dossier <code>premium/extension</code>, chargée « non empaquetée »).</p>
-          <p>Serveur : <code id="ext-url"></code></p>
-          <p>Jeton : <code id="ext-token">connectez-vous à nouveau pour l'afficher</code></p>
+        <details open>
+          <summary data-i18n>Connecter l'add-on de navigateur</summary>
+          <p class="muted" data-i18n>Collez ces deux valeurs dans les options de l'add-on.</p>
+          <p><span data-i18n>Serveur :</span> <code id="ext-url"></code></p>
+          <p><span data-i18n>Jeton :</span> <code id="ext-token" data-i18n>connectez-vous à nouveau pour l'afficher</code></p>
         </details>
       </div>
 
       <div class="card">
-        <h3>Assistant de profil</h3>
+        <h3 data-i18n>Assistant de profil</h3>
         <p id="chat-status" class="muted"></p>
         <ul id="chat-log" class="chat"></ul>
         <div class="row chat-row">
-          <input id="chat-input" placeholder="Ex. : comment présenter mes astreintes ?" maxlength="4000">
-          <button id="chat-send" type="button">Envoyer</button>
+          <input id="chat-input" placeholder="Ex. : comment présenter mes astreintes ?" data-i18n-attr="placeholder" maxlength="4000">
+          <button id="chat-send" type="button" data-i18n>Envoyer</button>
         </div>
         <button id="chat-refill" type="button" class="secondary" hidden></button>
       </div>
 
       <div class="card">
-        <h3>2. L'offre</h3>
-        <textarea id="offer" rows="8" placeholder="Collez le texte de l'offre d'emploi"></textarea>
+        <h3 data-i18n>2. L'offre</h3>
+        <textarea id="offer" rows="8" placeholder="Collez le texte de l'offre d'emploi" data-i18n-attr="placeholder"></textarea>
         <div class="row">
-          <button id="preview" type="button" class="secondary">Aperçu gratuit</button>
-          <button id="generate" type="button">Générer le CV (1 crédit)</button>
+          <button id="preview" type="button" class="secondary" data-i18n>Aperçu gratuit</button>
+          <button id="generate" type="button" data-i18n>Générer le CV (1 crédit)</button>
         </div>
         <p id="work-status" class="muted" hidden></p>
       </div>
 
       <div id="preview-result" class="card" hidden>
-        <h3>Aperçu</h3>
+        <h3 data-i18n>Aperçu</h3>
         <p class="score"><b id="pv-score"></b>/100 <span id="pv-verdict" class="muted"></span></p>
         <ul id="pv-reqs" class="chips"></ul>
         <div class="paywall">
           <div id="pv-skeleton" class="skeleton" aria-hidden="true"></div>
           <div class="lock">
-            <p><b>Le CV complet est prêt à être rédigé.</b> Accroche, résumé et points choisis pour cette offre.</p>
-            <button id="unlock" type="button">Générer le CV (1 crédit)</button>
+            <p><b data-i18n>Le CV complet est prêt à être rédigé.</b> <span data-i18n>Accroche, résumé et points choisis pour cette offre.</span></p>
+            <button id="unlock" type="button" data-i18n>Générer le CV (1 crédit)</button>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <h3>Mes CV</h3>
+        <h3 data-i18n>Mes CV</h3>
         <ul id="jobs" class="jobs"></ul>
-        <p class="muted">Conservés 12 mois, puis supprimés.</p>
+        <p class="muted" data-i18n>Conservés 12 mois, puis supprimés.</p>
       </div>
 
       <div class="card">
-        <h3>Mes données</h3>
-        <p class="muted">Aucun moyen de paiement n'est conservé ici. Détails : <a href="privacy.html">confidentialité</a>.</p>
+        <h3 data-i18n>Mes données</h3>
+        <p class="muted"><span data-i18n>Aucun moyen de paiement n'est conservé ici. Détails :</span> <a href="privacy.html" data-i18n>confidentialité</a></p>
         <div class="row">
-          <a id="export" href="api/me/export" download="itsaresume-mes-donnees.json"><button type="button" class="secondary">Télécharger mes données</button></a>
-          <button id="delete-profile" type="button" class="secondary">Supprimer mon profil</button>
+          <a id="export" href="api/me/export" download="itsaresume-data.json"><button type="button" class="secondary" data-i18n>Télécharger mes données</button></a>
+          <button id="delete-profile" type="button" class="secondary" data-i18n>Supprimer mon profil</button>
         </div>
         <details>
-          <summary>Supprimer mon compte</summary>
-          <p class="muted">Profil, CV et compte effacés tout de suite ; crédits restants perdus. Les commandes restent en comptabilité, sans votre adresse.</p>
-          <label>Mot de passe <input id="delete-password" type="password" autocomplete="current-password"></label>
-          <button id="delete-account" type="button" class="danger">Supprimer définitivement</button>
+          <summary data-i18n>Supprimer mon compte</summary>
+          <p class="muted" data-i18n>Profil, CV et compte effacés tout de suite ; crédits restants perdus. Les commandes restent en comptabilité, sans votre adresse.</p>
+          <label><span data-i18n>Mot de passe</span> <input id="delete-password" type="password" autocomplete="current-password"></label>
+          <button id="delete-account" type="button" class="danger" data-i18n>Supprimer définitivement</button>
           <p id="delete-error" class="error" hidden></p>
         </details>
       </div>
     </div>
   </section>
-  <footer class="foot"><a href="privacy.html">Confidentialité</a></footer>
+  <footer class="foot"><a href="privacy.html" data-i18n>Confidentialité</a></footer>
 </body>
 </html>

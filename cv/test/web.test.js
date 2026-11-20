@@ -25,7 +25,7 @@ test('the page holds no inline script, style or handler, and loads nothing from 
   assert.ok(!/\sstyle=/.test(html), 'inline style');
   assert.ok(!/\son[a-z]+=/.test(html), 'inline handler');
   const urls = [...html.matchAll(/<(?!a\b)[a-z]+\b[^>]*\b(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/icon-180.png', '/style.css']);
+  assert.deepEqual(urls.sort(), ['/app.js', '/favicon.svg', '/i18n.js', '/icon-180.png', '/style.css']);
   // 2.47: links are not loads; two leave the site, the source and its CI, opened apart.
   const links = [...html.matchAll(/<a\b[^>]*>/g)].map((match) => match[0]);
   const away = links.filter((link) => /href="https?:/.test(link));
@@ -276,7 +276,7 @@ test('the page greys the models the server says cannot answer, and refreshes the
 // 2026-10-06: a queued job shows its place in its lane, refreshed by the poll.
 test('the page shows a queued job its place in the queue', () => {
   const app = web('app.js');
-  assert.match(app, /queued: \['', Number\.isInteger\(job\.position\) \? `en attente : \$\{job\.position === 1 \? 'prochain'/);
+  assert.match(app, /queued: \['', Number\.isInteger\(job\.position\) \? \(job\.position === 1 \? t\('en attente : prochain dans la file'\) : t\('en attente : \{n\}e dans la file', \{ n: job\.position \}\)\)/);
 });
 
 // 2026-10-06 (the owner's technical note): no minute is lost by seeing a

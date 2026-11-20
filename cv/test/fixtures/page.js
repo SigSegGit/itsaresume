@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 
 const SOURCE = readFileSync(new URL('../../web/app.js', import.meta.url), 'utf8');
+const I18N = readFileSync(new URL('../../web/i18n.js', import.meta.url), 'utf8');
 const HTML = readFileSync(new URL('../../web/index.html', import.meta.url), 'utf8');
 
 class FakeNode {
@@ -128,6 +129,8 @@ export function loadPage(server, { token = 't'.repeat(48) } = {}) {
     return { ok: status >= 200 && status < 300, status, json: async () => JSON.parse(JSON.stringify(body)) };
   };
   const context = createContext({ document, Node: FakeNode, fetch, console, setTimeout: (fn, ms) => { delays.push(ms); timers.push(fn); }, clearTimeout: () => {} });
+  // 6.7: i18n.js first, as in the page (no browser language: French).
+  runInContext(I18N, context, { filename: 'web/i18n.js' });
   runInContext(`'use strict';\n${SOURCE}`, context, { filename: 'web/app.js' });
   const settle = async () => {
     for (let i = 0; i < 50; i += 1) await new Promise((resolve) => setImmediate(resolve));

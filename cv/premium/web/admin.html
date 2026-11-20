@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title data-i18n>Admin — itsaresume</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="i18n.js" defer></script>
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="brand" href="./">itsaresume</a>
+    <nav id="lang-switch"><a href="./#account" data-i18n>Mon compte</a></nav>
+  </header>
+  <p id="denied" class="error" hidden></p>
+  <main id="admin" class="admin" hidden>
+    <section class="card">
+      <h2 data-i18n>Base de données</h2>
+      <p><span data-i18n>Intégrité :</span> <b id="integrity"></b></p>
+      <table id="stats" class="summary"></table>
+      <h3 data-i18n>Chiffre d'affaires par devise</h3>
+      <table id="revenue" class="summary"></table>
+    </section>
+    <section class="card">
+      <h2 data-i18n>Sauvegardes</h2>
+      <p class="muted" data-i18n>Une copie cohérente par heure, les 48 dernières gardées ; c'est ce dossier que la synchronisation copie hors de la machine.</p>
+      <p id="newest" class="muted"></p>
+      <ul id="snapshots"></ul>
+    </section>
+    <section class="card">
+      <h2 data-i18n>Comptes</h2>
+      <form id="search" class="row">
+        <input id="q" type="search" placeholder="Rechercher une adresse" data-i18n-attr="placeholder">
+        <button type="submit" data-i18n>Rechercher</button>
+      </form>
+      <table id="users" class="summary"></table>
+    </section>
+    <section class="card">
+      <h2 data-i18n>Ajuster des crédits</h2>
+      <form id="credits" class="row">
+        <input id="c-email" type="email" placeholder="Adresse e-mail" data-i18n-attr="placeholder" required>
+        <input id="c-delta" type="number" step="1" placeholder="+5 ou -3" data-i18n-attr="placeholder" required>
+        <input id="c-reason" placeholder="Motif (obligatoire, journalisé)" data-i18n-attr="placeholder" maxlength="200" required>
+        <button type="submit" data-i18n>Appliquer</button>
+      </form>
+      <p id="c-result" class="muted" hidden></p>
+    </section>
+    <section class="card">
+      <h2 data-i18n>Journal des actions admin</h2>
+      <ul id="log"></ul>
+    </section>
+  </main>
+</body>
+</html>

@@ -3,17 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Confidentialité — itsaresume</title>
+  <title data-i18n>Confidentialité — itsaresume</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <script src="i18n.js" defer></script>
 </head>
 <body>
   <header class="bar">
     <a class="brand" href="./">itsaresume</a>
-    <nav><a href="./#pricing">Tarifs</a><a href="./#account">Mon compte</a></nav>
+    <nav id="lang-switch"><a href="./#pricing" data-i18n>Tarifs</a><a href="./#account" data-i18n>Mon compte</a></nav>
   </header>
-  <p class="demo-banner">Projet de politique (version 2026-11-19), à faire valider avant l'ouverture au public.</p>
-  <section class="legal">
+  <p class="demo-banner" data-i18n>Projet de politique (version 2026-11-19), à faire valider avant l'ouverture au public.</p>
+  <section class="legal" data-lang="fr">
     <h1>Vos données personnelles</h1>
     <p><b>Responsable du traitement :</b> l'éditeur du service ; contact : <b>{{contact}}</b>.</p>
 
@@ -45,6 +46,40 @@
 
     <h2>LinkedIn</h2>
     <p>L'extension ne lit que la page de votre propre profil que vous avez ouverte, au moment où vous cliquez. Elle ne parcourt rien d'autre et n'envoie rien sans votre clic.</p>
+  </section>
+  <section class="legal" data-lang="en" hidden>
+    <p class="notice"><b>Translation for convenience. The French version of this notice is the only one that prevails; in case of any difference, the French text applies.</b></p>
+    <h1>Your personal data</h1>
+    <p><b>Data controller:</b> the publisher of the service; contact: <b>{{contact}}</b>.</p>
+
+    <h2>What we process, why, on what basis</h2>
+    <table>
+      <tr><th>Data</th><th>Purpose</th><th>Legal basis</th><th>Retention</th></tr>
+      <tr><td>E-mail address, password (hashed, never readable)</td><td>Account and login</td><td>Contract</td><td>Until the account is deleted; an account with no login for 24 months: deleted</td></tr>
+      <tr><td>Professional profile (imported from LinkedIn or a file, on your click)</td><td>Writing your CVs</td><td>Contract</td><td>Until you delete it (dedicated button) or delete the account</td></tr>
+      <tr><td>Job offers analysed, CVs generated</td><td>Giving you your CVs</td><td>Contract</td><td>12 months, then deleted</td></tr>
+      <tr><td>Orders (pack, amount, currency, date)</td><td>Accounting</td><td>Legal obligation</td><td>10 years; the e-mail address is removed from them if you delete the account</td></tr>
+      <tr><td>Conversations with the profile assistant</td><td>Helping you complete your profile</td><td>Contract</td><td>The last 40, deleted with the account</td></tr>
+      <tr><td>New-password link</td><td>Recovering the account</td><td>Contract</td><td>One hour, single use</td></tr>
+      <tr><td>Session cookie</td><td>Staying logged in</td><td>Strictly necessary (no consent required)</td><td>30 days</td></tr>
+    </table>
+    <p>No advertising or audience-measurement cookie. No resale of data. No automated decision producing legal effects: the fit score is an aid, you decide whether to apply.</p>
+
+    <h2>Means of payment</h2>
+    <p>We never receive or keep your card numbers. Payment is made with the payment provider; if you choose to save a card there, the provider keeps it, and we keep only an opaque reference, deleted with the account. You can remove a saved card at any time.</p>
+
+    <h2>Recipients</h2>
+    <ul>
+      <li><b>AI model provider</b> (processor): receives the job offer and the profile excerpts needed for the writing, for the time of the request. Transfer outside the EU covered by the European Commission's standard contractual clauses.</li>
+      <li><b>Payment provider</b> (a separate controller for fraud prevention).</li>
+      <li><b>Hosting</b>: the publisher's server, in France.</li>
+    </ul>
+
+    <h2>Your rights</h2>
+    <p>Access, rectification, erasure, restriction, objection and portability. From "My account" → "My data": <b>download all your data</b> (JSON), <b>delete your profile</b>, <b>delete your account</b>. For any other request: <b>{{contact}}</b>; answer within one month. You can lodge a complaint with the CNIL (cnil.fr), the French data protection authority.</p>
+
+    <h2>LinkedIn</h2>
+    <p>The add-on reads only the page of your own profile that you opened, at the moment you click. It browses nothing else and sends nothing without your click.</p>
   </section>
 </body>
 </html>

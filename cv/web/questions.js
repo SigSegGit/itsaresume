@@ -2,6 +2,8 @@
 // Text goes in through textContent; the server checks every answer
 // (src/answers.js addAnswer) and the page only shows its refusal.
 
+// 6.7: every text through t() (web/i18n.js, loaded first).
+const { t } = globalThis.i18n;
 const token = document.querySelector('meta[name="csrf-token"]').content;
 
 function element(tag, props = {}, ...children) {
@@ -14,14 +16,14 @@ function element(tag, props = {}, ...children) {
   return node;
 }
 
-const LEVEL_LABELS = { expert: 'expert', proficient: 'confirmé', working: 'opérationnel', lab: 'en lab', notions: 'notions' };
+const LEVEL_LABELS = { expert: 'expert', proficient: t('confirmé'), working: t('opérationnel'), lab: t('en lab'), notions: 'notions' };
 
 function card(question, { levels, groups }) {
-  const name = element('input', { type: 'text', value: question.asked, 'aria-label': 'Nom de la compétence' });
+  const name = element('input', { type: 'text', value: question.asked, 'aria-label': t('Nom de la compétence') });
   const level = element('select', { 'aria-label': 'Niveau' }, ...levels.map((id) => element('option', { value: id, text: LEVEL_LABELS[id] ?? id })));
   level.value = 'working';
   const group = element('select', { 'aria-label': 'Groupe' }, ...groups.map((g) => element('option', { value: g.id, text: g.label ?? g.id })));
-  const said = element('textarea', { rows: '2', placeholder: 'Où, quand, quoi — une phrase à toi', 'aria-label': 'Ta phrase' });
+  const said = element('textarea', { rows: '2', placeholder: t('Où, quand, quoi — une phrase à toi'), 'aria-label': t('Ta phrase') });
   const status = element('p', { class: 'status' });
   const yesFields = element('div', { class: 'yes-fields' }, name, level, group, said);
   const send = async (answer) => {
@@ -31,14 +33,14 @@ function card(question, { levels, groups }) {
     const response = await fetch('/api/answers', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token }, body: JSON.stringify(body) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      status.textContent = `Refusé : ${result.error ?? response.status}`;
+      status.textContent = t('Refusé : {v0}', { v0: result.error ?? response.status });
       return;
     }
-    status.textContent = answer === 'yes' ? 'Ajouté au profil.' : 'Noté : la question ne reviendra pas.';
+    status.textContent = answer === 'yes' ? t('Ajouté au profil.') : t('Noté : la question ne reviendra pas.');
     for (const control of item.querySelectorAll('button, input, select, textarea')) control.disabled = true;
   };
-  const yes = element('button', { type: 'button', text: 'Oui, enregistrer' });
-  const no = element('button', { type: 'button', text: 'Non' });
+  const yes = element('button', { type: 'button', text: t('Oui, enregistrer') });
+  const no = element('button', { type: 'button', text: t('Non') });
   yes.addEventListener('click', () => send('yes'));
   no.addEventListener('click', () => send('no'));
   const item = element('li', {},
@@ -54,13 +56,13 @@ async function start() {
   const job = new URLSearchParams(location.search).get('job');
   const response = await fetch(job ? `/api/questions?job=${encodeURIComponent(job)}` : '/api/questions');
   if (!response.ok) {
-    notice.textContent = 'Les questions ne sont disponibles que sur la page locale.';
+    notice.textContent = t('Les questions ne sont disponibles que sur la page locale.');
     notice.hidden = false;
     return;
   }
   const data = await response.json();
   if (!data.questions.length) {
-    notice.textContent = 'Aucune question : le profil couvre ce que les offres demandent.';
+    notice.textContent = t('Aucune question : le profil couvre ce que les offres demandent.');
     notice.hidden = false;
   }
   list.replaceChildren(...data.questions.map((question) => card(question, data)));

@@ -3,6 +3,9 @@
 // script only chooses how many of those items fit, and the line spacing.
 // It sets textContent only, never HTML. test/a4.test.js runs fill() over a
 // fake sheet; the DOM part below runs only in a browser.
+// 6.7: its notices through t() (web/i18n.js, loaded first by cv.html; the
+// French key itself where it is not loaded, as in test/a4.test.js).
+const t = globalThis.i18n?.t ?? ((key) => key);
 //
 // 2.61 (the owner, 2026-11-19): four options, read from the address and the
 // toolbar, applied with no new model call: a linear or two-column layout, a
@@ -251,7 +254,7 @@ async function start() {
   document.getElementById('print').addEventListener('click', () => window.print());
   const job = new URLSearchParams(location.search).get('job') ?? '';
   const response = await fetch(`/api/jobs/${encodeURIComponent(job)}/page`);
-  if (!response.ok) return say('CV introuvable : relancez la génération depuis la page d’accueil.');
+  if (!response.ok) return say(t('CV introuvable : relancez la génération depuis la page d’accueil.'));
   const page = await response.json();
   await document.fonts?.ready;
   const controls = Object.fromEntries(Object.keys(CHOICES).map((name) => [name, document.getElementById(name)]));
@@ -265,12 +268,12 @@ async function start() {
       const one = fill(page, render(page, sheet, { ...chosen, pages: 1 }), { ...chosen, pages: 1 });
       if (one.left === 0 && !one.overflow) {
         result = one;
-        notes.push('Tout tient sur une page : la deuxième page n’apporterait rien.');
+        notes.push(t('Tout tient sur une page : la deuxième page n’apporterait rien.'));
       }
     }
     result ??= fill(page, render(page, sheet, chosen), chosen);
-    if (result.overflow) notes.push('Le contenu obligatoire dépasse la page, même à l’interligne minimal.');
-    else if (result.shrunk) notes.push('Le contenu obligatoire ne tenait qu’en resserrant l’interligne.');
+    if (result.overflow) notes.push(t('Le contenu obligatoire dépasse la page, même à l’interligne minimal.'));
+    else if (result.shrunk) notes.push(t('Le contenu obligatoire ne tenait qu’en resserrant l’interligne.'));
     say(notes.join(' '));
   };
   for (const [name, control] of Object.entries(controls)) {

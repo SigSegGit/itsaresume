@@ -58,13 +58,13 @@ small. Haiku 5.5 on these prompts is not measured yet: run it on the real
 offers (rules-replay) before selling. Prices, fees and the exchange rate
 are assumptions to confirm.
 
-## Markets (6.4b)
+## Markets (6.4b, 6.7)
 
-One grid per currency: EUR price × exchange rate × market factor, cut to a
-charm price (.49/.99; whole numbers ending in 9 for INR). The visitor's
-language picks the market (en-GB → GBP, pt-BR → BRL…), a selector changes
-it. Every pack keeps a positive margin on Haiku 5.5, India's 100-CV pack
-included (€0.075 per CV). Rates are assumptions of 2026-11.
+Four markets (6.7, the owner, 2026-11-20): EUR and CHF in French, GBP and
+USD in English. One grid per currency: EUR price × exchange rate × market
+factor, cut to a charm price (.49/.99). The visitor's language picks the
+market (en-GB → GBP, fr-CH → CHF, any other English → USD, the rest → EUR),
+a selector changes it. Rates are assumptions of 2026-11.
 
 | | 1 | 5 | 10 | 30 | 50 | 100 |
 |---|---|---|---|---|---|---|
@@ -72,10 +72,6 @@ included (€0.075 per CV). Rates are assumptions of 2026-11.
 | GBP | 0.99 | 3.99 | 5.99 | 13.49 | 21.49 | 30.99 |
 | USD | 1.49 | 5.49 | 7.99 | 18.49 | 28.49 | 41.49 |
 | CHF | 1.49 | 4.99 | 6.99 | 16.49 | 25.49 | 36.99 |
-| CAD | 1.99 | 7.49 | 10.49 | 23.99 | 37.49 | 54.49 |
-| AUD | 1.99 | 7.99 | 11.49 | 26.49 | 41.49 | 59.49 |
-| BRL | 3.99 | 13.49 | 19.49 | 44.49 | 69.49 | 99.99 |
-| INR | 39 | 139 | 199 | 469 | 729 | 1049 |
 
 Checkout: `/checkout.html` (summary, terms box, simulated payment, receipt).
 
@@ -107,6 +103,29 @@ sessions, resets, orders, jobs, chat. `secure_delete` so an erased account
 leaves no trace in the file. Every hour a consistent snapshot (`VACUUM
 INTO`) goes to `snapshots/`, the last 48 kept: sync those (ITSaNAS, 6.4g),
 never the live file, which a copy can catch half-written.
+
+**Off the machine (6.4g)**: `deploy/vm-generator/itsanas-premium.sh`, run on
+the VM, gives the snapshots folder an ITSaNAS account of its own
+(`itsaresume`, port 9800); the owner types its passphrase and keeps its 24
+words. On any other machine of that account,
+`node premium/restore-check.js <premium-*.db> [premium.db]` opens a copy,
+runs SQLite's integrity check and compares the counts.
+
+## Admin (6.8)
+
+`admin.html`: counts per table and integrity, revenue per currency, the
+snapshots (the newest opened and checked), the accounts (searchable; never a
+hash, salt or profile), credit changes (a reason required, never below
+zero, each one in `admin_log`). Admins are the addresses in
+`PREMIUM_ADMINS` (comma-separated, in `$DATA/.env` on the VM, never in the
+repository); with none, nobody is one. Their API answers 401 without a
+session, 403 to anyone else.
+
+## Languages (6.7)
+
+French and English on every page (`web/i18n.js`, shared with the generator):
+`?lang=en|fr`, then the stored choice, then the browser; French by default.
+The English privacy notice says the French one prevails.
 
 ## Before going public (not done by the demo)
 

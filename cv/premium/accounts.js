@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEX
 CREATE INDEX IF NOT EXISTS jobs_email ON jobs (email, created);
 CREATE INDEX IF NOT EXISTS chat_email ON chat (email, id);
 CREATE INDEX IF NOT EXISTS orders_email ON orders (email);
+CREATE TABLE IF NOT EXISTS admin_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, admin TEXT NOT NULL, target TEXT NOT NULL, action TEXT NOT NULL);
 `;
 
 const hash = (password, salt) => scryptSync(password, salt, 32).toString('hex');
@@ -250,6 +251,41 @@ export function createStore(file) {
     /** Counts, for tests and the founder's view. */
     stats() {
       return Object.fromEntries(['users', 'sessions', 'orders', 'jobs', 'chat'].map((table) => [table, one(`SELECT COUNT(*) AS n FROM ${table}`).n]));
+    },
+    /** 6.8: SQLite's own integrity check, 'ok' when sound. */
+    verify() {
+      return all('PRAGMA integrity_check').map((row) => Object.values(row)[0]).join('; ');
+    },
+    /** 6.8: the accounts for the admin page; never a hash, a salt or a profile. */
+    adminUsers(query = '', limit = 200) {
+      const like = `%${String(query).toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      return all(`SELECT u.email, u.credits, u.created_at, u.last_login, u.chat_left,
+          (SELECT COUNT(*) FROM orders o WHERE o.email = u.email) AS orders,
+          (SELECT COUNT(*) FROM jobs j WHERE j.email = u.email) AS jobs,
+          (u.profile IS NOT NULL) AS has_profile
+        FROM users u WHERE u.email LIKE ? ESCAPE '\\' ORDER BY u.created_at DESC LIMIT ?`, like, Math.min(Math.max(1, Number(limit) || 200), 1000))
+        .map((row) => ({ ...row, has_profile: Boolean(row.has_profile) }));
+    },
+    /** 6.8: an admin's credit change: a reason, never below zero, logged. Returns the new balance. */
+    adjustCredits(admin, email, delta, reason, now = Date.now()) {
+      const why = String(reason ?? '').trim();
+      if (!why) throw new Error('reason: required');
+      if (!Number.isInteger(delta) || delta === 0) throw new Error('delta: a non-zero whole number');
+      return transaction(() => {
+        const row = one('SELECT credits FROM users WHERE email = ?', email);
+        if (!row) throw new Error('no such account');
+        if (row.credits + delta < 0) throw new Error('credits: never below zero');
+        run('UPDATE users SET credits = credits + ? WHERE email = ?', delta, email);
+        run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, email, `credits ${delta > 0 ? '+' : ''}${delta}: ${why.slice(0, 200)}`);
+        return row.credits + delta;
+      });
+    },
+    adminLog(limit = 100) {
+      return all('SELECT at, admin, target, action FROM admin_log ORDER BY id DESC LIMIT ?', limit);
+    },
+    /** 6.8: orders and totals per currency. */
+    revenue() {
+      return all('SELECT currency, COUNT(*) AS orders, ROUND(SUM(price), 2) AS total, SUM(simulated) AS simulated FROM orders GROUP BY currency ORDER BY currency').map((row) => ({ ...row }));
     },
     /**
      * A consistent snapshot in `dir` (what ITSaNAS syncs, never the live
