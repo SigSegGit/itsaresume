@@ -32,7 +32,9 @@
     "src/text.js",
     "test/importance.test.js",
     "test/premium-e2e.test.js",
-    "test/premium.test.js"
+    "test/premium.test.js",
+    "premium/web/admin.js",
+    "web/i18n.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -193,6 +195,62 @@
       "dead": "",
       "expect": [
         "database: a snapshot is a whole, readable copy; only the last ones are kept"
+      ]
+    },
+    "Admin: a customer is refused": {
+      "file": "premium/server.js",
+      "live": "if (!isAdmin(user)) throw new HttpError(403, 'admins only');",
+      "dead": "",
+      "expect": [
+        "admin routes: 401 without a session, 403 for a customer, open to a listed admin"
+      ]
+    },
+    "Admin: no admin configured, nobody is one": {
+      "file": "premium/server.js",
+      "live": "const isAdmin = (user) => adminSet.has(user.email);",
+      "dead": "const isAdmin = (user) => adminSet.size === 0 || adminSet.has(user.email);",
+      "expect": [
+        "admin routes: no admin configured, nobody is one"
+      ]
+    },
+    "Admin: the accounts list carries no secret": {
+      "file": "premium/accounts.js",
+      "live": "return all(`SELECT u.email, u.credits,",
+      "dead": "return all(`SELECT u.hash, u.email, u.credits,",
+      "expect": [
+        "admin: the accounts list never carries a password hash, a salt or a profile"
+      ]
+    },
+    "Admin: a credit change is logged": {
+      "file": "premium/accounts.js",
+      "live": "run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)',",
+      "dead": "if (0) run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)',",
+      "expect": [
+        "admin: a credit change needs a reason, never goes below zero, and is logged"
+      ]
+    },
+    "Admin: credits never below zero": {
+      "file": "premium/accounts.js",
+      "live": "if (row.credits + delta < 0) throw new Error('credits: never below zero');",
+      "dead": "",
+      "expect": [
+        "admin: a credit change needs a reason, never goes below zero, and is logged"
+      ]
+    },
+    "Admin: a LIKE wildcard is a plain character": {
+      "file": "premium/accounts.js",
+      "live": ".replace(/[\\\\%_]/g, (c) => `\\\\${c}`)",
+      "dead": "",
+      "expect": [
+        "admin: the accounts list never carries a password hash, a salt or a profile"
+      ]
+    },
+    "Markets: English elsewhere pays in USD": {
+      "file": "premium/pricing.js",
+      "live": "return /^en\\b/i.test(tags[0]) ? 'USD' : 'EUR';",
+      "dead": "return 'EUR';",
+      "expect": [
+        "currencies: the visitor's language picks the market, EUR otherwise"
       ]
     }
   }

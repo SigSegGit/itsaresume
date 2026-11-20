@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="__CSRF_TOKEN__">
   <meta name="color-scheme" content="light dark">
-  <title>itsaresume — CV sur mesure</title>
-  <meta name="description" content="CV sur mesure, vérifié ligne à ligne contre le profil, pour chaque offre : colle une offre, reçois le CV et le rapport d’adéquation.">
+  <title data-i18n>itsaresume — CV sur mesure</title>
+  <meta name="description" content="CV sur mesure, vérifié ligne à ligne contre le profil, pour chaque offre : colle une offre, reçois le CV et le rapport d’adéquation." data-i18n-attr="content">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon-180.png">
   <meta property="og:type" content="website">
@@ -17,6 +17,7 @@
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="/style.css">
+  <script src="/i18n.js" defer></script>
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -25,98 +26,100 @@
       <span class="logo" aria-hidden="true">&gt;_</span>
       <div>
         <h1>itsa<span class="accent">resume</span></h1>
-        <p class="tagline">CV sur mesure, vérifié ligne à ligne contre ton profil</p>
+        <p class="tagline" data-i18n>CV sur mesure, vérifié ligne à ligne contre ton profil</p>
       </div>
     </div>
-    <a id="questions-link" class="questions-link" href="/questions.html" hidden>Questions sur ton profil</a>
-    <ul class="status" id="status" aria-label="État du système">
-      <li class="pill" data-state="pending" id="status-profile">Profil…</li>
-      <li class="pill" data-state="pending" id="status-router">Modèle…</li>
-      <li class="pill" data-state="pending" id="status-layout">Mise en page…</li>
+    <a id="questions-link" class="questions-link" href="/questions.html" hidden data-i18n>Questions sur ton profil</a>
+    <span id="lang-switch"></span>
+    <ul class="status" id="status" aria-label="État du système" data-i18n-attr="aria-label">
+      <li class="pill" data-state="pending" id="status-profile" data-i18n>Profil…</li>
+      <li class="pill" data-state="pending" id="status-router" data-i18n>Modèle…</li>
+      <li class="pill" data-state="pending" id="status-layout" data-i18n>Mise en page…</li>
     </ul>
   </header>
 
   <section class="pitch card" id="pitch" hidden aria-labelledby="pitch-title">
-    <h2 id="pitch-title">Recruteur ? Collez votre offre, recevez le CV de <span id="pitch-name">ce candidat</span> adapté, en deux minutes.</h2>
+    <h2 id="pitch-title"><span data-i18n>Recruteur ? Collez votre offre, recevez le CV de</span> <span id="pitch-name" data-i18n>ce candidat</span> <span data-i18n>adapté, en deux minutes.</span></h2>
     <p class="meta" id="pitch-role" hidden></p>
     <ul class="pitch-points">
-      <li><strong>Rien d’inventé.</strong> Chaque ligne du CV vient de son profil vérifié ; l’IA choisit, le code contrôle et refuse le reste.</li>
-      <li><strong>Une évaluation honnête.</strong> Le score dit ce qui est couvert, ce qui manque, et pourquoi il est plafonné quand le cœur du poste n’est pas là.</li>
-      <li><strong>Un produit qu’il a conçu, développé et exploite.</strong> Architecture, routeur d’IA en Rust qui bascule entre plusieurs modèles sans jamais être facturé au token, générateur en Node.js, serveur et déploiement continu sur sa propre infrastructure.</li>
-      <li><strong>L’IA comme outil d’ingénierie, sous contrôle.</strong> Développé avec des assistants IA, encadré par plus de 900 tests écrits avant le code et des tests de sabotage qui prouvent que chaque test détecte bien une régression ; chaque changement passe l’intégration continue (Linux et Windows) avant d’être fusionné puis déployé. <a id="source-link" href="https://github.com/SigSegGit/itsaresume" target="_blank" rel="noopener">Voir le code source</a> · <a id="ci-link" href="https://github.com/SigSegGit/itsaresume/actions" target="_blank" rel="noopener">Voir l’intégration continue</a></li>
+      <li><strong data-i18n>Rien d’inventé.</strong> <span data-i18n>Chaque ligne du CV vient de son profil vérifié ; l’IA choisit, le code contrôle et refuse le reste.</span></li>
+      <li><strong data-i18n>Une évaluation honnête.</strong> <span data-i18n>Le score dit ce qui est couvert, ce qui manque, et pourquoi il est plafonné quand le cœur du poste n’est pas là.</span></li>
+      <li><strong data-i18n>Un produit qu’il a conçu, développé et exploite.</strong> <span data-i18n>Architecture, routeur d’IA en Rust qui bascule entre plusieurs modèles sans jamais être facturé au token, générateur en Node.js, serveur et déploiement continu sur sa propre infrastructure.</span></li>
+      <li><strong data-i18n>L’IA comme outil d’ingénierie, sous contrôle.</strong> <span data-i18n>Développé avec des assistants IA, encadré par plus de 900 tests écrits avant le code et des tests de sabotage qui prouvent que chaque test détecte bien une régression ; chaque changement passe l’intégration continue (Linux et Windows) avant d’être fusionné puis déployé.</span> <a id="source-link" href="https://github.com/SigSegGit/itsaresume" target="_blank" rel="noopener" data-i18n>Voir le code source</a> · <a id="ci-link" href="https://github.com/SigSegGit/itsaresume/actions" target="_blank" rel="noopener" data-i18n>Voir l’intégration continue</a></li>
     </ul>
-    <button type="button" class="secondary" id="sample">Essayer avec une offre exemple</button>
+    <button type="button" class="secondary" id="sample" data-i18n>Essayer avec une offre exemple</button>
+    <p class="premium-teaser"><span data-i18n>Candidat ? Le même outil, sur votre propre profil LinkedIn, avec un add-on de navigateur :</span> <a id="premium-link" href="/premium/" data-i18n>essayer itsaresume premium</a></p>
   </section>
 
   <main class="grid">
-    <section class="card" id="sources-card" aria-label="Profil du candidat">
+    <section class="card" id="sources-card" aria-label="Profil du candidat" data-i18n-attr="aria-label">
       <div role="tablist">
-        <button type="button" role="tab" id="tab-stored" aria-selected="true">Mon profil</button>
-        <button type="button" role="tab" id="tab-sources" aria-selected="false">Sources du run</button>
+        <button type="button" role="tab" id="tab-stored" aria-selected="true" data-i18n>Mon profil</button>
+        <button type="button" role="tab" id="tab-sources" aria-selected="false" data-i18n>Sources du run</button>
       </div>
       <div id="sources-panel" hidden>
-        <p class="meta">Fichiers du candidat pour ce run seulement (rien n’est conservé) : export LinkedIn (.zip ou ses .csv), JSON Resume, ancien CV (.docx, .pdf), profil rédigé par une IA (.txt, .md).</p>
+        <p class="meta" data-i18n>Fichiers du candidat pour ce run seulement (rien n’est conservé) : export LinkedIn (.zip ou ses .csv), JSON Resume, ancien CV (.docx, .pdf), profil rédigé par une IA (.txt, .md).</p>
         <input type="file" id="source-files" multiple accept=".zip,.csv,.json,.docx,.pdf,.txt,.md">
-        <label for="source-links">Liens (un par ligne)</label>
+        <label for="source-links" data-i18n>Liens (un par ligne)</label>
         <textarea id="source-links" rows="2" placeholder="https://…"></textarea>
-        <label for="threshold">CV généré à partir du score</label> <input type="number" id="threshold" min="0" max="100" value="75">
+        <label for="threshold" data-i18n>CV généré à partir du score</label> <input type="number" id="threshold" min="0" max="100" value="75">
       </div>
     </section>
     <section class="card" aria-labelledby="offers-title">
-      <h2 id="offers-title"><span class="step">1</span> Offres</h2>
-      <label class="label" for="paste">Colle une offre, ou un mail d'ESN qui en contient plusieurs</label>
-      <textarea id="paste" rows="10" spellcheck="false" placeholder="Architecte Solutions Infrastructure…"></textarea>
+      <h2 id="offers-title"><span class="step">1</span> <span data-i18n>Offres</span></h2>
+      <label class="label" for="paste" data-i18n>Colle une offre, ou un mail d'ESN qui en contient plusieurs</label>
+      <textarea id="paste" rows="10" spellcheck="false" placeholder="Architecte Solutions Infrastructure…" data-i18n-attr="placeholder"></textarea>
       <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="drop-help">
-        <span>Ou dépose l’offre en <code>.pdf</code>, <code>.docx</code>, <code>.txt</code> ou <code>.md</code></span>
+        <span data-i18n>Ou dépose l’offre en .pdf, .docx, .txt ou .md</span>
         <input type="file" id="files" accept=".pdf,.docx,.txt,.md,application/pdf,text/plain,text/markdown" multiple hidden>
       </div>
-      <p class="help" id="drop-help">Un fichier = une offre. L’offre et ton profil ne vont qu’au modèle : local, ou Claude via ton abonnement (Anthropic les reçoit alors). Rien n’est envoyé à un recruteur.</p>
+      <p class="help" id="drop-help" data-i18n>Un fichier = une offre. L’offre et ton profil ne vont qu’au modèle : local, ou Claude via ton abonnement (Anthropic les reçoit alors). Rien n’est envoyé à un recruteur.</p>
       <div class="actions">
-        <button type="button" class="secondary" id="add">Ajouter tel quel</button>
-        <button type="button" class="secondary" id="split">Détecter plusieurs offres</button>
+        <button type="button" class="secondary" id="add" data-i18n>Ajouter tel quel</button>
+        <button type="button" class="secondary" id="split" data-i18n>Détecter plusieurs offres</button>
       </div>
       <ol class="offers" id="offers" aria-live="polite"></ol>
-      <label class="model" for="model">Modèle
+      <label class="model" for="model"><span data-i18n>Modèle</span>
         <select id="model">
-          <option value="auto">Auto : Claude, puis les autres en secours</option>
-          <option value="claude">Claude seul</option>
-          <option value="haiku">Claude Haiku (rapide, test)</option>
-          <option value="gemini">Gemini seul</option>
-          <option value="openai">OpenAI seul</option>
-          <option value="groq">OpenAI gpt-oss via Groq (gratuit)</option>
-          <option value="local">IA locale seule (lente)</option>
-          <option value="compare">Comparer tous les modèles disponibles</option>
+          <option value="auto" data-i18n>Auto : Claude, puis les autres en secours</option>
+          <option value="claude" data-i18n>Claude seul</option>
+          <option value="haiku" data-i18n>Claude Haiku (rapide, test)</option>
+          <option value="gemini" data-i18n>Gemini seul</option>
+          <option value="openai" data-i18n>OpenAI seul</option>
+          <option value="groq" data-i18n>OpenAI gpt-oss via Groq (gratuit)</option>
+          <option value="local" data-i18n>IA locale seule (lente)</option>
+          <option value="compare" data-i18n>Comparer tous les modèles disponibles</option>
         </select>
       </label>
-      <label class="model" for="profile" id="profile-row" hidden>Profil
+      <label class="model" for="profile" id="profile-row" hidden><span data-i18n>Profil</span>
         <select id="profile"></select>
       </label>
-      <button type="button" class="secondary" id="rank" hidden>Classer et garder les 3 meilleures</button>
-      <button type="button" class="secondary" id="match" hidden>Classer les profils pour cette offre</button>
+      <button type="button" class="secondary" id="rank" hidden data-i18n>Classer et garder les 3 meilleures</button>
+      <button type="button" class="secondary" id="match" hidden data-i18n>Classer les profils pour cette offre</button>
       <p class="meta" id="rank-result" hidden></p>
       <details id="import-row" hidden>
-        <summary>Importer un profil (JSON Resume ou export LinkedIn)</summary>
-        <label for="import-id">Identifiant</label> <input type="text" id="import-id" maxlength="41" placeholder="ex. sam-doe">
+        <summary data-i18n>Importer un profil (JSON Resume ou export LinkedIn)</summary>
+        <label for="import-id" data-i18n>Identifiant</label> <input type="text" id="import-id" maxlength="41" placeholder="ex. sam-doe" data-i18n-attr="placeholder">
         <input type="file" id="import-files" multiple accept=".json,.csv">
-        <button type="button" class="secondary" id="import">Importer</button>
+        <button type="button" class="secondary" id="import" data-i18n>Importer</button>
       </details>
-      <label class="model" for="template" id="style-row" hidden>Présentation
-        <select id="template"></select> <select id="palette" aria-label="Palette de couleurs"></select>
+      <label class="model" for="template" id="style-row" hidden><span data-i18n>Présentation</span>
+        <select id="template"></select> <select id="palette" aria-label="Palette de couleurs" data-i18n-attr="aria-label"></select>
       </label>
-      <button type="button" class="primary" id="generate" disabled>Générer les CV</button>
+      <button type="button" class="primary" id="generate" disabled data-i18n>Générer les CV</button>
       <p class="error" id="offers-error" role="alert" hidden></p>
     </section>
 
     <section class="card" aria-labelledby="jobs-title">
-      <h2 id="jobs-title"><span class="step">2</span> CV générés</h2>
-      <p class="empty" id="jobs-empty">Les CV apparaîtront ici, un par offre, avec leur rapport : qualification, exigences couvertes, preuves.</p>
+      <h2 id="jobs-title"><span class="step">2</span> <span data-i18n>CV générés</span></h2>
+      <p class="empty" id="jobs-empty" data-i18n>Les CV apparaîtront ici, un par offre, avec leur rapport : qualification, exigences couvertes, preuves.</p>
       <div class="jobs" id="jobs" aria-live="polite"></div>
     </section>
   </main>
 
   <footer class="foot">
-    <span id="foot-owner">L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours · aucune candidature envoyée · zéro facturation au token</span>
-    <span>Chaque ligne du CV provient de ton profil v4 ; les compétences <em>lab</em> et <em>jamais</em> sont appliquées par le code.</span>
+    <span id="foot-owner" data-i18n>L'offre est analysée par Claude (forfait Claude Code, donc envoyée à Anthropic), ou par une IA locale en secours · aucune candidature envoyée · zéro facturation au token</span>
+    <span data-i18n>Chaque ligne du CV provient de ton profil v4 ; les compétences lab et jamais sont appliquées par le code.</span>
   </footer>
 </body>
 </html>

@@ -33,7 +33,7 @@ function table(id, head, rows) {
 }
 
 const when = (value) => (value ? new Date(value).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR') : '—');
-const kb = (bytes) => `${Math.round(bytes / 1024)} ko`;
+const kb = (bytes) => t('{n} ko', { n: Math.round(bytes / 1024) });
 
 async function showStats() {
   const { stats, revenue, integrity } = await api('api/admin/stats');

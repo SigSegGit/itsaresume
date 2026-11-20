@@ -295,8 +295,8 @@
     },
     "Page: the pill names the router": {
       "file": "web/app.js",
-      "live": "router.up ? 'Routeur joignable' : 'Routeur injoignable'",
-      "dead": "router.up ? 'Modèle joignable' : 'Routeur injoignable'",
+      "live": "router.up ? t('Routeur joignable') : t('Routeur injoignable')",
+      "dead": "router.up ? t('Modèle…') : t('Routeur injoignable')",
       "expect": [
         "the status pill says the router answers, not that the model does"
       ]
@@ -319,8 +319,8 @@
     },
     "Page: an unbacked quality is for the interview, not a no": {
       "file": "web/app.js",
-      "live": ": `${r.name} — à montrer en entretien : ton profil n’en dit rien encore`,",
-      "dead": ": `${r.name} — non`,",
+      "live": ": t('{v0} — à montrer en entretien : ton profil n’en dit rien encore', { v0: r.name }),",
+      "dead": ": t('{v0} — non', { v0: r.name }),",
       "expect": [
         "a personal quality is never shown as a failed requirement"
       ]
@@ -335,8 +335,8 @@
     },
     "Page: gap labels in French": {
       "file": "web/app.js",
-      "live": "${gaps.map(gapLabel).join(",
-      "dead": "${gaps.join(",
+      "live": "v0: gaps.map(gapLabel).join(",
+      "dead": "v0: gaps.join(",
       "expect": [
         "a match the profile does not name is shown as the model reading, to verify, in French"
       ]
@@ -695,8 +695,8 @@
     },
     "Page: the public status renders without verdicts": {
       "file": "web/app.js",
-      "live": "const verified = profile.verdicts ? ` · ${profile.verdicts.verified ?? 0} vérifiées` : '';",
-      "dead": "const verified = ` · ${profile.verdicts.verified ?? 0} vérifiées`;",
+      "live": "const verified = profile.verdicts ? t(' · {v0} vérifiées', { v0: profile.verdicts.verified ?? 0 }) : '';",
+      "dead": "const verified = t(' · {v0} vérifiées', { v0: profile.verdicts.verified ?? 0 });",
       "expect": [
         "the public status renders without the owner assessment"
       ]
@@ -944,7 +944,7 @@
     },
     "A4 page: a done job links its page": {
       "file": "web/app.js",
-      "live": "  downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: 'Page A4' }));",
+      "live": "  downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: t('Page A4') }));",
       "dead": "",
       "expect": [
         "a finished card links its A4 page, built from the job id only"
@@ -1280,8 +1280,8 @@
     },
     "Showcase (2.47): the source opens apart, without the page": {
       "file": "web/index.html",
-      "live": "target=\"_blank\" rel=\"noopener\">Voir le code source",
-      "dead": "target=\"_blank\">Voir le code source",
+      "live": "target=\"_blank\" rel=\"noopener\" data-i18n>Voir le code source",
+      "dead": "target=\"_blank\" data-i18n>Voir le code source",
       "expect": [
         "the page holds no inline script, style or handler, and loads nothing from elsewhere"
       ]

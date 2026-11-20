@@ -2,14 +2,16 @@
 // into the page through textContent: nothing here parses HTML or evaluates
 // code (test/web.test.js keeps every such sink out of this file).
 
+// 6.7: every text through t() (web/i18n.js, loaded first); the French is the key.
+const { t } = globalThis.i18n;
 const token = document.querySelector('meta[name="csrf-token"]').content;
 const $ = (id) => document.getElementById(id);
 const MAX_TEXT = 60000;
 // A job's progress seen 5 s late costs nothing (a local model runs for
 // minutes); a tab out of sight asks nothing until it is back.
 const POLL_MS = 5000;
-const MODEL_NAMES = { auto: 'auto', claude: 'Claude seul', local: 'IA locale seule' };
-const seconds = (ms) => (Number.isFinite(ms) ? `${Math.round(ms / 1000)} s` : 'durée inconnue');
+const MODEL_NAMES = { auto: 'auto', claude: t('Claude seul'), local: t('IA locale seule') };
+const seconds = (ms) => (Number.isFinite(ms) ? `${Math.round(ms / 1000)} s` : t('durée inconnue'));
 
 /** An element with text only: attrs are properties, children are nodes or strings. */
 function h(tag, attrs = {}, ...children) {
@@ -70,7 +72,7 @@ function applyModels(models) {
 }
 
 /** 4.12: the templates and palettes as a person reads them. */
-const STYLE_LABELS = { 'two-column': 'Deux colonnes', marine: 'Marine', bordeaux: 'Bordeaux', foret: 'Forêt', ardoise: 'Ardoise', graphite: 'Graphite' };
+const STYLE_LABELS = { 'two-column': t('Deux colonnes'), marine: t('Marine'), bordeaux: 'Bordeaux', foret: t('Forêt'), ardoise: t('Ardoise'), graphite: 'Graphite' };
 
 /** 2.47: the public page's pitch to a recruiter: whose CV, his role, a sample. */
 function showPitch(profile) {
@@ -121,21 +123,21 @@ async function refreshStatus() {
       $('add').hidden = true;
       $('status-router').hidden = true;
       $('status-layout').hidden = true;
-      $('foot-owner').textContent = 'Aucune candidature envoyée, rien de conservé hors du CV généré · l’offre est analysée par une IA sous contrôle du code · zéro facturation au token';
+      $('foot-owner').textContent = t('Aucune candidature envoyée, rien de conservé hors du CV généré · l’offre est analysée par une IA sous contrôle du code · zéro facturation au token');
       rankAllowed = false;
       $('import-row').hidden = true;
       $('sources-card').hidden = true;
-      $('drop-help').textContent = `Colle le texte d’une offre d’emploi : tu obtiens le CV de ${profile.name ?? 'ce candidat'} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.`;
+      $('drop-help').textContent = t('Colle le texte d’une offre d’emploi : tu obtiens le CV de {v0} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.', { v0: profile.name ?? 'ce candidat' });
     }
-    if (profile.error) setPill('status-profile', 'bad', 'Profil invalide');
+    if (profile.error) setPill('status-profile', 'bad', t('Profil invalide'));
     else {
       // Public mode serves no assessment (verdicts, truth): the owner's.
-      const verified = profile.verdicts ? ` · ${profile.verdicts.verified ?? 0} vérifiées` : '';
-      setPill('status-profile', 'ok', `${profile.name} · ${profile.skills} compétences${verified}`);
+      const verified = profile.verdicts ? t(' · {v0} vérifiées', { v0: profile.verdicts.verified ?? 0 }) : '';
+      setPill('status-profile', 'ok', t('{v0} · {v1} compétences{v2}', { v0: profile.name, v1: profile.skills, v2: verified }));
       $('status-profile').title = profile.truth ?? '';
     }
-    setPill('status-router', router.up ? 'ok' : 'bad', router.up ? 'Routeur joignable' : 'Routeur injoignable');
-    setPill('status-layout', layout.word || layout.libre ? 'ok' : 'warn', layout.word ? 'Word : PDF et page pleine' : layout.libre ? 'LibreOffice : PDF et page pleine' : 'Sans moteur de mise en page : DOCX seul');
+    setPill('status-router', router.up ? 'ok' : 'bad', router.up ? t('Routeur joignable') : t('Routeur injoignable'));
+    setPill('status-layout', layout.word || layout.libre ? 'ok' : 'warn', layout.word ? t('Word : PDF et page pleine') : layout.libre ? t('LibreOffice : PDF et page pleine') : t('Sans moteur de mise en page : DOCX seul'));
   } catch (error) {
     setPill('status-profile', 'bad', `Statut indisponible : ${error.message}`);
   }
@@ -152,7 +154,7 @@ function showError(message) {
 }
 
 function firstLine(text) {
-  return (text.split('\n').find((line) => line.trim()) ?? 'Offre').replace(/^[\s/#*-]+/, '').slice(0, 80);
+  return (text.split('\n').find((line) => line.trim()) ?? t('Offre')).replace(/^[\s/#*-]+/, '').slice(0, 80);
 }
 
 /**
@@ -171,11 +173,11 @@ function addOffer(text, title) {
   const clean = text.trim();
   if (!clean) return;
   if (repeatedHeading(clean)) {
-    showError('Ce texte semble contenir plusieurs offres (une même rubrique y apparaît deux fois) : utilise « Détecter plusieurs offres », ou colle-les une par une.');
+    showError(t('Ce texte semble contenir plusieurs offres (une même rubrique y apparaît deux fois) : utilise « Détecter plusieurs offres », ou colle-les une par une.'));
     return;
   }
   if (clean.length > MAX_TEXT) {
-    showError(`Offre trop longue (${clean.length} caractères, ${MAX_TEXT} au plus).`);
+    showError(t('Offre trop longue ({v0} caractères, {v1} au plus).', { v0: clean.length, v1: MAX_TEXT }));
     return;
   }
   offers.push({ text: clean, title: title || firstLine(clean) });
@@ -202,7 +204,8 @@ async function withButton(id, busy, work) {
 }
 /** One line: each ranked row, chosen or not, its share and estimated tokens. */
 function showRanking(what, rows) {
-  $('rank-result').textContent = `Classement des ${what} par couverture : ${rows.map((row) => `${row.chosen ? '✓' : '✗'} ${row.name} ${Math.round(row.share * 100)} % (~${row.tokens} tokens)`).join(' · ')}`;
+  const list = rows.map((row) => `${row.chosen ? '✓' : '✗'} ${row.name} ${Math.round(row.share * 100)} % (~${row.tokens} tokens)`).join(' · ');
+  $('rank-result').textContent = (what === 'profils' ? t('Classement des profils par couverture : {rows}', { rows: list }) : t('Classement des offres par couverture : {rows}', { rows: list }));
   $('rank-result').hidden = false;
 }
 let rankAllowed = true;
@@ -211,21 +214,21 @@ function renderOffers() {
   const list = $('offers');
   list.replaceChildren(...offers.map((offer, index) => {
     // 2.31a: the name names the run and its folder; optional, the first line by default.
-    const title = h('input', { type: 'text', value: offer.title, maxLength: 80, placeholder: 'Nom de l’offre (facultatif)', title: 'Nom du run, modifiable : il nomme aussi son dossier', 'aria-label': `Nom de l'offre ${index + 1} (facultatif)` });
+    const title = h('input', { type: 'text', value: offer.title, maxLength: 80, placeholder: t('Nom de l’offre (facultatif)'), title: t('Nom du run, modifiable : il nomme aussi son dossier'), 'aria-label': t('Nom de l’offre {n} (facultatif)', { n: index + 1 }) });
     title.addEventListener('input', () => { offer.title = title.value; });
-    const remove = h('button', { type: 'button', class: 'link', text: 'Retirer', 'aria-label': `Retirer l'offre ${index + 1}` });
+    const remove = h('button', { type: 'button', class: 'link', text: t('Retirer'), 'aria-label': t('Retirer l’offre {n}', { n: index + 1 }) });
     remove.addEventListener('click', () => {
       offers.splice(index, 1);
       renderOffers();
     });
-    return h('li', { class: 'offer' }, title, remove, h('span', { class: 'meta', text: `${offer.text.split('\n').length} lignes · ${offer.text.length} caractères` }));
+    return h('li', { class: 'offer' }, title, remove, h('span', { class: 'meta', text: t('{v0} lignes · {v1} caractères', { v0: offer.text.split('\n').length, v1: offer.text.length }) }));
   }));
   $('rank').hidden = !rankAllowed || offers.length <= RANK_TOP;
   $('match').hidden = !rankAllowed || offers.length !== 1;
   const button = $('generate');
   // 2.47: a pasted offer is enough, no "add" step first.
   button.disabled = (offers.length === 0 && !$('paste').value.trim()) || !modelsReady;
-  button.textContent = offers.length > 1 ? `Générer les ${offers.length} CV` : 'Générer le CV';
+  button.textContent = offers.length > 1 ? t('Générer les {v0} CV', { v0: offers.length }) : t('Générer le CV');
 }
 
 async function readFiles(fileList) {
@@ -264,21 +267,21 @@ function setupOffers() {
   $('split').addEventListener('click', async () => {
     showError(null);
     const text = $('paste').value;
-    if (!text.trim()) return showError('Colle d’abord le texte à découper.');
+    if (!text.trim()) return showError(t('Colle d’abord le texte à découper.'));
     const button = $('split');
     button.disabled = true;
-    button.textContent = 'Détection…';
+    button.textContent = t('Détection…');
     try {
       const found = await api('/api/split', { text });
       for (const offer of found.offers) addOffer(offer.text, offer.title);
       // Each repair says what happened: kept as one offer, or lines left out.
-      if (found.repairs.length) showError(`Découpage : ${found.repairs.join(' ; ')}.`);
+      if (found.repairs.length) showError(t('Découpage : {v0}.', { v0: found.repairs.join(' ; ') }));
       $('paste').value = '';
     } catch (error) {
-      showError(`Découpage impossible : ${error.message}`);
+      showError(t('Découpage impossible : {v0}', { v0: error.message }));
     } finally {
       button.disabled = false;
-      button.textContent = 'Détecter plusieurs offres';
+      button.textContent = t('Détecter plusieurs offres');
     }
   });
   const drop = $('drop');
@@ -309,11 +312,11 @@ function setupOffers() {
   // 4.5: a JSON Resume file, or the CSV files of a LinkedIn export.
   $('import').addEventListener('click', () => withButton('import', 'Import…', async () => {
     const files = [...$('import-files').files];
-    if (!files.length) throw new Error('choisis un fichier .json ou les .csv de l’export LinkedIn');
+    if (!files.length) throw new Error(t('choisis un fichier .json ou les .csv de l’export LinkedIn'));
     const json = files.find((file) => file.name.toLowerCase().endsWith('.json'));
     const body = json ? { resume: JSON.parse(await json.text()) } : { linkedin: Object.fromEntries(await Promise.all(files.map(async (file) => [file.name, await file.text()]))) };
     const done = await api('/api/profiles', { id: $('import-id').value.trim(), ...body });
-    $('rank-result').textContent = `Profil « ${done.id} » importé ; à confirmer : ${done.to_confirm.length} ligne(s). Recharge la page pour le choisir.`;
+    $('rank-result').textContent = t('Profil « {v0} » importé ; à confirmer : {v1} ligne(s). Recharge la page pour le choisir.', { v0: done.id, v1: done.to_confirm.length });
     $('rank-result').hidden = false;
   }));
   $('rank').addEventListener('click', () => withButton('rank', 'Classement…', async () => {
@@ -341,7 +344,7 @@ function setupOffers() {
       return { name: file.name, data: btoa(binary) };
     }));
     const links = $('source-links').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-    if (!files.length && !links.length) throw new Error('ajoute au moins un fichier ou un lien du candidat');
+    if (!files.length && !links.length) throw new Error(t('ajoute au moins un fichier ou un lien du candidat'));
     return { sources: files, links, threshold: Number($('threshold').value) };
   };
   $('generate').addEventListener('click', async () => {
@@ -358,7 +361,7 @@ function setupOffers() {
     } catch (error) {
       offers.push(...batch);
       renderOffers();
-      showError(`Génération refusée : ${error.message}`);
+      showError(t('Génération refusée : {v0}', { v0: error.message }));
     }
   });
 }
@@ -366,30 +369,30 @@ function setupOffers() {
 /* ---------- Jobs ---------- */
 
 const STEPS = [
-  ['wake', 'Réveil de l’IA locale'],
-  ['listing', 'Lecture de l’offre'],
-  ['analysis', 'Analyse'],
-  ['layout', 'Mise en page'],
+  ['wake', t('Réveil de l’IA locale')],
+  ['listing', t('Lecture de l’offre')],
+  ['analysis', t('Analyse')],
+  ['layout', t('Mise en page')],
   ['pdf', 'PDF'],
-  ['ats', 'Contrôle ATS'],
-  ['done', 'Terminé'],
+  ['ats', t('Contrôle ATS')],
+  ['done', t('Terminé')],
 ];
 const QUALIFICATION = {
-  qualified: ['ok', 'Qualifié'],
-  partial: ['warn', 'Partiellement qualifié'],
-  'not-qualified': ['bad', 'Non qualifié'],
+  qualified: ['ok', t('Qualifié')],
+  partial: ['warn', t('Partiellement qualifié')],
+  'not-qualified': ['bad', t('Non qualifié')],
 };
-const VERDICT = { strong: 'fort', good: 'bon', partial: 'partiel', weak: 'faible' };
-const MATCH = { yes: ['ok', 'oui'], adjacent: ['warn', 'proche'], no: ['bad', 'non'] };
+const VERDICT = { strong: t('fort'), good: t('bon'), partial: t('partiel'), weak: t('faible') };
+const MATCH = { yes: ['ok', t('oui')], adjacent: ['warn', t('proche')], no: ['bad', t('non')] };
 /** The code's gap labels, in the page's language. */
-const GAP_LABELS = [[/ \(never claimed\)$/, ' (jamais revendiqué)'], [/ \(lab only\)$/, ' (lab uniquement)'], [/ \(to verify\)$/, ' (à vérifier)']];
+const GAP_LABELS = [[/ \(never claimed\)$/, t(' (jamais revendiqué)')], [/ \(lab only\)$/, t(' (lab uniquement)')], [/ \(to verify\)$/, t(' (à vérifier)')]];
 const gapLabel = (gap) => GAP_LABELS.reduce((text, [pattern, label]) => text.replace(pattern, label), gap);
 /** 2.45: the cap's reason in French (score.js capOf writes it in English). */
 const capLabel = (cap) => {
   const core = /^core: (.+), the technology the title leads with, is missed$/.exec(cap);
-  if (core) return `Score plafonné à 30 : ${core[1]}, la technologie en tête du titre, manque au profil.`;
-  if (cap.startsWith('level:')) return 'Score plafonné à 30 : poste junior ou de premier niveau, profil senior.';
-  return `Score plafonné à 30 : ${cap}`;
+  if (core) return t('Score plafonné à 30 : {v0}, la technologie en tête du titre, manque au profil.', { v0: core[1] });
+  if (cap.startsWith('level:')) return t('Score plafonné à 30 : poste junior ou de premier niveau, profil senior.');
+  return t('Score plafonné à 30 : {v0}', { v0: cap });
 };
 const details = new Map();
 const cards = new Map();
@@ -400,14 +403,14 @@ function stepsOf(job) {
   const last = job.steps.at(-1)?.step;
   return h('ol', { class: 'steps' }, STEPS.filter(([key]) => reached.has(key) || key === 'done').map(([key, label]) => {
     const step = reached.get(key);
-    const extra = key === 'analysis' && step?.attempt > 1 ? ` (essai ${step.attempt})` : key === 'layout' && step ? ` (${step.layouts} mesures)` : '';
+    const extra = key === 'analysis' && step?.attempt > 1 ? t(' (essai {n})', { n: step.attempt }) : key === 'layout' && step ? t(' ({n} mesures)', { n: step.layouts }) : '';
     const state = job.status === 'done' || (reached.has(key) && key !== last) ? 'done' : key === last && job.status === 'running' ? 'now' : '';
     return h('li', { class: state, text: label + extra });
   }));
 }
 
 function ring(score) {
-  const node = h('div', { class: 'ring', role: 'img', 'aria-label': `Adéquation ${score} sur 100` },
+  const node = h('div', { class: 'ring', role: 'img', 'aria-label': t('Adéquation {v0} sur 100', { v0: score }) },
     h('span', {}, String(score), h('small', { text: '/ 100' })));
   node.style.setProperty('--value', String(score));
   node.style.setProperty('--color', score >= 70 ? 'var(--ok)' : score >= 45 ? 'var(--warn)' : 'var(--bad)');
@@ -418,15 +421,15 @@ function requirementsTable(requirements) {
   const rows = requirements.map((r) => {
     const [tone, label] = MATCH[r.match] ?? ['', r.match];
     const covered = r.never
-      ? [h('span', { class: 'chip bad', text: 'jamais revendiqué' })]
+      ? [h('span', { class: 'chip bad', text: t('jamais revendiqué') })]
       : r.skills.map((s) => h('span', { class: `chip ${s.lab ? 'lab' : ''}`, text: s.lab ? `${s.name} · lab` : s.name }));
     // A match no profile skill names is the model's reading: shown with its note, to verify.
-    const judged = r.judged ? h('div', { class: 'quote', text: `à vérifier : ${r.note || 'rapprochement du modèle'}` }) : null;
-    return h('tr', {}, h('td', { text: r.name }), h('td', { text: r.importance === 'must' ? 'requis' : 'souhaité' }),
+    const judged = r.judged ? h('div', { class: 'quote', text: t('à vérifier : {v0}', { v0: r.note || t('rapprochement du modèle') }) }) : null;
+    return h('tr', {}, h('td', { text: r.name }), h('td', { text: r.importance === 'must' ? t('requis') : t('souhaité') }),
       h('td', {}, h('span', { class: `chip ${tone}`, text: label })), h('td', {}, covered.length ? covered : '—', judged));
   });
   return h('div', { class: 'table-wrap' }, h('table', {},
-    h('thead', {}, h('tr', {}, ['Exigence', 'Importance', 'Couverte', 'Par'].map((t) => h('th', { text: t })))),
+    h('thead', {}, h('tr', {}, [t('Exigence'), t('Importance'), t('Couverte'), t('Par')].map((name) => h('th', { text: name })))),
     h('tbody', {}, rows)));
 }
 
@@ -438,8 +441,8 @@ function requirementsTable(requirements) {
 function qualitiesList(qualities) {
   return h('ul', { class: 'list' }, qualities.map((r) => h('li', {
     text: r.skills.length
-      ? `${r.name} — appuyé par : ${r.skills.map((s) => s.name).join(', ')}`
-      : `${r.name} — à montrer en entretien : ton profil n’en dit rien encore`,
+      ? t('{v0} — appuyé par : {v1}', { v0: r.name, v1: r.skills.map((s) => s.name).join(', ') })
+      : t('{v0} — à montrer en entretien : ton profil n’en dit rien encore', { v0: r.name }),
   })));
 }
 
@@ -447,7 +450,7 @@ function verification(items) {
   return h('ul', { class: 'list' }, items.map((item) => h('li', {},
     h('strong', { text: item.name }), ' — ',
     h('span', { class: `chip ${item.verdict === 'verified' ? 'ok' : item.verdict === 'self-declared' ? 'info' : 'warn'}`, text: item.verdict }),
-    item.sources.slice(0, 2).map((s) => h('div', { class: 'quote', text: `${s.title} (${s.grade}) : « ${s.quote} »` })))));
+    item.sources.slice(0, 2).map((s) => h('div', { class: 'quote', text: t('{v0} ({v1}) : « {v2} »', { v0: s.title, v1: s.grade, v2: s.quote }) })))));
 }
 
 function resultOf(job, detail) {
@@ -458,42 +461,42 @@ function resultOf(job, detail) {
   const [qTone, qLabel] = QUALIFICATION[fit.qualification?.level] ?? ['', 'Qualification inconnue'];
   const gaps = fit.qualification?.gaps ?? [];
   const toConfirm = [
-    ...detail.older.map((o) => `${o.requirement} : cité par ${o.sources.join(', ')}, absent du profil — à confirmer, puis ajouter au profil si vrai`),
+    ...detail.older.map((o) => t('{v0} : cité par {v1}, absent du profil — à confirmer, puis ajouter au profil si vrai', { v0: o.requirement, v1: o.sources.join(', ') })),
     ...detail.flags,
   ];
-  const layout = detail.layout ? `${detail.layout.pages.toFixed(2)} page(s)` : 'mise en page non mesurée';
-  const ats = detail.ats ? (detail.ats.problems.length ? `ATS : ${detail.ats.problems.length} problème(s)` : 'ATS : texte lisible, dans l’ordre') : '';
+  const layout = detail.layout ? `${detail.layout.pages.toFixed(2)} page(s)` : t('mise en page non mesurée');
+  const ats = detail.ats ? (detail.ats.problems.length ? t('ATS : {v0} problème(s)', { v0: detail.ats.problems.length }) : t('ATS : texte lisible, dans l’ordre')) : '';
   const downloads = detail.files.map((name) => h('a', {
     class: name === 'cv.pdf' ? 'main' : '',
     href: `/api/jobs/${job.id}/files/${name}`,
     download: '',
-    text: { 'cv.pdf': 'CV (PDF)', 'cv.docx': 'CV (Word)', 'report.md': 'Rapport' }[name],
+    text: { 'cv.pdf': 'CV (PDF)', 'cv.docx': 'CV (Word)', 'report.md': t('Rapport') }[name],
   }));
-  downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: 'Page A4' }));
-  if (local) downloads.push(h('a', { href: `/questions.html?job=${encodeURIComponent(job.id)}`, text: 'Compléter le profil' }));
+  downloads.push(h('a', { href: `/cv.html?job=${encodeURIComponent(job.id)}`, target: '_blank', rel: 'noopener', text: t('Page A4') }));
+  if (local) downloads.push(h('a', { href: `/questions.html?job=${encodeURIComponent(job.id)}`, text: t('Compléter le profil') }));
   return [
     h('div', { class: 'result' }, ring(fit.score), h('div', {},
       h('div', { class: 'verdict' },
         h('span', { class: `chip ${qTone}`, text: qLabel }),
-        h('span', { class: 'chip', text: `adéquation ${VERDICT[fit.verdict] ?? fit.verdict}` }),
+        h('span', { class: 'chip', text: t('adéquation {v0}', { v0: VERDICT[fit.verdict] ?? fit.verdict }) }),
         h('span', { class: 'chip', text: `${layout}${ats ? ` · ${ats}` : ''}` })),
       h('p', { class: 'headline', text: detail.headline }),
       h('ul', { class: 'summary' }, detail.summary.map((s) => h('li', { text: s }))),
-      gaps.length ? h('p', { class: 'gaps', text: `Écarts sur l’essentiel : ${gaps.map(gapLabel).join(', ')}` }) : null,
+      gaps.length ? h('p', { class: 'gaps', text: t('Écarts sur l’essentiel : {v0}', { v0: gaps.map(gapLabel).join(', ') }) }) : null,
       // 2.45: why the score is capped (score.js capOf).
       fit.cap ? h('p', { class: 'gaps', text: capLabel(fit.cap) }) : null,
-      detail.offer_instructions ? h('p', { class: 'gaps', text: "Cette offre contient des consignes adressées au candidat ou à une IA : elles n'ont pas été appliquées." }) : null,
+      detail.offer_instructions ? h('p', { class: 'gaps', text: t("Cette offre contient des consignes adressées au candidat ou à une IA : elles n'ont pas été appliquées.") }) : null,
       detail.skipped ? h('p', { class: 'gaps', text: `Non fait : ${detail.skipped.reason}` }) : null)),
     h('div', { class: 'downloads' }, downloads),
-    h('details', {}, h('summary', { text: `Exigences de l’offre (${scored.length})` }), requirementsTable(scored)),
-    qualities.length ? h('details', {}, h('summary', { text: `Savoir-être, non notés (${qualities.length})` }), qualitiesList(qualities)) : null,
-    conditions.length ? h('details', {}, h('summary', { text: `Conditions à confirmer, non notées (${conditions.length})` }),
-      h('ul', { class: 'list' }, conditions.map((r) => h('li', { text: `${r.name} — à confirmer : ton profil n’en dit rien` })))) : null,
-    toConfirm.length ? h('details', { open: true }, h('summary', { text: `À confirmer avant envoi (${toConfirm.length})` }),
-      h('ul', { class: 'list' }, toConfirm.map((t) => h('li', { text: t })))) : null,
-    h('details', {}, h('summary', { text: `Preuves des compétences affichées (${detail.verification.length})` }), verification(detail.verification)),
-    detail.fit.rationale ? h('details', {}, h('summary', { text: 'Commentaire du modèle (non vérifié)' }), h('p', { class: 'quote', text: detail.fit.rationale })) : null,
-    h('p', { class: 'help', text: `Modèle demandé : ${MODEL_NAMES[detail.model] ?? detail.model}, via ${detail.via === 'vm' ? 'la VM' : 'le portable'} · répondu par ${detail.backend} en ${detail.attempts} essai(s), ${seconds(detail.elapsed_ms)}.` }),
+    h('details', {}, h('summary', { text: t('Exigences de l’offre ({v0})', { v0: scored.length }) }), requirementsTable(scored)),
+    qualities.length ? h('details', {}, h('summary', { text: t('Savoir-être, non notés ({v0})', { v0: qualities.length }) }), qualitiesList(qualities)) : null,
+    conditions.length ? h('details', {}, h('summary', { text: t('Conditions à confirmer, non notées ({v0})', { v0: conditions.length }) }),
+      h('ul', { class: 'list' }, conditions.map((r) => h('li', { text: t('{v0} — à confirmer : ton profil n’en dit rien', { v0: r.name }) })))) : null,
+    toConfirm.length ? h('details', { open: true }, h('summary', { text: t('À confirmer avant envoi ({v0})', { v0: toConfirm.length }) }),
+      h('ul', { class: 'list' }, toConfirm.map((line) => h('li', { text: line })))) : null,
+    h('details', {}, h('summary', { text: t('Preuves des compétences affichées ({v0})', { v0: detail.verification.length }) }), verification(detail.verification)),
+    detail.fit.rationale ? h('details', {}, h('summary', { text: t('Commentaire du modèle (non vérifié)') }), h('p', { class: 'quote', text: detail.fit.rationale })) : null,
+    h('p', { class: 'help', text: t('Modèle demandé : {v0}, via {v1} · répondu par {v2} en {v3} essai(s), {v4}.', { v0: MODEL_NAMES[detail.model] ?? detail.model, v1: detail.via === 'vm' ? t('la VM') : t('le portable'), v2: detail.backend, v3: detail.attempts, v4: seconds(detail.elapsed_ms) }) }),
   ];
 }
 
@@ -505,19 +508,19 @@ function renderJob(job) {
     $('jobs').prepend(card);
   }
   const status = {
-    queued: ['', Number.isInteger(job.position) ? `en attente : ${job.position === 1 ? 'prochain' : `${job.position}e`} dans la file` : 'en attente'],
-    running: ['info', 'en cours'],
-    done: ['ok', 'prêt'],
-    failed: ['bad', 'échec'],
+    queued: ['', Number.isInteger(job.position) ? (job.position === 1 ? t('en attente : prochain dans la file') : t('en attente : {n}e dans la file', { n: job.position })) : t('en attente')],
+    running: ['info', t('en cours')],
+    done: ['ok', t('prêt')],
+    failed: ['bad', t('échec')],
   }[job.status] ?? ['', job.status];
   // The server's clock (audit 2026-09-27): running, it grows; done, it stays.
   const elapsed = Number.isFinite(job.elapsed_ms) ? ` · ${Math.round(job.elapsed_ms / 1000)} s` : '';
   // 2.31a: a run can be renamed at any time, to be found again.
-  const rename = h('button', { type: 'button', class: 'link rename', text: 'Renommer', 'aria-label': `Renommer « ${job.title} »` });
+  const rename = h('button', { type: 'button', class: 'link rename', text: t('Renommer'), 'aria-label': t('Renommer « {v0} »', { v0: job.title }) });
   rename.addEventListener('click', () => renameJob(job));
   const children = [h('div', { class: 'job-head' }, h('h3', { text: job.title }), rename, h('span', { class: `chip ${status[0]}`, text: status[1] + elapsed }))];
   if (job.status !== 'done') children.push(stepsOf(job));
-  if (job.status === 'failed') children.push(h('p', { class: 'error', text: job.error ?? 'échec' }));
+  if (job.status === 'failed') children.push(h('p', { class: 'error', text: job.error ?? t('échec') }));
   const detail = details.get(job.id);
   if (detail) children.push(...resultOf(job, detail).filter(Boolean));
   card.replaceChildren(...children);
@@ -531,11 +534,11 @@ async function renderGroup(id) {
   const group = await api(`/api/groups/${id}`);
   let card = groupCards.get(id)?.card;
   if (!card) {
-    card = h('article', { class: 'job', 'aria-label': `Comparaison : ${group.title}` });
+    card = h('article', { class: 'job', 'aria-label': t('Comparaison : {title}', { title: group.title }) });
     $('jobs').prepend(card);
   }
   groupCards.set(id, { card, done: group.status === 'done' });
-  const head = h('div', { class: 'job-head' }, h('h3', { text: `Comparaison : ${group.title}` }), h('span', { class: `chip ${group.comparison ? 'ok' : 'info'}`, text: group.comparison ? 'prête' : 'en cours' }));
+  const head = h('div', { class: 'job-head' }, h('h3', { text: t('Comparaison : {title}', { title: group.title }) }), h('span', { class: `chip ${group.comparison ? 'ok' : 'info'}`, text: group.comparison ? t('prête') : t('en cours') }));
   if (!group.comparison) return card.replaceChildren(head);
   const { models, rows, leads } = group.comparison;
   const cells = (tag, values) => h('tr', {}, ...values.map((value) => h(tag, { text: value === null || value === undefined ? '–' : String(value) })));
@@ -543,10 +546,10 @@ async function renderGroup(id) {
   const differ = rows.filter((row) => !row.agree);
   return card.replaceChildren(head,
     ...(leads.length ? [h('ul', {}, ...leads.map((lead) => h('li', { text: lead.text })))] : []),
-    h('table', {}, cells('th', ['Modèle', 'Statut', 'Score', 'Verdict', 'Durée (s)', 'Tokens', 'Tentatives', 'Réparations', 'Verdicts changés']),
+    h('table', {}, cells('th', [t('Modèle'), t('Statut'), t('Score'), t('Verdict'), t('Durée (s)'), t('Tokens'), t('Tentatives'), t('Réparations'), t('Verdicts changés')]),
       ...models.map((m) => cells('td', [m.model, m.status, m.score, m.verdict, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs, m.verdicts_changed]))),
-    ...(differ.length ? [h('table', {}, cells('th', ['Désaccords', ...done]), ...differ.map((row) => cells('td', [row.name, ...done.map((name) => row.verdicts[name])])))] : []),
-    h('a', { href: `/api/groups/${id}/compare.md`, text: 'Télécharger la comparaison' }));
+    ...(differ.length ? [h('table', {}, cells('th', [t('Désaccords'), ...done]), ...differ.map((row) => cells('td', [row.name, ...done.map((name) => row.verdicts[name])])))] : []),
+    h('a', { href: `/api/groups/${id}/compare.md`, text: t('Télécharger la comparaison') }));
 }
 
 async function renameJob(job) {
@@ -556,7 +559,7 @@ async function renameJob(job) {
     job.title = (await api(`/api/jobs/${job.id}/title`, { title: title.trim() })).title;
     renderJob(job);
   } catch (error) {
-    showError(`Renommage refusé : ${error.message}`);
+    showError(t('Renommage refusé : {v0}', { v0: error.message }));
   }
 }
 
