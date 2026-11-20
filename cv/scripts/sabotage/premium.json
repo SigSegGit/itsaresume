@@ -35,7 +35,8 @@
     "test/premium.test.js",
     "premium/web/admin.js",
     "web/i18n.js",
-    "premium/restore-check.js"
+    "premium/restore-check.js",
+    "test/premium-admin.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
