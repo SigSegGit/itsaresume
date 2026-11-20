@@ -2,7 +2,7 @@
 // management; 6.4g: a snapshot restores to the same counts.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createStore } from '../premium/accounts.js';
@@ -26,6 +26,31 @@ test('6.4g: a snapshot opened by createStore() gives the same stats()', () => {
     assert.deepEqual(restored.stats(), store.stats());
     assert.equal(restored.verify(), 'ok');
     restored.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('6.4g: restore-check opens a synced copy, never writing it, and compares it with the live base', async () => {
+  const { restoreCheck } = await import('../premium/restore-check.js');
+  const dir = mkdtempSync(join(tmpdir(), 'premium-restore-'));
+  try {
+    const live = createStore(join(dir, 'premium.db'));
+    people(live);
+    const snapshot = live.backup(join(dir, 'snapshots'));
+    const before = readFileSync(snapshot);
+    const same = restoreCheck(snapshot, join(dir, 'premium.db'));
+    assert.equal(same.ok, true);
+    assert.equal(same.same, true);
+    assert.equal(same.stats.users, 2);
+    assert.deepEqual(readFileSync(snapshot), before, 'the snapshot is untouched');
+    live.register('c@example.org', 'long enough');
+    const behind = restoreCheck(snapshot, join(dir, 'premium.db'));
+    assert.equal(behind.same, false);
+    assert.equal(behind.ok, false);
+    writeFileSync(join(dir, 'broken.db'), 'not a database');
+    assert.throws(() => restoreCheck(join(dir, 'broken.db')));
+    live.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

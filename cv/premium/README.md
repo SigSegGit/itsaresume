@@ -104,6 +104,29 @@ leaves no trace in the file. Every hour a consistent snapshot (`VACUUM
 INTO`) goes to `snapshots/`, the last 48 kept: sync those (ITSaNAS, 6.4g),
 never the live file, which a copy can catch half-written.
 
+**Off the machine (6.4g)**: `deploy/vm-generator/itsanas-premium.sh`, run on
+the VM, gives the snapshots folder an ITSaNAS account of its own
+(`itsaresume`, port 9800); the owner types its passphrase and keeps its 24
+words. On any other machine of that account,
+`node premium/restore-check.js <premium-*.db> [premium.db]` opens a copy,
+runs SQLite's integrity check and compares the counts.
+
+## Admin (6.8)
+
+`admin.html`: counts per table and integrity, revenue per currency, the
+snapshots (the newest opened and checked), the accounts (searchable; never a
+hash, salt or profile), credit changes (a reason required, never below
+zero, each one in `admin_log`). Admins are the addresses in
+`PREMIUM_ADMINS` (comma-separated, in `$DATA/.env` on the VM, never in the
+repository); with none, nobody is one. Their API answers 401 without a
+session, 403 to anyone else.
+
+## Languages (6.7)
+
+French and English on every page (`web/i18n.js`, shared with the generator):
+`?lang=en|fr`, then the stored choice, then the browser; French by default.
+The English privacy notice says the French one prevails.
+
 ## Before going public (not done by the demo)
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is

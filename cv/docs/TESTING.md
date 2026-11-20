@@ -677,11 +677,12 @@ property it proves.
 | Property (the test name) | Sabotage defences |
 |---|---|
 | 6.4g: a snapshot opened by createStore() gives the same stats() | — |
-| admin: the accounts list never carries a password hash, a salt or a profile | — |
-| admin: a credit change needs a reason, never goes below zero, and is logged | — |
+| 6.4g: restore-check opens a synced copy, never writing it, and compares it with the live base | Restore: a copy behind the live base is not ok |
+| admin: the accounts list never carries a password hash, a salt or a profile | Admin: the accounts list carries no secret; Admin: a LIKE wildcard is a plain character |
+| admin: a credit change needs a reason, never goes below zero, and is logged | Admin: a credit change is logged; Admin: credits never below zero |
 | admin: revenue per currency, simulated orders apart | — |
-| admin routes: 401 without a session, 403 for a customer, open to a listed admin | — |
-| admin routes: no admin configured, nobody is one | — |
+| admin routes: 401 without a session, 403 for a customer, open to a listed admin | Admin: a customer is refused |
+| admin routes: no admin configured, nobody is one | Admin: no admin configured, nobody is one |
 | admin: the snapshots are listed with their size and the newest is verified | — |
 | admin page: served, and its script only sets textContent | — |
 
@@ -707,7 +708,7 @@ property it proves.
 | currencies: every market keeps a falling price per CV and a margin on the paid model | — |
 | currencies: charm prices (.49/.99, whole numbers where cents are not used) | Currencies: a local price is a charm price |
 | currencies: four markets only, EUR GBP USD CHF | — |
-| currencies: the visitor's language picks the market, EUR otherwise | — |
+| currencies: the visitor's language picks the market, EUR otherwise | Markets: English elsewhere pays in USD |
 | checkout: the order records its currency and local price; the credits are the same | Currencies: the order is priced in its currency |
 | GDPR: the export holds the account's data, never its password hash | GDPR: the export never holds the password hash |
 | GDPR: erasure: the profile alone, or the whole account; orders kept for the accounts, without the address | GDPR: erasure takes the address off the orders; Database: an erased row leaves no trace in the file |
@@ -1051,6 +1052,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**702 tests, 550 of them covered by at least one sabotage defence.**
+**703 tests, 556 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
