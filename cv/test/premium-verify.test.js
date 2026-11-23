@@ -28,6 +28,10 @@ test('store: an erased account takes its links with it', () => {
   const link = store.verifyToken('a@example.org');
   store.adminErase('boss@example.org', 'a@example.org', 'asked');
   assert.throws(() => store.confirmEmail(link), /invalid or expired/);
+  // The real risk: the address signed up again; the old link must not confirm it.
+  const { token: session } = store.register('a@example.org', 'long enough');
+  assert.throws(() => store.confirmEmail(link), /invalid or expired/);
+  assert.equal(store.user(session).verified, false);
 });
 
 async function serve(options = {}) {
