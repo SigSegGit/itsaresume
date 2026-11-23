@@ -420,6 +420,13 @@
     }
   }
 
-  globalThis.i18n = { lang, t, apply, EN, LANGS };
+  /** A price written as the page's language writes it: €1.49 in English, 1,49 € in French. */
+  const LOCALES = { en: { USD: 'en-US', default: 'en-GB' }, fr: { CHF: 'fr-CH', default: 'fr-FR' } };
+  function money(value, currency) {
+    const locale = LOCALES[lang][currency] ?? LOCALES[lang].default;
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
+  }
+
+  globalThis.i18n = { lang, t, apply, money, EN, LANGS };
   if (globalThis.document?.querySelectorAll) apply(globalThis.document);
 })();

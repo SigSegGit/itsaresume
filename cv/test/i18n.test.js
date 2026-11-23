@@ -44,6 +44,16 @@ test('i18n: t() gives the English, or the French key, and fills {vars}', () => {
   assert.equal(load().i18n.t('{price} par CV', { price: '1 €' }), '1 € par CV');
 });
 
+test('i18n: a price is written as the page language writes it', () => {
+  const en = load({ languages: ['en'] }).i18n;
+  const fr = load().i18n;
+  assert.equal(en.money(1.49, 'EUR'), '€1.49');
+  assert.equal(en.money(5.49, 'USD'), '$5.49');
+  assert.match(fr.money(1.49, 'EUR'), /^1,49\s€$/);
+  assert.match(fr.money(1.49, 'CHF'), /^1[.,]49\sCHF$/);
+  assert.equal(en.money(39, 'GBP'), '£39');
+});
+
 const { EN } = load().i18n;
 const squash = (text) => text.trim().replace(/\s+/g, ' ');
 

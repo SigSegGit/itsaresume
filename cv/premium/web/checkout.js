@@ -22,7 +22,7 @@ async function start() {
     location.href = './#pricing';
     return;
   }
-  const money = (value) => new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
+  const money = (value) => globalThis.i18n.money(value, data.currency);
   $('what').textContent = globalThis.i18n.t('{label} ({count} crédit(s))', { label: pack.label, count: pack.credits });
   $('price').textContent = money(pack.price);
   $('per-cv').textContent = money(Math.round(pack.per_cv * 100) / 100);
