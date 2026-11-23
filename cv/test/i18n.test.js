@@ -115,3 +115,18 @@ test('i18n: no French left outside t() in the page scripts', () => {
   }
   assert.deepEqual(left, []);
 });
+
+// 6.9: the premium server answers in English; every message it can send has
+// its French, so a French page never shows English.
+test('i18n: every premium server message has its French', () => {
+  const { i18n } = load();
+  const source = ['premium/server.js', 'premium/accounts.js'].map((name) => readFileSync(new URL(`../${name}`, import.meta.url), 'utf8')).join('\n');
+  const messages = new Set([
+    ...[...source.matchAll(/HttpError\(\d+, '([^']+)'/g)].map((match) => match[1]),
+    ...[...source.matchAll(/new Error\('([^']+)'\)/g)].map((match) => match[1]),
+  ]);
+  const missing = [...messages].filter((message) => !i18n.SERVER_FR[message]);
+  assert.deepEqual(missing, []);
+  assert.equal(i18n.serverText('wrong address or password'), 'adresse ou mot de passe incorrect');
+  assert.equal(load({ languages: ['en'] }).i18n.serverText('wrong address or password'), 'wrong address or password');
+});

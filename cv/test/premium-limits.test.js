@@ -20,12 +20,13 @@ test('limiter: max hits per window, per key; then refused with the seconds left'
 });
 
 test('limiter: a check counts nothing; old keys are dropped', () => {
-  const limit = createLimiter({ max: 1, windowMs: 1000 });
+  const limit = createLimiter({ max: 1, windowMs: 1000, cap: 100 });
   assert.equal(limit.check('a', 0).ok, true);
   assert.equal(limit.check('a', 0).ok, true);
   for (let i = 0; i < 5000; i += 1) limit.hit(`k${i}`, 0);
+  assert.ok(limit.size() <= 100, `${limit.size()} keys kept under the cap`);
   limit.hit('late', 5000);
-  assert.ok(limit.size() <= 1, `${limit.size()} keys kept`);
+  assert.equal(limit.size(), 1, 'the expired windows went');
 });
 
 test('clientIp: the proxy\'s X-Forwarded-For only from the machine itself', () => {

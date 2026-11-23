@@ -13,7 +13,7 @@ async function api(path, body) {
     credentials: 'same-origin',
   });
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(json.error ?? `HTTP ${response.status}`), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(json.error ? globalThis.i18n.serverText(json.error) : `HTTP ${response.status}`), { status: response.status });
   return json;
 }
 

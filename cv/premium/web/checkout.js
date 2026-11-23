@@ -5,7 +5,7 @@ const params = new URLSearchParams(location.search);
 async function api(path, body) {
   const response = await fetch(path, { method: body ? 'POST' : 'GET', headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(json.error ?? `HTTP ${response.status}`);
+  if (!response.ok) throw new Error(json.error ? globalThis.i18n.serverText(json.error) : `HTTP ${response.status}`);
   return json;
 }
 

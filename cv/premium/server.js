@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENCIES, localPacks, currencyFor } from './pricing.js';
 import { redact } from './preview.js';
+import { createLimiter, clientIp, DEFAULT_LIMITS } from './limits.js';
 import { CHAT } from './accounts.js';
 
 export { CHAT };
@@ -84,7 +85,13 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {} }) {
+  // 6.9: attempts limited (limits.js); a refusal says when to come back.
+  const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
+  const allow = (name, key) => {
+    const answer = limiter[name].hit(key);
+    if (!answer.ok) throw new HttpError(429, 'too many attempts: try again later', { retry_after: answer.retryAfter });
+  };
   const offerPacks = (request) => ({ packs: localPacks(currencyFor(request.headers['accept-language'])) });
   const account = (request) => {
     const user = store.user(tokenOf(request));
@@ -192,6 +199,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       const body = await readJson(request);
       // 6.4c: the privacy notice (/privacy.html) accepted, its version recorded.
       if (body.accept !== true) throw new HttpError(400, 'accept the privacy notice first');
+      allow('register', clientIp(request));
       try {
         const { token } = store.register(body.email, body.password);
         return [{ token }, sessionCookie(token)];
@@ -201,10 +209,21 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     },
     'POST /api/login': async (request) => {
       const body = await readJson(request);
+      // 6.9: failures are counted per address and per network address; while
+      // either is spent, even the right password waits (no oracle).
+      const email = String(body.email ?? '').trim().toLowerCase();
+      const ip = clientIp(request);
+      for (const [name, key] of [['login', email], ['loginIp', ip]]) {
+        const answer = limiter[name].check(key);
+        if (!answer.ok) throw new HttpError(429, 'too many attempts: try again later', { retry_after: answer.retryAfter });
+      }
       try {
         const { token } = store.login(body.email, body.password);
+        limiter.login.clear(email);
         return [{ token }, sessionCookie(token)];
       } catch (error) {
+        limiter.login.hit(email);
+        limiter.loginIp.hit(ip);
         throw new HttpError(401, error.message);
       }
     },
@@ -273,6 +292,8 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     // Recovery: the same answer whether the address has an account or not.
     'POST /api/password/forgot': async (request) => {
       const body = await readJson(request);
+      allow('forgotIp', clientIp(request));
+      allow('forgot', String(body.email ?? '').trim().toLowerCase());
       const token = store.resetToken(body.email);
       if (token) {
         // Behind the public proxy: its scheme and the path prefix it strips.
@@ -415,7 +436,8 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       const [body, headers = {}, code = 200] = Array.isArray(result) ? result : [result];
       return send(response, code, body, headers);
     } catch (error) {
-      return send(response, error.status ?? 500, { error: error.status ? error.message : 'internal error', ...(error.extra ?? {}) });
+      const retry = error.extra?.retry_after ? { 'retry-after': String(error.extra.retry_after) } : {};
+      return send(response, error.status ?? 500, { error: error.status ? error.message : 'internal error', ...(error.extra ?? {}) }, retry);
     }
   });
 }

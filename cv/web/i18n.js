@@ -447,6 +447,51 @@
     }
   }
 
+  // 6.9: the premium server answers in English; a French page says it in French.
+  const SERVER_FR = {
+    "JSON only": "requête JSON attendue",
+    "accept the privacy notice first": "acceptez d’abord la politique de confidentialité",
+    "admins only": "réservé aux administrateurs",
+    "already refunded": "déjà remboursée",
+    "an account exists for this address": "un compte existe déjà pour cette adresse",
+    "an admin does not erase its own account here": "un administrateur n’efface pas son propre compte ici",
+    "an empty message": "message vide",
+    "credits: never below zero": "crédits : jamais sous zéro",
+    "currency: unknown": "devise inconnue",
+    "delta: a non-zero whole number": "un nombre entier non nul",
+    "email: not an address": "adresse e-mail invalide",
+    "free previews used up for today": "aperçus gratuits épuisés pour aujourd’hui",
+    "import your profile first (the add-on, or a JSON Resume)": "importez d’abord votre profil (l’add-on, ou un JSON Resume)",
+    "invalid JSON": "JSON invalide",
+    "log in first": "connectez-vous d’abord",
+    "no credit left for the chat": "plus de crédit pour l’assistant",
+    "no credit left": "plus de crédit",
+    "no credit left: buy a pack": "plus de crédit : choisissez un lot",
+    "no message left": "plus de message",
+    "no such CV": "CV introuvable",
+    "no such account": "compte introuvable",
+    "no such order": "commande introuvable",
+    "not found": "introuvable",
+    "not ready": "pas encore prêt",
+    "offer: 1 to 60000 characters": "offre : 1 à 60 000 caractères",
+    "pack: unknown": "lot inconnu",
+    "reason: required": "motif obligatoire",
+    "saving a profile comes with a pack of CVs: buy one first": "enregistrer un profil est inclus avec un lot de CV : choisissez-en un d’abord",
+    "the chat is off": "l’assistant est désactivé",
+    "the profile chat comes with a pack of CVs": "l’assistant de profil est inclus avec un lot de CV",
+    "this link is invalid or expired": "ce lien est invalide ou expiré",
+    "too large": "trop volumineux",
+    "too many attempts: try again later": "trop de tentatives : réessayez plus tard",
+    "wrong address or password": "adresse ou mot de passe incorrect",
+    "wrong password": "mot de passe incorrect",
+    "password: 8 characters at least": "mot de passe : 8 caractères au moins",
+    "internal error": "erreur interne",
+  };
+  /** A server's error message in the page's language (unknown ones as they are). */
+  function serverText(message) {
+    return lang === 'fr' ? SERVER_FR[message] ?? message : message;
+  }
+
   /** A price written as the page's language writes it: €1.49 in English, 1,49 € in French. */
   const LOCALES = { en: { USD: 'en-US', default: 'en-GB' }, fr: { CHF: 'fr-CH', default: 'fr-FR' } };
   function money(value, currency) {
@@ -454,6 +499,6 @@
     return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
   }
 
-  globalThis.i18n = { lang, t, apply, money, EN, LANGS };
+  globalThis.i18n = { lang, t, apply, money, serverText, SERVER_FR, EN, LANGS };
   if (globalThis.document?.querySelectorAll) apply(globalThis.document);
 })();
