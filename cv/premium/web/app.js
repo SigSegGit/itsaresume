@@ -13,7 +13,7 @@ async function api(path, body) {
     credentials: 'same-origin',
   });
   const json = await response.json().catch(() => ({}));
-  if (!response.ok) throw Object.assign(new Error(json.error ?? `HTTP ${response.status}`), { status: response.status });
+  if (!response.ok) throw Object.assign(new Error(json.error ? globalThis.i18n.serverText(json.error) : `HTTP ${response.status}`), { status: response.status });
   return json;
 }
 
@@ -109,6 +109,7 @@ async function showMe() {
   $('ext-url').textContent = new URL('.', location.href).href.replace(/\/$/, '');
   if (token) $('ext-token').textContent = token;
   $('nav-admin').hidden = !me.admin;
+  $('verify-banner').hidden = me.verified !== false;
   $('jobs').replaceChildren(...me.jobs.map((job) => {
     const li = el('li');
     li.append(el('span', job.title || t('Offre')), el('span', ` — ${new Date(job.created).toLocaleString(lang === 'en' ? 'en-GB' : 'fr-FR')}`, 'muted'));
@@ -237,6 +238,25 @@ function wire() {
     if (!$('email').value) return say('auth-error', t('Indiquez votre adresse e-mail.'));
     await api('api/password/forgot', { email: $('email').value });
     say('auth-error', t('Si un compte existe pour cette adresse, un e-mail avec un lien (valable une heure) vient de partir.'));
+  });
+  // 6.10: the confirmation link mailed at sign-up.
+  const followVerifyLink = () => {
+    const link = /^#verify=([0-9a-f]+)$/.exec(location.hash)?.[1];
+    if (!link) return;
+    history.replaceState(null, '', './#account');
+    api('api/email/verify', { token: link })
+      .then(() => say('reset-msg', t('Adresse confirmée, merci.')), (error) => say('reset-msg', error.message))
+      .finally(showMe);
+  };
+  followVerifyLink();
+  window.addEventListener('hashchange', followVerifyLink);
+  $('resend').addEventListener('click', async () => {
+    try {
+      await api('api/email/resend', {});
+      $('verify-msg').textContent = t('Un nouveau lien vient de partir (valable 24 h).');
+    } catch (error) {
+      $('verify-msg').textContent = error.message;
+    }
   });
   const reset = /^#reset=([0-9a-f]+)$/.exec(location.hash)?.[1];
   if (reset) {

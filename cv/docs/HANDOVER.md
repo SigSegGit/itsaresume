@@ -1805,6 +1805,22 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   from the page (a reason, logged; never the admin's own), the orders as CSV
   (a cell never opens as a formula), the failed generations. Prices written
   in the page's language (`i18n.money`: €1.49 / 1,49 €).
+- [x] **6.9** (2026-11-23, before going public) Attempts limited
+  (`premium/limits.js`): failed logins per address and per network address
+  (then even the right password waits; `Retry-After`), recovery mails per
+  address and network address, new accounts per network address; the
+  proxy's `X-Forwarded-For` trusted only from the machine itself. The
+  premium server's messages in French on a French page
+  (`i18n.serverText`, a test keeps every message translated). Tests
+  `test/premium-limits.test.js`. Left before going public: e-mail
+  verification, the real payment, the API adapter (`premium/README.md`).
+- [x] **6.10** (2026-11-23, before going public) The address confirmed by
+  a mailed one-time link (24 h) before buying or generating; a new link on
+  request (3 an hour); an erased account's links go with it. Off until a
+  real mailer exists (`PREMIUM_REQUIRE_VERIFIED=1`). Tests
+  `test/premium-verify.test.js`; the sabotage found two tests too weak (a
+  second use tried at the expiry instant; an erased link tried before the
+  address signed up again), both fixed.
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it

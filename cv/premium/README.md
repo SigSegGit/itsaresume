@@ -121,6 +121,27 @@ zero, each one in `admin_log`). Admins are the addresses in
 repository); with none, nobody is one. Their API answers 401 without a
 session, 403 to anyone else.
 
+## Attempts limited (6.9)
+
+`limits.js`, in memory (a restart forgets: one window more at worst): 5
+failed logins per address and 30 per network address in 15 minutes (then
+even the right password waits, with `Retry-After`); 3 recovery mails per
+address and 10 per network address an hour (unknown addresses alike: no
+oracle); 5 new accounts per network address an hour. The network address is
+the socket's, or, from the machine itself (Caddy), the entry the proxy
+appended to `X-Forwarded-For`. The server's messages are English; a French
+page shows them in French (`i18n.serverText`).
+
+## Address confirmed (6.10)
+
+Sign-up mails a one-time link (`#verify=…`, a day); until it is followed,
+buying and generating answer 403 "confirm your e-mail address first" and the
+account page shows a banner with "send the link again" (3 an hour). An
+erased account's links go with it, so an address signed up again is never
+confirmed by an old link. On with `PREMIUM_REQUIRE_VERIFIED=1`, once a real
+mailer sends the links: the demo's mailer only writes them to the console
+and the outbox, and would lock every visitor out.
+
 ## Languages (6.7)
 
 French and English on every page (`web/i18n.js`, shared with the generator):
@@ -136,8 +157,9 @@ The English privacy notice says the French one prevails.
 - **Paid mode**: the demo sends it to the router; production needs an API key
   and an adapter in `server.js` `main()` (the `analyse` dependency).
 - **Real payment** (a payment provider's checkout and webhook), invoices, VAT,
-  terms of sale, privacy notice (profiles are personal data: retention,
-  deletion, export), rate limits, e-mail verification, password reset.
+  terms of sale, a real mailer, then `PREMIUM_REQUIRE_VERIFIED=1` (privacy
+  notice, export, deletion, retention, password reset, rate limits and the
+  address confirmation are done: 6.4c, 6.4d, 6.9, 6.10).
 - **LinkedIn**: the add-on reads only the page the user opened, on their
   click, for their own profile; no crawling. LinkedIn's terms forbid
   automated collection: keep it a user's click, and offer LinkedIn's own data

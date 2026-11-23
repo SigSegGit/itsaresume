@@ -90,10 +90,12 @@ test('e2e: preview, pay to save a profile, chat quota and refill, generate, expo
 
     // Recovery: a mail with a one-time link, the old password gone.
     assert.equal((await call('/api/password/forgot', { body: { email: 'nobody@example.org' } })).status, 200, 'no account enumeration');
-    assert.equal(mails.length, 0);
+    // 6.10: sign-up mailed its confirmation link; only recovery mails count here.
+    const recoveries = () => mails.filter((mail) => /#reset=/.test(mail.text));
+    assert.equal(recoveries().length, 0);
     await call('/api/password/forgot', { body: { email } });
-    assert.equal(mails.length, 1);
-    const reset = /#reset=([0-9a-f]+)/.exec(mails[0].text)[1];
+    assert.equal(recoveries().length, 1);
+    const reset = /#reset=([0-9a-f]+)/.exec(recoveries()[0].text)[1];
     assert.equal((await call('/api/password/reset', { body: { token: reset, password: 'second password' } })).status, 200);
     assert.equal((await call('/api/password/reset', { body: { token: reset, password: 'third password' } })).status, 400, 'one use');
     assert.equal((await call('/api/me', { token })).status, 401, 'old sessions closed');

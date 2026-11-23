@@ -20,6 +20,8 @@ export const PREVIEWS_PER_DAY = 3;
 export const CHAT = { free: 20, perCredit: 20 };
 /** A password reset link lives an hour, once. */
 const RESET_MS = 3600000;
+/** 6.10: an address confirmation link lives a day. */
+const VERIFY_MS = 86400000;
 /** The privacy notice's version a new account accepts (web/privacy.html). */
 export const PRIVACY_VERSION = '2026-11-19';
 /**
@@ -39,6 +41,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TEXT NOT NULL, accepted_at TEXT NOT NULL, privacy_version TEXT NOT NULL, last_login TEXT);
 CREATE TABLE IF NOT EXISTS sessions (key TEXT PRIMARY KEY, email TEXT NOT NULL, at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS resets (key TEXT PRIMARY KEY, email TEXT NOT NULL, at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS verifications (key TEXT PRIMARY KEY, email TEXT NOT NULL, at INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY, email TEXT, pack TEXT NOT NULL, credits INTEGER NOT NULL, currency TEXT NOT NULL,
   price REAL NOT NULL, simulated INTEGER NOT NULL, at TEXT NOT NULL);
@@ -64,6 +67,8 @@ export function createStore(file) {
   db.exec('PRAGMA secure_delete = ON; PRAGMA journal_mode = DELETE;');
   db.exec(SCHEMA);
   // 6.8b: an order's refund, on databases made before the column existed.
+  // 6.10: the address confirmed, on databases made before the column existed.
+  if (!db.prepare('PRAGMA table_info(users)').all().some((column) => column.name === 'verified_at')) db.exec('ALTER TABLE users ADD COLUMN verified_at TEXT');
   if (!db.prepare('PRAGMA table_info(orders)').all().some((column) => column.name === 'refunded_at')) db.exec('ALTER TABLE orders ADD COLUMN refunded_at TEXT');
   const one = (sql, ...args) => db.prepare(sql).get(...args);
   const all = (sql, ...args) => db.prepare(sql).all(...args);
@@ -94,6 +99,7 @@ export function createStore(file) {
       jobs: all('SELECT * FROM jobs WHERE email = ? ORDER BY created DESC LIMIT 50', email).map(jobOf),
       ...(row.chat_left == null ? {} : { chat: { left: row.chat_left, history } }),
       created_at: row.created_at, accepted_at: row.accepted_at, privacy_version: row.privacy_version, last_login: row.last_login,
+      verified: row.verified_at != null,
     };
   };
   const open = (email, now) => {
@@ -107,7 +113,7 @@ export function createStore(file) {
     return Boolean(user) && timingSafeEqual(given, Buffer.from(user.hash, 'hex'));
   };
   const erase = (email) => {
-    for (const table of ['users', 'sessions', 'resets', 'jobs', 'chat']) run(`DELETE FROM ${table} WHERE email = ?`, email);
+    for (const table of ['users', 'sessions', 'resets', 'verifications', 'jobs', 'chat']) run(`DELETE FROM ${table} WHERE email = ?`, email);
     // The orders stay for the accounts, pseudonymous.
     run('UPDATE orders SET email = NULL WHERE email = ?', email);
   };
@@ -207,6 +213,23 @@ export function createStore(file) {
     saveJob(user, job) {
       run('UPDATE jobs SET status = ?, score = ?, error = ?, page = ? WHERE id = ? AND email = ?', job.status, job.score ?? null, job.error ?? null, job.page ? JSON.stringify(job.page) : null, job.id, user.email);
     },
+    /** 6.10: a one-time link confirming an address; null when no account. */
+    verifyToken(email, now = Date.now()) {
+      const user = one('SELECT email FROM users WHERE email = ?', String(email ?? '').trim().toLowerCase());
+      if (!user) return null;
+      const token = randomBytes(24).toString('hex');
+      run('INSERT INTO verifications (key, email, at) VALUES (?, ?, ?)', tokenKey(token), user.email, now);
+      return token;
+    },
+    /** 6.10: follows a confirmation link, once, within a day; returns the address. */
+    confirmEmail(token, now = Date.now()) {
+      const key = tokenKey(token);
+      const found = one('SELECT email, at FROM verifications WHERE key = ?', key);
+      run('DELETE FROM verifications WHERE key = ?', key);
+      if (!found || now - found.at >= VERIFY_MS || !one('SELECT 1 AS x FROM users WHERE email = ?', found.email)) throw new Error('this link is invalid or expired');
+      run('UPDATE users SET verified_at = COALESCE(verified_at, ?) WHERE email = ?', iso(now), found.email);
+      return found.email;
+    },
     /** A one-time reset token for an address; null when no account (said to nobody). */
     resetToken(email, now = Date.now()) {
       const user = one('SELECT email FROM users WHERE email = ?', String(email ?? '').trim().toLowerCase());
@@ -245,6 +268,7 @@ export function createStore(file) {
       transaction(() => {
         run('DELETE FROM sessions WHERE ? - at > ?', now, RETENTION.sessionDays * DAY);
         run('DELETE FROM resets WHERE ? - at > ?', now, RESET_MS);
+        run('DELETE FROM verifications WHERE ? - at > ?', now, VERIFY_MS);
         run('DELETE FROM jobs WHERE created < ?', iso(now - RETENTION.cvDays * DAY));
         for (const { email } of all('SELECT email FROM users WHERE COALESCE(last_login, created_at) < ?', iso(now - RETENTION.inactiveDays * DAY))) erase(email);
         run('DELETE FROM orders WHERE at < ?', iso(now - RETENTION.orderYears * 366 * DAY));

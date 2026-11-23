@@ -414,6 +414,7 @@ property it proves.
 | i18n: every page loads i18n.js before its own scripts | — |
 | i18n: every key a page marks has its English | — |
 | i18n: no French left outside t() in the page scripts | — |
+| i18n: every premium server message has its French | — |
 
 ## `test/import.test.js`
 
@@ -699,6 +700,30 @@ property it proves.
 |---|---|
 | e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete | Pay: saving a profile needs a purchase; Chat: the quota stops the chat; Recovery: a reset link is used once; Recovery: a reset closes the old sessions |
 | 6.4e: under a prefix (cv.<domain>/premium/): relative links, the reused A4 page reads this site | — |
+
+## `test/premium-limits.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| limiter: max hits per window, per key; then refused with the seconds left | Limits: past the max, refused |
+| limiter: a check counts nothing; old keys are dropped | — |
+| clientIp: the proxy's X-Forwarded-For only from the machine itself | Limits: X-Forwarded-For only from the machine itself |
+| login: after the failures allowed for an address, even the right password waits | Limits: login waits while an address's failures are spent |
+| login: a success clears the address's failures | Limits: a success clears the address's failures |
+| login: one address trying many accounts is stopped too | Limits: login waits while an address's failures are spent; Limits: a failed login is counted per network address |
+| recovery: a few mails per address an hour, the same answer for an unknown one | Limits: recovery mails per address |
+| register: a few accounts per network address an hour | Limits: new accounts per network address |
+| the default limits are on without any option | Limits: past the max, refused |
+
+## `test/premium-verify.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| store: a confirmation link works once, within a day, for its own address | Verify: a link works once; Verify: a link lives a day |
+| store: an erased account takes its links with it | Verify: an erased account takes its links |
+| sign-up mails a confirmation link; until it is followed, nothing is bought | Verify: nothing is bought before the address is confirmed; Verify: a link works once |
+| a new link on request, for the logged-in address only, limited | Verify: new links are limited |
+| generation waits for the confirmation too; without the option nothing waits | Verify: nothing is generated before the address is confirmed |
 
 ## `test/premium.test.js`
 
@@ -1060,6 +1085,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**711 tests, 560 of them covered by at least one sabotage defence.**
+**726 tests, 573 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

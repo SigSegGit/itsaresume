@@ -214,7 +214,7 @@ jobs:
   # Break each defence in scripts/sabotage/*.json, check its tests go red,
   # restore it byte for byte. A test that stays green is decoration. Only the
   # plans whose files the change touches (the changes job).
-  # 2026-11-23: 22 to 24 minutes in one job; four shards side by side now,
+  # 2026-11-23: 22 to 24 minutes in one job; six shards side by side now (four: 11 at most),
   # and the required check `cv-sabotage` sums them up.
   cv-sabotage-shard:
     needs: changes
@@ -225,7 +225,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v7
         if: needs.changes.outputs.sabotage_cv != ''
@@ -241,7 +241,7 @@ jobs:
           python-version: '3.12'
       - run: npm ci
         if: needs.changes.outputs.sabotage_cv != ''
-      - run: python scripts/sabotage.py --shard ${{ matrix.shard }}/4 ${{ needs.changes.outputs.sabotage_cv }}
+      - run: python scripts/sabotage.py --shard ${{ matrix.shard }}/6 ${{ needs.changes.outputs.sabotage_cv }}
         if: needs.changes.outputs.sabotage_cv != ''
 
   cv-sabotage:

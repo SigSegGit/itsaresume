@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENCIES, localPacks, currencyFor } from './pricing.js';
 import { redact } from './preview.js';
+import { createLimiter, clientIp, DEFAULT_LIMITS } from './limits.js';
 import { CHAT } from './accounts.js';
 
 export { CHAT };
@@ -84,7 +85,28 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false }) {
+  // 6.9: attempts limited (limits.js); a refusal says when to come back.
+  const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
+  // 6.10: a link to this site as the visitor reached it (behind the proxy:
+  // its scheme and the path prefix it strips).
+  const linkTo = (request, fragment) => {
+    const proto = request.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+    const prefix = /^\/[a-z0-9-]{1,40}$/.test(request.headers['x-forwarded-prefix'] ?? '') ? request.headers['x-forwarded-prefix'] : '';
+    return `${proto}://${request.headers.host}${prefix}/#${fragment}`;
+  };
+  const sendVerification = async (request, email) => {
+    const token = store.verifyToken(email);
+    if (!token) return;
+    await mailer.send({ to: email, subject: 'itsaresume : confirmez votre adresse / confirm your address', text: `Pour confirmer votre adresse (lien valable 24 h, une fois) / To confirm your address (link valid 24 h, once):\n${linkTo(request, `verify=${token}`)}\nSi vous n'avez rien demandé, ignorez ce message. / If you asked for nothing, ignore this message.` });
+  };
+  const verified = (user) => {
+    if (requireVerified && !user.verified) throw new HttpError(403, 'confirm your e-mail address first');
+  };
+  const allow = (name, key) => {
+    const answer = limiter[name].hit(key);
+    if (!answer.ok) throw new HttpError(429, 'too many attempts: try again later', { retry_after: answer.retryAfter });
+  };
   const offerPacks = (request) => ({ packs: localPacks(currencyFor(request.headers['accept-language'])) });
   const account = (request) => {
     const user = store.user(tokenOf(request));
@@ -192,8 +214,10 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       const body = await readJson(request);
       // 6.4c: the privacy notice (/privacy.html) accepted, its version recorded.
       if (body.accept !== true) throw new HttpError(400, 'accept the privacy notice first');
+      allow('register', clientIp(request));
       try {
         const { token } = store.register(body.email, body.password);
+        await sendVerification(request, String(body.email).trim().toLowerCase());
         return [{ token }, sessionCookie(token)];
       } catch (error) {
         throw new HttpError(400, error.message);
@@ -201,10 +225,21 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     },
     'POST /api/login': async (request) => {
       const body = await readJson(request);
+      // 6.9: failures are counted per address and per network address; while
+      // either is spent, even the right password waits (no oracle).
+      const email = String(body.email ?? '').trim().toLowerCase();
+      const ip = clientIp(request);
+      for (const [name, key] of [['login', email], ['loginIp', ip]]) {
+        const answer = limiter[name].check(key);
+        if (!answer.ok) throw new HttpError(429, 'too many attempts: try again later', { retry_after: answer.retryAfter });
+      }
       try {
         const { token } = store.login(body.email, body.password);
+        limiter.login.clear(email);
         return [{ token }, sessionCookie(token)];
       } catch (error) {
+        limiter.login.hit(email);
+        limiter.loginIp.hit(ip);
         throw new HttpError(401, error.message);
       }
     },
@@ -222,6 +257,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         demo_paid: demoPaid,
         paid: store.hasPaid(user),
         admin: isAdmin(user),
+        verified: user.verified,
         chat_left: user.chat?.left ?? 0,
         chat_per_credit: CHAT.perCredit,
         chat_history: (user.chat?.history ?? []).slice(-10),
@@ -273,14 +309,30 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     // Recovery: the same answer whether the address has an account or not.
     'POST /api/password/forgot': async (request) => {
       const body = await readJson(request);
+      allow('forgotIp', clientIp(request));
+      allow('forgot', String(body.email ?? '').trim().toLowerCase());
       const token = store.resetToken(body.email);
       if (token) {
         // Behind the public proxy: its scheme and the path prefix it strips.
-        const proto = request.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-        const prefix = /^\/[a-z0-9-]{1,40}$/.test(request.headers['x-forwarded-prefix'] ?? '') ? request.headers['x-forwarded-prefix'] : '';
-        const link = `${proto}://${request.headers.host}${prefix}/#reset=${token}`;
+        const link = linkTo(request, `reset=${token}`);
         await mailer.send({ to: String(body.email).trim().toLowerCase(), subject: 'itsaresume : nouveau mot de passe', text: `Pour choisir un nouveau mot de passe (lien valable une heure, une fois) : ${link}\nSi vous n'avez rien demandé, ignorez ce message.` });
       }
+      return { ok: true };
+    },
+    'POST /api/email/verify': async (request) => {
+      const body = await readJson(request);
+      try {
+        store.confirmEmail(String(body.token ?? ''));
+      } catch (error) {
+        throw new HttpError(400, error.message);
+      }
+      return { ok: true };
+    },
+    'POST /api/email/resend': async (request) => {
+      const user = account(request);
+      await readJson(request);
+      allow('verify', user.email);
+      if (!user.verified) await sendVerification(request, user.email);
       return { ok: true };
     },
     'POST /api/password/reset': async (request) => {
@@ -308,6 +360,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     },
     'POST /api/checkout': async (request) => {
       const user = account(request);
+      verified(user);
       const body = await readJson(request);
       try {
         const currency = body.currency ?? 'EUR';
@@ -344,6 +397,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     },
     'POST /api/generate': async (request) => {
       const user = account(request);
+      verified(user);
       const offer = offerOf(await readJson(request));
       needProfile(user);
       try {
@@ -415,7 +469,8 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       const [body, headers = {}, code = 200] = Array.isArray(result) ? result : [result];
       return send(response, code, body, headers);
     } catch (error) {
-      return send(response, error.status ?? 500, { error: error.status ? error.message : 'internal error', ...(error.extra ?? {}) });
+      const retry = error.extra?.retry_after ? { 'retry-after': String(error.extra.retry_after) } : {};
+      return send(response, error.status ?? 500, { error: error.status ? error.message : 'internal error', ...(error.extra ?? {}) }, retry);
     }
   });
 }
@@ -457,6 +512,8 @@ async function main(argv) {
       return profile;
     },
     demoPaid: true,
+    // 6.10: on once a real mailer sends the links (the demo's only writes them to the outbox).
+    requireVerified: process.env.PREMIUM_REQUIRE_VERIFIED === '1',
     contact: option('contact', process.env.PREMIUM_CONTACT ?? ''),
     // Demo mail: the console and the data folder's outbox.
     mailer: { send: async (mail) => {
