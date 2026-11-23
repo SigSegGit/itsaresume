@@ -826,6 +826,7 @@ property it proves.
 | the reference experience is the most developed | Rules: the reference is the most developed |
 | a lab skill says so on the CV | Rules: a lab skill is labelled on the CV |
 | a requirement met by lab skills only counts half | Rules: a lab-only match counts half; Rules: normalisation scores with the lab skills |
+| a yes resting on notions-level skills only is adjacent | 2.60: a yes on notions-level skills only is adjacent |
 | a never-claimed skill stays a gap and may not be written | Rules: a never-claimed requirement stays no; Rules: a never-claimed name may not be written |
 | qualification: every must met, some missed, or the core missed | Rules: a never-claimed must is a core gap; Rules: a lab-only must is a core gap; Rules: half the musts missed is the core missed; Rules: only must-haves are the core |
 | the normalised fit carries the qualification | Rules: half the musts missed is the core missed; Rules: the fit carries the qualification |
@@ -1058,6 +1059,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**709 tests, 559 of them covered by at least one sabotage defence.**
+**710 tests, 560 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
