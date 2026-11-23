@@ -638,6 +638,14 @@ property it proves.
 | a docx offer is its paragraphs, one per line | Offer files (2.53): a docx offer is its paragraphs |
 | a text offer is read as UTF-8; other kinds are refused | — |
 
+## `test/pack-addon.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the add-on zip holds the manifest and every file it reaches, named by its version | Add-on zip (6.3): the scripts' imports are followed |
+| a file the manifest never reaches stays out; a reached file missing stops the pack | Add-on zip (6.3): a missing file stops the pack |
+| the same files give the same zip, byte for byte: every entry has one fixed date | Add-on zip (6.3): one fixed date |
+
 ## `test/page.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -1097,6 +1105,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**733 tests, 577 of them covered by at least one sabotage defence.**
+**736 tests, 580 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

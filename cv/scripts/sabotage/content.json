@@ -99,7 +99,9 @@
     "addon/options.js",
     "addon/popup.js",
     "test/anchor.test.js",
-    "test/linear.test.js"
+    "test/linear.test.js",
+    "tools/pack-addon.mjs",
+    "test/pack-addon.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2329,6 +2331,9 @@
       "expect": [
         "2.62: his order, one line per paragraph, lists joined in place"
       ]
-    }
+    },
+    "Add-on zip (6.3): the scripts' imports are followed": {"file": "tools/pack-addon.mjs", "live": "if (/\\.(html|js)$/.test(name)) queue.push(", "dead": "if (false) queue.push(", "expect": ["the add-on zip holds the manifest and every file it reaches, named by its version"]},
+    "Add-on zip (6.3): a missing file stops the pack": {"file": "tools/pack-addon.mjs", "live": "throw new Error(`the add-on reaches ${name}, which is missing`);", "dead": "continue;", "expect": ["a file the manifest never reaches stays out; a reached file missing stops the pack"]},
+    "Add-on zip (6.3): one fixed date": {"file": "tools/pack-addon.mjs", "live": "{ date: FIXED, binary: true }", "dead": "{ binary: true }", "expect": ["the same files give the same zip, byte for byte: every entry has one fixed date"]}
   }
 }

@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 6.4g
-TITLE: 6.8b admin refunds, erasure, CSV, failed jobs; 2.60 notions-only yes is adjacent; 6.4g waits for the owner's run on the VM; then 6.5
+TITLE: Haiku by default (6.5), add-on zipped by CI (6.3), footer font (2.63); 6.4g waits for the owner's run on the VM
 WRITTEN-AT: 2026-11-23
 -->
 
@@ -1857,6 +1857,14 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   now leaves the terms out (-1.45k tokens); its replay on the 10 offers is
   **next** (a scripted run of both stalled after 6 offers: run it from the
   page's "Comparer", one batch at a time).
+  **Haiku is now the default** (`src/models.js`) while its use is light
+  (not limited, usage allowed); else Sonnet, then the free tiers as before.
+- [x] **2.63** (seen on the RTE CV, 2026-11-23) The made_by footer took
+  Times New Roman (no font on its run, the styles' default): it now takes
+  the body's font (Calibri), in both templates. 1 test, 1 defence. The
+  "Ubuntu yes" of the same run was read again: the requirement is
+  "Linux / Enterprise Linux / Ubuntu/Debian" (RHEL and Debian attested),
+  "Alma Linux 9.8" alone is adjacent: no rule to add.
 - [x] **2.60** (seen in the 2026-11-19 comparison, done 2026-11-23) A
   "yes" whose skills are all at notions level (GCP "montée en compétence"
   read yes by Groq) is now adjacent, said in the repairs ("its skills are at
@@ -1904,6 +1912,11 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   - [ ] **6.3** Publish: the add-on zipped by CI as an artifact, a README
     section with screenshots, then the Chrome Web Store if the owner
     wants it (his account, his decision).
+    - [x] (2026-11-23) `tools/pack-addon.mjs`: the manifest and only what it
+      reaches (pages, their scripts, the imports), one fixed date per entry
+      (same files, same bytes), a missing file stops it; CI's cv-test
+      (ubuntu) uploads `itsaresume-addon`; README "Browser add-on". 3 tests,
+      3 defences. Left: screenshots, the store (the owner).
 
 ## 9. Open on purpose
 

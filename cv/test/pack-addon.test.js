@@ -30,6 +30,8 @@ test('a file the manifest never reaches stays out; a reached file missing stops 
   assert.throws(() => addonFiles(dir), /service\.js/);
 });
 
-test('the same files give the same zip, byte for byte', () => {
+test('the same files give the same zip, byte for byte: every entry has one fixed date', () => {
   assert.ok(packAddon(ADDON).buffer.equals(packAddon(ADDON).buffer));
+  const dates = Object.values(new PizZip(packAddon(ADDON).buffer).files).map((entry) => entry.date.toISOString().slice(0, 10));
+  assert.deepEqual([...new Set(dates)], ['2026-01-01']);
 });
