@@ -11,12 +11,18 @@ import { TEMPLATES_DIR, recolour, resolveStyle } from './style.js';
 export const TEMPLATE = fileURLToPath(new URL('../templates/two-column.docx', import.meta.url));
 const templatePath = (style) => join(TEMPLATES_DIR, `${resolveStyle(style).template}.docx`);
 
-/** `{a.b}` reads `scope.a.b`; `{.}` is the current item. */
+// 2.62: a list joined on one line, for the linear template.
+const JOINS = { join: ', ', dots: ' · ' };
+
+/** `{a.b}` reads `scope.a.b`; `{.}` is the current item; `{a|join}` and
+ * `{a|dots}` join the list `a` with ", " and " · ". */
 function dotted(tag) {
+  const [path, joiner] = tag.split('|').map((part) => part.trim());
   return {
     get(scope) {
-      if (tag === '.') return scope;
-      return tag.split('.').reduce((value, key) => (value == null ? undefined : value[key]), scope);
+      if (path === '.') return scope;
+      const value = path.split('.').reduce((current, key) => (current == null ? undefined : current[key]), scope);
+      return joiner && Array.isArray(value) ? value.join(JOINS[joiner]) : value;
     },
   };
 }

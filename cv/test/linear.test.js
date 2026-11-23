@@ -32,7 +32,7 @@ test('2.62: the linear template is listed and holds tags only', () => {
   const xml = documentXml(readFileSync(LINEAR));
   const pieces = [...xml.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map((m) => m[1]);
   assert.ok(pieces.length > 15, 'the template has its tags');
-  for (const piece of pieces) assert.match(piece, /^(\{[^{}]+\}|\s|\||:)*$/, `untagged text in the template: ${piece}`);
+  for (const piece of pieces) assert.match(piece, /^(\{[^{}]+\}|\s|[|:—])*$/, `untagged text in the template: ${piece}`);
 });
 
 test('2.62: one column on an A4 page, no table', () => {

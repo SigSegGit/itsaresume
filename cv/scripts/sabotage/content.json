@@ -98,7 +98,8 @@
     "addon/service.js",
     "addon/options.js",
     "addon/popup.js",
-    "test/anchor.test.js"
+    "test/anchor.test.js",
+    "test/linear.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -839,8 +840,8 @@
     },
     "Render: dotted tags resolve": {
       "file": "src/render.js",
-      "live": "return tag.split('.').reduce(",
-      "dead": "return [tag].reduce(",
+      "live": "const value = path.split('.').reduce(",
+      "dead": "const value = [path].reduce(",
       "expect": [
         "rendering replaces every tag, in order, with the model"
       ]
@@ -2310,6 +2311,22 @@
       "dead": "=== 'rnd');",
       "expect": [
         "2.59: the founder\u2019s R&D experience comes first when it is shown"
+      ]
+    },
+    "Linear (2.62): lists joined in place": {
+      "file": "src/render.js",
+      "live": "return joiner && Array.isArray(value) ? value.join(JOINS[joiner]) : value;",
+      "dead": "return value;",
+      "expect": [
+        "2.62: his order, one line per paragraph, lists joined in place"
+      ]
+    },
+    "Linear (2.62): glance and languages joined with dots": {
+      "file": "src/render.js",
+      "live": "dots: ' \u00b7 ' }",
+      "dead": "dots: ', ' }",
+      "expect": [
+        "2.62: his order, one line per paragraph, lists joined in place"
       ]
     }
   }
