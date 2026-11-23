@@ -363,6 +363,18 @@
     "Aucune.": "None.",
     "Effacer définitivement le compte {email} ? Ses commandes restent, sans son adresse.": "Erase the account {email} for good? Its orders stay, without the address.",
     "Compte effacé : {email}.": "Account erased: {email}.",
+    "limite atteinte, levée à {at}": "limit reached, lifted at {at}",
+    "limite d’usage atteinte à {at}": "usage limit reached at {at}",
+    "limite atteinte à {at}, peut-être levée": "limit reached at {at}, maybe lifted",
+    "non configuré": "not configured",
+    "non configurée": "not configured",
+    "sans crédit : l’API est payante au token, exclue": "no credit: the API is billed per token, excluded",
+    "indisponible (connexion ou sécurité)": "unavailable (connection or security)",
+    "injoignable": "unreachable",
+    "en veille : réveil à l’envoi, 2 à 6 min": "asleep: woken on sending, 2 to 6 min",
+    "portable éteint ou hors ligne": "laptop off or offline",
+    "chargé à la demande, 1 à 2 min de plus": "loaded on demand, 1 to 2 min more",
+    "routeur injoignable": "router unreachable",
   };
 
   const store = (() => {

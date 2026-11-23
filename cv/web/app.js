@@ -11,6 +11,20 @@ const MAX_TEXT = 60000;
 // minutes); a tab out of sight asks nothing until it is back.
 const POLL_MS = 5000;
 const MODEL_NAMES = { auto: 'auto', claude: t('Claude seul'), local: t('IA locale seule') };
+// 6.7: the server's notes on a model (src/models.js) are French; those with a
+// time in them are read through their pattern.
+const NOTE_PATTERNS = [
+  [/^limite atteinte, levée à (.+)$/, 'limite atteinte, levée à {at}'], // i18n: key
+  [/^limite d’usage atteinte à (.+)$/, 'limite d’usage atteinte à {at}'], // i18n: key
+  [/^limite atteinte à (.+), peut-être levée$/, 'limite atteinte à {at}, peut-être levée'], // i18n: key
+];
+function noteText(note) {
+  for (const [pattern, key] of NOTE_PATTERNS) {
+    const match = pattern.exec(note);
+    if (match) return t(key, { at: match[1] });
+  }
+  return t(note);
+}
 const seconds = (ms) => (Number.isFinite(ms) ? `${Math.round(ms / 1000)} s` : t('durée inconnue'));
 
 /** An element with text only: attrs are properties, children are nodes or strings. */
@@ -64,7 +78,7 @@ function applyModels(models) {
     option.dataset.label ??= option.textContent;
     // 2.34 (the owner, 2026-11-10): what cannot answer stays in sight, greyed with its reason.
     option.disabled = !state?.available;
-    option.textContent = state.note ? `${option.dataset.label} (${state.note})` : option.dataset.label;
+    option.textContent = state.note ? `${option.dataset.label} (${noteText(state.note)})` : option.dataset.label;
   }
   if ((!modelChosen || !models.options[select.value]?.available) && models.default) select.value = models.default;
   modelsReady = models.default !== null;
