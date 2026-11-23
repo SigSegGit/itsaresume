@@ -9,6 +9,7 @@
 #   printf '#!/bin/sh\nexec bash scripts/pre-push.sh\n' > .git/hooks/pre-push
 #
 # SKIP_SABOTAGE=1 git push   skips only the sabotage plans (say so in the PR).
+# The cv plans run on the committed HEAD (worktrees): commit before pushing.
 # PREPUSH_BASE=<sha>         compares with that instead of origin/main.
 
 set -u
@@ -68,7 +69,9 @@ fi
 if [ -n "$cv_plans" ]; then
     step "sabotage (cv): $cv_plans"
     # shellcheck disable=SC2086
-    out=$(cd cv && "$py" scripts/sabotage.py $cv_plans 2>&1) || { printf '%s\n' "$out" | grep -E "^(FAIL|DECORATIVE|REFUSED)|NOT verified" | head -10; failed=1; }
+    # In parallel worktrees of HEAD (scripts/sabotage-parallel.sh): minutes, not 45.
+    out=$(bash scripts/sabotage-parallel.sh $cv_plans 2>&1) || { printf '%s\n' "$out" | grep -E "FAIL|REFUSED|BASELINE|failed" | head -12; failed=1; }
+    printf '%s\n' "$out" | tail -1
 fi
 [ "$failed" -eq 0 ] || { step "refused: a sabotage defence is not verified (above)."; exit 1; }
 step "ok"

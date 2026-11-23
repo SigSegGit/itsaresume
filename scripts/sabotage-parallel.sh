@@ -16,7 +16,7 @@ cleanup() {
     for dir in "$work"/w*; do
         [ -d "$dir" ] || continue
         rm -f "$dir/cv/node_modules" 2>/dev/null
-        cmd //c rmdir "$(cygpath -w "$dir/cv/node_modules" 2>/dev/null)" >/dev/null 2>&1
+        MSYS2_ARG_CONV_EXCL="*" cmd /c rmdir "$(cygpath -w "$dir/cv/node_modules" 2>/dev/null)" >/dev/null 2>&1
         git -C "$root" worktree remove --force "$dir" >/dev/null 2>&1
     done
     git -C "$root" worktree prune >/dev/null 2>&1
@@ -26,7 +26,7 @@ trap cleanup EXIT INT TERM
 
 link_modules() {  # the worktree's cv/node_modules is the clone's (a junction on Windows)
     if [ "${OS:-}" = Windows_NT ]; then
-        cmd //c mklink /J "$(cygpath -w "$1/cv/node_modules")" "$(cygpath -w "$root/cv/node_modules")" >/dev/null
+        MSYS2_ARG_CONV_EXCL="*" cmd /c mklink /J "$(cygpath -w "$1/cv/node_modules")" "$(cygpath -w "$root/cv/node_modules")" >/dev/null
     else
         ln -s "$root/cv/node_modules" "$1/cv/node_modules"
     fi
