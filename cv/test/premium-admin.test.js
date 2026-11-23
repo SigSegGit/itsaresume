@@ -176,3 +176,74 @@ test('admin page: served, and its script only sets textContent', async () => {
     server.close();
   }
 });
+
+// 6.8b (the owner, 2026-11-20): refunds, an erasure from the page, the
+// orders for the accounts, the failed jobs; each admin action logged.
+test('admin: a refund is recorded once, takes back the credits left, and leaves the revenue', () => {
+  const store = createStore(null);
+  const a = people(store);
+  const [order] = store.adminOrders();
+  assert.equal(order.email, 'a@example.org');
+  assert.throws(() => store.refundOrder('boss@example.org', order.id, ''), /reason/);
+  assert.throws(() => store.refundOrder('boss@example.org', 'ffffffffffff', 'x'), /no such order/);
+  store.debit(a);
+  const done = store.refundOrder('boss@example.org', order.id, 'customer asked', Date.parse('2026-11-21T10:00:00Z'));
+  assert.equal(done.credits_taken, 9, 'one credit was already spent');
+  assert.equal(store.adminUsers('a@')[0].credits, 0);
+  assert.equal(store.adminOrders()[0].refunded_at, '2026-11-21T10:00:00.000Z');
+  assert.throws(() => store.refundOrder('boss@example.org', order.id, 'again'), /already refunded/);
+  assert.deepEqual(store.revenue(), [{ currency: 'GBP', orders: 0, total: 0, simulated: 0 }]);
+  assert.match(store.adminLog()[0].action, /refund [0-9a-f]{12}: customer asked/);
+});
+
+test('admin: an erasure from the page needs a reason, keeps the orders without the address, and is logged', () => {
+  const store = createStore(null);
+  people(store);
+  assert.throws(() => store.adminErase('boss@example.org', 'a@example.org', ''), /reason/);
+  assert.throws(() => store.adminErase('boss@example.org', 'nobody@example.org', 'x'), /no such account/);
+  store.adminErase('boss@example.org', 'a@example.org', 'asked by mail');
+  assert.deepEqual(store.adminUsers().map((row) => row.email), ['b@example.org']);
+  assert.equal(store.adminOrders()[0].email, null);
+  assert.match(store.adminLog()[0].action, /erase: asked by mail/);
+});
+
+test('admin: the orders as CSV, one line each, a formula never starting a cell', () => {
+  const store = createStore(null);
+  store.register('=cmd@example.org', 'long enough');
+  const user = store.user(store.login('=cmd@example.org', 'long enough').token);
+  store.buy(user, 'unit', { currency: 'EUR', price: 1.49 });
+  const lines = store.ordersCsv().trim().split('\n');
+  assert.equal(lines[0], 'id,at,email,pack,credits,currency,price,simulated,refunded_at');
+  assert.equal(lines.length, 2);
+  assert.match(lines[1], /,"'=cmd@example\.org",unit,1,EUR,1\.49,1,$/);
+});
+
+test('admin: the failed jobs, newest first, with their error', () => {
+  const store = createStore(null);
+  const a = people(store);
+  store.addJob(a, { id: '1'.repeat(16), status: 'running', title: 'SRE', created: '2026-11-20T10:00:00Z' });
+  store.saveJob(a, { id: '1'.repeat(16), status: 'failed', error: 'model down' });
+  store.addJob(a, { id: '2'.repeat(16), status: 'done', title: 'Dev', created: '2026-11-20T11:00:00Z' });
+  assert.deepEqual(store.failedJobs(), [{ id: '1'.repeat(16), email: 'a@example.org', title: 'SRE', created: '2026-11-20T10:00:00Z', error: 'model down' }]);
+});
+
+test('admin routes (6.8b): orders, CSV, refund, erase and failed jobs, admins only', async () => {
+  const { server, call, boss, client } = await serve();
+  try {
+    for (const path of ['/api/admin/orders', '/api/admin/orders.csv', '/api/admin/failed']) {
+      assert.equal((await call(path, { token: client })).status, 403, path);
+      assert.equal((await call(path, { token: boss })).status, 200, path);
+    }
+    const csv = await call('/api/admin/orders.csv', { token: boss });
+    assert.match(csv.text, /^id,at,email/);
+    const { json: { orders } } = await call('/api/admin/orders', { token: boss });
+    assert.equal((await call('/api/admin/refund', { token: client, body: { id: orders[0].id, reason: 'x' } })).status, 403);
+    assert.equal((await call('/api/admin/refund', { token: boss, body: { id: orders[0].id, reason: 'x' } })).status, 200);
+    assert.equal((await call('/api/admin/refund', { token: boss, body: { id: orders[0].id, reason: 'x' } })).status, 409);
+    assert.equal((await call('/api/admin/erase', { token: boss, body: { email: 'b@example.org' } })).status, 400);
+    assert.equal((await call('/api/admin/erase', { token: boss, body: { email: 'boss@example.org', reason: 'x' } })).status, 400, 'an admin does not erase itself');
+    assert.equal((await call('/api/admin/erase', { token: boss, body: { email: 'b@example.org', reason: 'x' } })).status, 200);
+  } finally {
+    server.close();
+  }
+});
