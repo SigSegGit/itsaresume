@@ -136,6 +136,23 @@ test('a requirement met by lab skills only counts half', () => {
   assert.equal(normalised.fit.score, 50);
 });
 
+// 2.60 (2026-11-19 comparison, measured 2026-11-23: GCP "montée en
+// compétence" read yes): a yes resting on notions-level skills only is near,
+// never met: adjacent, said, and scored as such.
+test('a yes resting on notions-level skills only is adjacent', () => {
+  const requirements = [
+    { name: 'GCP', importance: 'must', match: 'yes', skills: ['gcp'], note: '' },
+    { name: 'PostgreSQL', importance: 'must', match: 'yes', skills: ['postgresql'], note: '' },
+  ];
+  const { analysis: normalised, repairs } = normalize(analysis({ requirements }), v4());
+  assert.equal(normalised.requirements[0].match, 'adjacent');
+  assert.deepEqual(normalised.requirements[0].skills, ['gcp']);
+  assert.match(repairs.join('\n'), /GCP: its skills are at notions level only \(GCP\): adjacent, never yes \(was yes\)/);
+  assert.equal(normalised.requirements[1].match, 'yes', 'a working skill stays met');
+  const mixed = normalize(analysis({ requirements: [{ name: 'Cloud (GCP, AWS)', importance: 'must', match: 'yes', skills: ['gcp', 'aws'], note: '' }] }), v4());
+  assert.notEqual(mixed.analysis.requirements[0].match === 'adjacent' && /notions level/.test(mixed.repairs.join('\n')), true, 'one stronger skill keeps it out of this rule');
+});
+
 test('a never-claimed skill stays a gap and may not be written', () => {
   const requirements = [
     { name: 'Kubernetes (EKS)', importance: 'must', match: 'adjacent', skills: ['docker'], note: 'containers' },

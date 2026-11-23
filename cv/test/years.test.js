@@ -27,8 +27,11 @@ test('2.40: fewer years than asked leave the model verdict (it only raises)', ()
 });
 
 test('2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0)', () => {
-  const { row } = judge("3 ans d'expérience GCP", 'yes', ['gcp']);
-  assert.equal(row.match, 'yes', JSON.stringify(row));
+  const { row, repairs } = judge("3 ans d'expérience GCP", 'yes', ['gcp']);
+  // GCP is held at notions level: 2.60 makes it adjacent, never the count.
+  assert.ok(!repairs.some((repair) => /years/.test(repair)), repairs.join(String.fromCharCode(10)));
+  assert.equal(row.match, 'adjacent', JSON.stringify(row));
+  assert.ok(repairs.some((repair) => /notions level only/.test(repair)), repairs.join(String.fromCharCode(10)));
 });
 
 test('2.40: a requirement stating no number of years is left to the other rules', () => {

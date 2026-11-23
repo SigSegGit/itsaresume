@@ -64,13 +64,14 @@ root_plans=$(printf '%s\n' "$plans" | sed -n 's/^sabotage_root=//p')
 if [ -n "$root_plans" ]; then
     step "sabotage (router): $root_plans"
     # shellcheck disable=SC2086
-    out=$("$py" scripts/sabotage.py $root_plans 2>&1) || { printf '%s\n' "$out" | grep -E "^(FAIL|DECORATIVE|REFUSED)|NOT verified" | head -10; failed=1; }
+    out=$(bash scripts/sabotage-parallel.sh root $root_plans 2>&1) || { printf '%s\n' "$out" | grep -E "FAIL|REFUSED|BASELINE|failed" | head -12; failed=1; }
+    printf '%s\n' "$out" | tail -1
 fi
 if [ -n "$cv_plans" ]; then
     step "sabotage (cv): $cv_plans"
     # shellcheck disable=SC2086
     # In parallel worktrees of HEAD (scripts/sabotage-parallel.sh): minutes, not 45.
-    out=$(bash scripts/sabotage-parallel.sh $cv_plans 2>&1) || { printf '%s\n' "$out" | grep -E "FAIL|REFUSED|BASELINE|failed" | head -12; failed=1; }
+    out=$(bash scripts/sabotage-parallel.sh cv $cv_plans 2>&1) || { printf '%s\n' "$out" | grep -E "FAIL|REFUSED|BASELINE|failed" | head -12; failed=1; }
     printf '%s\n' "$out" | tail -1
 fi
 [ "$failed" -eq 0 ] || { step "refused: a sabotage defence is not verified (above)."; exit 1; }

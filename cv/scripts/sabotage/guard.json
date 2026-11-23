@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/years.test.js",
     "src/style.js",
     "src/sources.js",
     "src/import.js",
@@ -1692,6 +1693,14 @@
       "dead": "`- L${at + 1}: ",
       "expect": [
         "2.55: a split analysis classifies a long listing in batches"
+      ]
+    },
+    "2.60: a yes on notions-level skills only is adjacent": {
+      "file": "src/normalize.js",
+      "live": "if (requirement.match === 'yes' && known.length > 0 && known.every((id) => skills.get(id)?.level === 'notions')) {",
+      "dead": "if (false) {",
+      "expect": [
+        "a yes resting on notions-level skills only is adjacent"
       ]
     }
   }
