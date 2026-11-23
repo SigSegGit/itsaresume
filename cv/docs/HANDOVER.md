@@ -1814,6 +1814,13 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   (`i18n.serverText`, a test keeps every message translated). Tests
   `test/premium-limits.test.js`. Left before going public: e-mail
   verification, the real payment, the API adapter (`premium/README.md`).
+- [x] **6.10** (2026-11-23, before going public) The address confirmed by
+  a mailed one-time link (24 h) before buying or generating; a new link on
+  request (3 an hour); an erased account's links go with it. Off until a
+  real mailer exists (`PREMIUM_REQUIRE_VERIFIED=1`). Tests
+  `test/premium-verify.test.js`; the sabotage found two tests too weak (a
+  second use tried at the expiry instant; an erased link tried before the
+  address signed up again), both fixed.
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it
