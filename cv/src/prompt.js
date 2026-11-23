@@ -48,13 +48,13 @@ const LEVELS = { expert: 'E', proficient: 'P', working: 'W', notions: 'N', lab: 
  * 2.25b, off by default: the same skills in fewer tokens, grouped under their
  * group, one letter per level, terms the lexicon keys alike written once.
  */
-function compactSkills(profile) {
+function compactSkills(profile, noTerms = false) {
   const lines = ['Skills by group (id — name / aliases [covers], level). Levels: E expert, P proficient, W working, N notions, L lab (personal R&D only)'];
   for (const group of profile.skill_groups) {
     lines.push(`Group ${group.id} (${group.title.en}):`);
     for (const skill of profile.skills.filter((s) => s.group === group.id)) {
       const seen = new Set();
-      const terms = (skill.terms ?? []).filter((term) => !seen.has(key(term)) && seen.add(key(term)));
+      const terms = (noTerms ? [] : skill.terms ?? []).filter((term) => !seen.has(key(term)) && seen.add(key(term)));
       const names = [skill.name, ...(skill.aliases ?? [])].join(' / ');
       lines.push(`- ${skill.id} — ${names}${terms.length ? ` [${terms.join(', ')}]` : ''}, ${LEVELS[skill.level] ?? skill.level}`);
     }
@@ -70,22 +70,23 @@ export function promptOptions(env = process.env) {
   // 2.25d: on by default since the 2.42b A/B (no row lost); "off" is the whole prompt.
   const given = String(env.ITSACV_PROMPT ?? '').trim();
   if (given === 'off') return { compact: false, shortlist: false };
+  // 6.5: "noterms" leaves the skills' terms out (measuring a smaller prompt).
   const asked = (given || 'compact,shortlist').split(',').map((word) => word.trim()).filter(Boolean);
-  const unknown = asked.filter((word) => word !== 'compact' && word !== 'shortlist');
-  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist, or off)`);
-  return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist') };
+  const unknown = asked.filter((word) => !['compact', 'shortlist', 'noterms'].includes(word));
+  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist, noterms, or off)`);
+  return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist'), ...(asked.includes('noterms') ? { noTerms: true } : {}) };
 }
 
-function skillLines(profile, compact) {
+function skillLines(profile, compact, noTerms = false) {
   const lines = [];
-  if (compact) lines.push(...compactSkills(profile));
+  if (compact) lines.push(...compactSkills(profile, noTerms));
   else {
     lines.push('Skill groups (id — title):');
     for (const group of profile.skill_groups) lines.push(`- ${group.id} — ${group.title.en}`);
     lines.push('', 'Skills (id — name, level, group):');
     for (const skill of profile.skills) {
       const aliases = skill.aliases?.length ? ` (also: ${skill.aliases.join(', ')})` : '';
-      const terms = skill.terms?.length ? ` [covers: ${skill.terms.join(', ')}]` : '';
+      const terms = skill.terms?.length && !noTerms ? ` [covers: ${skill.terms.join(', ')}]` : '';
       const level = skill.level === 'lab' ? 'lab (personal R&D only)' : skill.level;
       lines.push(`- ${skill.id} — ${skill.name}${aliases}${terms}, ${level}, ${skill.group}`);
     }
@@ -142,8 +143,8 @@ function languageLine(offer) {
   return `The offer is in ${LANGUAGE_NAMES[language]}: set "language" to "${language}" and write the headline, summary, rationale and notes in ${LANGUAGE_NAMES[language]}.`;
 }
 
-export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false } = {}) {
-  const lines = ['CATALOGUE', '', ...skillLines(profile, compact), '', ...experienceLines(profile), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)];
+export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false, noTerms = false } = {}) {
+  const lines = ['CATALOGUE', '', ...skillLines(profile, compact, noTerms), '', ...experienceLines(profile), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)];
   return { system: SYSTEM, prompt: lines.join('\n') };
 }
 
