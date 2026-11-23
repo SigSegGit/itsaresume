@@ -16,7 +16,7 @@ test('store: a confirmation link works once, within a day, for its own address',
   assert.match(link, /^[0-9a-f]{48}$/);
   assert.equal(store.confirmEmail(link, DAY - 1), 'a@example.org');
   assert.equal(store.user(session, DAY).verified, true);
-  assert.throws(() => store.confirmEmail(link, DAY), /invalid or expired/, 'once');
+  assert.throws(() => store.confirmEmail(link, DAY - 1), /invalid or expired/, 'once, even within the day');
   const late = store.verifyToken('a@example.org', 0);
   assert.throws(() => store.confirmEmail(late, DAY + 1), /invalid or expired/);
   assert.equal(store.verifyToken('nobody@example.org', 0), null);
