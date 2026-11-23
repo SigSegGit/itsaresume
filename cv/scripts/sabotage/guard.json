@@ -6,6 +6,7 @@
     "--test-reporter=tap"
   ],
   "files": [
+    "test/models.test.js",
     "test/years.test.js",
     "src/style.js",
     "src/sources.js",
