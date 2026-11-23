@@ -82,8 +82,11 @@ export function modelMenu(backends, now = Date.now() / 1000, { awake = false } =
   }
   const claudeBackend = backends.find((backend) => backend.kind === 'claude-code' && backend.name !== HAIKU);
   const claude = cloudOption(claudeBackend, now);
-  // 6.5: Haiku through the subscription, offered, never the default.
-  const haiku = cloudOption(backends.find((backend) => backend.name === HAIKU), now);
+  // 6.5: Haiku through the subscription; the default while its use is light
+  // (measured 2026-11-23: 95.2 % agreement with Sonnet on the real offers).
+  const haikuBackend = backends.find((backend) => backend.name === HAIKU);
+  const haiku = cloudOption(haikuBackend, now);
+  const haikuLight = haikuBackend?.state !== 'limited' && [undefined, 'allowed'].includes(haikuBackend?.usage);
   const gemini = cloudOption(backends.find((backend) => backend.kind === 'gemini-cli'), now);
   const openai = cloudOption(backends.find((backend) => backend.kind === 'openai'), now);
   // 2.36: Groq's free tier (OpenAI's open models), its own option.
@@ -93,7 +96,7 @@ export function modelMenu(backends, now = Date.now() / 1000, { awake = false } =
   const auto = { available: claude.available || gemini.available || openai.available || groq.available || local.available, note: '' };
   const fallback = auto.available ? 'auto' : null;
   // The owner, 2026-10-14: past Claude, the cloud free tiers before the slow local model.
-  const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')
+  const chosen = (haiku.available && haikuLight && 'haiku') || (claude.available && light && 'claude') || (gemini.available && 'gemini')
     || (openai.available && 'openai') || (groq.available && 'groq') || (local.available && 'local') || fallback;
   // 2.31b: comparing needs two models that can answer.
   const compare = { available: [claude, haiku, gemini, openai, groq, local].filter((model) => model.available).length >= 2, note: '' };
