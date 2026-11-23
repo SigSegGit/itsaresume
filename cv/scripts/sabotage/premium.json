@@ -225,8 +225,8 @@
     },
     "Admin: a credit change is logged": {
       "file": "premium/accounts.js",
-      "live": "run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)',",
-      "dead": "if (0) run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)',",
+      "live": "run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, email, `credits ${delta > 0 ? '+' : ''}${delta}: ${why.slice(0, 200)}`);",
+      "dead": "if (0) run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, email, `credits ${delta > 0 ? '+' : ''}${delta}: ${why.slice(0, 200)}`);",
       "expect": [
         "admin: a credit change needs a reason, never goes below zero, and is logged"
       ]
@@ -281,7 +281,7 @@
     },
     "Admin: a CSV cell never opens as a formula": {
       "file": "premium/accounts.js",
-      "live": "if (/^[=+\\-@\t\r]/.test(text)) text = `'${text}`;",
+      "live": "if (/^[=+\\-@\\t\\r]/.test(text)) text = `'${text}`;",
       "dead": "",
       "expect": [
         "admin: the orders as CSV, one line each, a formula never starting a cell"
