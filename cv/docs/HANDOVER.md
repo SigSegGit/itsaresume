@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 6.4g
-TITLE: 6.7 four markets, every page in French and English; 6.8 admin page; 6.4g waits for the owner's run on the VM; then 2.60
-WRITTEN-AT: 2026-11-20
+TITLE: 6.8b admin refunds, erasure, CSV, failed jobs; 2.60 notions-only yes is adjacent; 6.4g waits for the owner's run on the VM; then 6.5
+WRITTEN-AT: 2026-11-23
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1799,6 +1799,12 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   Next (6.8b): refunds of an order, an account's erasure from the page (with
   the same log), CSV export of the orders for the accounts, and the admin's
   view of a failed job.
+- [x] **6.8b** (2026-11-23) Admin, second part: an order refunded once
+  (`refunded_at`; the credits it gave that are left are taken back; out of
+  the revenue; the money itself at the payment provider), an account erased
+  from the page (a reason, logged; never the admin's own), the orders as CSV
+  (a cell never opens as a formula), the failed generations. Prices written
+  in the page's language (`i18n.money`: €1.49 / 1,49 €).
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it
@@ -1815,10 +1821,14 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   already ranked by code (rankBullets); headline and summary assembled from
   the profile's own sentences, the model picking among them. (d) Target: one
   Haiku call of 5k tokens at most, under 10 s.
-- [ ] **2.60** (seen in the 2026-11-19 comparison) A "yes" whose skills
-  are all at a learning or lab level (GCP "montée en compétence" read yes
-  by Groq) shows as met: the code only ever raises a verdict. Decide
-  whether such a "yes" is lowered to adjacent, measured on the real runs.
+- [x] **2.60** (seen in the 2026-11-19 comparison, done 2026-11-23) A
+  "yes" whose skills are all at notions level (GCP "montée en compétence"
+  read yes by Groq) is now adjacent, said in the repairs ("its skills are at
+  notions level only"), scored and shown as near. Lab-only stays yes with
+  half credit and "(lab only)" (unchanged). Measured on the 31 local runs:
+  no notions-only yes there (the GCP case came from the VM's comparison),
+  so nothing honest is lowered. Test `test/rules.test.js`; 2.40's GCP case
+  in `test/years.test.js` now checks the count never lowers it.
 
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own
@@ -1887,10 +1897,8 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   history and address bar and in the VM's Caddy access log. 96 random
   bits, revocable at once (2.16); not hidden further on purpose.
 
-- **From 2.28b-iii (2026-10-27), left open on purpose:** a yes through a
-  notions-level skill still counts in full when the profile has nothing
-  better (score.js caps lab only; coverage only replaces it when a
-  well-held skill exists); a name "X (Y)" is read as both concepts, so
+- **From 2.28b-iii (2026-10-27), left open on purpose:** (a yes through
+  notions-level skills only: closed by 2.60, now adjacent); a name "X (Y)" is read as both concepts, so
   "Sécurité (IA)" is yes through SecOps and the alerting skill although it
   means the security of AI (accepted by the owner on 2026-10-27: nothing
   to change); a model's yes grounded only by a skill's term

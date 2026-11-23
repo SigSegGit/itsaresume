@@ -311,6 +311,16 @@ test("the model's yes through a notions-level skill gives way to the profile's w
   assert.deepEqual(row.skills, ['aws']);
 });
 
+// Since 2.60 a notions-only yes is adjacent before coverage; the swap still
+// matters for a lab skill, which stays yes.
+test("the model's yes through a lab skill gives way to the profile's well-held one", () => {
+  const p = v4();
+  p.skills.push({ id: 'scaleway', name: 'Scaleway', group: 'cloud', level: 'lab', aliases: [], terms: ['cloud public'] });
+  const { row } = judge('Cloud public', { match: 'yes', skills: ['scaleway'], profile: p });
+  assert.equal(row.match, 'yes');
+  assert.deepEqual(row.skills, ['aws']);
+});
+
 test('an evidence-blocked skill does not join a met requirement as another name of its concept', () => {
   const p = v4();
   p.skills.push(

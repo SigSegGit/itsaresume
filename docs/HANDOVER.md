@@ -2,8 +2,8 @@
 
 <!-- ITSARESUME-STATE
 NEXT: done
-TITLE: 8.59 done, an overloaded backend is tried once more after 15 s; no router step open
-WRITTEN-AT: 2026-11-18
+TITLE: 8.60 done, CI gates before the push and sabotage in shards; no router step open
+WRITTEN-AT: 2026-11-23
 BASE: edc32d8
 -->
 
@@ -753,6 +753,19 @@ branch with the local gates of §3 green.
   `only_an_overload_is_retried_and_only_when_configured`,
   `the_overload_pause_is_fifteen_seconds_unless_set`; 4 defences
   (`router-gemini.json`).
+
+- [x] **8.60** **CI: fewer red rounds, shorter rounds** (2026-11-23, the
+  owner: "fix recurrent issues like CI frequent failures"). Measured on the
+  last 200 runs: 14 failures, every one a gate nothing ran before the push
+  (sabotage 6, the handover job 4, cv tests 3, catalogue 1); cv-sabotage
+  took 22-24 minutes, the router's sabotage 16. Now `scripts/pre-push.sh`
+  runs the CI's gates for what the branch touches (handover job, cv tests,
+  catalogue, fmt, then the sabotage plans `sabotage-select.py` picks;
+  `SKIP_SABOTAGE=1` skips only those), and both `sabotage.py` take
+  `--shard I/N`: the CI runs 3 router shards and 4 cv shards side by side,
+  the required checks `sabotage` and `cv-sabotage` sum them up. Test
+  `scripts/test-sabotage-shard.sh`. The hook is installed by the owner
+  (writing .git/hooks is his call): see the script's header.
 
 ## 9. Deliberately open
 

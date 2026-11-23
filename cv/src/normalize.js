@@ -507,6 +507,11 @@ export function normalize(input, profile, { assessment, offer } = {}) {
       repairs.push(`requirement ${requirement.name}: the owner ruled it near ${known.map((id) => skills.get(id).name).join(', ')}: adjacent, never yes (was yes)`);
       requirement.match = 'adjacent';
     }
+    // 2.60: a skill held at notions level is near the requirement, never meets it.
+    if (requirement.match === 'yes' && known.length > 0 && known.every((id) => skills.get(id)?.level === 'notions')) {
+      repairs.push(`requirement ${requirement.name}: its skills are at notions level only (${known.map((id) => skills.get(id).name).join(', ')}): adjacent, never yes (was yes)`);
+      requirement.match = 'adjacent';
+    }
     if ((requirement.match === 'yes' || requirement.match === 'adjacent') && requirement.skills.length === 0) {
       repairs.push(`requirement ${requirement.name}: marked ${requirement.match} without a profile skill, now no (was ${requirement.match})`);
       requirement.match = 'no';

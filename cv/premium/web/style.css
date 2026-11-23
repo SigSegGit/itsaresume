@@ -62,3 +62,11 @@ button.danger { background: var(--no); }
 .legal table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: .9rem; }
 .legal th, .legal td { border-bottom: 1px solid #ddd; padding: 6px 8px; text-align: left; vertical-align: top; }
 .foot { text-align: center; padding: 24px 16px; font-size: .9rem; }
+/* 6.7, 6.8: the brand link, a link drawn as a button, the admin page. */
+.bar .brand { color: #fff; text-decoration: none; font-weight: 700; }
+a.button { display: inline-block; padding: 9px 16px; border-radius: 6px; background: var(--ink); color: #fff; text-decoration: none; }
+.admin { max-width: 960px; margin: 0 auto; padding: 0 16px 24px; }
+.admin table { border-collapse: collapse; }
+.admin th, .admin td { padding: 4px 10px 4px 0; text-align: left; border-bottom: 1px solid #eee; }
+.admin form.row input { flex: 1 1 10em; }
+button:disabled { opacity: .45; cursor: not-allowed; }

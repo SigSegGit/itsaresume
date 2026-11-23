@@ -225,8 +225,8 @@
     },
     "Admin: a credit change is logged": {
       "file": "premium/accounts.js",
-      "live": "run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)',",
-      "dead": "if (0) run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)',",
+      "live": "run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, email, `credits ${delta > 0 ? '+' : ''}${delta}: ${why.slice(0, 200)}`);",
+      "dead": "if (0) run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, email, `credits ${delta > 0 ? '+' : ''}${delta}: ${why.slice(0, 200)}`);",
       "expect": [
         "admin: a credit change needs a reason, never goes below zero, and is logged"
       ]
@@ -261,6 +261,38 @@
       "dead": "result.ok = result.integrity === 'ok';",
       "expect": [
         "6.4g: restore-check opens a synced copy, never writing it, and compares it with the live base"
+      ]
+    },
+    "Admin: an order is refunded once": {
+      "file": "premium/accounts.js",
+      "live": "if (order.refunded_at) throw new Error('already refunded');",
+      "dead": "",
+      "expect": [
+        "admin: a refund is recorded once, takes back the credits left, and leaves the revenue"
+      ]
+    },
+    "Admin: a refunded order leaves the revenue": {
+      "file": "premium/accounts.js",
+      "live": "SUM(refunded_at IS NULL) AS orders",
+      "dead": "COUNT(*) AS orders",
+      "expect": [
+        "admin: a refund is recorded once, takes back the credits left, and leaves the revenue"
+      ]
+    },
+    "Admin: a CSV cell never opens as a formula": {
+      "file": "premium/accounts.js",
+      "live": "if (/^[=+\\-@\\t\\r]/.test(text)) text = `'${text}`;",
+      "dead": "",
+      "expect": [
+        "admin: the orders as CSV, one line each, a formula never starting a cell"
+      ]
+    },
+    "Admin: an admin does not erase itself": {
+      "file": "premium/server.js",
+      "live": "if (email === user.email) throw new HttpError(400, 'an admin does not erase its own account here');",
+      "dead": "",
+      "expect": [
+        "admin routes (6.8b): orders, CSV, refund, erase and failed jobs, admins only"
       ]
     }
   }

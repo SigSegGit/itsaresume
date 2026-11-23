@@ -348,6 +348,33 @@
     "Les questions ne sont disponibles que sur la page locale.": "The questions are available on the local page only.",
     "Aucune question : le profil couvre ce que les offres demandent.": "No question: the profile covers what the offers ask for.",
     "{n} ko": "{n} KB",
+    "Exporter en CSV (comptabilité)": "Export as CSV (accounting)",
+    "Un remboursement est enregistré ici et reprend les crédits restants ; le remboursement d'argent se fait chez le prestataire de paiement.": "A refund is recorded here and takes back the credits left; the money itself is refunded at the payment provider.",
+    "Générations en échec": "Failed generations",
+    "Effacer un compte (demande reçue par e-mail)": "Erase an account (a request received by e-mail)",
+    "Effacer définitivement": "Erase for good",
+    "Date": "Date",
+    "Remboursée": "Refunded",
+    "(effacée)": "(erased)",
+    "simulé": "simulated",
+    "Rembourser": "Refund",
+    "Motif du remboursement (journalisé) :": "Reason for the refund (logged):",
+    "Remboursement enregistré : {n} crédit(s) repris.": "Refund recorded: {n} credit(s) taken back.",
+    "Aucune.": "None.",
+    "Effacer définitivement le compte {email} ? Ses commandes restent, sans son adresse.": "Erase the account {email} for good? Its orders stay, without the address.",
+    "Compte effacé : {email}.": "Account erased: {email}.",
+    "limite atteinte, levée à {at}": "limit reached, lifted at {at}",
+    "limite d’usage atteinte à {at}": "usage limit reached at {at}",
+    "limite atteinte à {at}, peut-être levée": "limit reached at {at}, maybe lifted",
+    "non configuré": "not configured",
+    "non configurée": "not configured",
+    "sans crédit : l’API est payante au token, exclue": "no credit: the API is billed per token, excluded",
+    "indisponible (connexion ou sécurité)": "unavailable (connection or security)",
+    "injoignable": "unreachable",
+    "en veille : réveil à l’envoi, 2 à 6 min": "asleep: woken on sending, 2 to 6 min",
+    "portable éteint ou hors ligne": "laptop off or offline",
+    "chargé à la demande, 1 à 2 min de plus": "loaded on demand, 1 to 2 min more",
+    "routeur injoignable": "router unreachable",
   };
 
   const store = (() => {
@@ -420,6 +447,13 @@
     }
   }
 
-  globalThis.i18n = { lang, t, apply, EN, LANGS };
+  /** A price written as the page's language writes it: €1.49 in English, 1,49 € in French. */
+  const LOCALES = { en: { USD: 'en-US', default: 'en-GB' }, fr: { CHF: 'fr-CH', default: 'fr-FR' } };
+  function money(value, currency) {
+    const locale = LOCALES[lang][currency] ?? LOCALES[lang].default;
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
+  }
+
+  globalThis.i18n = { lang, t, apply, money, EN, LANGS };
   if (globalThis.document?.querySelectorAll) apply(globalThis.document);
 })();

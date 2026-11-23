@@ -63,6 +63,8 @@ export function createStore(file) {
   const db = new DatabaseSync(file ?? ':memory:');
   db.exec('PRAGMA secure_delete = ON; PRAGMA journal_mode = DELETE;');
   db.exec(SCHEMA);
+  // 6.8b: an order's refund, on databases made before the column existed.
+  if (!db.prepare('PRAGMA table_info(orders)').all().some((column) => column.name === 'refunded_at')) db.exec('ALTER TABLE orders ADD COLUMN refunded_at TEXT');
   const one = (sql, ...args) => db.prepare(sql).get(...args);
   const all = (sql, ...args) => db.prepare(sql).all(...args);
   const run = (sql, ...args) => db.prepare(sql).run(...args);
@@ -283,9 +285,62 @@ export function createStore(file) {
     adminLog(limit = 100) {
       return all('SELECT at, admin, target, action FROM admin_log ORDER BY id DESC LIMIT ?', limit);
     },
-    /** 6.8: orders and totals per currency. */
+    /** 6.8: orders and totals per currency; a refunded order counts for nothing. */
     revenue() {
-      return all('SELECT currency, COUNT(*) AS orders, ROUND(SUM(price), 2) AS total, SUM(simulated) AS simulated FROM orders GROUP BY currency ORDER BY currency').map((row) => ({ ...row }));
+      return all(`SELECT currency, SUM(refunded_at IS NULL) AS orders, ROUND(COALESCE(SUM(CASE WHEN refunded_at IS NULL THEN price END), 0), 2) AS total,
+          SUM(CASE WHEN refunded_at IS NULL THEN simulated ELSE 0 END) AS simulated FROM orders GROUP BY currency ORDER BY currency`).map((row) => ({ ...row }));
+    },
+    /** 6.8b: the orders, newest first. */
+    adminOrders(limit = 500) {
+      return all('SELECT id, at, email, pack, credits, currency, price, simulated, refunded_at FROM orders ORDER BY at DESC LIMIT ?', limit).map((row) => ({ ...row }));
+    },
+    /** 6.8b: the orders for the accounts; a cell never opens as a formula. */
+    ordersCsv() {
+      const cell = (value) => {
+        if (value == null) return '';
+        let text = String(value);
+        if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+        return /[",\n']/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+      };
+      const columns = ['id', 'at', 'email', 'pack', 'credits', 'currency', 'price', 'simulated', 'refunded_at'];
+      const rows = all(`SELECT ${columns.join(', ')} FROM orders ORDER BY at`);
+      return `${columns.join(',')}\n${rows.map((row) => columns.map((name) => cell(row[name])).join(',')).join('\n')}${rows.length ? '\n' : ''}`;
+    },
+    /**
+     * 6.8b: an order's refund, recorded (the payment provider's own refund is
+     * done there): the credits it gave that are left are taken back, logged.
+     */
+    refundOrder(admin, id, reason, now = Date.now()) {
+      const why = String(reason ?? '').trim();
+      if (!why) throw new Error('reason: required');
+      return transaction(() => {
+        const order = one('SELECT id, email, credits, refunded_at FROM orders WHERE id = ?', String(id));
+        if (!order) throw new Error('no such order');
+        if (order.refunded_at) throw new Error('already refunded');
+        let taken = 0;
+        if (order.email) {
+          const row = one('SELECT credits FROM users WHERE email = ?', order.email);
+          taken = row ? Math.min(row.credits, order.credits) : 0;
+          if (taken) run('UPDATE users SET credits = credits - ? WHERE email = ?', taken, order.email);
+        }
+        run('UPDATE orders SET refunded_at = ? WHERE id = ?', iso(now), order.id);
+        run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, order.email ?? '(erased)', `refund ${order.id}: ${why.slice(0, 200)} (credits -${taken})`);
+        return { id: order.id, credits_taken: taken };
+      });
+    },
+    /** 6.8b: an account erased by an admin (a mailed request): as deleteAccount, logged. */
+    adminErase(admin, email, reason, now = Date.now()) {
+      const why = String(reason ?? '').trim();
+      if (!why) throw new Error('reason: required');
+      transaction(() => {
+        if (!one('SELECT 1 AS x FROM users WHERE email = ?', email)) throw new Error('no such account');
+        erase(email);
+        run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, email, `erase: ${why.slice(0, 200)}`);
+      });
+    },
+    /** 6.8b: the failed generations, newest first. */
+    failedJobs(limit = 100) {
+      return all("SELECT id, email, title, created, error FROM jobs WHERE status = 'failed' ORDER BY created DESC LIMIT ?", limit).map((row) => ({ ...row }));
     },
     /**
      * A consistent snapshot in `dir` (what ITSaNAS syncs, never the live

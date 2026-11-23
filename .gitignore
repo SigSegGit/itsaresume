@@ -17,3 +17,6 @@ config.local.toml
 
 # Python bytecode from the CI check scripts.
 __pycache__/
+
+# Local preview configurations (local paths)
+.claude/launch.json

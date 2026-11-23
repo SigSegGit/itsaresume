@@ -30,7 +30,7 @@ async function showPacks() {
   const data = await api(`api/packs${currency ? `?currency=${encodeURIComponent(currency)}` : ''}`);
   currency = data.currency;
   packs = data.packs;
-  const money = (value) => new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, maximumFractionDigits: value % 1 ? 2 : 0 }).format(value);
+  const money = (value) => globalThis.i18n.money(value, data.currency);
   const select = $('currency');
   select.replaceChildren(...data.currencies.map((code) => Object.assign(el('option', code), { value: code, selected: code === data.currency })));
   select.onchange = () => { currency = select.value; showPacks(); };

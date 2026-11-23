@@ -44,6 +44,16 @@ test('i18n: t() gives the English, or the French key, and fills {vars}', () => {
   assert.equal(load().i18n.t('{price} par CV', { price: '1 €' }), '1 € par CV');
 });
 
+test('i18n: a price is written as the page language writes it', () => {
+  const en = load({ languages: ['en'] }).i18n;
+  const fr = load().i18n;
+  assert.equal(en.money(1.49, 'EUR'), '€1.49');
+  assert.equal(en.money(5.49, 'USD'), '$5.49');
+  assert.match(fr.money(1.49, 'EUR'), /^1,49\s€$/);
+  assert.match(fr.money(1.49, 'CHF'), /^1[.,]49\sCHF$/);
+  assert.equal(en.money(39, 'GBP'), '£39');
+});
+
 const { EN } = load().i18n;
 const squash = (text) => text.trim().replace(/\s+/g, ' ');
 
@@ -81,6 +91,12 @@ test('i18n: every key a page marks has its English', () => {
     for (const match of text.matchAll(/\bt\((['"])((?:(?!\1)[^\\]|\\.)*)\1/g)) {
       if (!EN[match[2]]) missing.push(`${name}: t(${match[2]})`);
     }
+    // A key kept apart from its t() call (a pattern table) says so: `// i18n: key`.
+    for (const line of text.split('\n').filter((row) => row.includes('// i18n: key'))) {
+      for (const match of line.matchAll(/'((?:[^'\\]|\\.)*)'/g)) {
+        if (!EN[match[1]]) missing.push(`${name}: key ${match[1]}`);
+      }
+    }
   }
   assert.deepEqual(missing, []);
 });
@@ -90,7 +106,7 @@ test('i18n: no French left outside t() in the page scripts', () => {
   for (const { name, text } of files('.js')) {
     if (name.endsWith('i18n.js') || name.endsWith('sample-offer.js')) continue;
     text.split('\n').forEach((line, index) => {
-      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+      if (/^\s*(\/\/|\*|\/\*)/.test(line) || line.includes('// i18n: key')) return;
       const bare = line.replace(/\bt\((['"])(?:(?!\1)[^\\]|\\.)*\1/g, 't()');
       for (const match of bare.matchAll(/(['`])((?:(?!\1)[^\\]|\\.)*)\1/g)) {
         if (/[éèêàùçôî«»]|\b(?:le|la|les|des|une|pour|avec|sans|aucun|votre|ton|ta|tes)\b/i.test(match[2].replace(/\$\{[^}]*\}/g, ''))) left.push(`${name}:${index + 1}: ${match[2].slice(0, 60)}`);

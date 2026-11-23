@@ -223,7 +223,8 @@ property it proves.
 | every verdict the profile gives passes validation | — |
 | an evidence-blocked skill meets nothing through the profile, an owner link or a bullet | Coverage (2.28b): an evidence-blocked skill meets nothing |
 | the model's yes through a lab skill the concept holds, no word of it named, stays yes (not to verify) | Equivalents: a concept holding the model's skills grounds its yes |
-| the model's yes through a notions-level skill gives way to the profile's well-held one | Coverage (2.28b): a yes through lab or notions skills gives way |
+| the model's yes through a notions-level skill gives way to the profile's well-held one | — |
+| the model's yes through a lab skill gives way to the profile's well-held one | Coverage (2.28b): a yes through lab or notions skills gives way |
 | an evidence-blocked skill does not join a met requirement as another name of its concept | Equivalents: evidence-blocked skills are not equivalents |
 | the model's yes through a lab skill its concept holds stays yes, its lab level said by the score | — |
 | a quality word beside a product name the lexicon lacks keeps the requirement scored | Quality: a product name keeps a requirement scored |
@@ -408,6 +409,7 @@ property it proves.
 |---|---|
 | i18n: the language is ?lang= > the stored choice > the browser > French | — |
 | i18n: t() gives the English, or the French key, and fills {vars} | — |
+| i18n: a price is written as the page language writes it | — |
 | i18n: no empty English, nothing but text written into the page | — |
 | i18n: every page loads i18n.js before its own scripts | — |
 | i18n: every key a page marks has its English | — |
@@ -685,6 +687,11 @@ property it proves.
 | admin routes: no admin configured, nobody is one | Admin: no admin configured, nobody is one |
 | admin: the snapshots are listed with their size and the newest is verified | — |
 | admin page: served, and its script only sets textContent | — |
+| admin: a refund is recorded once, takes back the credits left, and leaves the revenue | Admin: an order is refunded once; Admin: a refunded order leaves the revenue |
+| admin: an erasure from the page needs a reason, keeps the orders without the address, and is logged | — |
+| admin: the orders as CSV, one line each, a formula never starting a cell | Admin: a CSV cell never opens as a formula |
+| admin: the failed jobs, newest first, with their error | — |
+| admin routes (6.8b): orders, CSV, refund, erase and failed jobs, admins only | Admin: an admin does not erase itself |
 
 ## `test/premium-e2e.test.js`
 
@@ -820,6 +827,7 @@ property it proves.
 | the reference experience is the most developed | Rules: the reference is the most developed |
 | a lab skill says so on the CV | Rules: a lab skill is labelled on the CV |
 | a requirement met by lab skills only counts half | Rules: a lab-only match counts half; Rules: normalisation scores with the lab skills |
+| a yes resting on notions-level skills only is adjacent | 2.60: a yes on notions-level skills only is adjacent |
 | a never-claimed skill stays a gap and may not be written | Rules: a never-claimed requirement stays no; Rules: a never-claimed name may not be written |
 | qualification: every must met, some missed, or the core missed | Rules: a never-claimed must is a core gap; Rules: a lab-only must is a core gap; Rules: half the musts missed is the core missed; Rules: only must-haves are the core |
 | the normalised fit carries the qualification | Rules: half the musts missed is the core missed; Rules: the fit carries the qualification |
@@ -1052,6 +1060,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**703 tests, 556 of them covered by at least one sabotage defence.**
+**711 tests, 560 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words
