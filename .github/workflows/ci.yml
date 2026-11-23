@@ -109,15 +109,31 @@ jobs:
   # removed. Doing this in CI turns "sabotage-verified" from a claim made once
   # into a property checked on every change (docs/TESTING.md). Only the
   # plans whose files the change touches (the changes job).
-  sabotage:
+  # 2026-11-23: in three shards side by side (sabotage.py --shard), the
+  # required check `sabotage` is the job that sums them up.
+  sabotage-shard:
     needs: changes
-    if: needs.changes.outputs.sabotage_root != ''
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
     steps:
       - uses: actions/checkout@v7
+        if: needs.changes.outputs.sabotage_root != ''
       - uses: dtolnay/rust-toolchain@stable
+        if: needs.changes.outputs.sabotage_root != ''
       - uses: Swatinem/rust-cache@v2
-      - run: python3 scripts/sabotage.py ${{ needs.changes.outputs.sabotage_root }}
+        if: needs.changes.outputs.sabotage_root != ''
+      - run: python3 scripts/sabotage.py --shard ${{ matrix.shard }}/3 ${{ needs.changes.outputs.sabotage_root }}
+        if: needs.changes.outputs.sabotage_root != ''
+
+  sabotage:
+    needs: sabotage-shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.sabotage-shard.result }}" = success
 
   # The image, with the real claude CLI inside: see scripts/docker-smoke.sh
   # for what each check proves.
@@ -141,6 +157,7 @@ jobs:
       - run: bash scripts/test-merge-when-green.sh
       - run: bash scripts/test-ci-changes.sh
       - run: bash scripts/test-sabotage-select.sh
+      - run: bash scripts/test-sabotage-shard.sh
       - run: python3 scripts/sabotage-select.py --check
       - run: python3 scripts/check-workflow.py
       - run: bash scripts/test-check-workflow.sh
@@ -197,22 +214,39 @@ jobs:
   # Break each defence in scripts/sabotage/*.json, check its tests go red,
   # restore it byte for byte. A test that stays green is decoration. Only the
   # plans whose files the change touches (the changes job).
-  cv-sabotage:
+  # 2026-11-23: 22 to 24 minutes in one job; four shards side by side now,
+  # and the required check `cv-sabotage` sums them up.
+  cv-sabotage-shard:
     needs: changes
-    if: needs.changes.outputs.sabotage_cv != ''
     defaults:
       run:
         working-directory: cv
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v7
+        if: needs.changes.outputs.sabotage_cv != ''
       - uses: actions/setup-node@v7
+        if: needs.changes.outputs.sabotage_cv != ''
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: cv/package-lock.json
       - uses: actions/setup-python@v7
+        if: needs.changes.outputs.sabotage_cv != ''
         with:
           python-version: '3.12'
       - run: npm ci
-      - run: python scripts/sabotage.py ${{ needs.changes.outputs.sabotage_cv }}
+        if: needs.changes.outputs.sabotage_cv != ''
+      - run: python scripts/sabotage.py --shard ${{ matrix.shard }}/4 ${{ needs.changes.outputs.sabotage_cv }}
+        if: needs.changes.outputs.sabotage_cv != ''
+
+  cv-sabotage:
+    needs: cv-sabotage-shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.cv-sabotage-shard.result }}" = success

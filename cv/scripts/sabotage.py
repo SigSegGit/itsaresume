@@ -57,6 +57,7 @@ import io
 import json
 import os
 import shutil
+import re
 import subprocess
 import sys
 import tempfile
@@ -84,6 +85,18 @@ def red_tests(output):
             if len(parts) == 2:
                 names.add(parts[1].split(' # ')[0].strip())
     return sorted(names)
+
+
+def skipped_tests(output):
+    """Names of tests the TAP reporter marks skipped (``ok 3 - name # SKIP why``)."""
+    names = set()
+    for line in output.splitlines():
+        line = line.strip()
+        if line.startswith('ok ') and '# SKIP' in line.upper():
+            parts = line.split(' - ', 1)
+            if len(parts) == 2:
+                names.add(parts[1].split(' # ')[0].strip())
+    return names
 
 
 def matches(expected, red):
@@ -190,6 +203,12 @@ def verify(defence, command, root):
         return 'fail', 'the sabotaged tree did not build; the plan is broken:\n' + tail
 
     missing = [e for e in expect if not matches(e, red)]
+    # 2026-11-23: on Windows, a test skipped there (POSIX shell fakes) cannot
+    # go red; that defence is the Linux CI's to verify, never counted ok.
+    # Anywhere else a skipped test is a failure: it would hide a decorative one.
+    skipped = skipped_tests(output)
+    if missing and os.name == 'nt' and all(name in skipped for name in missing):
+        return 'skip', 'skipped on Windows (%s): the Linux CI verifies it' % ', '.join(missing)
     if missing:
         return 'fail', ('stayed green: %s (red were: %s)'
                         % (', '.join(missing), ', '.join(red) or 'none'))
@@ -198,19 +217,44 @@ def verify(defence, command, root):
 
 def main():
     root = repo_root()
-    paths = sys.argv[1:] or sorted(glob.glob(os.path.join(root, 'scripts', 'sabotage', '*.json')))
+    # --shard I/N (or SABOTAGE_SHARD=I/N): only the defences whose rank, over
+    # the plans given, is I modulo N; the CI runs N shards side by side
+    # (2026-11-23: one cv-sabotage job took 22-24 minutes).
+    args = sys.argv[1:]
+    shard = os.environ.get('SABOTAGE_SHARD', '')
+    if '--shard' in args:
+        at = args.index('--shard')
+        shard = args[at + 1] if at + 1 < len(args) else ''
+        del args[at:at + 2]
+    index, count = 0, 1
+    if shard:
+        match = re.match(r'^(\d+)/(\d+)$', shard)
+        if not match or int(match.group(2)) < 1 or int(match.group(1)) >= int(match.group(2)):
+            print('REFUSED: --shard takes I/N with 0 <= I < N, not %r' % shard)
+            return 2
+        index, count = int(match.group(1)), int(match.group(2))
+    paths = args or sorted(glob.glob(os.path.join(root, 'scripts', 'sabotage', '*.json')))
 
     plans = []
     for plan_path in paths:
         with io.open(plan_path, encoding='utf-8') as handle:
             plans.append((plan_path, json.load(handle)))
 
+    rank = 0
+    for _, plan in plans:
+        mine = {}
+        for name, defence in plan['defences'].items():
+            if rank % count == index:
+                mine[name] = defence
+            rank += 1
+        plan['defences'] = mine
     total = sum(len(plan['defences']) for _, plan in plans)
     if total == 0:
         print('0 defences declared: nothing is sabotage-verified yet.')
         return 0
 
     failures = 0
+    skips = 0
     checked = set()
     for plan_path, plan in plans:
         command = plan['command']
@@ -225,6 +269,8 @@ def main():
             print('test binary after the first red one.')
             return 1
 
+        if not plan['defences']:
+            continue
         if tuple(command) in checked:
             code, output = 0, ''
         else:
@@ -238,10 +284,12 @@ def main():
 
         for name, defence in plan['defences'].items():
             verdict, detail = verify(defence, command, root)
-            print('%-4s %s' % ('ok' if verdict == 'ok' else 'FAIL', name))
+            print('%-4s %s' % ({'ok': 'ok', 'skip': 'skip'}.get(verdict, 'FAIL'), name))
             for line in detail.splitlines():
                 print('       ' + line)
-            if verdict != 'ok':
+            if verdict == 'skip':
+                skips += 1
+            elif verdict != 'ok':
                 failures += 1
 
     # The tree after every restore, once per command (each plan restores its
@@ -257,7 +305,9 @@ def main():
     if failures:
         print('%d of %d defence(s) are NOT verified by any test.' % (failures, total))
         return 1
-    print('%d defence(s) verified: each turned its named tests red, every file was' % total)
+    if skips:
+        print('%d defence(s) skipped on Windows: NOT verified here; the Linux CI verifies them.' % skips)
+    print('%d defence(s) verified: each turned its named tests red, every file was' % (total - skips))
     print('restored from a byte-for-byte copy, and the tree is green again.')
     return 0
 
