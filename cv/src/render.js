@@ -59,7 +59,10 @@ const FOOTER_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2
  * the body keeps all its height.
  */
 function addFooter(zip, text) {
-  const run = `<w:r><w:rPr><w:color w:val="7F7F7F"/><w:sz w:val="13"/><w:szCs w:val="13"/></w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`;
+  // 2.63: the body's font, or Word falls back to the styles' Times New Roman.
+  const font = /w:ascii="([^"]+)"/.exec(zip.file('word/document.xml').asText())?.[1];
+  const fonts = font ? `<w:rFonts w:ascii="${font}" w:hAnsi="${font}" w:cs="${font}"/>` : '';
+  const run = `<w:r><w:rPr>${fonts}<w:color w:val="7F7F7F"/><w:sz w:val="13"/><w:szCs w:val="13"/></w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`;
   zip.file('word/footer1.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ${FOOTER_NS}><w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>${run}</w:p></w:ftr>`);
   const rels = 'word/_rels/document.xml.rels';
   zip.file(rels, zip.file(rels).asText().replace('</Relationships>', '<Relationship Id="rIdMadeBy" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/></Relationships>'));
