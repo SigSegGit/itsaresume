@@ -138,9 +138,24 @@ Sign-up mails a one-time link (`#verify=…`, a day); until it is followed,
 buying and generating answer 403 "confirm your e-mail address first" and the
 account page shows a banner with "send the link again" (3 an hour). An
 erased account's links go with it, so an address signed up again is never
-confirmed by an old link. On with `PREMIUM_REQUIRE_VERIFIED=1`, once a real
-mailer sends the links: the demo's mailer only writes them to the console
-and the outbox, and would lock every visitor out.
+confirmed by an old link. On by itself once a real mailer is set (below;
+`PREMIUM_REQUIRE_VERIFIED=0` turns it off, `=1` forces it): the demo's
+mailer only writes the links to the console and the outbox, and would lock
+every visitor out.
+
+### Mail (6.11)
+
+`premium/smtp.js`, no dependency. In `$DATA/.env`, never the repository:
+
+```
+PREMIUM_SMTP_URL=smtps://user%40example.org:password@smtp.example.org:465
+PREMIUM_MAIL_FROM=itsaresume <noreply@example.org>
+```
+
+`smtps://` is TLS from the start (465); `smtp://` (587) must offer STARTTLS
+before the password is sent, unless the relay is on this machine
+(127.0.0.1, localhost). One plain-text UTF-8 mail per link; an address with
+a line break is refused, the subject is encoded. Unset: the demo outbox.
 
 ## Languages (6.7)
 
@@ -157,7 +172,7 @@ The English privacy notice says the French one prevails.
 - **Paid mode**: the demo sends it to the router; production needs an API key
   and an adapter in `server.js` `main()` (the `analyse` dependency).
 - **Real payment** (a payment provider's checkout and webhook), invoices, VAT,
-  terms of sale, a real mailer, then `PREMIUM_REQUIRE_VERIFIED=1` (privacy
+  terms of sale, the SMTP account (6.11, which turns the address check on) (privacy
   notice, export, deletion, retention, password reset, rate limits and the
   address confirmation are done: 6.4c, 6.4d, 6.9, 6.10).
 - **LinkedIn**: the add-on reads only the page the user opened, on their

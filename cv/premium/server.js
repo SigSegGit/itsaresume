@@ -17,6 +17,13 @@ import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENC
 import { redact } from './preview.js';
 import { createLimiter, clientIp, DEFAULT_LIMITS } from './limits.js';
 import { CHAT } from './accounts.js';
+import { mailerFromEnv } from './smtp.js';
+
+/** 6.11: the address check is on with a real mailer, unless PREMIUM_REQUIRE_VERIFIED=0. */
+export function verificationRequired(env) {
+  if (env.PREMIUM_REQUIRE_VERIFIED === '0') return false;
+  return env.PREMIUM_REQUIRE_VERIFIED === '1' || Boolean(env.PREMIUM_SMTP_URL);
+}
 
 export { CHAT };
 
@@ -512,11 +519,11 @@ async function main(argv) {
       return profile;
     },
     demoPaid: true,
-    // 6.10: on once a real mailer sends the links (the demo's only writes them to the outbox).
-    requireVerified: process.env.PREMIUM_REQUIRE_VERIFIED === '1',
+    // 6.10/6.11: on once a real mailer sends the links (the demo's only writes them to the outbox).
+    requireVerified: verificationRequired(process.env),
     contact: option('contact', process.env.PREMIUM_CONTACT ?? ''),
-    // Demo mail: the console and the data folder's outbox.
-    mailer: { send: async (mail) => {
+    // 6.11: SMTP when PREMIUM_SMTP_URL is set; else the demo mail, the console and the data folder's outbox.
+    mailer: mailerFromEnv(process.env) ?? { send: async (mail) => {
       appendFileSync(join(data, 'outbox.log'), `${new Date().toISOString()} to ${mail.to}: ${mail.subject}\n${mail.text}\n\n`);
       console.log(`[mail to ${mail.to}] ${mail.text}`);
     } },

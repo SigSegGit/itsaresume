@@ -1826,6 +1826,14 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   `test/premium-verify.test.js`; the sabotage found two tests too weak (a
   second use tried at the expiry instant; an erased link tried before the
   address signed up again), both fixed.
+- [x] **6.11** (2026-11-23) A real mailer: `premium/smtp.js` (no
+  dependency; implicit TLS or STARTTLS, AUTH PLAIN, refused in clear to
+  another host; UTF-8 base64 body, RFC 2047 subject, an address with a line
+  break refused). `PREMIUM_SMTP_URL` + `PREMIUM_MAIL_FROM` in `$DATA/.env`;
+  set, the address check is on (`verificationRequired`,
+  `PREMIUM_REQUIRE_VERIFIED=0` to keep it off). Tests
+  `test/premium-smtp.test.js` (a fake SMTP server), 7 defences. Left to the
+  owner: an SMTP account (his provider) in the VM's `.env`.
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it

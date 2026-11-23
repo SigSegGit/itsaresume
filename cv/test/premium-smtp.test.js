@@ -99,3 +99,11 @@ test('the configuration: smtps or smtp with a sender; nothing set is the demo ou
   assert.deepEqual([plain.secure, plain.port], [false, 587]);
   assert.equal(typeof mailerFromEnv({ PREMIUM_SMTP_URL: 'smtps://u:p@mail.example.org', PREMIUM_MAIL_FROM: 'a@b.org' }).send, 'function');
 });
+
+test('with a real mailer the address check is on by default; PREMIUM_REQUIRE_VERIFIED=0 turns it off', async () => {
+  const { verificationRequired } = await import('../premium/server.js');
+  assert.equal(verificationRequired({}), false, 'the demo outbox: off');
+  assert.equal(verificationRequired({ PREMIUM_REQUIRE_VERIFIED: '1' }), true);
+  assert.equal(verificationRequired({ PREMIUM_SMTP_URL: 'smtps://u:p@mail.example.org' }), true);
+  assert.equal(verificationRequired({ PREMIUM_SMTP_URL: 'smtps://u:p@mail.example.org', PREMIUM_REQUIRE_VERIFIED: '0' }), false);
+});

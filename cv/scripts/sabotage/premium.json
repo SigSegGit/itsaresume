@@ -39,7 +39,9 @@
     "test/premium-admin.test.js",
     "premium/limits.js",
     "test/premium-limits.test.js",
-    "test/premium-verify.test.js"
+    "test/premium-verify.test.js",
+    "premium/smtp.js",
+    "test/premium-smtp.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -403,6 +405,62 @@
       "dead": "",
       "expect": [
         "a new link on request, for the logged-in address only, limited"
+      ]
+    },
+    "SMTP (6.11): no password in clear to another host": {
+      "file": "premium/smtp.js",
+      "live": "if (!encrypted && !config.local) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "the password never crosses an unencrypted link to another host: no STARTTLS, no AUTH"
+      ]
+    },
+    "SMTP (6.11): an address with a line break is refused": {
+      "file": "premium/smtp.js",
+      "live": "if (!ADDRESS.test(address)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a header line cannot be injected through the address or the subject"
+      ]
+    },
+    "SMTP (6.11): a header is encoded unless plain ASCII": {
+      "file": "premium/smtp.js",
+      "live": "return /^[\\x20-\\x7e]*$/.test(text) ? text",
+      "dead": "return true ? text",
+      "expect": [
+        "a header line cannot be injected through the address or the subject"
+      ]
+    },
+    "SMTP (6.11): a refused reply is an error": {
+      "file": "premium/smtp.js",
+      "live": "if (!codes.includes(reply.code)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a refused recipient is an error that names the reply"
+      ]
+    },
+    "SMTP (6.11): the body is UTF-8 base64 with CRLF": {
+      "file": "premium/smtp.js",
+      "live": "String(text).replace(/\\r?\\n/g, '\\r\\n')",
+      "dead": "String(text)",
+      "expect": [
+        "a mail goes out: EHLO, AUTH PLAIN, MAIL FROM, RCPT TO, DATA dot-stuffed, UTF-8 subject encoded"
+      ]
+    },
+    "SMTP (6.11): a real mailer turns the address check on": {
+      "file": "premium/server.js",
+      "live": "|| Boolean(env.PREMIUM_SMTP_URL);",
+      "dead": "|| false;",
+      "expect": [
+        "with a real mailer the address check is on by default; PREMIUM_REQUIRE_VERIFIED=0 turns it off"
+      ]
+    },
+    "SMTP (6.11): PREMIUM_REQUIRE_VERIFIED=0 turns it off": {
+      "file": "premium/server.js",
+      "live": "if (env.PREMIUM_REQUIRE_VERIFIED === '0') return false;",
+      "dead": "",
+      "expect": [
+        "with a real mailer the address check is on by default; PREMIUM_REQUIRE_VERIFIED=0 turns it off"
       ]
     }
   }
