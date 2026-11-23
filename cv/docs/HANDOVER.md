@@ -1842,6 +1842,21 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   already ranked by code (rankBullets); headline and summary assembled from
   the profile's own sentences, the model picking among them. (d) Target: one
   Haiku call of 5k tokens at most, under 10 s.
+  Measured 2026-11-23 (no model call): the analysis prompt is 6.0-6.6k
+  tokens (compact: 5.3-5.9k) on the 10 real offers; the skills list is
+  3.2k of it (108 lines), the offer under 1k. Headline and summary are
+  already picked by id (titles, profile facts). A "slim" catalogue of the
+  lexicon's shortlist only is **refused**: on the 31 real runs it holds 45 %
+  of the skills the analyses kept (29 % of the CV's skills section; misses:
+  architecture, aws, prod-ops, prometheus, grafana, puppet...). Shrinking
+  the prompt needs another cut (the terms in `[covers: …]`, or a lexicon
+  that knows those skills), measured the same way.
+  Haiku vs Sonnet on the 10 real offers (2026-11-23, "Comparer"): 95.2 %
+  requirement agreement, same qualification on all, mean score gap 1.5,
+  one retry on Haiku (Safran). `ITSACV_PROMPT=compact,shortlist,noterms`
+  now leaves the terms out (-1.45k tokens); its replay on the 10 offers is
+  **next** (a scripted run of both stalled after 6 offers: run it from the
+  page's "Comparer", one batch at a time).
 - [x] **2.60** (seen in the 2026-11-19 comparison, done 2026-11-23) A
   "yes" whose skills are all at notions level (GCP "montée en compétence"
   read yes by Groq) is now adjacent, said in the repairs ("its skills are at

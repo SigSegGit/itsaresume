@@ -1537,8 +1537,8 @@
     },
     "Prompt options: each one only when named (or by default)": {
       "file": "src/prompt.js",
-      "live": "shortlist: asked.includes('shortlist') };",
-      "dead": "shortlist: true };",
+      "live": "shortlist: asked.includes('shortlist'), ...(asked.includes('noterms')",
+      "dead": "shortlist: true, ...(asked.includes('noterms')",
       "expect": [
         "the compact catalogue and the shortlist are on by default (2.25d); ITSACV_PROMPT=off is the whole prompt"
       ]
@@ -1701,6 +1701,14 @@
       "dead": "if (false) {",
       "expect": [
         "a yes resting on notions-level skills only is adjacent"
+      ]
+    },
+    "6.5: the terms leave only when noterms is asked": {
+      "file": "src/prompt.js",
+      "live": "const terms = (noTerms ? [] : skill.terms ?? []).filter(",
+      "dead": "const terms = ([]).filter(",
+      "expect": [
+        "ITSACV_PROMPT=noterms leaves the skills' terms out of the catalogue (6.5)"
       ]
     }
   }

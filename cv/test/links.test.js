@@ -147,3 +147,19 @@ test('the compact catalogue and the shortlist are on by default (2.25d); ITSACV_
   assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact, shortlist' }), { compact: true, shortlist: true });
   assert.throws(() => promptOptions({ ITSACV_PROMPT: 'tiny' }), /ITSACV_PROMPT/);
 });
+
+// 6.5 (2026-11-23): the skills' terms are 1.45k of the prompt's ~5.5k tokens;
+// "noterms" leaves them out, for measuring a smaller prompt on the real offers.
+test('ITSACV_PROMPT=noterms leaves the skills\' terms out of the catalogue (6.5)', async () => {
+  const { promptOptions } = await import('../src/prompt.js');
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact,shortlist,noterms' }), { compact: true, shortlist: true, noTerms: true });
+  const profile = JSON.parse(readFileSync(new URL('./fixtures/profile.synthetic.json', import.meta.url), 'utf8'));
+  const skill = profile.skills.find((entry) => entry.id === 'postgresql');
+  skill.terms = ['bases relationnelles'];
+  for (const compact of [true, false]) {
+    assert.match(buildPrompt(profile, 'SRE', [], { compact }).prompt, /bases relationnelles/);
+    const without = buildPrompt(profile, 'SRE', [], { compact, noTerms: true }).prompt;
+    assert.doesNotMatch(without, /bases relationnelles/);
+    assert.match(without, /postgresql — PostgreSQL/);
+  }
+});
