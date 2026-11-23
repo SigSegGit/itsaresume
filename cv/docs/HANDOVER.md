@@ -1834,6 +1834,14 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   `PREMIUM_REQUIRE_VERIFIED=0` to keep it off). Tests
   `test/premium-smtp.test.js` (a fake SMTP server), 7 defences. Left to the
   owner: an SMTP account (his provider) in the VM's `.env`.
+- [x] **6.12** (2026-11-23) Real payment through Stripe Checkout
+  (`premium/stripe.js`, no dependency), off until `STRIPE_SECRET_KEY` and
+  `STRIPE_WEBHOOK_SECRET`: the order waits in `pending_orders` and is
+  credited only by the signed `checkout.session.completed` (paid, the
+  order's amount and currency, once); `checkout.html?order=` shows the
+  receipt and waits for the credits. Tests `test/premium-stripe.test.js`,
+  8 defences. Left to the owner: his Stripe account, the webhook endpoint,
+  invoices, VAT, terms of sale (`premium/README.md`).
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it

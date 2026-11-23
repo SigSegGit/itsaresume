@@ -157,6 +157,24 @@ before the password is sent, unless the relay is on this machine
 (127.0.0.1, localhost). One plain-text UTF-8 mail per link; an address with
 a line break is refused, the subject is encoded. Unset: the demo outbox.
 
+### Payment (6.12)
+
+`premium/stripe.js`, no dependency, off until both keys are in `$DATA/.env`:
+
+```
+STRIPE_SECRET_KEY=sk_live_...        # or sk_test_... to try it
+STRIPE_WEBHOOK_SECRET=whsec_...      # the endpoint's signing secret
+```
+
+In Stripe's dashboard, one webhook endpoint `https://<host>/<prefix>/api/stripe/webhook`
+for `checkout.session.completed`. "Payer par carte" opens Stripe Checkout
+for the pack's price in the page's currency; the order waits
+(`pending_orders`, gone after a week unpaid) and is credited only by the
+signed event (5 minutes, HMAC-SHA256), when paid and for the order's own
+amount and currency, once (Stripe's retries change nothing). Back from
+Stripe, `checkout.html?order=…` shows the receipt and updates itself until
+the credits arrive. Without the keys: the simulated payment, unchanged.
+
 ## Languages (6.7)
 
 French and English on every page (`web/i18n.js`, shared with the generator):
@@ -171,8 +189,8 @@ The English privacy notice says the French one prevails.
   costs ~$0.01 per run) or the local model.
 - **Paid mode**: the demo sends it to the router; production needs an API key
   and an adapter in `server.js` `main()` (the `analyse` dependency).
-- **Real payment** (a payment provider's checkout and webhook), invoices, VAT,
-  terms of sale, the SMTP account (6.11, which turns the address check on) (privacy
+- **Real payment**: the code is there (6.12, Stripe); left: the owner's
+  Stripe account and keys, invoices, VAT, terms of sale, the SMTP account (6.11, which turns the address check on) (privacy
   notice, export, deletion, retention, password reset, rate limits and the
   address confirmation are done: 6.4c, 6.4d, 6.9, 6.10).
 - **LinkedIn**: the add-on reads only the page the user opened, on their
