@@ -1846,6 +1846,12 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   architecture, aws, prod-ops, prometheus, grafana, puppet...). Shrinking
   the prompt needs another cut (the terms in `[covers: …]`, or a lexicon
   that knows those skills), measured the same way.
+  Haiku vs Sonnet on the 10 real offers (2026-11-23, "Comparer"): 95.2 %
+  requirement agreement, same qualification on all, mean score gap 1.5,
+  one retry on Haiku (Safran). `ITSACV_PROMPT=compact,shortlist,noterms`
+  now leaves the terms out (-1.45k tokens); its replay on the 10 offers is
+  **next** (a scripted run of both stalled after 6 offers: run it from the
+  page's "Comparer", one batch at a time).
 - [x] **2.60** (seen in the 2026-11-19 comparison, done 2026-11-23) A
   "yes" whose skills are all at notions level (GCP "montée en compétence"
   read yes by Groq) is now adjacent, said in the repairs ("its skills are at
