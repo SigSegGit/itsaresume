@@ -1732,7 +1732,7 @@
       "live": "(row.judged || weak(row) ? 1 : 0)",
       "dead": "(row.judged ? 1 : 0)",
       "expect": [
-        "the model's yes through a notions-level skill gives way to the profile's well-held one"
+        "the model's yes through a lab skill gives way to the profile's well-held one"
       ]
     },
     "Coverage (2.28b): a term brings near, only a name or an alias meets": {

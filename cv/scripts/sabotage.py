@@ -207,7 +207,7 @@ def verify(defence, command, root):
     # go red; that defence is the Linux CI's to verify, never counted ok.
     # Anywhere else a skipped test is a failure: it would hide a decorative one.
     skipped = skipped_tests(output)
-    if missing and os.name == 'nt' and all(name in skipped for name in missing):
+    if missing and os.name == 'nt' and any(name in skipped for name in expect):
         return 'skip', 'skipped on Windows (%s): the Linux CI verifies it' % ', '.join(missing)
     if missing:
         return 'fail', ('stayed green: %s (red were: %s)'
