@@ -154,8 +154,8 @@
     },
     "Models: Claude in light use is the default": {
       "file": "src/models.js",
-      "live": "const chosen = (claude.available && light && 'claude') || (gemini.available && 'gemini')",
-      "dead": "const chosen = (gemini.available && 'gemini')",
+      "live": "|| (claude.available && light && 'claude') || (gemini.available && 'gemini')",
+      "dead": "|| (gemini.available && 'gemini')",
       "expect": [
         "Claude in light use is the default; the local model up says whether it must load first"
       ]
