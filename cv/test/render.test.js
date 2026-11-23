@@ -141,3 +141,15 @@ test('made_by needs both languages, and never names what the profile never claim
   assert.deepEqual(validateProfile({ ...base, made_by: { fr: 'Adapté par itsaresume', en: 'Tailored by itsaresume' } }).errors, []);
   assert.ok(validateProfile({ ...base, made_by: { fr: 'Adapté par itsaresume' } }).errors.some((error) => /made_by/.test(error)));
 });
+
+// 2.63 (seen on the RTE CV, 2026-11-23): the footer run had no font, so Word
+// fell back to the styles' Times New Roman; it takes the body's font.
+test('the made_by footer is in the body font, in both templates', () => {
+  const owner = { ...profile(), made_by: { fr: 'Adapté par itsaresume', en: 'Tailored by itsaresume' } };
+  for (const template of ['two-column', 'linear']) {
+    const zip = new PizZip(render(buildModel(owner, analysis()), { template }));
+    const body = /w:ascii="([^"]+)"/.exec(zip.file('word/document.xml').asText())[1];
+    assert.equal(body, 'Calibri');
+    assert.match(zip.file('word/footer1.xml').asText(), new RegExp(`<w:rFonts w:ascii="${body}" w:hAnsi="${body}" w:cs="${body}"/>`), template);
+  }
+});

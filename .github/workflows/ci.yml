@@ -191,6 +191,15 @@ jobs:
         if: needs.changes.outputs.cv == 'true'
       - run: npm test
         if: needs.changes.outputs.cv == 'true'
+      # 6.3: the add-on, zipped, downloadable from the run's page.
+      - run: node tools/pack-addon.mjs dist
+        if: needs.changes.outputs.cv == 'true' && matrix.os == 'ubuntu-latest'
+      - uses: actions/upload-artifact@v7
+        if: needs.changes.outputs.cv == 'true' && matrix.os == 'ubuntu-latest'
+        with:
+          name: itsaresume-addon
+          path: cv/dist/itsaresume-addon-*.zip
+          if-no-files-found: error
 
   cv-catalogue:
     needs: changes

@@ -134,6 +134,15 @@ it); `serve --invite-only` lets only such a page generate. On the VM:
 /data/out --public-host "$CV_HOST"`, and `CV_FLAGS=--invite-only` in the
 data directory's `.env` turns invite-only on.
 
+## Browser add-on
+
+`addon/` sends the offer on screen (or the selected text) to the page in
+one click; in service mode it carries the visitor's own profile, kept in the
+browser only. Each CI run on `main` attaches it zipped
+(`itsaresume-addon`, built by `node tools/pack-addon.mjs`: the manifest and
+only the files it reaches). Unzip it, then Chrome → `chrome://extensions` →
+Developer mode → "Load unpacked" on the folder.
+
 ## Stack
 
 | Layer | Choice |
