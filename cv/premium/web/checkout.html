@@ -14,7 +14,7 @@
     <a class="brand" href="./">itsaresume</a>
     <nav id="lang-switch"><a href="./#pricing" data-i18n>Tarifs</a><a href="./#account" data-i18n>Mon compte</a></nav>
   </header>
-  <p class="demo-banner" data-i18n>Démo : paiement simulé. Aucune carte n'est demandée ni débitée.</p>
+  <p class="demo-banner simulated-only" data-i18n>Démo : paiement simulé. Aucune carte n'est demandée ni débitée.</p>
 
   <section class="checkout">
     <div id="pay" class="card">
@@ -25,17 +25,19 @@
         <tr class="total"><td data-i18n>Total TTC</td><td id="total"></td></tr>
       </table>
       <p class="muted" data-i18n>Crédits sans date limite, utilisables pour tout CV depuis votre compte. Un crédit est rendu si la génération échoue.</p>
-      <p class="muted" data-i18n>En production : paiement par carte chez le prestataire de paiement, facture envoyée par e-mail, TVA du pays de l'acheteur incluse.</p>
+      <p class="muted simulated-only" data-i18n>En production : paiement par carte chez le prestataire de paiement, facture envoyée par e-mail, TVA du pays de l'acheteur incluse.</p>
       <label class="consent"><input id="terms" type="checkbox"> <span data-i18n>J'accepte les conditions de vente et je demande l'exécution immédiate du service (droit de rétractation éteint à la première génération).</span></label>
       <div class="row">
         <a href="./#pricing" data-i18n>Retour</a>
-        <button id="confirm" type="button" disabled data-i18n>Payer (simulé)</button>
+        <button id="confirm" type="button" disabled><span class="simulated-only" data-i18n>Payer (simulé)</span><span class="card-only" hidden data-i18n>Payer par carte</span></button>
       </div>
       <p id="error" class="error" hidden></p>
     </div>
 
     <div id="receipt" class="card receipt" hidden>
-      <h2 data-i18n>Paiement accepté (simulé)</h2>
+      <h2 class="simulated-only" data-i18n>Paiement accepté (simulé)</h2>
+      <h2 class="card-only" hidden data-i18n>Paiement accepté</h2>
+      <p id="waiting" class="muted" hidden data-i18n>Paiement en cours de confirmation… la page se met à jour d'elle-même.</p>
       <table class="summary">
         <tr><td data-i18n>Commande</td><td id="r-id"></td></tr>
         <tr><td data-i18n>Lot</td><td id="r-pack"></td></tr>

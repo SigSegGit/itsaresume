@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS chat (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEX
 CREATE INDEX IF NOT EXISTS jobs_email ON jobs (email, created);
 CREATE INDEX IF NOT EXISTS chat_email ON chat (email, id);
 CREATE INDEX IF NOT EXISTS orders_email ON orders (email);
+CREATE TABLE IF NOT EXISTS pending_orders (
+  id TEXT PRIMARY KEY, email TEXT NOT NULL, pack TEXT NOT NULL, credits INTEGER NOT NULL, currency TEXT NOT NULL,
+  price REAL NOT NULL, at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS admin_log (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, admin TEXT NOT NULL, target TEXT NOT NULL, action TEXT NOT NULL);
 `;
 
@@ -113,7 +116,7 @@ export function createStore(file) {
     return Boolean(user) && timingSafeEqual(given, Buffer.from(user.hash, 'hex'));
   };
   const erase = (email) => {
-    for (const table of ['users', 'sessions', 'resets', 'verifications', 'jobs', 'chat']) run(`DELETE FROM ${table} WHERE email = ?`, email);
+    for (const table of ['users', 'sessions', 'resets', 'verifications', 'jobs', 'chat', 'pending_orders']) run(`DELETE FROM ${table} WHERE email = ?`, email);
     // The orders stay for the accounts, pseudonymous.
     run('UPDATE orders SET email = NULL WHERE email = ?', email);
   };
@@ -158,12 +161,40 @@ export function createStore(file) {
       user.chat ??= { left: CHAT.free, history: [] };
       return order;
     },
+    /** 6.12: an order waiting for its payment (Stripe); no credit yet. */
+    pendingOrder(user, packId, local = null) {
+      const pack = PACKS.find((entry) => entry.id === packId);
+      if (!pack) throw new Error('pack: unknown');
+      const order = { id: randomBytes(6).toString('hex'), email: user.email, pack: pack.id, credits: pack.credits, currency: local?.currency ?? 'EUR', price: local?.price ?? pack.price, simulated: false, pending: true, at: new Date().toISOString() };
+      run('INSERT INTO pending_orders (id, email, pack, credits, currency, price, at) VALUES (?, ?, ?, ?, ?, ?, ?)', order.id, order.email, order.pack, order.credits, order.currency, order.price, order.at);
+      return order;
+    },
+    /** 6.12: the paid event: credits the order once, for its own amount and currency. */
+    confirmPaid(id, { amount, currency }) {
+      return transaction(() => {
+        const pending = one('SELECT * FROM pending_orders WHERE id = ?', String(id));
+        if (!pending) {
+          if (one('SELECT 1 AS x FROM orders WHERE id = ?', String(id))) return 'already';
+          throw new Error('no such order');
+        }
+        if (Number(amount) !== Math.round(pending.price * 100) || String(currency).toUpperCase() !== pending.currency) throw new Error('amount or currency differs from the order');
+        const user = one('SELECT email, credits FROM users WHERE email = ?', pending.email);
+        if (!user) throw new Error('no such account');
+        credit(user, pending.credits);
+        run('UPDATE users SET chat_left = COALESCE(chat_left, ?) WHERE email = ?', CHAT.free, pending.email);
+        run('INSERT INTO orders (id, email, pack, credits, currency, price, simulated, at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', pending.id, pending.email, pending.pack, pending.credits, pending.currency, pending.price, new Date().toISOString());
+        run('DELETE FROM pending_orders WHERE id = ?', pending.id);
+        return 'credited';
+      });
+    },
     hasPaid(user) {
       return Boolean(one('SELECT 1 AS x FROM orders WHERE email = ? LIMIT 1', user.email));
     },
     order(user, id) {
       const row = one('SELECT * FROM orders WHERE id = ? AND email = ?', id, user.email);
-      return row ? { ...row, simulated: Boolean(row.simulated) } : null;
+      if (row) return { ...row, simulated: Boolean(row.simulated), pending: false };
+      const pending = one('SELECT * FROM pending_orders WHERE id = ? AND email = ?', id, user.email);
+      return pending ? { ...pending, simulated: false, pending: true } : null;
     },
     debit(user) {
       if (user.credits < 1) throw new Error('no credit left');
@@ -272,6 +303,8 @@ export function createStore(file) {
         run('DELETE FROM jobs WHERE created < ?', iso(now - RETENTION.cvDays * DAY));
         for (const { email } of all('SELECT email FROM users WHERE COALESCE(last_login, created_at) < ?', iso(now - RETENTION.inactiveDays * DAY))) erase(email);
         run('DELETE FROM orders WHERE at < ?', iso(now - RETENTION.orderYears * 366 * DAY));
+        // 6.12: an order never paid goes after a week.
+        run('DELETE FROM pending_orders WHERE at < ?', iso(now - 7 * DAY));
       });
     },
     /** Counts, for tests and the founder's view. */

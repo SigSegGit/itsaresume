@@ -39,7 +39,12 @@
     "test/premium-admin.test.js",
     "premium/limits.js",
     "test/premium-limits.test.js",
-    "test/premium-verify.test.js"
+    "test/premium-verify.test.js",
+    "premium/smtp.js",
+    "test/premium-smtp.test.js",
+    "premium/stripe.js",
+    "test/premium-stripe.test.js",
+    "premium/web/checkout.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -403,6 +408,127 @@
       "dead": "",
       "expect": [
         "a new link on request, for the logged-in address only, limited"
+      ]
+    },
+    "SMTP (6.11): no password in clear to another host": {
+      "file": "premium/smtp.js",
+      "live": "if (!encrypted && !config.local) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "the password never crosses an unencrypted link to another host: no STARTTLS, no AUTH"
+      ]
+    },
+    "SMTP (6.11): an address with a line break is refused": {
+      "file": "premium/smtp.js",
+      "live": "if (!ADDRESS.test(address)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a header line cannot be injected through the address or the subject"
+      ]
+    },
+    "SMTP (6.11): a header is encoded unless plain ASCII": {
+      "file": "premium/smtp.js",
+      "live": "return /^[\\x20-\\x7e]*$/.test(text) ? text",
+      "dead": "return true ? text",
+      "expect": [
+        "a header line cannot be injected through the address or the subject"
+      ]
+    },
+    "SMTP (6.11): a refused reply is an error": {
+      "file": "premium/smtp.js",
+      "live": "if (!codes.includes(reply.code)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "a refused recipient is an error that names the reply"
+      ]
+    },
+    "SMTP (6.11): the body is UTF-8 base64 with CRLF": {
+      "file": "premium/smtp.js",
+      "live": "String(text).replace(/\\r?\\n/g, '\\r\\n')",
+      "dead": "String(text)",
+      "expect": [
+        "a mail goes out: EHLO, AUTH PLAIN, MAIL FROM, RCPT TO, DATA dot-stuffed, UTF-8 subject encoded"
+      ]
+    },
+    "SMTP (6.11): a real mailer turns the address check on": {
+      "file": "premium/server.js",
+      "live": "|| Boolean(env.PREMIUM_SMTP_URL);",
+      "dead": "|| false;",
+      "expect": [
+        "with a real mailer the address check is on by default; PREMIUM_REQUIRE_VERIFIED=0 turns it off"
+      ]
+    },
+    "SMTP (6.11): PREMIUM_REQUIRE_VERIFIED=0 turns it off": {
+      "file": "premium/server.js",
+      "live": "if (env.PREMIUM_REQUIRE_VERIFIED === '0') return false;",
+      "dead": "",
+      "expect": [
+        "with a real mailer the address check is on by default; PREMIUM_REQUIRE_VERIFIED=0 turns it off"
+      ]
+    },
+    "Stripe (6.12): a wrong signature is refused": {
+      "file": "premium/stripe.js",
+      "live": "if (!given.some((value) => value.length === expected.length && timingSafeEqual(value, expected))) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "the webhook signature: right secret and fresh only, the payload untouched",
+        "with Stripe: a forged, unpaid or wrong-amount event credits nothing"
+      ]
+    },
+    "Stripe (6.12): an old event is refused": {
+      "file": "premium/stripe.js",
+      "live": "if (Math.abs(now - t) > TOLERANCE_S) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "the webhook signature: right secret and fresh only, the payload untouched"
+      ]
+    },
+    "Stripe (6.12): the amount in cents": {
+      "file": "premium/stripe.js",
+      "live": "Math.round(Number(price) * 100)",
+      "dead": "Math.round(Number(price))",
+      "expect": [
+        "the checkout session: amount in minor units, the order as reference, the key as bearer"
+      ]
+    },
+    "Stripe (6.12): only a paid event credits": {
+      "file": "premium/server.js",
+      "live": "|| session.payment_status !== 'paid') return",
+      "dead": ") return",
+      "expect": [
+        "with Stripe: a forged, unpaid or wrong-amount event credits nothing"
+      ]
+    },
+    "Stripe (6.12): the amount must be the order's": {
+      "file": "premium/accounts.js",
+      "live": "if (Number(amount) !== Math.round(pending.price * 100) || String(currency).toUpperCase() !== pending.currency) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "with Stripe: a forged, unpaid or wrong-amount event credits nothing"
+      ]
+    },
+    "Stripe (6.12): credited once": {
+      "file": "premium/accounts.js",
+      "live": "        run('DELETE FROM pending_orders WHERE id = ?', pending.id);",
+      "dead": "",
+      "expect": [
+        "with Stripe: checkout sends to Stripe, the order waits, the paid event credits it once"
+      ]
+    },
+    "Stripe (6.12): the order waits for the payment": {
+      "file": "premium/server.js",
+      "live": "const order = store.pendingOrder(user, body.pack,",
+      "dead": "const order = store.buy(user, body.pack,",
+      "expect": [
+        "with Stripe: checkout sends to Stripe, the order waits, the paid event credits it once"
+      ]
+    },
+    "Stripe (6.12): no webhook without Stripe": {
+      "file": "premium/server.js",
+      "live": "if (!payments) throw new HttpError(404, 'not found');",
+      "dead": "",
+      "expect": [
+        "without Stripe the demo is unchanged: credits at once, simulated; no webhook route"
       ]
     }
   }

@@ -734,6 +734,28 @@ property it proves.
 | register: a few accounts per network address an hour | Limits: new accounts per network address |
 | the default limits are on without any option | Limits: past the max, refused |
 
+## `test/premium-smtp.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| a mail goes out: EHLO, AUTH PLAIN, MAIL FROM, RCPT TO, DATA dot-stuffed, UTF-8 subject encoded | SMTP (6.11): the body is UTF-8 base64 with CRLF |
+| a refused recipient is an error that names the reply | SMTP (6.11): a refused reply is an error |
+| the password never crosses an unencrypted link to another host: no STARTTLS, no AUTH | SMTP (6.11): no password in clear to another host |
+| a header line cannot be injected through the address or the subject | SMTP (6.11): an address with a line break is refused; SMTP (6.11): a header is encoded unless plain ASCII |
+| the configuration: smtps or smtp with a sender; nothing set is the demo outbox | — |
+| with a real mailer the address check is on by default; PREMIUM_REQUIRE_VERIFIED=0 turns it off | SMTP (6.11): a real mailer turns the address check on; SMTP (6.11): PREMIUM_REQUIRE_VERIFIED=0 turns it off |
+
+## `test/premium-stripe.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the webhook signature: right secret and fresh only, the payload untouched | Stripe (6.12): a wrong signature is refused; Stripe (6.12): an old event is refused |
+| the checkout session: amount in minor units, the order as reference, the key as bearer | Stripe (6.12): the amount in cents |
+| the configuration: both keys or none | — |
+| with Stripe: checkout sends to Stripe, the order waits, the paid event credits it once | Stripe (6.12): credited once; Stripe (6.12): the order waits for the payment |
+| with Stripe: a forged, unpaid or wrong-amount event credits nothing | Stripe (6.12): a wrong signature is refused; Stripe (6.12): only a paid event credits; Stripe (6.12): the amount must be the order's |
+| without Stripe the demo is unchanged: credits at once, simulated; no webhook route | Stripe (6.12): no webhook without Stripe |
+
 ## `test/premium-verify.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -1105,6 +1127,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**736 tests, 580 of them covered by at least one sabotage defence.**
+**748 tests, 590 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

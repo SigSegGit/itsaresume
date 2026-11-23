@@ -17,6 +17,14 @@ import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENC
 import { redact } from './preview.js';
 import { createLimiter, clientIp, DEFAULT_LIMITS } from './limits.js';
 import { CHAT } from './accounts.js';
+import { mailerFromEnv } from './smtp.js';
+import { stripeFromEnv } from './stripe.js';
+
+/** 6.11: the address check is on with a real mailer, unless PREMIUM_REQUIRE_VERIFIED=0. */
+export function verificationRequired(env) {
+  if (env.PREMIUM_REQUIRE_VERIFIED === '0') return false;
+  return env.PREMIUM_REQUIRE_VERIFIED === '1' || Boolean(env.PREMIUM_SMTP_URL);
+}
 
 export { CHAT };
 
@@ -85,16 +93,17 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null }) {
   // 6.9: attempts limited (limits.js); a refusal says when to come back.
   const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
   // 6.10: a link to this site as the visitor reached it (behind the proxy:
   // its scheme and the path prefix it strips).
-  const linkTo = (request, fragment) => {
+  const siteOf = (request) => {
     const proto = request.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
     const prefix = /^\/[a-z0-9-]{1,40}$/.test(request.headers['x-forwarded-prefix'] ?? '') ? request.headers['x-forwarded-prefix'] : '';
-    return `${proto}://${request.headers.host}${prefix}/#${fragment}`;
+    return `${proto}://${request.headers.host}${prefix}`;
   };
+  const linkTo = (request, fragment) => `${siteOf(request)}/#${fragment}`;
   const sendVerification = async (request, email) => {
     const token = store.verifyToken(email);
     if (!token) return;
@@ -208,7 +217,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     'GET /api/packs': (request, url) => {
       const asked = url.searchParams.get('currency');
       const currency = CURRENCIES[asked] ? asked : currencyFor(request.headers['accept-language']);
-      return { currency, symbol: CURRENCIES[currency].symbol, locale: CURRENCIES[currency].locale, currencies: Object.keys(CURRENCIES), packs: localPacks(currency), founder: costTable(), model: PAID_MODEL, run: RUN, cost_usd: costPerCv(PAID_MODEL), prices: API_PRICES, eur_per_usd: EUR_PER_USD, demo_paid: demoPaid };
+      return { currency, symbol: CURRENCIES[currency].symbol, locale: CURRENCIES[currency].locale, currencies: Object.keys(CURRENCIES), packs: localPacks(currency), founder: costTable(), model: PAID_MODEL, run: RUN, cost_usd: costPerCv(PAID_MODEL), prices: API_PRICES, eur_per_usd: EUR_PER_USD, demo_paid: demoPaid, card_payment: Boolean(payments) };
     },
     'POST /api/register': async (request) => {
       const body = await readJson(request);
@@ -366,8 +375,38 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         const currency = body.currency ?? 'EUR';
         if (!CURRENCIES[currency]) throw new Error('currency: unknown');
         const local = localPacks(currency).find((pack) => pack.id === body.pack);
+        if (payments) {
+          // 6.12: the order waits; Stripe's signed paid event credits it.
+          const order = store.pendingOrder(user, body.pack, local && { currency, price: local.price });
+          const session = await payments.checkout({ order, label: local?.label ?? order.pack, email: user.email, successUrl: `${siteOf(request)}/checkout.html?order=${order.id}`, cancelUrl: `${siteOf(request)}/#pricing` });
+          return { order, credits: user.credits, redirect: session.url };
+        }
         const order = store.buy(user, body.pack, local && { currency, price: local.price });
         return { order, credits: user.credits };
+      } catch (error) {
+        throw new HttpError(400, error.message);
+      }
+    },
+    // 6.12: Stripe's events, signed; only "checkout.session.completed" and paid credits.
+    'POST /api/stripe/webhook': async (request) => {
+      if (!payments) throw new HttpError(404, 'not found');
+      let size = 0;
+      const chunks = [];
+      for await (const chunk of request) {
+        size += chunk.length;
+        if (size > MAX_BODY) throw new HttpError(413, 'too large');
+        chunks.push(chunk);
+      }
+      let event;
+      try {
+        event = payments.verify(Buffer.concat(chunks).toString('utf8'), request.headers['stripe-signature']);
+      } catch (error) {
+        throw new HttpError(400, error.message);
+      }
+      const session = event?.data?.object ?? {};
+      if (event?.type !== 'checkout.session.completed' || session.payment_status !== 'paid') return { received: true };
+      try {
+        return { received: true, order: store.confirmPaid(session.client_reference_id, { amount: session.amount_total, currency: session.currency }) };
       } catch (error) {
         throw new HttpError(400, error.message);
       }
@@ -512,11 +551,13 @@ async function main(argv) {
       return profile;
     },
     demoPaid: true,
-    // 6.10: on once a real mailer sends the links (the demo's only writes them to the outbox).
-    requireVerified: process.env.PREMIUM_REQUIRE_VERIFIED === '1',
+    // 6.10/6.11: on once a real mailer sends the links (the demo's only writes them to the outbox).
+    requireVerified: verificationRequired(process.env),
     contact: option('contact', process.env.PREMIUM_CONTACT ?? ''),
-    // Demo mail: the console and the data folder's outbox.
-    mailer: { send: async (mail) => {
+    // 6.11: SMTP when PREMIUM_SMTP_URL is set; else the demo mail, the console and the data folder's outbox.
+    // 6.12: Stripe when its two keys are set; else the simulated payment.
+    payments: stripeFromEnv(process.env),
+    mailer: mailerFromEnv(process.env) ?? { send: async (mail) => {
       appendFileSync(join(data, 'outbox.log'), `${new Date().toISOString()} to ${mail.to}: ${mail.subject}\n${mail.text}\n\n`);
       console.log(`[mail to ${mail.to}] ${mail.text}`);
     } },
