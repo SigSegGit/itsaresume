@@ -348,6 +348,21 @@
     "Les questions ne sont disponibles que sur la page locale.": "The questions are available on the local page only.",
     "Aucune question : le profil couvre ce que les offres demandent.": "No question: the profile covers what the offers ask for.",
     "{n} ko": "{n} KB",
+    "Exporter en CSV (comptabilité)": "Export as CSV (accounting)",
+    "Un remboursement est enregistré ici et reprend les crédits restants ; le remboursement d'argent se fait chez le prestataire de paiement.": "A refund is recorded here and takes back the credits left; the money itself is refunded at the payment provider.",
+    "Générations en échec": "Failed generations",
+    "Effacer un compte (demande reçue par e-mail)": "Erase an account (a request received by e-mail)",
+    "Effacer définitivement": "Erase for good",
+    "Date": "Date",
+    "Remboursée": "Refunded",
+    "(effacée)": "(erased)",
+    "simulé": "simulated",
+    "Rembourser": "Refund",
+    "Motif du remboursement (journalisé) :": "Reason for the refund (logged):",
+    "Remboursement enregistré : {n} crédit(s) repris.": "Refund recorded: {n} credit(s) taken back.",
+    "Aucune.": "None.",
+    "Effacer définitivement le compte {email} ? Ses commandes restent, sans son adresse.": "Erase the account {email} for good? Its orders stay, without the address.",
+    "Compte effacé : {email}.": "Account erased: {email}.",
   };
 
   const store = (() => {

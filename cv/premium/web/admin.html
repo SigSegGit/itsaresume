@@ -49,6 +49,26 @@
       <p id="c-result" class="muted" hidden></p>
     </section>
     <section class="card">
+      <h2 data-i18n>Commandes</h2>
+      <p><a href="api/admin/orders.csv" download="orders.csv" data-i18n>Exporter en CSV (comptabilité)</a></p>
+      <p class="muted" data-i18n>Un remboursement est enregistré ici et reprend les crédits restants ; le remboursement d'argent se fait chez le prestataire de paiement.</p>
+      <table id="orders" class="summary"></table>
+      <p id="o-result" class="muted" hidden></p>
+    </section>
+    <section class="card">
+      <h2 data-i18n>Générations en échec</h2>
+      <ul id="failed"></ul>
+    </section>
+    <section class="card">
+      <h2 data-i18n>Effacer un compte (demande reçue par e-mail)</h2>
+      <form id="erase" class="row">
+        <input id="e-email" type="email" placeholder="Adresse e-mail" data-i18n-attr="placeholder" required>
+        <input id="e-reason" placeholder="Motif (obligatoire, journalisé)" data-i18n-attr="placeholder" maxlength="200" required>
+        <button type="submit" class="danger" data-i18n>Effacer définitivement</button>
+      </form>
+      <p id="e-result" class="muted" hidden></p>
+    </section>
+    <section class="card">
       <h2 data-i18n>Journal des actions admin</h2>
       <ul id="log"></ul>
     </section>

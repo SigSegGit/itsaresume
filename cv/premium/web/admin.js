@@ -56,6 +56,43 @@ async function showUsers(query = '') {
     users.map((row) => [row.email, row.credits, row.orders, row.jobs, row.has_profile ? t('oui') : t('non'), when(row.created_at), when(row.last_login)]));
 }
 
+async function showOrders() {
+  const { orders } = await api('api/admin/orders');
+  const header = el('tr');
+  header.append(...[t('Commande'), t('Date'), t('Adresse'), t('Lot'), t('Montant'), t('Remboursée'), ''].map((name) => el('th', name)));
+  $('orders').replaceChildren(header, ...orders.map((order) => {
+    const row = el('tr');
+    row.append(...[order.id, when(order.at), order.email ?? t('(effacée)'), order.pack, `${order.price} ${order.currency}${order.simulated ? ` (${t('simulé')})` : ''}`, when(order.refunded_at)].map((cell) => el('td', cell)));
+    const cell = el('td');
+    if (!order.refunded_at) {
+      const button = el('button', t('Rembourser'));
+      button.type = 'button';
+      button.className = 'secondary';
+      button.addEventListener('click', async () => {
+        const reason = window.prompt(t('Motif du remboursement (journalisé) :'));
+        if (!reason) return;
+        const say = $('o-result');
+        say.hidden = false;
+        try {
+          const done = await api('api/admin/refund', { id: order.id, reason });
+          say.textContent = t('Remboursement enregistré : {n} crédit(s) repris.', { n: done.credits_taken });
+          await Promise.all([showOrders(), showStats(), showUsers($('q').value.trim()), showLog()]);
+        } catch (error) {
+          say.textContent = error.message;
+        }
+      });
+      cell.append(button);
+    }
+    row.append(cell);
+    return row;
+  }));
+}
+
+async function showFailed() {
+  const { jobs } = await api('api/admin/failed');
+  $('failed').replaceChildren(...(jobs.length ? jobs.map((job) => el('li', `${when(job.created)} — ${job.email} — ${job.title || t('Offre')} : ${job.error ?? '?'}`)) : [el('li', t('Aucune.'))]));
+}
+
 async function showLog() {
   const { log } = await api('api/admin/log');
   $('log').replaceChildren(...log.map((row) => el('li', `${when(row.at)} — ${row.admin} → ${row.target} : ${row.action}`)));
@@ -70,7 +107,23 @@ async function start() {
     return;
   }
   $('admin').hidden = false;
-  await Promise.all([showSnapshots(), showUsers(), showLog()]);
+  await Promise.all([showSnapshots(), showUsers(), showLog(), showOrders(), showFailed()]);
+  $('erase').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const email = $('e-email').value.trim();
+    if (!window.confirm(t('Effacer définitivement le compte {email} ? Ses commandes restent, sans son adresse.', { email }))) return;
+    const say = $('e-result');
+    say.hidden = false;
+    try {
+      await api('api/admin/erase', { email, reason: $('e-reason').value });
+      say.textContent = t('Compte effacé : {email}.', { email });
+      $('e-email').value = '';
+      $('e-reason').value = '';
+      await Promise.all([showUsers($('q').value.trim()), showLog(), showStats(), showOrders()]);
+    } catch (error) {
+      say.textContent = error.message;
+    }
+  });
   $('search').addEventListener('submit', (event) => {
     event.preventDefault();
     showUsers($('q').value.trim());

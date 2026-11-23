@@ -51,7 +51,8 @@ class HttpError extends Error {
 
 const send = (response, status, body, headers = {}) => {
   response.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers });
-  response.end(JSON.stringify(body));
+  // 6.8b: a string is sent as is (the orders CSV), anything else as JSON.
+  response.end(typeof body === 'string' ? body : JSON.stringify(body));
 };
 
 async function readJson(request) {
@@ -126,6 +127,39 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       const body = await readJson(request);
       try {
         return { credits: store.adjustCredits(user.email, String(body.email ?? '').trim().toLowerCase(), body.delta, body.reason) };
+      } catch (error) {
+        throw new HttpError(error.message === 'no such account' ? 404 : 400, error.message);
+      }
+    },
+    'GET /api/admin/orders': (request) => {
+      admin(request);
+      return { orders: store.adminOrders() };
+    },
+    'GET /api/admin/orders.csv': (request) => {
+      admin(request);
+      return [store.ordersCsv(), { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': 'attachment; filename="orders.csv"' }, 200];
+    },
+    'GET /api/admin/failed': (request) => {
+      admin(request);
+      return { jobs: store.failedJobs() };
+    },
+    'POST /api/admin/refund': async (request) => {
+      const user = admin(request);
+      const body = await readJson(request);
+      try {
+        return store.refundOrder(user.email, String(body.id ?? ''), body.reason);
+      } catch (error) {
+        throw new HttpError({ 'no such order': 404, 'already refunded': 409 }[error.message] ?? 400, error.message);
+      }
+    },
+    'POST /api/admin/erase': async (request) => {
+      const user = admin(request);
+      const body = await readJson(request);
+      const email = String(body.email ?? '').trim().toLowerCase();
+      if (email === user.email) throw new HttpError(400, 'an admin does not erase its own account here');
+      try {
+        store.adminErase(user.email, email, body.reason);
+        return { erased: email };
       } catch (error) {
         throw new HttpError(error.message === 'no such account' ? 404 : 400, error.message);
       }
