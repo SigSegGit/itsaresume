@@ -2193,6 +2193,7 @@
         "the page is measured without the made_by footer, the final CV keeps it"
       ]
     },
+    "Footer (2.63): the footer is in the body font": {"file": "src/render.js", "live": "const fonts = font ? `<w:rFonts", "dead": "const fonts = false ? `<w:rFonts", "expect": ["the made_by footer is in the body font, in both templates"]},
     "Offer files (2.53): a docx offer is its paragraphs": {
       "file": "src/sources.js",
       "live": "  if (kind === '.docx') return docxText(buffer);",
