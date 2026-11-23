@@ -46,8 +46,13 @@ link_modules() {  # the worktree's cv/node_modules is the clone's (a junction on
     fi
 }
 
+# SABOTAGE_ONLY=I reruns one shard of the N (a failed one, its log kept).
+shards=$(seq 0 $((jobs - 1)))
+[ -n "${SABOTAGE_ONLY:-}" ] && shards=$SABOTAGE_ONLY
+logs="${TMPDIR:-/tmp}/sabotage-logs"
+mkdir -p "$logs"
 pids=()
-for i in $(seq 0 $((jobs - 1))); do
+for i in $shards; do
     dir="$work/w$i"
     git -C "$root" worktree add --detach -q "$dir" HEAD || { echo "sabotage-parallel: worktree $i failed"; exit 1; }
     if [ "$tree" = cv ]; then
@@ -60,14 +65,25 @@ wait "${pids[@]}"
 
 failed=0
 verified=0
-for i in $(seq 0 $((jobs - 1))); do
+for i in $shards; do
     code=$(cat "$work/code$i" 2>/dev/null || echo 1)
+    # A shard red with no FAIL verdict (its baseline or its last run red) is
+    # a test that a loaded machine upset (seen 2026-11-23 with 10 shards):
+    # run alone once more, and say so.
+    if [ "$code" != 0 ] && ! grep -q "^FAIL" "$work/out$i.txt"; then
+        cp "$work/out$i.txt" "$logs/$tree-$i-of-$jobs.loaded.log"
+        echo "[$tree $i] red without a FAIL verdict under load (log: $logs/$tree-$i-of-$jobs.loaded.log); run again alone"
+        (cd "$work/w$i/$sub" && CARGO_TARGET_DIR="$work/target$i" "$py" scripts/sabotage.py --shard "$i/$jobs" "$@" > "$work/out$i.txt" 2>&1; echo $? > "$work/code$i")
+        code=$(cat "$work/code$i" 2>/dev/null || echo 1)
+    fi
     grep -E "^(FAIL|skip|REFUSED|BASELINE|AFTER RESTORE)" "$work/out$i.txt" | sed "s/^/[$tree $i] /"
     n=$(sed -n 's/^\([0-9]*\) defence(s) verified.*/\1/p' "$work/out$i.txt")
     verified=$((verified + ${n:-0}))
     if [ "$code" != 0 ]; then
         failed=1
-        grep -q "^FAIL" "$work/out$i.txt" || tail -15 "$work/out$i.txt" | sed "s/^/[$tree $i] /"
+        cp "$work/out$i.txt" "$logs/$tree-$i-of-$jobs.log"
+        grep -q "^FAIL" "$work/out$i.txt" || grep -E "^(BASELINE|AFTER RESTORE)|^not ok|^# Subtest" "$work/out$i.txt" | grep -B1 -A0 "^not ok\|^BASELINE\|^AFTER" | head -12 | sed "s/^/[$tree $i] /"
+        echo "[$tree $i] full log: $logs/$tree-$i-of-$jobs.log (rerun: SABOTAGE_JOBS=$jobs SABOTAGE_ONLY=$i bash scripts/sabotage-parallel.sh $tree ...)"
     fi
 done
 if [ "$failed" -ne 0 ]; then
