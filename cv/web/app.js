@@ -86,7 +86,7 @@ function applyModels(models) {
 }
 
 /** 4.12: the templates and palettes as a person reads them. */
-const STYLE_LABELS = { 'two-column': t('Deux colonnes'), marine: t('Marine'), bordeaux: 'Bordeaux', foret: t('Forêt'), ardoise: t('Ardoise'), graphite: 'Graphite' };
+const STYLE_LABELS = { 'two-column': t('Deux colonnes'), linear: t('Linéaire'), marine: t('Marine'), bordeaux: 'Bordeaux', foret: t('Forêt'), ardoise: t('Ardoise'), graphite: 'Graphite' };
 
 /** 2.47: the public page's pitch to a recruiter: whose CV, his role, a sample. */
 function showPitch(profile) {

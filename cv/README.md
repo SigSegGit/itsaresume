@@ -62,7 +62,7 @@ src/               the generator, one module per concern (table in docs/ARCHITEC
   server.js, serve.js, view.js, intake.js   the web page, local or public
 web/               the page itself: index.html, app.js, style.css (no build)
 data/esco.json     ESCO concepts (ICT, computers, transversal), FR/EN labels, built by tools/esco.py
-templates/         the owner's two-column Word design, holding tags only
+templates/         the owner's two-column and linear Word designs, tags only
 tools/             word.ps1 (Word through COM), pdftext.py (PDF read-back), esco.py (data/esco.json),
                    templatize.py (made the template once, from the owner's CV)
 test/              node:test suites; fixtures/ holds a fictitious profile and a fake page
