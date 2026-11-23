@@ -65,4 +65,5 @@ export const DEFAULT_LIMITS = {
   forgot: { max: 3, windowMs: 3600000 },
   forgotIp: { max: 10, windowMs: 3600000 },
   register: { max: 5, windowMs: 3600000 },
+  verify: { max: 3, windowMs: 3600000 },
 };

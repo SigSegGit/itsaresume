@@ -375,6 +375,11 @@
     "portable éteint ou hors ligne": "laptop off or offline",
     "chargé à la demande, 1 à 2 min de plus": "loaded on demand, 1 to 2 min more",
     "routeur injoignable": "router unreachable",
+    "Adresse confirmée, merci.": "Address confirmed, thank you.",
+    "Un nouveau lien vient de partir (valable 24 h).": "A new link is on its way (valid 24 h).",
+    "Confirmez votre adresse e-mail.": "Confirm your e-mail address.",
+    "Un lien vous a été envoyé à l’inscription ; il est nécessaire pour acheter et générer.": "A link was sent to you at sign-up; it is needed to buy and to generate.",
+    "Renvoyer le lien": "Send the link again",
   };
 
   const store = (() => {
@@ -486,6 +491,7 @@
     "wrong password": "mot de passe incorrect",
     "password: 8 characters at least": "mot de passe : 8 caractères au moins",
     "internal error": "erreur interne",
+    "confirm your e-mail address first": "confirmez d’abord votre adresse e-mail (lien envoyé par e-mail)",
   };
   /** A server's error message in the page's language (unknown ones as they are). */
   function serverText(message) {

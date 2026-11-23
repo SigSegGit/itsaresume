@@ -89,6 +89,11 @@
     </form>
 
     <div id="dashboard" hidden>
+      <div id="verify-banner" class="card notice" hidden>
+        <p><b data-i18n>Confirmez votre adresse e-mail.</b> <span data-i18n>Un lien vous a été envoyé à l’inscription ; il est nécessaire pour acheter et générer.</span></p>
+        <button id="resend" type="button" class="secondary" data-i18n>Renvoyer le lien</button>
+        <p id="verify-msg" class="muted"></p>
+      </div>
       <div class="card row spread">
         <span><span data-i18n>Connecté :</span> <b id="me-email"></b></span>
         <span class="credits"><b id="me-credits">0</b> <span data-i18n>crédit(s)</span></span>

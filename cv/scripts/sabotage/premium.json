@@ -38,7 +38,8 @@
     "premium/restore-check.js",
     "test/premium-admin.test.js",
     "premium/limits.js",
-    "test/premium-limits.test.js"
+    "test/premium-limits.test.js",
+    "test/premium-verify.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -353,6 +354,55 @@
       "expect": [
         "limiter: max hits per window, per key; then refused with the seconds left",
         "the default limits are on without any option"
+      ]
+    },
+    "Verify: nothing is bought before the address is confirmed": {
+      "file": "premium/server.js",
+      "live": "    'POST /api/checkout': async (request) => {\n      const user = account(request);\n      verified(user);",
+      "dead": "    'POST /api/checkout': async (request) => {\n      const user = account(request);",
+      "expect": [
+        "sign-up mails a confirmation link; until it is followed, nothing is bought"
+      ]
+    },
+    "Verify: nothing is generated before the address is confirmed": {
+      "file": "premium/server.js",
+      "live": "    'POST /api/generate': async (request) => {\n      const user = account(request);\n      verified(user);",
+      "dead": "    'POST /api/generate': async (request) => {\n      const user = account(request);",
+      "expect": [
+        "generation waits for the confirmation too; without the option nothing waits"
+      ]
+    },
+    "Verify: a link works once": {
+      "file": "premium/accounts.js",
+      "live": "      run('DELETE FROM verifications WHERE key = ?', key);",
+      "dead": "",
+      "expect": [
+        "store: a confirmation link works once, within a day, for its own address",
+        "sign-up mails a confirmation link; until it is followed, nothing is bought"
+      ]
+    },
+    "Verify: a link lives a day": {
+      "file": "premium/accounts.js",
+      "live": "now - found.at >= VERIFY_MS ||",
+      "dead": "",
+      "expect": [
+        "store: a confirmation link works once, within a day, for its own address"
+      ]
+    },
+    "Verify: an erased account takes its links": {
+      "file": "premium/accounts.js",
+      "live": "'resets', 'verifications', 'jobs'",
+      "dead": "'resets', 'jobs'",
+      "expect": [
+        "store: an erased account takes its links with it"
+      ]
+    },
+    "Verify: new links are limited": {
+      "file": "premium/server.js",
+      "live": "      allow('verify', user.email);",
+      "dead": "",
+      "expect": [
+        "a new link on request, for the logged-in address only, limited"
       ]
     }
   }
