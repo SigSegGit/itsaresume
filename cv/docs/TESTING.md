@@ -475,6 +475,7 @@ property it proves.
 | itsacv invite --usage reads the QA log of --out | Invite usage: the CLI reads the QA log |
 | a live label is unique: a second invitation with it is refused until the first is revoked | Invite: a live label is unique |
 | invites.json is 0600 even over a stale world-readable temporary file | Invite: the file is the owner's alone |
+| §9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over | Invites (§9): a held lock makes the writer wait, then give up; Invites (§9): a stale lock is taken over; Invites (§9): the lock is released |
 
 ## `test/layout.test.js`
 
@@ -734,6 +735,14 @@ property it proves.
 | register: a few accounts per network address an hour | Limits: new accounts per network address |
 | the default limits are on without any option | Limits: past the max, refused |
 
+## `test/premium-orders.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the account lists its own orders, newest first; a receipt per paid order, text, in the page language | Orders (6.13): the account's orders are its own; Orders (6.13): a demo order's receipt says no money was taken |
+| a receipt: a refunded order says it, a pending one has none | Orders (6.13): a refunded order's receipt says so |
+| a pending order (Stripe not yet paid) has no receipt | Orders (6.13): a receipt only for the account's own paid order |
+
 ## `test/premium-smtp.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -755,6 +764,9 @@ property it proves.
 | with Stripe: checkout sends to Stripe, the order waits, the paid event credits it once | Stripe (6.12): credited once; Stripe (6.12): the order waits for the payment |
 | with Stripe: a forged, unpaid or wrong-amount event credits nothing | Stripe (6.12): a wrong signature is refused; Stripe (6.12): only a paid event credits; Stripe (6.12): the amount must be the order's |
 | without Stripe the demo is unchanged: credits at once, simulated; no webhook route | Stripe (6.12): no webhook without Stripe |
+| 6.14: a refund made at Stripe takes back the credits left, once; an unknown or partial refund changes nothing | Stripe (6.14): only a full refund is automatic; Stripe (6.14): a refund counts once; Stripe (6.14): the paid event keeps the payment reference |
+| 6.14: an expired Checkout drops its pending order; a paid one is never dropped | Stripe (6.14): an expired Checkout drops only a pending order |
+| 6.14: a delayed payment method (async_payment_succeeded) credits as a card does | Stripe (6.14): a delayed method's paid event credits |
 
 ## `test/premium-verify.test.js`
 
@@ -1127,6 +1139,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**748 tests, 590 of them covered by at least one sabotage defence.**
+**755 tests, 597 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

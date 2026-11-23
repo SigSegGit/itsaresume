@@ -19,6 +19,7 @@ import { createLimiter, clientIp, DEFAULT_LIMITS } from './limits.js';
 import { CHAT } from './accounts.js';
 import { mailerFromEnv } from './smtp.js';
 import { stripeFromEnv } from './stripe.js';
+import { receiptText } from './receipt.js';
 
 /** 6.11: the address check is on with a real mailer, unless PREMIUM_REQUIRE_VERIFIED=0. */
 export function verificationRequired(env) {
@@ -263,6 +264,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         credits: user.credits,
         profile: user.profile ? { name: user.profile.identity?.name ?? user.profile.name, experiences: user.profile.experiences?.length ?? 0 } : null,
         jobs: user.jobs.map(({ page, ...job }) => job),
+        orders: store.ordersOf(user),
         demo_paid: demoPaid,
         paid: store.hasPaid(user),
         admin: isAdmin(user),
@@ -403,13 +405,20 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       } catch (error) {
         throw new HttpError(400, error.message);
       }
-      const session = event?.data?.object ?? {};
-      if (event?.type !== 'checkout.session.completed' || session.payment_status !== 'paid') return { received: true };
+      const object = event?.data?.object ?? {};
       try {
-        return { received: true, order: store.confirmPaid(session.client_reference_id, { amount: session.amount_total, currency: session.currency }) };
+        // 6.14: a delayed method (SEPA...) is paid later, by its own event.
+        if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event?.type) && object.payment_status === 'paid') {
+          return { received: true, order: store.confirmPaid(object.client_reference_id, { amount: object.amount_total, currency: object.currency, ref: object.payment_intent }) };
+        }
+        // 6.14: a Checkout left unpaid expires (24 h at most): its order goes.
+        if (event?.type === 'checkout.session.expired') return { received: true, order: store.dropPending(object.client_reference_id) };
+        // 6.14: a full refund made at Stripe takes back the credits left; a partial one is the owner's call.
+        if (event?.type === 'charge.refunded' && object.refunded === true) return { received: true, order: store.refundPaid(object.payment_intent) };
       } catch (error) {
         throw new HttpError(400, error.message);
       }
+      return { received: true };
     },
     'POST /api/preview': async (request) => {
       const user = account(request);
@@ -484,6 +493,17 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         // The privacy page names the configured contact (never written in the repository).
         if (url.pathname === '/privacy.html') return response.end(body.toString('utf8').replaceAll('{{contact}}', contact.replace(/[<>&"]/g, '') || 'à compléter / to be completed'));
         return response.end(body);
+      }
+      // 6.13: a paid order's receipt, the account's own only.
+      const receipt = /^\/api\/orders\/([0-9a-f]{12})\/receipt$/.exec(url.pathname);
+      if (request.method === 'GET' && receipt) {
+        const found = store.order(account(request), receipt[1]);
+        if (!found || found.pending) throw new HttpError(404, 'no such order');
+        const en = url.searchParams.get('lang') === 'en';
+        return send(response, 200, receiptText(found, en ? 'en' : 'fr'), {
+          'content-type': 'text/plain; charset=utf-8',
+          'content-disposition': `attachment; filename="itsaresume-${en ? 'receipt' : 'recu'}-${found.id}.txt"`,
+        });
       }
       const order = /^\/api\/orders\/([0-9a-f]{12})$/.exec(url.pathname);
       if (request.method === 'GET' && order) {

@@ -122,6 +122,20 @@ async function showMe() {
     } else li.append(el('span', job.status === 'failed' ? t(' — échec, crédit rendu') : t(' — en cours…'), 'muted'));
     return li;
   }));
+  // 6.13: the account's orders, each with its receipt.
+  $('no-orders').hidden = me.orders.length > 0;
+  $('orders').replaceChildren(...me.orders.map((order) => {
+    const li = el('li');
+    const day = new Date(order.at).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR');
+    li.append(el('span', `${day} — ${t('{count} crédits', { count: order.credits })} — ${globalThis.i18n.money(order.price, order.currency)}`));
+    if (order.simulated) li.append(el('span', t(' (démonstration)'), 'muted'));
+    if (order.refunded_at) li.append(el('span', t(' — remboursée'), 'muted'));
+    const link = el('a', t('Reçu'));
+    link.href = `api/orders/${encodeURIComponent(order.id)}/receipt${lang === 'en' ? '?lang=en' : ''}`;
+    link.download = '';
+    li.append(el('span', ' '), link);
+    return li;
+  }));
   if (me.jobs.some((job) => job.status === 'running')) setTimeout(showMe, 3000);
 }
 

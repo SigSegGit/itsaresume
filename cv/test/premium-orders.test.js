@@ -55,6 +55,7 @@ test('the account lists its own orders, newest first; a receipt per paid order, 
     assert.match(en.headers.get('content-disposition'), /itsaresume-receipt-/);
 
     const other = await register('b@example.org');
+    assert.deepEqual((await call('/api/me', { token: other })).json.orders, [], 'never the orders of another account');
     assert.equal((await call(`/api/orders/${first.id}/receipt`, { token: other })).status, 404, 'never another account\'s');
     assert.equal((await call(`/api/orders/${first.id}/receipt`)).status, 401);
   } finally {
