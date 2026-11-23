@@ -1710,6 +1710,22 @@
       "expect": [
         "ITSACV_PROMPT=noterms leaves the skills' terms out of the catalogue (6.5)"
       ]
+    },
+    "6.5: Haiku is the default while light": {
+      "file": "src/models.js",
+      "live": "const chosen = (haiku.available && haikuLight && 'haiku') ||",
+      "dead": "const chosen = (false && haikuLight && 'haiku') ||",
+      "expect": [
+        "6.5: Haiku is offered when a backend is named claude-haiku, and is the default while light"
+      ]
+    },
+    "6.5: Haiku near its limit gives way to Sonnet": {
+      "file": "src/models.js",
+      "live": "const haikuLight = haikuBackend?.state !== 'limited' && [undefined, 'allowed'].includes(haikuBackend?.usage);",
+      "dead": "const haikuLight = true;",
+      "expect": [
+        "6.5: Haiku is offered when a backend is named claude-haiku, and is the default while light"
+      ]
     }
   }
 }
