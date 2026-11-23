@@ -172,11 +172,15 @@ test('OpenAI with no credits is said so, and stays off after the hour', () => {
   assert.doesNotMatch(menu.options.openai.note, /limite/);
 });
 
-test('6.5: Haiku is offered when a backend is named claude-haiku, never the default', () => {
+// 6.5 (measured 2026-11-23 on the 10 real offers: 95.2 % agreement with
+// Sonnet, same qualification on all): Haiku first while the subscription is light.
+test('6.5: Haiku is offered when a backend is named claude-haiku, and is the default while light', () => {
   const haiku = { name: 'claude-haiku', kind: 'claude-code', state: 'up', usage: 'allowed' };
   const menu = modelMenu([claude('up', { usage: 'allowed' }), haiku], NOW);
   assert.equal(menu.options.haiku.available, true);
-  assert.equal(menu.default, 'claude');
+  assert.equal(menu.default, 'haiku');
+  assert.equal(modelMenu([claude('up', { usage: 'allowed' }), { ...haiku, usage: 'allowed_warning' }], NOW).default, 'claude', 'Haiku near its limit: Sonnet');
+  assert.equal(modelMenu([claude('up', { usage: 'allowed' }), { ...haiku, state: 'limited' }], NOW).default, 'claude');
   assert.equal(modelMenu([claude('up')], NOW).options.haiku.available, false);
   assert.equal(modelMenu([haiku], NOW).options.compare.available, false, 'one model alone compares nothing');
 });
