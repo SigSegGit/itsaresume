@@ -1845,6 +1845,19 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   no notions-only yes there (the GCP case came from the VM's comparison),
   so nothing honest is lowered. Test `test/rules.test.js`; 2.40's GCP case
   in `test/years.test.js` now checks the count never lowers it.
+- [ ] **2.62** (the owner, 2026-11-23) **A linear (single-column) docx
+  template** beside `two-column`, shaped like his own one-column CV
+  (name, headline, contact, a shaded focus line, then centred ruled
+  headings: profile, experience, skills, education; experience header
+  "org | title" with the dates right-aligned, bullets, a grey italic Env
+  line; skills one line per group "Title: a, b, c"). Built by
+  `tools/linear-template.mjs` from the two-column package (no personal
+  text: the same "tags only" test), drawn in the marine roles so palettes
+  recolour it, found by `listTemplates()` like any template, labelled in
+  the page's select. Same tags as the model; lists joined in place by the
+  render parser (`{items|join}`, `{glance|dots}`). Word fits it to one full
+  page as it does the other. Tests `test/render.test.js`,
+  `test/style.test.js`; defences in `scripts/sabotage/content.json`.
 
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own
