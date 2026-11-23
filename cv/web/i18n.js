@@ -153,6 +153,7 @@
     "IA locale seule": "Local AI only",
     "durée inconnue": "unknown duration",
     "Deux colonnes": "Two columns",
+    "Linéaire": "Linear",
     "Marine": "Navy",
     "Forêt": "Forest",
     "Ardoise": "Slate",
