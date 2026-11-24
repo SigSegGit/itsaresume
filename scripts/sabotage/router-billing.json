@@ -733,8 +733,8 @@
     },
     "M2: a request no backend serves is unserved": {
       "file": "crates/itsaresume-router/src/router.rs",
-      "live": "if serving.is_empty() {",
-      "dead": "if serving.is_empty() && false {",
+      "live": "if serving.is_empty() {\n            return Outcome {\n                result: Err(RouteError::Unserved",
+      "dead": "if serving.is_empty() && false {\n            return Outcome {\n                result: Err(RouteError::Unserved",
       "expect": [
         "a_request_no_backend_serves_is_unserved"
       ]
