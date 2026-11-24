@@ -29,6 +29,18 @@
       <p id="api-spend-line"></p>
       <p class="muted" data-i18n>Les requêtes des clients passent par l'API (jamais par l'abonnement) ; au-delà du plafond du jour, le routeur les refuse.</p>
     </section>
+    <section class="card" id="invites">
+      <h2 data-i18n>Invitations (CV gratuits contre un avis)</h2>
+      <p class="muted" data-i18n>Un lien par personne : un prénom et une initiale suffisent comme libellé. Chaque lien donne 3 CV à partir de son propre profil ; rien n'est gardé.</p>
+      <form id="invite" class="row">
+        <input id="i-label" placeholder="Prénom N." data-i18n-attr="placeholder" maxlength="60" required>
+        <button type="submit" data-i18n>Créer le lien</button>
+      </form>
+      <p id="i-result" class="muted" hidden></p>
+      <table id="invitations" class="summary"></table>
+      <h3 data-i18n>Avis reçus</h3>
+      <ul id="opinions"></ul>
+    </section>
     <section class="card">
       <h2 data-i18n>Sauvegardes</h2>
       <p class="muted" data-i18n>Une copie cohérente par heure, les 48 dernières gardées ; c'est ce dossier que la synchronisation copie hors de la machine.</p>

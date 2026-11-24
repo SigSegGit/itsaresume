@@ -51,6 +51,20 @@ test('the JSON is found in fences or prose, and its absence is an error', () => 
   assert.throws(() => extractJson('no json here'), /JSON/);
 });
 
+// 2026-11-24, Haiku on a real offer (2 attempts of 2, reproducible): the
+// answer was whole but its root object never closed ('..."ksh"]}]' and no
+// final '}'). Only the missing closers go at the end; nothing else is
+// repaired, and the analysis checks still judge what comes out.
+test('an answer whose last brackets never close is closed, and only that', () => {
+  assert.deepEqual(extractJson('{"a": 1, "groups": [{"id": "x", "skills": ["s"]}]'), { a: 1, groups: [{ id: 'x', skills: ['s'] }] });
+  assert.deepEqual(extractJson('```json\n{"a": {"b": [1, 2'), { a: { b: [1, 2] } });
+  assert.deepEqual(extractJson('{"a": "brace } and [ in a string"'), { a: 'brace } and [ in a string' });
+  assert.deepEqual(extractJson('{"a": "say \\"}\\" here"'), { a: 'say "}" here' });
+  assert.throws(() => extractJson('{"a": "never closed'), /JSON/, 'cut inside a string: not repaired');
+  assert.throws(() => extractJson('{"a": [1, 2}'), /JSON/, 'a wrong closer is not repaired');
+  assert.throws(() => extractJson('{"a": 1,'), /JSON/, 'a dangling comma is not repaired');
+});
+
 test('an invalid answer is sent back once with its errors, and a valid retry is accepted', async () => {
   const prompts = [];
   const bad = { ...valid(), summary: ['Kafka expert.'] };
@@ -76,6 +90,23 @@ test('an answer that only needs safe repairs is accepted at once, the repairs re
   assert.deepEqual(analysis.experiences, [{ id: 'acme', bullets: ['acme-pg'] }]);
   assert.match(repairs.join('\n'), /acme-pg/);
   assert.match(report(analysis, profile(), { backend: 'fake', attempts, repairs }), /acme-pg is a bullet/);
+});
+
+// The same Haiku answers: "fit" never closed, so every later key sat inside
+// it and the root was left open. Closed, then the answer's own keys found
+// under "fit" go back to the top: accepted at once, the repair said.
+test('an answer whose keys sit inside an unclosed "fit" is put back in shape, the repair reported', async () => {
+  const { language, fit, ...rest } = valid();
+  const text = `{"language": ${JSON.stringify(language)}, "fit": ${JSON.stringify({ ...fit, ...rest })}`;
+  const llm = async ({ system }) => ({ text: system === LISTING_SYSTEM ? EMPTY_LISTING : text, backend: 'fake' });
+  const { analysis, attempts, repairs } = await analyse({ profile: profile(), offer: OFFER, llm });
+  assert.equal(attempts, 1);
+  assert.deepEqual(analysis, normalize(valid(), profile()).analysis);
+  assert.match(repairs.join('\n'), /moved out of "fit": requirements, headline, summary, experiences, skill_groups/);
+  // A key the answer has at the top is never overwritten from "fit".
+  const both = JSON.stringify({ ...valid(), fit: { ...fit, headline: 'Kafka lead' } });
+  const kept = await analyse({ profile: profile(), offer: OFFER, llm: async ({ system }) => ({ text: system === LISTING_SYSTEM ? EMPTY_LISTING : both, backend: 'fake' }) });
+  assert.equal(kept.analysis.headline, valid().headline);
 });
 
 test('an answer still invalid after the retry is refused, not rendered', async () => {

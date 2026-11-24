@@ -6,6 +6,8 @@
 import { chmodSync, closeSync, existsSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
+import { QA_LOG } from './qa.js';
+import { FEEDBACK_FILE } from './feedback.js';
 
 export const INVITES_FILE = 'invites.json';
 export const LABEL_MAX = 60;
@@ -154,30 +156,63 @@ export function usageByInvite(log) {
     .join('');
 }
 
+const jsonLines = (text) => String(text ?? '').split('\n').flatMap((line) => {
+  try {
+    const entry = JSON.parse(line);
+    return entry && typeof entry === 'object' ? [entry] : [];
+  } catch {
+    return [];
+  }
+});
+
+/** The mean of the prices said (euros, one decimal), null when none was. */
+const meanPrice = (given) => {
+  const prices = given.map((entry) => entry.price).filter(Number.isInteger);
+  return prices.length ? Math.round((prices.reduce((sum, price) => sum + price, 0) / prices.length) * 10) / 10 : null;
+};
+
 /**
- * `itsacv invite --funnel` (2026-11-24): per invitation, live or revoked,
- * the own-profile CVs asked and made (QA log), the opinions given
- * (feedback.jsonl) and the last activity. A line that is not JSON is skipped.
+ * 2026-11-24: per invitation, live or revoked, its live code (null once
+ * revoked), the own-profile CVs asked and made (QA log), the opinions given
+ * (feedback.jsonl), their mean, the last activity and the comments, newest
+ * first. A line that is not JSON is skipped.
  */
-export function outreachFunnel(invites, log, feedback) {
-  const lines = (text) => String(text ?? '').split('\n').flatMap((line) => {
-    try {
-      const entry = JSON.parse(line);
-      return entry && typeof entry === 'object' ? [entry] : [];
-    } catch {
-      return [];
-    }
-  });
-  const runs = lines(log);
-  const opinions = lines(feedback).filter((entry) => Number.isInteger(entry.rating));
-  const labels = [...new Set(Object.values(invites ?? {}).map((invite) => invite.label).filter((label) => typeof label === 'string'))].sort();
+export function funnelRows(invites, log, feedback) {
+  const runs = jsonLines(log);
+  const opinions = jsonLines(feedback).filter((entry) => Number.isInteger(entry.rating));
+  const entries = Object.entries(invites ?? {}).filter(([, invite]) => typeof invite?.label === 'string');
+  const labels = [...new Set(entries.map(([, invite]) => invite.label))].sort();
   return labels.map((label) => {
-    const live = Object.values(invites).some((invite) => invite.label === label && !invite.revoked);
+    const code = entries.find(([, invite]) => invite.label === label && !invite.revoked)?.[0] ?? null;
     const asked = runs.filter((entry) => entry.invite === label);
-    const made = asked.filter((entry) => entry.status === 'done').length;
     const given = opinions.filter((entry) => entry.invite === label);
-    const mean = given.length ? ` (${(given.reduce((sum, entry) => sum + entry.rating, 0) / given.length).toFixed(1)}/5)` : '';
-    const last = [...asked, ...given].map((entry) => String(entry.at ?? '')).filter(Boolean).sort().at(-1);
-    return `${label}\t${live ? 'live' : 'revoked'}\t${asked.length} asked\t${made} made\t${plural(given.length, 'opinion')}${mean}\t${last ? `last ${last.slice(0, 10)}` : 'never used'}\n`;
+    const last = [...asked, ...given].map((entry) => String(entry.at ?? '')).filter(Boolean).sort().at(-1) ?? null;
+    return {
+      label,
+      live: code !== null,
+      code,
+      asked: asked.length,
+      made: asked.filter((entry) => entry.status === 'done').length,
+      opinions: given.length,
+      mean: given.length ? Math.round((given.reduce((sum, entry) => sum + entry.rating, 0) / given.length) * 10) / 10 : null,
+      price: meanPrice(given),
+      last,
+      comments: given.map(({ rating, comment, price, at }) => ({ rating, comment: String(comment ?? ''), price: Number.isInteger(price) ? price : null, at: at ?? null })).sort((a, b) => String(b.at).localeCompare(String(a.at))),
+    };
+  });
+}
+
+/** The rows of an out folder: its invitations, QA log and opinions. */
+export function outreachOf(out) {
+  const read = (name) => (existsSync(join(out, name)) ? readFileSync(join(out, name), 'utf8') : '');
+  return funnelRows(loadInvites(out), read(QA_LOG), read(FEEDBACK_FILE));
+}
+
+/** `itsacv invite --funnel` (2026-11-24): the rows, one tab-separated line each. */
+export function outreachFunnel(invites, log, feedback) {
+  return funnelRows(invites, log, feedback).map((row) => {
+    const mean = row.opinions ? ` (${row.mean.toFixed(1)}/5)` : '';
+    const cells = [row.label, row.live ? 'live' : 'revoked', `${row.asked} asked`, `${row.made} made`, `${plural(row.opinions, 'opinion')}${mean}`, row.last ? `last ${row.last.slice(0, 10)}` : 'never used'];
+    return `${cells.join('\t')}\n`;
   }).join('');
 }

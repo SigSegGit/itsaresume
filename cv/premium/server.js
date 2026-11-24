@@ -94,7 +94,7 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null, outreach = null }) {
   // 6.9: attempts limited (limits.js); a refusal says when to come back.
   const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
   // 6.10: a link to this site as the visitor reached it (behind the proxy:
@@ -131,6 +131,12 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     if (!isAdmin(user)) throw new HttpError(403, 'admins only');
     return user;
   };
+  const invitesModule = () => import('../src/invites.js');
+  const outreachDir = () => {
+    if (!outreach?.out) throw new HttpError(404, 'invitations: the generator folder is not configured (--out)');
+    return outreach.out;
+  };
+  const inviteLink = (code) => `${outreach?.host ? `https://${outreach.host}` : ''}/?i=${code}`;
   const snapshotList = () => {
     if (!snapshots || !existsSync(snapshots)) return [];
     return readdirSync(snapshots).filter((name) => /^premium-\d{10}\.db$/.test(name)).sort().reverse()
@@ -213,6 +219,42 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
       } catch (error) {
         throw new HttpError(error.message === 'no such account' ? 404 : 400, error.message);
       }
+    },
+    // 2026-11-24: the LinkedIn outreach from this page. `outreach.out` is the
+    // generator's folder (its invites.json, QA log and opinions); the link is
+    // the public page's, the bare code never leaves.
+    'GET /api/admin/invites': async (request) => {
+      admin(request);
+      const { outreachOf } = await invitesModule();
+      return { invitations: outreachOf(outreachDir()).map(({ code, ...row }) => ({ ...row, link: code ? inviteLink(code) : null })) };
+    },
+    'POST /api/admin/invites': async (request) => {
+      const user = admin(request);
+      const body = await readJson(request);
+      const { createInvite } = await invitesModule();
+      const label = String(body.label ?? '').trim();
+      const out = outreachDir();
+      let code;
+      try {
+        code = createInvite(out, label);
+      } catch (error) {
+        throw new HttpError(/already live/.test(error.message) ? 409 : 400, error.message);
+      }
+      store.noteAdmin(user.email, label, 'invitation made');
+      return { label, link: inviteLink(code) };
+    },
+    'POST /api/admin/invites/revoke': async (request) => {
+      const user = admin(request);
+      const body = await readJson(request);
+      const { loadInvites, revokeInvite } = await invitesModule();
+      const label = String(body.label ?? '').trim();
+      // Labels only: a code typed here would be a secret in the admin log.
+      if (!label || !Object.values(loadInvites(outreachDir())).some((invite) => invite.label === label && !invite.revoked)) {
+        throw new HttpError(404, 'no live invitation with that label');
+      }
+      const revoked = revokeInvite(outreachDir(), label);
+      store.noteAdmin(user.email, label, 'invitation revoked');
+      return { revoked };
     },
     'GET /api/admin/log': (request) => {
       admin(request);
@@ -585,6 +627,8 @@ async function main(argv) {
   const routerStatus = async () => (await fetch(new URL('/status', router))).json();
   const app = createPremiumApp({
     routerStatus,
+    // The generator's folder (invites.json, QA log, opinions) and the public host.
+    outreach: option('out', null) ? { out: option('out', null), host: option('public-host', process.env.CV_HOST ?? '') } : null,
     store: accounts,
     // 6.8: comma-separated admin addresses, from $DATA/.env (never the repository).
     admins: option('admins', process.env.PREMIUM_ADMINS ?? '').split(','),

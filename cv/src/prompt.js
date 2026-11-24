@@ -19,6 +19,9 @@ const SHAPE = {
   skill_groups: [{ id: 'group-id', skills: ['skill-id'] }],
 };
 
+/** The analysis answer's top-level keys, in the order the prompt shows them. */
+export const ANSWER_KEYS = Object.keys(SHAPE);
+
 export const SYSTEM = `You assess how well a candidate fits a job offer and choose, from the candidate's catalogue, what a CV tailored to that offer should show.
 
 Answer with ONE JSON object and nothing else, of this shape:
@@ -48,13 +51,13 @@ const LEVELS = { expert: 'E', proficient: 'P', working: 'W', notions: 'N', lab: 
  * 2.25b, off by default: the same skills in fewer tokens, grouped under their
  * group, one letter per level, terms the lexicon keys alike written once.
  */
-function compactSkills(profile, noTerms = false) {
+function compactSkills(profile, keepTerm) {
   const lines = ['Skills by group (id — name / aliases [covers], level). Levels: E expert, P proficient, W working, N notions, L lab (personal R&D only)'];
   for (const group of profile.skill_groups) {
     lines.push(`Group ${group.id} (${group.title.en}):`);
     for (const skill of profile.skills.filter((s) => s.group === group.id)) {
       const seen = new Set();
-      const terms = (noTerms ? [] : skill.terms ?? []).filter((term) => !seen.has(key(term)) && seen.add(key(term)));
+      const terms = (skill.terms ?? []).filter(keepTerm).filter((term) => !seen.has(key(term)) && seen.add(key(term)));
       const names = [skill.name, ...(skill.aliases ?? [])].join(' / ');
       lines.push(`- ${skill.id} — ${names}${terms.length ? ` [${terms.join(', ')}]` : ''}, ${LEVELS[skill.level] ?? skill.level}`);
     }
@@ -72,21 +75,34 @@ export function promptOptions(env = process.env) {
   if (given === 'off') return { compact: false, shortlist: false };
   // 6.5: "noterms" leaves the skills' terms out (measuring a smaller prompt).
   const asked = (given || 'compact,shortlist').split(',').map((word) => word.trim()).filter(Boolean);
-  const unknown = asked.filter((word) => !['compact', 'shortlist', 'noterms'].includes(word));
-  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist, noterms, or off)`);
-  return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist'), ...(asked.includes('noterms') ? { noTerms: true } : {}) };
+  const unknown = asked.filter((word) => !['compact', 'shortlist', 'noterms', 'offerterms'].includes(word));
+  if (unknown.length) throw new Error(`ITSACV_PROMPT: unknown ${unknown.join(', ')} (compact, shortlist, noterms, offerterms, or off)`);
+  return { compact: asked.includes('compact'), shortlist: asked.includes('shortlist'), ...(asked.includes('noterms') ? { noTerms: true } : {}), ...(asked.includes('offerterms') ? { offerTerms: true } : {}) };
 }
 
-function skillLines(profile, compact, noTerms = false) {
+/**
+ * 6.5: which of a skill's terms go in the prompt. noterms: none; offerterms:
+ * the ones the offer names, word for word once keyed (a term inside a longer
+ * word is not named); otherwise all.
+ */
+export function termFilter(offer, { noTerms = false, offerTerms = false } = {}) {
+  if (noTerms) return () => false;
+  if (!offerTerms) return () => true;
+  const text = ` ${key(offer)} `;
+  return (term) => Boolean(key(term)) && text.includes(` ${key(term)} `);
+}
+
+function skillLines(profile, compact, keepTerm = () => true) {
   const lines = [];
-  if (compact) lines.push(...compactSkills(profile, noTerms));
+  if (compact) lines.push(...compactSkills(profile, keepTerm));
   else {
     lines.push('Skill groups (id — title):');
     for (const group of profile.skill_groups) lines.push(`- ${group.id} — ${group.title.en}`);
     lines.push('', 'Skills (id — name, level, group):');
     for (const skill of profile.skills) {
       const aliases = skill.aliases?.length ? ` (also: ${skill.aliases.join(', ')})` : '';
-      const terms = skill.terms?.length && !noTerms ? ` [covers: ${skill.terms.join(', ')}]` : '';
+      const kept = (skill.terms ?? []).filter(keepTerm);
+      const terms = kept.length ? ` [covers: ${kept.join(', ')}]` : '';
       const level = skill.level === 'lab' ? 'lab (personal R&D only)' : skill.level;
       lines.push(`- ${skill.id} — ${skill.name}${aliases}${terms}, ${level}, ${skill.group}`);
     }
@@ -143,8 +159,8 @@ function languageLine(offer) {
   return `The offer is in ${LANGUAGE_NAMES[language]}: set "language" to "${language}" and write the headline, summary, rationale and notes in ${LANGUAGE_NAMES[language]}.`;
 }
 
-export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false, noTerms = false } = {}) {
-  const lines = ['CATALOGUE', '', ...skillLines(profile, compact, noTerms), '', ...experienceLines(profile), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)];
+export function buildPrompt(profile, offer, listed = [], { compact = false, shortlist: offered = false, noTerms = false, offerTerms = false } = {}) {
+  const lines = ['CATALOGUE', '', ...skillLines(profile, compact, termFilter(offer, { noTerms, offerTerms })), '', ...experienceLines(profile), ...offerLines(offer), ...listedLines(profile, listed, offered), languageLine(offer)];
   return { system: SYSTEM, prompt: lines.join('\n') };
 }
 

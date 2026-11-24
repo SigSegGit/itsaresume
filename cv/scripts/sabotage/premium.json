@@ -48,7 +48,13 @@
     "premium/receipt.js",
     "test/premium-orders.test.js",
     "test/trials.test.js",
-    "test/api-spend.test.js"
+    "test/api-spend.test.js",
+    "src/invites.js",
+    "src/qa.js",
+    "src/feedback.js",
+    "test/outreach-admin.test.js",
+    "deploy/vm-generator/compose.yaml",
+    "premium/web/admin.html"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -645,6 +651,111 @@
       "dead": "|| order.refunded_at) continue;",
       "expect": [
         "the admin page: customers' spend against the ceilings, its cost, the day's real revenue; admins only"
+      ]
+    },
+    "Invitations: listed for admins only": {
+      "file": "premium/server.js",
+      "live": "'GET /api/admin/invites': async (request) => {\n      admin(request);",
+      "dead": "'GET /api/admin/invites': async (request) => {\n      (request);",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: made by admins only": {
+      "file": "premium/server.js",
+      "live": "      const user = admin(request);\n      const body = await readJson(request);\n      const { createInvite }",
+      "dead": "      const user = { email: 'anyone' };\n      const body = await readJson(request);\n      const { createInvite }",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: revoked by admins only": {
+      "file": "premium/server.js",
+      "live": "      const user = admin(request);\n      const body = await readJson(request);\n      const { loadInvites, revokeInvite }",
+      "dead": "      const user = { email: 'anyone' };\n      const body = await readJson(request);\n      const { loadInvites, revokeInvite }",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: the link, never the bare code": {
+      "file": "premium/server.js",
+      "live": "map(({ code, ...row }) => ({ ...row, link:",
+      "dead": "map((row) => ({ ...row, code: row.code, link:",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: a revoked one has no code": {
+      "file": "src/invites.js",
+      "live": "invite.label === label && !invite.revoked)?.[0] ?? null",
+      "dead": "invite.label === label)?.[0] ?? null",
+      "expect": [
+        "funnelRows: per invitation, live code, asked, made, opinions, mean, last activity, comments",
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: revoked by label only": {
+      "file": "premium/server.js",
+      "live": "if (!label || !Object.values(loadInvites(outreachDir())).some(",
+      "dead": "if (false && !Object.values(loadInvites(outreachDir())).some(",
+      "expect": [
+        "no host given, the link is the page's path; revoking by code is refused (labels only)"
+      ]
+    },
+    "Invitations: a second live link for a label is a conflict": {
+      "file": "premium/server.js",
+      "live": "/already live/.test(error.message) ? 409 : 400",
+      "dead": "400",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: making one is in the admin log": {
+      "file": "premium/server.js",
+      "live": "store.noteAdmin(user.email, label, 'invitation made');",
+      "dead": "",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: revoking one is in the admin log": {
+      "file": "premium/server.js",
+      "live": "store.noteAdmin(user.email, label, 'invitation revoked');",
+      "dead": "",
+      "expect": [
+        "the admin page makes, lists and revokes invitations; admins only; each action in the admin log"
+      ]
+    },
+    "Invitations: comments newest first": {
+      "file": "src/invites.js",
+      "live": ".sort((a, b) => String(b.at).localeCompare(String(a.at))),",
+      "dead": ",",
+      "expect": [
+        "funnelRows: per invitation, live code, asked, made, opinions, mean, last activity, comments"
+      ]
+    },
+    "Invitations: no folder, a clear 404": {
+      "file": "premium/server.js",
+      "live": "if (!outreach?.out) throw new HttpError(404,",
+      "dead": "if (false) throw new HttpError(404,",
+      "expect": [
+        "without the generator's folder the invitations say so (404), the rest of the admin works"
+      ]
+    },
+    "Invitations: the premium container mounts the generator's folder": {
+      "file": "deploy/vm-generator/compose.yaml",
+      "live": "      # 2026-11-24: the invitations, QA log and opinions, for the admin page.\n      - ${DATA:-~/itsacv-data}/out:/data/out\n",
+      "dead": "      # 2026-11-24: the invitations, QA log and opinions, for the admin page.\n",
+      "expect": [
+        "the page and the VM: an Invitations card, the premium container reads the generator's folder"
+      ]
+    },
+    "Invitations: the mean price counts only the opinions that gave one": {
+      "file": "src/invites.js",
+      "live": ".map((entry) => entry.price).filter(Number.isInteger);",
+      "dead": ".map((entry) => entry.price ?? 0);",
+      "expect": [
+        "funnelRows: per invitation, live code, asked, made, opinions, mean, last activity, comments"
       ]
     }
   }

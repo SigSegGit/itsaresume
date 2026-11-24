@@ -113,3 +113,25 @@ test('itsacv invite --feedback: the opinions per invitation, mean rating, newest
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /^Ana\t1 opinion\tmean 5\.0\/5\n {2}2026-11-24\t5\/5\tSRE\tTop\n$/);
 });
+
+// 2026-11-24: what a free CV would be worth to the person, for the owner's
+// first price: optional, one of a few amounts in euros, null when not said.
+test('an opinion may say what the CV would be worth: one of the offered amounts, or nothing', async (t) => {
+  const kept = [];
+  const port = await start(t, kept);
+  const job = await oneJob(port);
+  const path = `/api/jobs/${job.id}/feedback`;
+  assert.equal((await call(port, { method: 'POST', path, body: { rating: 4, price: 10 } })).status, 200);
+  assert.equal(kept[0].price, 10);
+  assert.equal((await call(port, { method: 'POST', path, body: { rating: 4, price: 0 } })).status, 200);
+  assert.equal(kept[1].price, 0, 'zero is an answer: free only');
+  assert.equal((await call(port, { method: 'POST', path, body: { rating: 4 } })).status, 200);
+  assert.equal(kept[2].price, null);
+  for (const price of [7, '10', -5, 1e9, 10.5]) {
+    assert.equal((await call(port, { method: 'POST', path, body: { rating: 4, price } })).status, 400, String(price));
+  }
+  assert.equal(kept.length, 3);
+  const app = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+  assert.match(app, /PRICES\.map\(/);
+  assert.match(app, /comment: comment\.value, price: price\.value === '' \? null : Number\(price\.value\)/);
+});

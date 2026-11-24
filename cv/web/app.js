@@ -661,18 +661,21 @@ async function renderGroup(id) {
     h('a', { href: `/api/groups/${id}/compare.md`, text: t('Télécharger la comparaison') }));
 }
 
-/* 2026-11-24: an opinion on a CV (a rating, a comment) for the owner. */
+/* 2026-11-24: an opinion on a CV (a rating, a comment, what it would be worth) for the owner. */
 const opinions = new Set();
+const PRICES = [0, 5, 10, 20, 50];
 function opinionOf(job) {
   if (opinions.has(job.id)) return h('p', { class: 'muted', text: t('Merci pour votre avis !') });
   const rating = h('select', { 'aria-label': t('Note') }, [5, 4, 3, 2, 1].map((value) => h('option', { value: String(value), text: `${'★'.repeat(value)}${'☆'.repeat(5 - value)}` })));
   const comment = h('textarea', { rows: 3, maxLength: 2000, placeholder: t('Ce qui est juste, ce qui manque, ce qui gêne…'), 'aria-label': t('Commentaire') });
+  const price = h('select', { 'aria-label': t('Combien paieriez-vous pour ce CV ?') }, [h('option', { value: '', text: t('Combien paieriez-vous pour ce CV ? (facultatif)') }),
+    ...PRICES.map((value) => h('option', { value: String(value), text: value ? `${value} €` : t('Rien : seulement gratuit') }))]);
   const error = h('p', { class: 'error', hidden: true });
   const send = h('button', { type: 'button', text: t('Envoyer mon avis') });
   send.addEventListener('click', async () => {
     send.disabled = true;
     try {
-      await api(`/api/jobs/${job.id}/feedback`, { rating: Number(rating.value), comment: comment.value });
+      await api(`/api/jobs/${job.id}/feedback`, { rating: Number(rating.value), comment: comment.value, price: price.value === '' ? null : Number(price.value) });
       opinions.add(job.id);
       box.replaceWith(opinionOf(job));
     } catch (failure) {
@@ -681,7 +684,7 @@ function opinionOf(job) {
       send.disabled = false;
     }
   });
-  const box = h('details', { class: 'opinion' }, h('summary', { text: t('Votre avis sur ce CV') }), rating, comment, send, error);
+  const box = h('details', { class: 'opinion' }, h('summary', { text: t('Votre avis sur ce CV') }), rating, comment, price, send, error);
   return box;
 }
 

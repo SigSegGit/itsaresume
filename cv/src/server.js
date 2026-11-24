@@ -19,7 +19,7 @@ import { cleanName } from './guard.js';
 import { LINKEDIN_FILES } from './import.js';
 import { ID } from './profiles.js';
 import { resolveStyle } from './style.js';
-import { COMMENT_MAX } from './feedback.js';
+import { COMMENT_MAX, PRICES } from './feedback.js';
 import { applicationsCsv, followUp, STATUSES, summary, weekly } from './applications.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { OFFER_FILES } from './sources.js';
@@ -696,7 +696,9 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         const comment = String(body?.comment ?? '').trim();
         if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new HttpError(400, 'rating: a whole number from 1 to 5');
         if (comment.length > COMMENT_MAX) throw new HttpError(400, `comment: at most ${COMMENT_MAX} characters`);
-        await deps.feedback({ at: new Date().toISOString(), job: job.id, title: job.title ?? null, invite: job.invite ?? null, model: job.model ?? null, rating, comment });
+        const price = body?.price ?? null;
+        if (price !== null && !PRICES.includes(price)) throw new HttpError(400, `price: one of ${PRICES.join(', ')} (euros), or nothing`);
+        await deps.feedback({ at: new Date().toISOString(), job: job.id, title: job.title ?? null, invite: job.invite ?? null, model: job.model ?? null, rating, comment, price });
         return send(response, 200, { ok: true });
       }
       // 2026-11-24: an application's status and note, the owner's page only.

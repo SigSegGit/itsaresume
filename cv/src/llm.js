@@ -97,6 +97,27 @@ export function complete({ url, system, prompt, backend, schema, kind, audience,
   });
 }
 
+/**
+ * The closers an answer still owes at its end ('}' and ']', innermost
+ * first). A cut string or a wrong closer is left for JSON.parse to refuse.
+ */
+function missingClosers(text) {
+  const open = [];
+  let inString = false;
+  let escaped = false;
+  for (const char of text) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+    } else if (char === '"') inString = true;
+    else if (char === '{') open.push('}');
+    else if (char === '[') open.push(']');
+    else if (char === '}' || char === ']') open.pop();
+  }
+  return open.reverse().join('');
+}
+
 /** The JSON object in a model's answer, fenced or wrapped in prose. */
 export function extractJson(text) {
   const unfenced = text.replace(/```(?:json)?/g, '');
@@ -106,7 +127,20 @@ export function extractJson(text) {
     try {
       return JSON.parse(unfenced.slice(start, end + 1));
     } catch {
-      // fall through to the error below
+      // fall through to the closing below
+    }
+  }
+  // 2026-11-24 (Haiku): a whole answer whose root never closed. Only the
+  // missing closers are added; the analysis checks judge the rest.
+  if (start >= 0) {
+    const rest = unfenced.slice(start).trimEnd();
+    const closers = missingClosers(rest);
+    if (closers) {
+      try {
+        return JSON.parse(rest + closers);
+      } catch {
+        // fall through to the error below
+      }
     }
   }
   throw new Error(`the model's answer holds no JSON object: ${text.slice(0, 200)}`);
