@@ -1706,10 +1706,26 @@
         "a yes resting on notions-level skills only is adjacent"
       ]
     },
+    "6.5: offerterms keeps the terms the offer names": {
+      "file": "src/prompt.js",
+      "live": "return (term) => Boolean(key(term)) && text.includes(` ${key(term)} `);",
+      "dead": "return (term) => Boolean(key(term));",
+      "expect": [
+        "ITSACV_PROMPT=offerterms keeps only the terms the offer names (6.5)"
+      ]
+    },
+    "6.5: offerterms needs whole words": {
+      "file": "src/prompt.js",
+      "live": "text.includes(` ${key(term)} `)",
+      "dead": "text.includes(`${key(term)}`)",
+      "expect": [
+        "ITSACV_PROMPT=offerterms keeps only the terms the offer names (6.5)"
+      ]
+    },
     "6.5: the terms leave only when noterms is asked": {
       "file": "src/prompt.js",
-      "live": "const terms = (noTerms ? [] : skill.terms ?? []).filter(",
-      "dead": "const terms = ([]).filter(",
+      "live": "  if (noTerms) return () => false;",
+      "dead": "  if (false) return () => false;",
       "expect": [
         "ITSACV_PROMPT=noterms leaves the skills' terms out of the catalogue (6.5)"
       ]
