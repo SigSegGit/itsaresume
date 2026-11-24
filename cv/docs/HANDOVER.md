@@ -11,7 +11,19 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-11-23)
+## 0. Where things stand (2026-11-24)
+
+- **2026-11-24, after a Rodin review**: the premium gets no new feature
+  until the owner's decisions (sales status, VAT, terms of sale; the API
+  when he sells). What serves now is his outreach: a free CV for people met
+  on LinkedIn through an invitation link, their opinion kept
+  (`POST /api/jobs/:id/feedback`, `$OUT/feedback.jsonl`, "Votre avis sur ce
+  CV" on each finished card). The A4 page follows the palette (4.x); role
+  names are no longer asked (2.22). Every manual step is now a numbered
+  sheet in `docs/RECETTE-MANUELLE.md` (add-on, Firefox print, Bionic
+  variance, an invitation's whole journey, Stripe test mode, SMTP, 6.4g).
+  6.5(c) measured: a listing by code alone finds 92 % of the corpus labels
+  but lists 849 names for 246 (3.5x noise, each a scored row): refused.
 
 - **2026-11-23, 6.13 and 6.14**: each premium account lists its orders
   with a receipt; Stripe's refunds, expired Checkouts and delayed methods
@@ -273,7 +285,7 @@ Traps met, each cost time once:
   Bionic-only router (`qwen3-coder-next`): 239 s, first attempt valid,
   0.91 page, ATS ok, `raw.json` holding the two calls. The fallback is
   usable, at about the time Sonnet took per offer.
-- [~] **2.3** Router contract: structured output, a model per call (router
+- [x] **2.3** Router contract: structured output, a model per call (router
   M3). A model per call: done (router 8.22, cv 8.23). Structured output:
   the router takes a schema (8.24) and the client sends one when asked
   (8.25, `complete({schema})`, `listRequirements({structured})`,
@@ -295,7 +307,7 @@ Traps met, each cost time once:
     (peer disconnected, global timeout; whether the schema caused them is
     not shown). **Verdict: not sent, for either model**: no gain on Sonnet,
     a loss on the local model. The measure stays for a later model.
-  - [ ] **2.3b** Carries 2.7's step (5): the code settles each requirement
+  - [x] **2.3b** Carries 2.7's step (5): the code settles each requirement
     it can *before* the model, and only the rest goes to a narrow question
     with a shortlist ("which of these skills, or none"), maybe read as
     option probabilities (ADR-10). `relate()` in `src/lexicon.js` is its
@@ -624,8 +636,9 @@ Traps met, each cost time once:
     /api/jobs` `style` (400 when unknown), `/api/status` `styles`, the
     page's "Présentation" selects. 3 tests, 2 defences. Next for 4.x: a
     second template (a one-column .docx with the same tags, made in Word
-    by the owner or from two-column with `tools/templatize.py`); the A4
-    browser page (`web/cv.css`) does not follow the palette yet.
+    by the owner or from two-column with `tools/templatize.py`; done as
+    2.62); the A4 browser page follows the palette since 2026-11-24 (the
+    run's own, or the page's "Couleurs" select; `?palette=`).
 
 - [x] **2.17** (2026-10-05, the owner, laptop off, public page on the VM)
   Two bugs. (1) A recruiter's LinkedIn approach (SRE senior) was refused
@@ -692,7 +705,7 @@ Traps met, each cost time once:
   LibreOffice with its own profile, so two layouts never share one.
   Measured live the same night: a sleeping local model woken from the
   public page (watcher, Bionic, tunnel) and a CV in 434 s.
-- [ ] **2.22** (the owner, 2026-10-06: "je n'ai pas forcément mis toutes
+- [x] **2.22** (the owner, 2026-10-06: "je n'ai pas forcément mis toutes
   mes compétences en avant… des questions pour savoir si j'ai telle ou
   telle compétence et enrichir le profil petit à petit") **Refining the
   profile from the app.** A requirement the profile cannot meet is a
@@ -717,8 +730,8 @@ Traps met, each cost time once:
     questions, counted per distinct offer) `src/questions.js`; older runs are
     re-read with today's kinds (`settledKind()` in normalize.js), a run
     without offer.txt is its slug's offer; what the profile now meets is not
-    asked. Left: listing errors (roles such as "Architectes", "QA") are
-    asked, the owner answers no. The questions. From one run (the report's requirement
+    asked. Listing errors (roles such as "Architectes", "QA") are no longer
+    asked (2026-11-24, `isRole` in `src/questions.js`, 1 test, 2 defences). The questions. From one run (the report's requirement
     table) and from all runs in `out/`: each requirement met by no profile
     skill (verdict no, not adjacent), grouped by its concept (`lookup()`
     in `src/lexicon.js`, else its text), minus what `answers.json`
@@ -1267,7 +1280,7 @@ job view carries `elapsed_ms` from the server's clock, the page shows it in
 the status chip). The audit list is closed. One rare flake seen once in
 three full runs on 2026-09-30, none in six more: name it when it shows.
 
-- [ ] **2.31** (the owner, 2026-11-06) **Find runs again, compare every
+- [x] **2.31** (the owner, 2026-11-06) **Find runs again, compare every
   model, recover what the profile lost.**
   - [x] **2.31a** (PR #156) A name typed before the run names its folder
     (`runName(offer, now, title)`); `POST /api/jobs/:id/title` renames a
@@ -1873,7 +1886,9 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   (b) Measure on the real offers with "Comparer": time, attempts, validity,
   requirement agreement against Sonnet (compare.js), then rules-replay.
   (c) Move to code what the model still does: requirements listed from the
-  lexicon (ESCO + tech.json), the model only for phrases it leaves; bullets
+  lexicon (ESCO + tech.json), the model only for phrases it leaves
+  (**refused 2026-11-24**: floor + capitalised names + lexicon spans find
+  227/246 corpus labels but list 849 names, 3.5x noise that would be scored); bullets
   already ranked by code (rankBullets); headline and summary assembled from
   the profile's own sentences, the model picking among them. (d) Target: one
   Haiku call of 5k tokens at most, under 10 s.
@@ -1927,8 +1942,11 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
 - [ ] **6.x** (the owner, 2026-11-18, after a career coach's remark) **A
   "service" mode beside his own page**: a job seeker brings their own
   profile, gets one CV for one offer, nothing is kept on the server (no
-  GDPR store). His rules: the Pro plan serves until its rate limit; an API
-  billed per token only once revenue covers it; tests never cost money.
+  GDPR store). His rules: the Pro plan serves until its rate limit; tests
+  never cost money. **2026-11-24 (the owner):** no paid API for now; the
+  free CVs he gives people met on LinkedIn, for their opinion, run on his
+  subscription; when he is ready to sell, he replaces the subscription by
+  the API himself.
   - [x] **6.1** (2026-11-18) Server: `--service` (with `--public-host`;
     on the VM) lets a public run carry the visitor's profile files
     (`sources`, never `links`: the server fetches nothing for a visitor);

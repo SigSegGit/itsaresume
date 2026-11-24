@@ -17,6 +17,15 @@ import { isNever } from './score.js';
 /** Not a skill to ask about: code settles these from the profile's own lines, or the interview does. */
 const NOT_A_SKILL = new Set(['quality', 'condition', 'language', 'certification', 'degree']);
 
+/**
+ * 2.22: a role the listing took for a skill ("Architectes", "QA", "Product
+ * Owner", "équipes de développement"): people the job works with, never a
+ * skill to ask about (the owner answered no to each). The whole name only:
+ * "Architecture hexagonale" stays a question.
+ */
+const ROLE = /^(?:(?:les?|des|the)\s+)?(?:architectes?|architects?|qa|testeurs?|testers?|d[ée]veloppeurs?|developers?|devs?|product\s+owners?|po|product\s+managers?|scrum\s+masters?|chefs?\s+de\s+projets?|project\s+managers?|managers?|[ée]quipes?(?:\s+\S+){0,3}|teams?(?:\s+\S+){0,2}|m[ée]tiers?|utilisateurs?|users?|clients?|customers?|ing[ée]nieurs?|engineers?|experts?|consultants?|partenaires?|partners?|stakeholders?|parties\s+prenantes)$/iu;
+export const isRole = (name) => ROLE.test(String(name ?? '').trim());
+
 /** What groups a phrase with others: the concepts it names, else its own words. */
 function groupOf(index, phrase) {
   const concepts = lookup(index, phrase).sort();
@@ -87,7 +96,7 @@ export function gatherQuestions(runs, { profile, answers = [], index = defaultIn
       if (requirement.match !== 'no' || isNever(requirement, profile.never)) continue;
       if (NOT_A_SKILL.has(settledKind(requirement, profile, run.analysis.language))) continue;
       const name = String(requirement.name ?? '').trim();
-      if (!name) continue;
+      if (!name || isRole(name)) continue;
       const { id, concepts } = groupOf(index, name);
       if (answered.has(id) || owned.has(key(name)) || members(index, name, placed).length) continue;
       const group = groups.get(id) ?? { id, concepts, spelled: new Map(), counts: new Map(), offers: new Set(), musts: new Set(), runs: new Set() };

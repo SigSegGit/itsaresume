@@ -537,6 +537,7 @@ function renderJob(job) {
   if (job.status === 'failed') children.push(h('p', { class: 'error', text: job.error ?? t('échec') }));
   const detail = details.get(job.id);
   if (detail) children.push(...resultOf(job, detail).filter(Boolean));
+  if (job.status === 'done') children.push(opinionOf(job));
   card.replaceChildren(...children);
   $('jobs-empty').hidden = true;
 }
@@ -564,6 +565,30 @@ async function renderGroup(id) {
       ...models.map((m) => cells('td', [m.model, m.status, m.score, m.verdict, m.elapsed_ms === null ? null : Math.round(m.elapsed_ms / 1000), m.tokens, m.attempts, m.repairs, m.verdicts_changed]))),
     ...(differ.length ? [h('table', {}, cells('th', [t('Désaccords'), ...done]), ...differ.map((row) => cells('td', [row.name, ...done.map((name) => row.verdicts[name])])))] : []),
     h('a', { href: `/api/groups/${id}/compare.md`, text: t('Télécharger la comparaison') }));
+}
+
+/* 2026-11-24: an opinion on a CV (a rating, a comment) for the owner. */
+const opinions = new Set();
+function opinionOf(job) {
+  if (opinions.has(job.id)) return h('p', { class: 'muted', text: t('Merci pour votre avis !') });
+  const rating = h('select', { 'aria-label': t('Note') }, [5, 4, 3, 2, 1].map((value) => h('option', { value: String(value), text: `${'★'.repeat(value)}${'☆'.repeat(5 - value)}` })));
+  const comment = h('textarea', { rows: 3, maxLength: 2000, placeholder: t('Ce qui est juste, ce qui manque, ce qui gêne…'), 'aria-label': t('Commentaire') });
+  const error = h('p', { class: 'error', hidden: true });
+  const send = h('button', { type: 'button', text: t('Envoyer mon avis') });
+  send.addEventListener('click', async () => {
+    send.disabled = true;
+    try {
+      await api(`/api/jobs/${job.id}/feedback`, { rating: Number(rating.value), comment: comment.value });
+      opinions.add(job.id);
+      box.replaceWith(opinionOf(job));
+    } catch (failure) {
+      error.textContent = failure.message;
+      error.hidden = false;
+      send.disabled = false;
+    }
+  });
+  const box = h('details', { class: 'opinion' }, h('summary', { text: t('Votre avis sur ce CV') }), rating, comment, send, error);
+  return box;
 }
 
 async function renameJob(job) {

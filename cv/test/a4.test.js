@@ -153,9 +153,11 @@ test('an experience reads title, organisation, then dates (no float before the t
 
 test('options: defaults, and anything unknown falls back to them', () => {
   const { options } = load();
-  assert.deepEqual({ ...options('') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1 });
-  assert.deepEqual({ ...options('?layout=columns&highlight=3&detail=1&pages=2') }, { layout: 'columns', highlight: 3, detail: 1, pages: 2 });
-  assert.deepEqual({ ...options('?layout=x&highlight=9&detail=-1&pages=3') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1 });
+  assert.deepEqual({ ...options('') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1, palette: 'marine' });
+  assert.deepEqual({ ...options('?layout=columns&highlight=3&detail=1&pages=2&palette=bordeaux') }, { layout: 'columns', highlight: 3, detail: 1, pages: 2, palette: 'bordeaux' });
+  assert.deepEqual({ ...options('?layout=x&highlight=9&detail=-1&pages=3&palette=rose') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1, palette: 'marine' });
+  assert.equal(options('', 'foret').palette, 'foret', 'the palette of the run when the address names none');
+  assert.equal(options('?palette=graphite', 'foret').palette, 'graphite', 'the address wins');
 });
 
 test('highlight: off, first on the page, first per block, every one; whole words only', () => {
@@ -209,4 +211,15 @@ test('the page offers the four options and lays out columns, two pages and highl
   assert.match(css, /\.a4\.pages-2\s*\{[^}]*height:\s*594mm/);
   assert.match(css, /\.a4 strong\.kw/);
   assert.doesNotMatch(read('cv.js'), /innerHTML/, 'text only, never HTML');
+});
+
+test('4.x: the A4 page knows the docx palettes and draws with them', async () => {
+  const { PALETTES } = await import('../src/style.js');
+  const { PALETTES: page } = runInContext(`${SOURCE}
+;({ PALETTES });`, createContext({ URLSearchParams }));
+  assert.deepEqual(JSON.parse(JSON.stringify(page)), PALETTES, 'one list, the same colours');
+  const css = readFileSync(new URL('../web/cv.css', import.meta.url), 'utf8');
+  assert.match(css, /\.a4 h2 \{[^}]*border-bottom: 1px solid var\(--accent/);
+  assert.match(css, /\.a4 h1 \{[^}]*color: var\(--primary/);
+  assert.match(readFileSync(new URL('../web/cv.html', import.meta.url), 'utf8'), /<select id="palette">/);
 });

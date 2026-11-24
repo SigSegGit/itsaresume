@@ -77,7 +77,8 @@
     "test/coverage.test.js",
     "bin/itsacv.js",
     "test/degree.test.js",
-    "src/compare.js"
+    "src/compare.js",
+    "src/feedback.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {

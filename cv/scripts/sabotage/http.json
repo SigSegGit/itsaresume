@@ -71,7 +71,8 @@
     "test/naming.test.js",
     "test/compare.test.js",
     "src/compare.js",
-    "web/sample-offer.js"
+    "web/sample-offer.js",
+    "src/feedback.js"
   ],
   "defences": {
     "Menu (2.34): an unavailable model stays in sight": {
