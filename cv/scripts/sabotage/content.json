@@ -109,7 +109,8 @@
     "test/a4.test.js",
     "src/applications.js",
     "test/applications.test.js",
-    "test/invites.test.js"
+    "test/invites.test.js",
+    "web/app.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2203,7 +2204,14 @@
         "the page is measured without the made_by footer, the final CV keeps it"
       ]
     },
-    "Footer (2.63): the footer is in the body font": {"file": "src/render.js", "live": "const fonts = font ? `<w:rFonts", "dead": "const fonts = false ? `<w:rFonts", "expect": ["the made_by footer is in the body font, in both templates"]},
+    "Footer (2.63): the footer is in the body font": {
+      "file": "src/render.js",
+      "live": "const fonts = font ? `<w:rFonts",
+      "dead": "const fonts = false ? `<w:rFonts",
+      "expect": [
+        "the made_by footer is in the body font, in both templates"
+      ]
+    },
     "Offer files (2.53): a docx offer is its paragraphs": {
       "file": "src/sources.js",
       "live": "  if (kind === '.docx') return docxText(buffer);",
@@ -2340,9 +2348,30 @@
         "2.62: his order, one line per paragraph, lists joined in place"
       ]
     },
-    "Add-on zip (6.3): the scripts' imports are followed": {"file": "tools/pack-addon.mjs", "live": "if (/\\.(html|js)$/.test(name)) queue.push(", "dead": "if (false) queue.push(", "expect": ["the add-on zip holds the manifest and every file it reaches, named by its version"]},
-    "Add-on zip (6.3): a missing file stops the pack": {"file": "tools/pack-addon.mjs", "live": "throw new Error(`the add-on reaches ${name}, which is missing`);", "dead": "continue;", "expect": ["a file the manifest never reaches stays out; a reached file missing stops the pack"]},
-    "Add-on zip (6.3): one fixed date": {"file": "tools/pack-addon.mjs", "live": "{ date: FIXED, binary: true }", "dead": "{ binary: true }", "expect": ["the same files give the same zip, byte for byte: every entry has one fixed date"]},
+    "Add-on zip (6.3): the scripts' imports are followed": {
+      "file": "tools/pack-addon.mjs",
+      "live": "if (/\\.(html|js)$/.test(name)) queue.push(",
+      "dead": "if (false) queue.push(",
+      "expect": [
+        "the add-on zip holds the manifest and every file it reaches, named by its version"
+      ]
+    },
+    "Add-on zip (6.3): a missing file stops the pack": {
+      "file": "tools/pack-addon.mjs",
+      "live": "throw new Error(`the add-on reaches ${name}, which is missing`);",
+      "dead": "continue;",
+      "expect": [
+        "a file the manifest never reaches stays out; a reached file missing stops the pack"
+      ]
+    },
+    "Add-on zip (6.3): one fixed date": {
+      "file": "tools/pack-addon.mjs",
+      "live": "{ date: FIXED, binary: true }",
+      "dead": "{ binary: true }",
+      "expect": [
+        "the same files give the same zip, byte for byte: every entry has one fixed date"
+      ]
+    },
     "Questions (2.22): a role is not asked": {
       "file": "src/questions.js",
       "live": "if (!name || isRole(name)) continue;",
@@ -2573,6 +2602,22 @@
       "dead": "asked.length",
       "expect": [
         "itsacv invite --funnel: per invitation, CVs asked, made, opinions, last activity"
+      ]
+    },
+    "Feedback: a price is one of the offered amounts": {
+      "file": "src/server.js",
+      "live": "if (price !== null && !PRICES.includes(price)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "an opinion may say what the CV would be worth: one of the offered amounts, or nothing"
+      ]
+    },
+    "Feedback: the page sends the price said, or nothing": {
+      "file": "web/app.js",
+      "live": "price: price.value === '' ? null : Number(price.value) });",
+      "dead": "price: Number(price.value) });",
+      "expect": [
+        "an opinion may say what the CV would be worth: one of the offered amounts, or nothing"
       ]
     }
   }

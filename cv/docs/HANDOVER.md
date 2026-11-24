@@ -1,6 +1,6 @@
 <!-- ITSACV-STATE
 NEXT: 6.4g
-TITLE: noterms replayed and refused (6.5), the premium backup node runs on the VM (6.4g); 6.4g waits for the restore on a second machine
+TITLE: outreach from the admin page, price asked, Haiku's unclosed fit repaired, terms cuts refused (6.5); 6.4g waits for the restore on a second machine
 WRITTEN-AT: 2026-11-24
 -->
 
@@ -12,6 +12,26 @@ the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
 ## 0. Where things stand (2026-11-24)
+
+- **2026-11-24, the outreach from the admin page**: the premium admin
+  page's "Invitations" card makes a link per person, lists each one's
+  funnel (asked, made, opinions, mean, last activity) and its comments,
+  copies and revokes (by label only; each action in the admin log).
+  `funnelRows`/`outreachOf` (`src/invites.js`) feed it and the CLI's
+  `--funnel`; the premium container mounts the generator's `out` folder
+  (`--out /data/out --public-host`). 6 tests, 12 defences (premium.json).
+
+- **2026-11-24, what a free CV is worth**: the opinion form asks,
+  optionally, what the person would pay (0, 5, 10, 20 or 50 EUR;
+  `PRICES`); the admin card shows the mean per invitation, the CLI's
+  `--feedback` each one. 1 test, 3 defences.
+
+- **2026-11-24, Haiku's unclosed "fit"** (issue #225): on two real offers
+  Haiku left `fit` open, every later key inside it, the root unclosed:
+  refused twice. `extractJson` now adds only the missing closers at the
+  end; `liftFromFit` (`src/pipeline.js`) moves the answer's own keys found
+  under `fit` back to the top (never over one the top has), said in the
+  repairs. 2 tests, 5 defences; none of the 18 stored real answers changes.
 
 - **2026-11-24, what customers cost, where the owner looks**: the premium
   admin page's "Coût API du jour" (`GET /api/admin/api-spend`: the router's
@@ -1963,8 +1983,14 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   become adjacent without the terms (training workshops, industrialisation,
   architecture, RCA/post-mortems; score -9 at worst) and none is gained;
   25 % faster (10-53 s against 30-78 s). The terms carry those readings:
-  the 5k target needs another cut that keeps them (e.g. only the terms
-  of the shortlisted skills), measured the same way.
+  the 5k target needs another cut that keeps them, measured the same way.
+  **Then `offerterms`** (only the terms the offer names, word for word:
+  -1.4k tokens; `ITSACV_PROMPT=compact,shortlist,offerterms`): also 4
+  honest "yes" lost (DBA task automation twice, training workshops,
+  architecture), none gained; **refused as the default**. **Haiku's own
+  variance**, the same prompt twice: 154/155 agree, 0 yes lost, mean score
+  gap 0.4: both losses are the cut's, not noise. The terms stay whole; the
+  remaining room is elsewhere (experiences 1.4k, facts 0.36k).
   **Haiku is now the default** (`src/models.js`) while its use is light
   (not limited, usage allowed); else Sonnet, then the free tiers as before.
 - [x] **2.63** (seen on the RTE CV, 2026-11-23) The made_by footer took

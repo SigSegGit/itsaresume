@@ -1706,10 +1706,26 @@
         "a yes resting on notions-level skills only is adjacent"
       ]
     },
+    "6.5: offerterms keeps the terms the offer names": {
+      "file": "src/prompt.js",
+      "live": "return (term) => Boolean(key(term)) && text.includes(` ${key(term)} `);",
+      "dead": "return (term) => Boolean(key(term));",
+      "expect": [
+        "ITSACV_PROMPT=offerterms keeps only the terms the offer names (6.5)"
+      ]
+    },
+    "6.5: offerterms needs whole words": {
+      "file": "src/prompt.js",
+      "live": "text.includes(` ${key(term)} `)",
+      "dead": "text.includes(`${key(term)}`)",
+      "expect": [
+        "ITSACV_PROMPT=offerterms keeps only the terms the offer names (6.5)"
+      ]
+    },
     "6.5: the terms leave only when noterms is asked": {
       "file": "src/prompt.js",
-      "live": "const terms = (noTerms ? [] : skill.terms ?? []).filter(",
-      "dead": "const terms = ([]).filter(",
+      "live": "  if (noTerms) return () => false;",
+      "dead": "  if (false) return () => false;",
       "expect": [
         "ITSACV_PROMPT=noterms leaves the skills' terms out of the catalogue (6.5)"
       ]
@@ -1728,6 +1744,47 @@
       "dead": "const haikuLight = true;",
       "expect": [
         "6.5: Haiku is offered when a backend is named claude-haiku, and is the default while light"
+      ]
+    },
+    "JSON: the missing closers are added at the end": {
+      "file": "src/llm.js",
+      "live": "        return JSON.parse(rest + closers);",
+      "dead": "        return JSON.parse(rest);",
+      "expect": [
+        "an answer whose last brackets never close is closed, and only that",
+        "an answer whose keys sit inside an unclosed \"fit\" is put back in shape, the repair reported"
+      ]
+    },
+    "JSON: a string's escaped quote stays in the string": {
+      "file": "src/llm.js",
+      "live": "      else if (char === '\\\\') escaped = true;",
+      "dead": "      else if (char === '\\\\') escaped = false;",
+      "expect": [
+        "an answer whose last brackets never close is closed, and only that"
+      ]
+    },
+    "Fit: the answer's keys go back to the top": {
+      "file": "src/pipeline.js",
+      "live": "      const lifted = liftFromFit(extractJson(text));",
+      "dead": "      const lifted = { answer: extractJson(text), repairs: [] };",
+      "expect": [
+        "an answer whose keys sit inside an unclosed \"fit\" is put back in shape, the repair reported"
+      ]
+    },
+    "Fit: a key the top has is never overwritten": {
+      "file": "src/pipeline.js",
+      "live": "Object.hasOwn(fit, key) && !Object.hasOwn(answer, key));",
+      "dead": "Object.hasOwn(fit, key));",
+      "expect": [
+        "an answer whose keys sit inside an unclosed \"fit\" is put back in shape, the repair reported"
+      ]
+    },
+    "Fit: the lifting is said in the repairs": {
+      "file": "src/pipeline.js",
+      "live": "      repairs = [...lifted.repairs, ...merged.repairs, ...normalised.repairs];",
+      "dead": "      repairs = [...merged.repairs, ...normalised.repairs];",
+      "expect": [
+        "an answer whose keys sit inside an unclosed \"fit\" is put back in shape, the repair reported"
       ]
     }
   }

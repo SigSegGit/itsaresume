@@ -54,6 +54,49 @@ async function showApiSpend() {
     : t('Routeur injoignable : dépense inconnue.');
 }
 
+/* 2026-11-24: the LinkedIn outreach: one link per person, its funnel, its opinions. */
+async function showInvites() {
+  let invitations;
+  try {
+    ({ invitations } = await api('api/admin/invites'));
+  } catch (error) {
+    $('invites').replaceChildren(el('h2', t('Invitations (CV gratuits contre un avis)')), el('p', error.message));
+    return;
+  }
+  const header = el('tr');
+  header.append(...[t('Libellé'), t('État'), t('Demandés'), t('Faits'), t('Avis'), t('Note'), t('Prix dit'), t('Dernière activité'), ''].map((name) => el('th', name)));
+  const rows = invitations.map((row) => {
+    const line = el('tr');
+    line.append(...[row.label, row.live ? t('actif') : t('révoqué'), row.asked, row.made, row.opinions, row.mean === null ? '—' : `${row.mean}/5`, row.price === null ? '—' : `${row.price} €`, when(row.last)].map((cell) => el('td', cell)));
+    const actions = el('td');
+    if (row.link) {
+      const copy = el('button', t('Copier le lien'));
+      copy.type = 'button';
+      copy.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(row.link);
+        copy.textContent = t('Copié');
+      });
+      const revoke = el('button', t('Révoquer'));
+      revoke.type = 'button';
+      revoke.className = 'danger';
+      revoke.addEventListener('click', async () => {
+        if (!window.confirm(t('Révoquer le lien de {label} ? Il ne servira plus.', { label: row.label }))) return;
+        await api('api/admin/invites/revoke', { label: row.label });
+        await Promise.all([showInvites(), showLog()]);
+      });
+      actions.append(copy, revoke);
+    }
+    line.append(actions);
+    return line;
+  });
+  $('invitations').replaceChildren(header, ...rows);
+  const opinions = invitations.flatMap((row) => row.comments.map((comment) => ({ ...comment, label: row.label })))
+    .sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  $('opinions').replaceChildren(...(opinions.length
+    ? opinions.map((row) => el('li', `${when(row.at)} — ${row.label} — ${row.rating}/5${row.price === null ? '' : ` — ${row.price} €`}${row.comment ? ` — ${row.comment}` : ''}`))
+    : [el('li', t('Aucun avis pour l’instant.'))]));
+}
+
 async function showSnapshots() {
   const { snapshots, newest } = await api('api/admin/snapshots');
   $('newest').textContent = newest
@@ -120,7 +163,20 @@ async function start() {
     return;
   }
   $('admin').hidden = false;
-  await Promise.all([showSnapshots(), showUsers(), showLog(), showOrders(), showFailed()]);
+  await Promise.all([showInvites(), showSnapshots(), showUsers(), showLog(), showOrders(), showFailed()]);
+  $('invite').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const say = $('i-result');
+    say.hidden = false;
+    try {
+      const { label, link } = await api('api/admin/invites', { label: $('i-label').value });
+      say.textContent = t('Lien pour {label} : {link}', { label, link });
+      $('i-label').value = '';
+      await Promise.all([showInvites(), showLog()]);
+    } catch (error) {
+      say.textContent = error.message;
+    }
+  });
   $('erase').addEventListener('submit', async (event) => {
     event.preventDefault();
     const email = $('e-email').value.trim();

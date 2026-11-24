@@ -7,6 +7,8 @@ import { join } from 'node:path';
 
 export const FEEDBACK_FILE = 'feedback.jsonl';
 export const COMMENT_MAX = 2000;
+/** 2026-11-24: what a free CV would be worth, in euros (the owner's first price). */
+export const PRICES = [0, 5, 10, 20, 50];
 
 export function appendFeedback(out, entry) {
   const file = join(out, FEEDBACK_FILE);
@@ -41,7 +43,7 @@ export function feedbackByInvite(text) {
     const entries = byInvite.get(label).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     const mean = entries.reduce((sum, entry) => sum + entry.rating, 0) / entries.length;
     const head = `${label ?? '(no invitation)'}\t${plural(entries.length, 'opinion')}\tmean ${mean.toFixed(1)}/5\n`;
-    return head + entries.map((entry) => `  ${String(entry.at).slice(0, 10)}\t${entry.rating}/5\t${oneLine(entry.title)}\t${oneLine(entry.comment)}\n`).join('');
+    return head + entries.map((entry) => `  ${String(entry.at).slice(0, 10)}\t${entry.rating}/5${Number.isInteger(entry.price) ? ` ${entry.price} EUR` : ''}\t${oneLine(entry.title)}\t${oneLine(entry.comment)}\n`).join('');
   }).join('');
 }
 
