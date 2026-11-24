@@ -196,12 +196,15 @@ ligne `SMTP …`.
 **Il faut** : la flotte ITSaNAS en place sur la VM, une deuxième machine
 du compte.
 
-1. Sur la VM :
+1. Sur la VM (**fait le 2026-11-24** : nœud enregistré, 2G offerts, une
+   copie ailleurs ; relancer le script est sans danger) :
    ```bash
    bash ~/itsaresume/cv/deploy/vm-generator/itsanas-premium.sh
    ```
    Tu tapes la phrase de passe et tu notes les 24 mots toi-même (le script
-   ne les écrit nulle part).
+   ne les écrit nulle part). Pour changer la phrase de passe plus tard :
+   `itsanas passphrase --recovery`, nœud arrêté, puis la nouvelle dans
+   le `client.env` du compte (c'est ce qu'il lit au démarrage).
 2. Sur une autre machine du compte `itsaresume`, une fois la copie
    synchronisée :
    ```powershell
