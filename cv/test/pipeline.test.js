@@ -173,6 +173,23 @@ test('a call marked classify sends its kind; an unmarked call sends none', async
   }
 });
 
+test('a customer\'s call says so to the router; the owner\'s says nothing', async () => {
+  const { asCustomer } = await import('../src/llm.js');
+  const { server, seen, url } = await fakeRouter([
+    [200, { backend: 'api', text: 'a', attempts: [] }],
+    [200, { backend: 'sub', text: 'b', attempts: [] }],
+  ]);
+  try {
+    const customer = asCustomer((call) => complete({ url, ...call }));
+    await customer({ system: 's', prompt: 'p' });
+    await complete({ url, system: 's', prompt: 'p', audience: 'owner' });
+    assert.deepEqual(seen[0].body, { prompt: 'p', system: 's', audience: 'customer' });
+    assert.deepEqual(seen[1].body, { prompt: 'p', system: 's' });
+  } finally {
+    server.close();
+  }
+});
+
 test('an unreachable router is a clear error', async () => {
   await assert.rejects(complete({ url: 'http://127.0.0.1:9', system: 's', prompt: 'p' }), /itsaresume/);
 });

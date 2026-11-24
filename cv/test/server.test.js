@@ -281,7 +281,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, feedbackList, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, feedbackList, perInvite, serviceInviteOnly, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const dirs = new Map();
@@ -316,7 +316,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
         return result;
       },
     },
-    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), ...(maxJobs ? { maxJobs } : {}), ...(service ? { service, serviceTtlMs } : {}), now: () => clock.now },
+    publicMode: { host: 'cv.example.org', perDay, perVisitorPerHour, maxQueued, ...ban, ...(inviteOnly ? { inviteOnly } : {}), ...(maxVisitors ? { maxVisitors } : {}), ...(maxJobs ? { maxJobs } : {}), ...(service ? { service, serviceTtlMs } : {}), ...(perInvite ? { perInvite } : {}), ...(serviceInviteOnly ? { serviceInviteOnly } : {}), now: () => clock.now },
   });
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   t.after(() => { app.server.closeAllConnections(); app.server.close(); });
@@ -1418,6 +1418,41 @@ test('the opinions received: the owner\'s page lists them, newest first; never i
   const open = await startPublic(t, { feedbackList: () => kept });
   const visitor = await open.visit();
   assert.equal((await visitor.get('/api/feedback')).status, 404);
+});
+
+// 2026-11-24, red team of the free trials on the public page: one shared
+// invitation, or strangers, must not get own-profile CVs without end.
+test('red team: an invitation gives a fixed number of own-profile CVs, whoever opens it', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-quota-'));
+  const { createInvite } = await import('../src/invites.js');
+  const code = createInvite(dir, 'Sam D.');
+  const app = await startPublic(t, { service: true, perInvite: 2, perVisitorPerHour: 20, perDay: 50, maxQueued: 20, invites: () => JSON.parse(readFileSync(join(dir, 'invites.json'), 'utf8')) });
+  const sources = [{ name: 'cv.txt', data: Buffer.from('Sam Doe, SRE').toString('base64') }];
+  const statuses = [];
+  for (const ip of ['203.0.113.21', '203.0.113.22', '203.0.113.23']) {
+    const friend = await app.visit(ip, `/?i=${code}`);
+    statuses.push((await friend.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER(`SRE ${ip}`) }], sources })).status);
+  }
+  assert.deepEqual(statuses, [202, 202, 429], 'the link shared with a third person gives nothing more');
+});
+
+test('red team: with serviceInviteOnly, a stranger cannot bring a profile; an invited visitor can', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-only-'));
+  const { createInvite } = await import('../src/invites.js');
+  const code = createInvite(dir, 'Lou B.');
+  const app = await startPublic(t, { service: true, serviceInviteOnly: true, perVisitorPerHour: 10, invites: () => JSON.parse(readFileSync(join(dir, 'invites.json'), 'utf8')) });
+  const sources = [{ name: 'cv.txt', data: Buffer.from('Lou B, DevOps').toString('base64') }];
+  const stranger = await app.visit('203.0.113.31');
+  assert.equal((await stranger.post('/api/jobs', { offers: [{ title: 'DevOps', text: PUBLIC_OFFER('DevOps') }], sources })).status, 403);
+  const guest = await app.visit('203.0.113.32', `/?i=${code}`);
+  assert.equal((await guest.post('/api/jobs', { offers: [{ title: 'DevOps', text: PUBLIC_OFFER('DevOps 2') }], sources })).status, 202);
+  assert.equal((await stranger.post('/api/jobs', { offers: [{ title: 'Owner CV', text: PUBLIC_OFFER('Owner CV') }] })).status, 202, 'the owner\'s own CV stays open to all');
+});
+
+test('a run on a visitor\'s own profile reaches the router as a customer\'s', () => {
+  const source = readFileSync(new URL('../src/serve.js', import.meta.url), 'utf8');
+  assert.match(source, /const billed = sources && publicMode \? asCustomer\(llm\) : llm;/);
+  assert.match(source, /llm: counted\(withModel\(billed, sources && publicMode \? 'auto' : model\), onAnswer\)/);
 });
 
 // 6.2: the add-on in service mode posts from its own origin

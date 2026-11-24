@@ -9,9 +9,9 @@ import { complete, TIMEOUT_MS } from '../src/llm.js';
 import { loadedFrom, loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
-import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/invites.js';
+import { createInvite, loadInvites, outreachFunnel, revokeInvite, usageByInvite } from '../src/invites.js';
 import { FEEDBACK_FILE, feedbackByInvite } from '../src/feedback.js';
-import { applicationsCsv, applicationsText, listApplications } from '../src/applications.js';
+import { applicationsCsv, applicationsText, listApplications, weekReport } from '../src/applications.js';
 import { QA_LOG } from '../src/qa.js';
 import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
@@ -28,10 +28,10 @@ const USAGE = `usage:
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
   itsacv serve [--port PORT] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
-               [--ban-after N] [--ban-hours N] [--invite-only] [--service]]
+               [--ban-after N] [--ban-hours N] [--invite-only] [--service [--service-invite-only] [--per-invite N]]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
-  itsacv invite --list | --usage | --feedback | --revoke <label|code> | --many FILE [--out DIR]
-  itsacv applications [--csv] [--out DIR]
+  itsacv invite --list | --usage | --feedback | --funnel | --revoke <label|code> | --many FILE [--out DIR]
+  itsacv applications [--csv | --week] [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
   itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
   itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
@@ -100,8 +100,8 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--many', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--service': ['service', true], '--list': ['list', true], '--usage': ['usage', true], '--feedback': ['feedback', true], '--csv': ['csv', true], '--run': ['run', true] };
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--per-invite', '--revoke', '--many', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--service': ['service', true], '--service-invite-only': ['serviceInviteOnly', true], '--list': ['list', true], '--usage': ['usage', true], '--feedback': ['feedback', true], '--funnel': ['funnel', true], '--week': ['week', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -130,9 +130,13 @@ function parse(argv) {
     banHours: '24',
     inviteOnly: false,
     service: false,
+    serviceInviteOnly: false,
+    perInvite: '3',
     list: false,
     usage: false,
     feedback: false,
+    funnel: false,
+    week: false,
     csv: false,
     revoke: null,
     many: null,
@@ -155,7 +159,7 @@ function parse(argv) {
     else options.files.push(arg);
   }
   if (command === 'invite') {
-    if (!options.list && !options.usage && !options.feedback && options.revoke === null && options.many === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
+    if (!options.list && !options.usage && !options.feedback && !options.funnel && options.revoke === null && options.many === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
   if (!['serve', 'questions', 'matrix', 'applications'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
@@ -215,6 +219,9 @@ async function main() {
           }
         }
         if (refused) process.exitCode = 2;
+      } else if (options.funnel) {
+        const read = (name) => (existsSync(join(options.out, name)) ? readFileSync(join(options.out, name), 'utf8') : '');
+        process.stdout.write(outreachFunnel(loadInvites(options.out), read(QA_LOG), read(FEEDBACK_FILE)));
       } else if (options.feedback) {
         const file = join(options.out, FEEDBACK_FILE);
         process.stdout.write(feedbackByInvite(existsSync(file) ? readFileSync(file, 'utf8') : ''));
@@ -243,18 +250,20 @@ async function main() {
   if (options.command === 'applications') {
     // 2026-11-24: the applications tracked on the owner's page (src/applications.js).
     const rows = listApplications(options.out);
-    process.stdout.write(options.csv ? applicationsCsv(rows) : applicationsText(rows));
+    process.stdout.write(options.csv ? applicationsCsv(rows) : options.week ? weekReport(rows) : applicationsText(rows));
     return;
   }
 
   if (options.command === 'serve') {
     if (options.inviteOnly && options.publicHost === null) fail(2, '--invite-only goes with --public-host');
     if (options.service && options.publicHost === null) fail(2, '--service goes with --public-host');
+    if (options.serviceInviteOnly && !options.service) fail(2, '--service-invite-only goes with --service');
+    if (!/^[1-9]\d*$/.test(options.perInvite)) fail(2, '--per-invite: a whole number, 1 or more');
     for (const key of ['perDay', 'perHour', 'maxQueued', 'banAfter', 'banHours']) {
       if (!/^[1-9]\d*$/.test(options[key])) fail(2, `--${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: a whole number, 1 or more`);
     }
     if (options.publicHost !== null && !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(options.publicHost)) fail(2, '--public-host: a host name, like cv.ngas.fr');
-    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, service: options.service, now: Date.now };
+    const publicMode = options.publicHost && { host: options.publicHost, perDay: Number(options.perDay), perVisitorPerHour: Number(options.perHour), maxQueued: Number(options.maxQueued), banAfter: Number(options.banAfter), banHours: Number(options.banHours), inviteOnly: options.inviteOnly, service: options.service, serviceInviteOnly: options.serviceInviteOnly, perInvite: Number(options.perInvite), now: Date.now };
     // 4.7: the add-on's origin from --addon-origin, its key from $ITSACV_ADDON_KEY (48+ characters).
     let addon = null;
     if (options.addonOrigin) {

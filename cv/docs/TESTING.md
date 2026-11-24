@@ -91,6 +91,10 @@ property it proves.
 | each application lists its CV files; the owner's page serves them, nothing else | CV files: never another file of the run |
 | itsacv applications: the list in the terminal, or as CSV | — |
 | the applications card shows the summary, the follow-ups and the CV links | — |
+| a contact and a channel per application, in the CSV too | Applications: a channel from the list only; Applications: the contact stays when a change does not say |
+| the week in one screen: sent, answers, follow-ups, and what moved | Week: answers are this week's |
+| a follow-up draft says only what the application and the profile hold | Draft: the date as the reader writes it |
+| the owner's page gives each application its follow-up draft | — |
 
 ## `test/bionic-up.test.js`
 
@@ -506,6 +510,7 @@ property it proves.
 | invites.json is 0600 even over a stale world-readable temporary file | Invite: the file is the owner's alone |
 | §9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over | Invites (§9): a held lock makes the writer wait, then give up; Invites (§9): a stale lock is taken over; Invites (§9): the lock is released |
 | itsacv invite --many: one link per label of a file, a refused label named, the others made | Invites --many: a refused label does not stop the others |
+| itsacv invite --funnel: per invitation, CVs asked, made, opinions, last activity | Funnel: made counts the finished runs |
 
 ## `test/layout.test.js`
 
@@ -703,6 +708,7 @@ property it proves.
 | the client names a backend only when asked (router 8.22) | Client: a backend name is sent only when asked |
 | the client sends a schema only when asked (router 8.24) | Client: a schema is sent only when asked |
 | a call marked classify sends its kind; an unmarked call sends none | Client: a call's kind reaches the router; Client: a call without a kind sends none |
+| a customer's call says so to the router; the owner's says nothing | Audience: a customer's call says so; Audience: asCustomer marks every call |
 | an unreachable router is a clear error | — |
 | itsacv tailor writes the CV, the report and the analysis | Run: the report gets the rendered CV |
 | itsacv tailor flags the instructions of an offer in the report and run.json, and applies none | Instructions: a run finds them in the offer; Instructions: run.json keeps them |
@@ -1065,6 +1071,9 @@ property it proves.
 | the public page offers the own-profile tab in service mode, files only | Service tab: shown only in service mode; Service tab: a visitor sends no links |
 | an invited visitor is told so, and lands on the own-profile tab (service mode) | Outreach: an invited visitor is told so |
 | the opinions received: the owner's page lists them, newest first; never in public | Outreach: the opinions never in public; Outreach: the opinions newest first |
+| red team: an invitation gives a fixed number of own-profile CVs, whoever opens it | Trials: an invitation gives a fixed number of own-profile CVs |
+| red team: with serviceInviteOnly, a stranger cannot bring a profile; an invited visitor can | Trials: own profile on invitation only when asked |
+| a run on a visitor's own profile reaches the router as a customer's | — |
 | service mode: the add-on may create a job with a profile, and only that | Service (6.2): the add-on only creates jobs; Service (6.2): the add-on brings its own profile; Service (6.2): an extension origin, no other site |
 
 ## `test/split.test.js`
@@ -1091,6 +1100,15 @@ property it proves.
 |---|---|
 | 4.12: one default template and palette, the template folder listed | Style (4.12): an unknown palette is refused |
 | 4.12: a palette recolours the template; the default leaves it as drawn | Style (4.12): a palette recolours the template |
+
+## `test/trials.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| red team: an unconfirmed address takes no free preview when addresses are checked | Trials: a free preview needs a confirmed address |
+| red team: throwaway accounts from one address hit a daily preview ceiling per address | Trials: a daily preview ceiling per address |
+| red team: accounts from many addresses hit the site's daily preview ceiling | Trials: a daily preview ceiling for the site |
+| red team: the premium server sends its model calls as a customer's | — |
 
 ## `test/tunnel.test.js`
 
@@ -1174,6 +1192,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**780 tests, 616 of them covered by at least one sabotage defence.**
+**793 tests, 626 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

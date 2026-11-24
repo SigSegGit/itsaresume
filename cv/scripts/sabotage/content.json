@@ -2534,6 +2534,46 @@
       "expect": [
         "each application lists its CV files; the owner's page serves them, nothing else"
       ]
+    },
+    "Applications: a channel from the list only": {
+      "file": "src/applications.js",
+      "live": "&& !CHANNELS.includes(channel)) throw",
+      "dead": "&& false) throw",
+      "expect": [
+        "a contact and a channel per application, in the CSV too"
+      ]
+    },
+    "Applications: the contact stays when a change does not say": {
+      "file": "src/applications.js",
+      "live": "contact: contact === undefined ? before.contact ?? '' : who,",
+      "dead": "contact: who,",
+      "expect": [
+        "a contact and a channel per application, in the CSV too"
+      ]
+    },
+    "Week: answers are this week's": {
+      "file": "src/applications.js",
+      "live": "['interview', 'offer', 'rejected'].includes(row.status) && thisWeek(row.at)",
+      "dead": "['interview', 'offer', 'rejected'].includes(row.status)",
+      "expect": [
+        "the week in one screen: sent, answers, follow-ups, and what moved"
+      ]
+    },
+    "Draft: the date as the reader writes it": {
+      "file": "src/applications.js",
+      "live": "row.sent.split('-').reverse().join('/')",
+      "dead": "row.sent",
+      "expect": [
+        "a follow-up draft says only what the application and the profile hold"
+      ]
+    },
+    "Funnel: made counts the finished runs": {
+      "file": "src/invites.js",
+      "live": "asked.filter((entry) => entry.status === 'done').length",
+      "dead": "asked.length",
+      "expect": [
+        "itsacv invite --funnel: per invitation, CVs asked, made, opinions, last activity"
+      ]
     }
   }
 }

@@ -879,8 +879,8 @@
     },
     "Invite: an unreadable file names nobody": {
       "file": "src/server.js",
-      "live": "      return {};\n    }\n  };\n  const inviteOf",
-      "dead": "      throw error;\n    }\n  };\n  const inviteOf",
+      "live": "      return {};\n    }\n  };\n  // 2026-11-24: own-profile CVs given per invitation label (kept across a deploy).",
+      "dead": "      throw error;\n    }\n  };\n  // 2026-11-24: own-profile CVs given per invitation label (kept across a deploy).",
       "expect": [
         "an unreadable invitation file names nobody: the page loads, invite-only refuses with 403, never 500"
       ]

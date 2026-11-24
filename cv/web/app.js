@@ -108,6 +108,7 @@ function showPitch(profile) {
 }
 
 /* 2026-11-24: the owner's applications, one per run folder (src/applications.js). */
+const channelLabel = (channel) => ({ linkedin: 'LinkedIn', email: t('E-mail'), site: t('Site'), phone: t('Téléphone'), other: t('Autre') })[channel] ?? channel;
 const statusLabel = (status) => ({ todo: t('À envoyer'), sent: t('Envoyée'), interview: t('Entretien'), offer: t('Offre reçue'), rejected: t('Refusée') })[status] ?? status;
 let applicationsShown = false;
 async function showApplications() {
@@ -128,9 +129,20 @@ async function showApplications() {
   const rows = data.rows.map((row) => {
     const select = h('select', { 'aria-label': t('Statut') }, data.statuses.map((status) => h('option', { value: status, text: statusLabel(status), ...(status === row.status ? { selected: true } : {}) })));
     const note = h('input', { type: 'text', value: row.note, maxLength: 500, placeholder: t('Remarque'), 'aria-label': t('Remarque') });
+    const contact = h('input', { type: 'text', value: row.contact ?? '', maxLength: 120, placeholder: t('Contact'), 'aria-label': t('Contact') });
+    const channel = h('select', { 'aria-label': t('Canal') }, ['', 'linkedin', 'email', 'site', 'phone', 'other'].map((value) => h('option', { value, text: value ? channelLabel(value) : '—', ...(value === (row.channel ?? '') ? { selected: true } : {}) })));
+    const draft = h('button', { type: 'button', class: 'link', text: t('Brouillon de relance') });
+    draft.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText((await api(`/api/applications/${encodeURIComponent(row.run)}/follow-up?lang=${lang}`)).text);
+        draft.textContent = t('Copié !');
+      } catch (failure) {
+        showError(failure.message);
+      }
+    });
     const save = async () => {
       try {
-        Object.assign(row, await api(`/api/applications/${encodeURIComponent(row.run)}`, { status: select.value, note: note.value }));
+        Object.assign(row, await api(`/api/applications/${encodeURIComponent(row.run)}`, { status: select.value, note: note.value, contact: contact.value, channel: channel.value }));
         tr.dataset.status = row.status;
       } catch (failure) {
         showError(failure.message);
@@ -138,10 +150,12 @@ async function showApplications() {
     };
     select.addEventListener('change', save);
     note.addEventListener('change', save);
+    contact.addEventListener('change', save);
+    channel.addEventListener('change', save);
     const tr = h('tr', { 'data-status': row.status },
       h('td', { text: row.date }),
       h('td', {}, row.title, ' ', row.follow_up ? h('span', { class: 'chip warn', text: t('À relancer') }) : null,
-        ...row.files.map((file) => h('a', { class: 'cv-file', href: `/api/applications/${encodeURIComponent(row.run)}/${file}`, download: file, text: file.endsWith('.pdf') ? 'PDF' : 'Word' }))), h('td', { text: row.score == null ? '' : `${row.score}/100` }), h('td', {}, select), h('td', {}, note));
+        ...row.files.map((file) => h('a', { class: 'cv-file', href: `/api/applications/${encodeURIComponent(row.run)}/${file}`, download: file, text: file.endsWith('.pdf') ? 'PDF' : 'Word' }))), h('td', { text: row.score == null ? '' : `${row.score}/100` }), h('td', {}, select, ' ', channel), h('td', {}, note, contact, row.status === 'sent' ? draft : null));
     return tr;
   });
   $('applications-rows').replaceChildren(...rows);

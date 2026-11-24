@@ -140,3 +140,21 @@ test('itsacv invite --many: one link per label of a file, a refused label named,
   assert.match(made.stderr, /Ana.*already live/);
   assert.deepEqual(Object.values(loadInvites(out)).map((invite) => invite.label).sort(), ['Ana', 'Lou B.', 'Sam D.']);
 });
+
+test('itsacv invite --funnel: per invitation, CVs asked, made, opinions, last activity', async () => {
+  const { outreachFunnel } = await import('../src/invites.js');
+  const invites = { a1: { label: 'Sam D.' }, b2: { label: 'Lou B.', revoked: true }, c3: { label: 'Ana' } };
+  const log = [
+    { invite: 'Sam D.', status: 'done', at: '2026-11-24T10:00:00Z' },
+    { invite: 'Sam D.', status: 'failed', at: '2026-11-24T11:00:00Z' },
+    { invite: 'Lou B.', status: 'done', at: '2026-11-20T10:00:00Z' },
+    { invite: null, status: 'done', at: '2026-11-25T10:00:00Z' },
+  ].map((entry) => JSON.stringify(entry)).join('\n');
+  const feedback = [{ invite: 'Sam D.', rating: 4, at: '2026-11-24T12:00:00Z' }].map((entry) => JSON.stringify(entry)).join('\n');
+  assert.equal(outreachFunnel(invites, log, feedback), [
+    'Ana\tlive\t0 asked\t0 made\t0 opinions\tnever used',
+    'Lou B.\trevoked\t1 asked\t1 made\t0 opinions\tlast 2026-11-20',
+    'Sam D.\tlive\t2 asked\t1 made\t1 opinion (4.0/5)\tlast 2026-11-24',
+    '',
+  ].join('\n'));
+});

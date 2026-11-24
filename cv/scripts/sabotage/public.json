@@ -429,6 +429,22 @@
       "expect": [
         "the opinions received: the owner's page lists them, newest first; never in public"
       ]
+    },
+    "Trials: an invitation gives a fixed number of own-profile CVs": {
+      "file": "src/server.js",
+      "live": "inviteRuns.set(invite, (inviteRuns.get(invite) ?? 0) + created.length);",
+      "dead": "inviteRuns.set(invite, 0);",
+      "expect": [
+        "red team: an invitation gives a fixed number of own-profile CVs, whoever opens it"
+      ]
+    },
+    "Trials: own profile on invitation only when asked": {
+      "file": "src/server.js",
+      "live": "if (publicMode.serviceInviteOnly && !invite) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "red team: with serviceInviteOnly, a stranger cannot bring a profile; an invited visitor can"
+      ]
     }
   }
 }

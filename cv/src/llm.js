@@ -36,12 +36,14 @@ export function contractProblem(parsed) {
   return `itsaresume speaks contract ${String(parsed.contract).slice(0, 20)}; this client speaks contract ${CONTRACT_MAJOR}.x`;
 }
 
-export function complete({ url, system, prompt, backend, schema, kind, timeoutMs = TIMEOUT_MS }) {
+export function complete({ url, system, prompt, backend, schema, kind, audience, timeoutMs = TIMEOUT_MS }) {
   const target = new URL(`${url.replace(/\/$/, '')}/v1/complete`);
   // A named backend is tried alone by the router (8.22): a measure per model.
   // A schema asks for structured output (8.24); an older router ignores it.
   // A kind (8.34) lets a classify-only backend take a call that only chooses.
-  const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}), ...(kind ? { kind } : {}) });
+  // 2026-11-24: a customer's call says so; the router keeps it off the
+  // owner's subscription (customer_billing). The owner's says nothing.
+  const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}), ...(kind ? { kind } : {}), ...(audience === 'customer' ? { audience } : {}) });
   return new Promise((resolve, reject) => {
     const outgoing = httpRequest(
       target,
@@ -135,4 +137,9 @@ export function counted(llm, onAnswer) {
     onAnswer(answer);
     return answer;
   };
+}
+
+/** 2026-11-24: the same llm, every call marked as a customer's (the router decides what it may reach). */
+export function asCustomer(llm) {
+  return (call) => llm({ ...call, audience: 'customer' });
 }

@@ -18,6 +18,12 @@ pub const GROQ_URL: &str = "https://api.groq.com/openai/v1";
 /// The variable Groq's key is read from.
 pub const GROQ_KEY_ENV: &str = "GROQ_API_KEY";
 
+/// 2026-11-24: Anthropic's API, through its OpenAI-compatible endpoint, for
+/// customers' requests; its key in `ANTHROPIC_API_KEY`, never in a file.
+pub const ANTHROPIC_URL: &str = "https://api.anthropic.com/v1";
+/// The variable Anthropic's key is read from.
+pub const ANTHROPIC_KEY_ENV: &str = "ANTHROPIC_API_KEY";
+
 /// The OpenAI backend (and Groq's, the same protocol).
 #[derive(Debug, Clone)]
 pub struct OpenAiBackend {
@@ -39,6 +45,15 @@ impl OpenAiBackend {
             kind: "openai",
             key_env: KEY_ENV,
         }
+    }
+
+    /// Anthropic's API for `model`, with `key` (`None`: every request stops).
+    pub fn anthropic(model: impl Into<String>, key: Option<String>) -> Self {
+        let mut backend = Self::new(ANTHROPIC_URL, model, key);
+        backend.inner.label = "anthropic-api";
+        backend.kind = "anthropic-api";
+        backend.key_env = ANTHROPIC_KEY_ENV;
+        backend
     }
 
     /// Groq's backend for `model`, with `key` (`None`: every request stops).

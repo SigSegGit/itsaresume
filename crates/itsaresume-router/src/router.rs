@@ -1,6 +1,6 @@
 //! Tries backends in order; falls back on quota or outage, stops on anything else.
 
-use crate::backend::{Backend, BackendError, Kind, Probe, Request};
+use crate::backend::{Audience, Backend, BackendError, Billing, Kind, Probe, Request};
 use crate::journal::Journal;
 use std::collections::HashMap;
 use std::fmt;
@@ -50,6 +50,12 @@ pub enum RouteError {
         /// The kind asked for.
         kind: crate::backend::Kind,
     },
+    /// 2026-11-24: no backend this audience may use (a customer's request
+    /// and only billings `customer_billing` leaves out): nothing was asked.
+    NotAllowed {
+        /// Whose request it was.
+        audience: Audience,
+    },
 }
 
 impl fmt::Display for RouteError {
@@ -58,6 +64,11 @@ impl fmt::Display for RouteError {
             Self::Stopped { backend, error } => write!(f, "stopped by {backend}: {error}"),
             Self::Exhausted => write!(f, "every backend failed with a quota or an outage"),
             Self::Unserved { kind } => write!(f, "no configured backend serves {kind:?} requests"),
+            Self::NotAllowed { audience } => write!(
+                f,
+                "no configured backend may serve a {} request (customer_billing)",
+                audience.as_str()
+            ),
         }
     }
 }
@@ -123,6 +134,8 @@ pub struct Router {
     /// 8.59: the pause before an overloaded backend is tried once more;
     /// zero, never.
     overload_retry: Duration,
+    /// 2026-11-24: the billings a customer's request may reach.
+    customer_billing: Vec<Billing>,
 }
 
 /// Whether an outage is a model overloaded for a moment (503, "high
@@ -154,6 +167,8 @@ pub struct BackendStatus {
     pub name: String,
     /// What it is (`claude-code`, `lm-studio`).
     pub kind: String,
+    /// How it is paid for (`subscription`, `api`, `free`, `local`).
+    pub billing: &'static str,
     /// `up`, `down`, `limited` (a quota), `stopped` (an error that is not an
     /// outage: logged out, a tripwire), or `unknown` (no probe, never asked).
     pub state: &'static str,
@@ -181,7 +196,15 @@ impl Router {
             seen: Mutex::new(HashMap::new()),
             check_periods: HashMap::new(),
             overload_retry: Duration::ZERO,
+            customer_billing: vec![Billing::Api],
         })
+    }
+
+    /// The billings a customer's request may reach (the API alone unless told).
+    #[must_use]
+    pub fn with_customer_billing(mut self, billings: Vec<Billing>) -> Self {
+        self.customer_billing = billings;
+        self
     }
 
     /// Pause `pause` and try an overloaded backend once more (8.59).
@@ -239,6 +262,7 @@ impl Router {
                 BackendStatus {
                     name: backend.name().to_owned(),
                     kind: backend.kind().to_owned(),
+                    billing: backend.billing().as_str(),
                     state,
                     reason,
                     loaded,
@@ -297,7 +321,7 @@ impl Router {
     /// Answer `request` from the first backend that can, and journal it.
     pub fn complete(&self, request: &Request) -> Outcome {
         let all: Vec<&dyn Backend> = self.backends.iter().map(AsRef::as_ref).collect();
-        self.journaled(request, None, &all)
+        self.journaled(request, None, &all, Audience::Owner)
     }
 
     fn journaled(
@@ -305,12 +329,30 @@ impl Router {
         request: &Request,
         asked: Option<&str>,
         backends: &[&dyn Backend],
+        audience: Audience,
     ) -> Outcome {
         let started = Instant::now();
-        let mut outcome = self.route(request, backends);
-        if let Err(error) = self
-            .journal
-            .record_asked(request, asked, &outcome, started.elapsed())
+        // 2026-11-24: a customer's request sees only the billings allowed to
+        // customers, a named backend included: naming one is no way around.
+        let allowed: Vec<&dyn Backend> = backends
+            .iter()
+            .copied()
+            .filter(|backend| {
+                audience == Audience::Owner || self.customer_billing.contains(&backend.billing())
+            })
+            .collect();
+        let mut outcome = if allowed.is_empty() {
+            Outcome {
+                result: Err(RouteError::NotAllowed { audience }),
+                attempts: Vec::new(),
+                journal_error: None,
+            }
+        } else {
+            self.route(request, &allowed)
+        };
+        if let Err(error) =
+            self.journal
+                .record_for(request, asked, &outcome, started.elapsed(), audience)
         {
             outcome.journal_error = Some(format!(
                 "could not append to {}: {error}",
@@ -329,6 +371,17 @@ impl Router {
         request: &Request,
         only: Option<&str>,
     ) -> Result<Outcome, UnknownBackend> {
+        self.complete_as(request, only, Audience::Owner)
+    }
+
+    /// As [`Router::complete_on`], for `audience`: a customer's request
+    /// reaches only the billings `customer_billing` allows.
+    pub fn complete_as(
+        &self,
+        request: &Request,
+        only: Option<&str>,
+        audience: Audience,
+    ) -> Result<Outcome, UnknownBackend> {
         let chosen: Vec<&dyn Backend> = match only {
             None => self.backends.iter().map(AsRef::as_ref).collect(),
             // The configured name first, else the first backend of that kind.
@@ -344,7 +397,7 @@ impl Router {
                 }
             },
         };
-        Ok(self.journaled(request, only, &chosen))
+        Ok(self.journaled(request, only, &chosen, audience))
     }
 
     fn route(&self, request: &Request, backends: &[&dyn Backend]) -> Outcome {

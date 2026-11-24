@@ -60,6 +60,9 @@ const STATIC = {
   '/banner.png': ['banner.png', 'image/png'],
 };
 const LOCAL_ONLY = new Set(['/questions.html', '/questions.js', '/api/questions', '/api/answers']);
+/** 2026-11-24: own-profile CVs an invitation gives (publicMode.perInvite overrides). */
+const DEFAULT_PER_INVITE = 3;
+
 const DOWNLOADS = {
   'cv.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'cv.pdf': 'application/pdf',
@@ -221,6 +224,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       return {};
     }
   };
+  // 2026-11-24: own-profile CVs given per invitation label (kept across a deploy).
+  const inviteRuns = new Map();
   const inviteOf = (visitor) => {
     const code = invited.get(visitor);
     return code ? invitationOf(invites(), code) : null;
@@ -347,7 +352,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         .filter((job) => job.status === 'done' && job.visitor && job.result?.dir && !job.service)
         .slice(-(publicMode.maxJobs ?? MAX_JOBS))
         .map((job) => ({ id: job.id, visitor: job.visitor, title: job.title, model: job.model, via: job.via, dir: job.result.dir }));
-      deps.state.save({ accepted, bans: [...bans], visitors: [...visitors.keys()].map((visitor) => [visitor, invited.get(visitor) ?? null]), jobs: done });
+      deps.state.save({ accepted, bans: [...bans], visitors: [...visitors.keys()].map((visitor) => [visitor, invited.get(visitor) ?? null]), jobs: done, inviteRuns: [...inviteRuns] });
     } catch (error) {
       process.stderr.write(`itsacv serve: the public state cannot be written: ${error.message ?? error}\n`);
     }
@@ -358,6 +363,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       const now = publicMode.now();
       for (const entry of saved?.accepted ?? []) accepted.push({ at: entry.at, client: entry.client });
       for (const [key, until] of saved?.bans ?? []) if (until > now) bans.set(key, until);
+      for (const [label, count] of saved?.inviteRuns ?? []) if (typeof label === 'string' && Number.isSafeInteger(count)) inviteRuns.set(label, count);
       for (const [visitor, code] of (saved?.visitors ?? []).slice(-(publicMode.maxVisitors ?? MAX_VISITORS))) {
         if (!/^[0-9a-f]{48}$/.test(visitor)) continue;
         visitors.set(visitor, new Set());
@@ -518,6 +524,13 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
+        // 2026-11-24: an application's follow-up draft (no model), the owner's page only.
+        const draftOf = path.match(/^\/api\/applications\/([^/]+)\/follow-up$/);
+        if (draftOf) {
+          const text = !publicMode && deps.applications?.draft?.(decodeURIComponent(draftOf[1]), url.searchParams.get('lang') === 'en' ? 'en' : 'fr');
+          if (!text) throw new HttpError(404, 'not found');
+          return send(response, 200, { text });
+        }
         // 2026-11-24: an application's CV (cv.pdf, cv.docx), the owner's page only.
         const cvOf = path.match(/^\/api\/applications\/([^/]+)\/(cv\.(?:pdf|docx))$/);
         if (cvOf) {
@@ -684,7 +697,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (application) {
         if (publicMode || !deps.applications) throw new HttpError(404, 'not found');
         try {
-          return send(response, 200, deps.applications.set(decodeURIComponent(application[1]), { status: body?.status, note: body?.note }));
+          return send(response, 200, deps.applications.set(decodeURIComponent(application[1]), { status: body?.status, note: body?.note, contact: body?.contact, channel: body?.channel }));
         } catch (error) {
           throw new HttpError(400, error.message ?? String(error));
         }
@@ -733,6 +746,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         // 6.1: in public, the candidate's own files in service mode only, never links (no fetch for a visitor).
         if (links !== undefined && publicMode) throw new HttpError(403, 'les liens ne sont pas lus en accès public : joins des fichiers');
         if (sources !== undefined && publicMode && !publicMode.service) throw new HttpError(403, 'les sources du run sont réservées à la page du propriétaire');
+        // 2026-11-24, red team of the free trials: an own-profile CV is for
+        // invited visitors when the owner says so, and an invitation gives a
+        // fixed number of them, whoever opens the link.
+        if (sources !== undefined && publicMode) {
+          if (publicMode.serviceInviteOnly && !invite) throw new HttpError(403, 'Un CV sur ton propre profil se fait sur invitation : demande un lien.');
+          const quota = publicMode.perInvite ?? DEFAULT_PER_INVITE;
+          if (invite && (inviteRuns.get(invite) ?? 0) + offers.length > quota) {
+            throw new HttpError(429, `Cette invitation donne ${quota} CV sur ton propre profil, déjà utilisés.`);
+          }
+        }
         if (sources !== undefined && (!Array.isArray(sources) || sources.length > 10 || !sources.every((file) => typeof file?.name === 'string' && /^[^\\/:*?"<>|]{1,120}$/.test(file.name) && !file.name.startsWith('.') && typeof file.data === 'string' && file.data.length <= MAX_TEXT * 8))) {
           throw new HttpError(400, 'sources: at most 10 files { name, data (base64) }');
         }
@@ -766,6 +789,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         const reused = created.map((job) => (publicMode && deps.reuse && job.model === 'auto' && !job.service ? deps.reuse(job.text) : null));
         const fresh = reused.filter((result) => !result).length;
         if (publicMode) admit(request, fresh, group ? Math.min(fresh, 1) : fresh);
+        if (publicMode && sources !== undefined && invite) {
+          inviteRuns.set(invite, (inviteRuns.get(invite) ?? 0) + created.length);
+          persist();
+        }
         if (group) groups.set(group, { id: group, title: cleanName(offers[0].title ?? '') ?? 'Offre', visitor, jobs: created, comparison: null });
         created.forEach((job, index) => {
           jobs.set(job.id, job);

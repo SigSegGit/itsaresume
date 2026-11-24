@@ -188,6 +188,14 @@ French and English on every page (`web/i18n.js`, shared with the generator):
 `?lang=en|fr`, then the stored choice, then the browser; French by default.
 The English privacy notice says the French one prevails.
 
+## Free trials, red-teamed (2026-11-24)
+
+Every premium model call is a customer's: the router sends it to the API
+(`customer_billing`), never to the owner's subscription. A free preview
+needs a confirmed address (when addresses are checked) and has a daily
+ceiling per address (`previewIp`, 10) and for the whole site
+(`previewAll`, 200), whatever the number of accounts.
+
 ## Before going public (not done by the demo)
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is

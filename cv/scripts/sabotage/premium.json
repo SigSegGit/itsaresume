@@ -46,7 +46,8 @@
     "test/premium-stripe.test.js",
     "premium/web/checkout.js",
     "premium/receipt.js",
-    "test/premium-orders.test.js"
+    "test/premium-orders.test.js",
+    "test/trials.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -603,6 +604,30 @@
       "dead": "['checkout.session.completed']",
       "expect": [
         "6.14: a delayed payment method (async_payment_succeeded) credits as a card does"
+      ]
+    },
+    "Trials: a free preview needs a confirmed address": {
+      "file": "premium/server.js",
+      "live": "      verified(user);\n      if (!store.previewAllowed(user))",
+      "dead": "      if (!store.previewAllowed(user))",
+      "expect": [
+        "red team: an unconfirmed address takes no free preview when addresses are checked"
+      ]
+    },
+    "Trials: a daily preview ceiling per address": {
+      "file": "premium/server.js",
+      "live": "      allow('previewIp', clientIp(request));\n",
+      "dead": "",
+      "expect": [
+        "red team: throwaway accounts from one address hit a daily preview ceiling per address"
+      ]
+    },
+    "Trials: a daily preview ceiling for the site": {
+      "file": "premium/server.js",
+      "live": "      allow('previewAll', 'site');\n",
+      "dead": "",
+      "expect": [
+        "red team: accounts from many addresses hit the site's daily preview ceiling"
       ]
     }
   }
