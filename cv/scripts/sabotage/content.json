@@ -109,7 +109,8 @@
     "test/a4.test.js",
     "src/applications.js",
     "test/applications.test.js",
-    "test/invites.test.js"
+    "test/invites.test.js",
+    "web/app.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
