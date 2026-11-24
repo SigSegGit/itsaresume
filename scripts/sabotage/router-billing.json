@@ -134,8 +134,8 @@
     },
     "Router reports a journal it could not write": {
       "file": "crates/itsaresume-router/src/router.rs",
-      "live": ".record_asked(request, asked, &outcome, started.elapsed())\n        {",
-      "dead": ".record_asked(request, asked, &outcome, started.elapsed())\n            .or(Ok::<(), std::io::Error>(()))\n        {",
+      "live": ".record_for(request, asked, &outcome, started.elapsed(), audience)\n        {",
+      "dead": ".record_for(request, asked, &outcome, started.elapsed(), audience)\n            .or(Ok::<(), std::io::Error>(()))\n        {",
       "expect": [
         "an_unwritable_journal_does_not_lose_the_answer"
       ]
@@ -670,8 +670,8 @@
     },
     "Router: the journal hears the name asked": {
       "file": "crates/itsaresume-router/src/router.rs",
-      "live": ".record_asked(request, asked, &outcome, started.elapsed())",
-      "dead": ".record_asked(request, asked.filter(|_| false), &outcome, started.elapsed())",
+      "live": ".record_for(request, asked, &outcome, started.elapsed(), audience)",
+      "dead": ".record_for(request, asked.filter(|_| false), &outcome, started.elapsed(), audience)",
       "expect": [
         "a_named_structured_request_is_journaled_as_such"
       ]

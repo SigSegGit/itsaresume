@@ -219,6 +219,14 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `its_name_is_openai` | `tests/openai.rs` | The journal name | — |
 | `groq_is_its_own_backend_with_its_own_key_and_address` | `tests/openai.rs` | Groq (2.36) is its own backend: named `groq`, its address fixed, its key read from `GROQ_API_KEY` only | Groq (2.36): its address is fixed; Groq (2.36): its own key variable |
 | `groq_waits_out_a_rate_limit_and_asks_again` | `tests/openai.rs` | Groq (2.37): a 429 with `retry-after` is waited out and asked again, within the timeout | Groq (2.37): a rate limit is waited out, then asked again |
+| `a_customer_request_skips_the_subscription_the_owner_keeps_it` | `tests/audience.rs` | 2026-11-24: a customer's request skips the subscription backend; the owner's takes the first | Audience: a customer sees only the allowed billings |
+| `naming_a_subscription_backend_does_not_get_a_customer_through` | `tests/audience.rs` | A customer naming the subscription backend is refused, nothing called | Audience: a customer sees only the allowed billings |
+| `a_customer_request_with_no_allowed_backend_is_refused_and_nothing_is_called` | `tests/audience.rs` | No allowed billing: `NotAllowed`, nothing called, journal `not_allowed` and `audience` | Audience: customers get the API alone by default |
+| `each_kind_is_billed_its_way_and_customer_billing_parses` | `tests/audience.rs` | Each kind has its billing; `customer_billing` parses, defaults to the API alone, refuses an unknown billing | Audience: claude-code is the subscription; Audience: the configuration defaults to the API alone |
+| `the_fake_key_runs_on_the_subscription_but_is_billed_as_the_api` | `tests/audience.rs` | The fake key runs on the subscription; a real key on the API; no key, nothing sent | Audience: the fake key runs on the subscription, a real one on the API |
+| `a_customer_request_with_no_allowed_backend_is_403_and_the_owner_is_served` | `tests/server.rs` | HTTP: `audience` read; a customer with no allowed backend is 403, the owner 200, a bad audience 400 | Audience: a customer request is read as one |
+| `the_billings_allowed_to_customers_are_configurable` | `tests/audience.rs` | `with_customer_billing` widens what a customer may reach | — |
+| `an_api_key_never_sits_in_the_configuration` | `tests/audience.rs` | An `api_key` field on `anthropic-api` is refused | — |
 | `groq_does_not_wait_past_its_timeout` | `tests/openai.rs` | Groq (2.37): a wait longer than the time left is no wait, the router falls back at once | Groq (2.37): no wait past the timeout |
 | `openai_does_not_wait_out_a_429` | `tests/openai.rs` | Plain OpenAI never waits out a 429: its 429 is a quota | Groq (2.37): plain OpenAI never waits |
 | `groq_request_too_large_falls_back` | `tests/openai.rs` | Groq (2.37): a request over the minute's token budget (413) falls back | Groq (2.37): a request over the minute's budget falls back |
