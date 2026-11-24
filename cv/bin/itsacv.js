@@ -11,6 +11,7 @@ import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
 import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/invites.js';
 import { FEEDBACK_FILE, feedbackByInvite } from '../src/feedback.js';
+import { applicationsCsv, applicationsText, listApplications } from '../src/applications.js';
 import { QA_LOG } from '../src/qa.js';
 import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
@@ -30,6 +31,7 @@ const USAGE = `usage:
                [--ban-after N] [--ban-hours N] [--invite-only] [--service]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
   itsacv invite --list | --usage | --feedback | --revoke <label|code> | --many FILE [--out DIR]
+  itsacv applications [--csv] [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
   itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
   itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
@@ -108,7 +110,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite', 'questions', 'matrix', 'rank', 'match', 'import', 'fit'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'split', 'serve', 'invite', 'applications', 'questions', 'matrix', 'rank', 'match', 'import', 'fit'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -156,7 +158,7 @@ function parse(argv) {
     if (!options.list && !options.usage && !options.feedback && options.revoke === null && options.many === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
-  if (!['serve', 'questions', 'matrix'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
+  if (!['serve', 'questions', 'matrix', 'applications'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
   if ((command === 'rank' || command === 'match') && !/^[1-9]\d*$/.test(options.top)) fail(2, '--top: a whole number, 1 or more');
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
   if (!/^\d+(\.\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {
@@ -235,6 +237,13 @@ async function main() {
     } catch (error) {
       fail(2, error.message);
     }
+    return;
+  }
+
+  if (options.command === 'applications') {
+    // 2026-11-24: the applications tracked on the owner's page (src/applications.js).
+    const rows = listApplications(options.out);
+    process.stdout.write(options.csv ? applicationsCsv(rows) : applicationsText(rows));
     return;
   }
 

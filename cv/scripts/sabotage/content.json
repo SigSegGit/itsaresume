@@ -2502,6 +2502,38 @@
       "expect": [
         "itsacv invite --many: one link per label of a file, a refused label named, the others made"
       ]
+    },
+    "Follow-ups: only a sent application": {
+      "file": "src/applications.js",
+      "live": "return row.status === 'sent' && Boolean(row.at) && now",
+      "dead": "return row.status !== 'todo' && Boolean(row.at) && now",
+      "expect": [
+        "an application sent over a week ago with no news is to follow up; the summary counts it"
+      ]
+    },
+    "Follow-ups: after a week only": {
+      "file": "src/applications.js",
+      "live": "> FOLLOW_UP_DAYS * DAY;",
+      "dead": "> 0;",
+      "expect": [
+        "an application sent over a week ago with no news is to follow up; the summary counts it"
+      ]
+    },
+    "Follow-ups: an offer counts as an interview": {
+      "file": "src/applications.js",
+      "live": "row.status === 'interview' || row.status === 'offer'",
+      "dead": "row.status !== 'todo'",
+      "expect": [
+        "an application sent over a week ago with no news is to follow up; the summary counts it"
+      ]
+    },
+    "CV files: never another file of the run": {
+      "file": "src/applications.js",
+      "live": "if (!isRun(out, run) || !CV_FILES.includes(name)) return null;",
+      "dead": "if (!isRun(out, run)) return null;",
+      "expect": [
+        "each application lists its CV files; the owner's page serves them, nothing else"
+      ]
     }
   }
 }

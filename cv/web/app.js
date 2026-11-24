@@ -122,6 +122,8 @@ async function showApplications() {
   $('applications-card').hidden = data.rows.length === 0;
   const filter = $('applications-filter');
   filter.replaceChildren(h('option', { value: '', text: t('Toutes') }), ...data.statuses.map((status) => h('option', { value: status, text: statusLabel(status) })));
+  const counts = data.summary;
+  $('applications-summary').textContent = t('{v0} candidatures · {v1} envoyées · {v2} entretiens ({v3}) · {v4} à relancer', { v0: counts.total, v1: counts.sent, v2: counts.interviews, v3: counts.rate == null ? '–' : `${counts.rate} %`, v4: counts.followUps });
   $('applications-weekly').textContent = t('Envoyées par semaine : {v0}', { v0: data.weekly.map((week) => `${week.week.slice(5)} ${week.sent}`).join(' · ') });
   const rows = data.rows.map((row) => {
     const select = h('select', { 'aria-label': t('Statut') }, data.statuses.map((status) => h('option', { value: status, text: statusLabel(status), ...(status === row.status ? { selected: true } : {}) })));
@@ -137,7 +139,9 @@ async function showApplications() {
     select.addEventListener('change', save);
     note.addEventListener('change', save);
     const tr = h('tr', { 'data-status': row.status },
-      h('td', { text: row.date }), h('td', { text: row.title }), h('td', { text: row.score == null ? '' : `${row.score}/100` }), h('td', {}, select), h('td', {}, note));
+      h('td', { text: row.date }),
+      h('td', {}, row.title, ' ', row.follow_up ? h('span', { class: 'chip warn', text: t('À relancer') }) : null,
+        ...row.files.map((file) => h('a', { class: 'cv-file', href: `/api/applications/${encodeURIComponent(row.run)}/${file}`, download: file, text: file.endsWith('.pdf') ? 'PDF' : 'Word' }))), h('td', { text: row.score == null ? '' : `${row.score}/100` }), h('td', {}, select), h('td', {}, note));
     return tr;
   });
   $('applications-rows').replaceChildren(...rows);

@@ -226,7 +226,12 @@ du compte.
 **Attendu** : le statut et la remarque sont toujours là ; la ligne
 « Envoyées par semaine » compte 1 cette semaine ; le filtre « Envoyée »
 ne montre que celle-ci ; « Exporter en CSV » télécharge
-`candidatures.csv` (s'ouvre dans Excel).
+`candidatures.csv` (s'ouvre dans Excel). Les liens « PDF » et « Word » de
+chaque ligne téléchargent son CV ; une candidature « Envoyée » depuis plus
+de 7 jours porte « À relancer ». Dans un terminal :
+```powershell
+cd D:\GitHub\itsaresume\cv; node bin/itsacv.js applications --out $HOME\.itsaresume\out
+```
 
 ---
 
