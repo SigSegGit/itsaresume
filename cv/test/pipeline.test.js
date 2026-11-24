@@ -51,6 +51,20 @@ test('the JSON is found in fences or prose, and its absence is an error', () => 
   assert.throws(() => extractJson('no json here'), /JSON/);
 });
 
+// 2026-11-24, Haiku on a real offer (2 attempts of 2, reproducible): the
+// answer was whole but its root object never closed ('..."ksh"]}]' and no
+// final '}'). Only the missing closers go at the end; nothing else is
+// repaired, and the analysis checks still judge what comes out.
+test('an answer whose last brackets never close is closed, and only that', () => {
+  assert.deepEqual(extractJson('{"a": 1, "groups": [{"id": "x", "skills": ["s"]}]'), { a: 1, groups: [{ id: 'x', skills: ['s'] }] });
+  assert.deepEqual(extractJson('```json\n{"a": {"b": [1, 2'), { a: { b: [1, 2] } });
+  assert.deepEqual(extractJson('{"a": "brace } and [ in a string"'), { a: 'brace } and [ in a string' });
+  assert.deepEqual(extractJson('{"a": "say \\"}\\" here"'), { a: 'say "}" here' });
+  assert.throws(() => extractJson('{"a": "never closed'), /JSON/, 'cut inside a string: not repaired');
+  assert.throws(() => extractJson('{"a": [1, 2}'), /JSON/, 'a wrong closer is not repaired');
+  assert.throws(() => extractJson('{"a": 1,'), /JSON/, 'a dangling comma is not repaired');
+});
+
 test('an invalid answer is sent back once with its errors, and a valid retry is accepted', async () => {
   const prompts = [];
   const bad = { ...valid(), summary: ['Kafka expert.'] };
