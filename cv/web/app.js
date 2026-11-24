@@ -146,9 +146,25 @@ async function showApplications() {
   });
 }
 
+/* 2026-11-24: the opinions people gave on their CVs, on the owner's page only. */
+async function showFeedback() {
+  let entries = [];
+  try {
+    entries = await api('/api/feedback');
+  } catch {
+    return;
+  }
+  $('feedback-card').hidden = entries.length === 0;
+  $('feedback-list').replaceChildren(...entries.slice(0, 50).map((entry) => h('li', {},
+    h('strong', { text: `${'★'.repeat(entry.rating)}${'☆'.repeat(5 - entry.rating)}` }),
+    ` ${String(entry.at).slice(0, 10)} · ${entry.invite ?? t('sans invitation')} · ${entry.title ?? ''}`,
+    entry.comment ? h('p', { text: entry.comment }) : null)));
+}
+
+let ownTabOffered = false;
 async function refreshStatus() {
   try {
-    const { profile, profiles, router, models, layout, public: open, styles, service } = await api('/api/status');
+    const { profile, profiles, router, models, layout, public: open, styles, service, invited } = await api('/api/status');
     // 4.12: the CV's template and palette, the default selected.
     if (styles) {
       const fill = (id, names, chosen) => $(id).replaceChildren(...names.map((name) => h('option', { value: name, text: STYLE_LABELS[name] ?? name, ...(name === chosen ? { selected: true } : {}) })));
@@ -159,6 +175,7 @@ async function refreshStatus() {
     local = !open;
     if (!open) showApplications();
     $('questions-link').hidden = Boolean(open);
+    if (!open) showFeedback();
     applyModels(models);
     // 4.1: several profiles (the owner's --profiles): choose the one to tailor to.
     if (!open && profiles?.length > 1 && $('profile-row').hidden) {
@@ -185,6 +202,11 @@ async function refreshStatus() {
       $('links-row').hidden = true;
       $('tab-stored').textContent = t('CV de {v0}', { v0: profile.name ?? t('ce candidat') });
       $('tab-sources').textContent = t('Mon propre profil');
+      // A person invited from LinkedIn came for their own CV: that tab first, once.
+      if (service && invited && !ownTabOffered) {
+        ownTabOffered = true;
+        $('tab-sources').click();
+      }
       $('drop-help').textContent = t('Colle le texte d’une offre d’emploi : tu obtiens le CV de {v0} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.', { v0: profile.name ?? 'ce candidat' });
     }
     if (profile.error) setPill('status-profile', 'bad', t('Profil invalide'));

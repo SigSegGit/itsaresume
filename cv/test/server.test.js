@@ -281,7 +281,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, feedbackList, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const dirs = new Map();
@@ -295,6 +295,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       ...(state ? { state } : {}),
       ...(restore ? { restore } : {}),
       ...(offerText ? { offerText } : {}),
+      ...(feedbackList ? { feedbackList } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer, onStep }) => {
@@ -1391,6 +1392,32 @@ test('the public page offers the own-profile tab in service mode, files only', (
   assert.match(app, /\$\('links-row'\)\.hidden = true;/);
   assert.match(app, /return \{ sources: files, \.\.\.\(local \? \{ links \} : \{\}\), threshold/);
   assert.match(readFileSync(new URL('../web/index.html', import.meta.url), 'utf8'), /id="links-row"/);
+});
+
+test('an invited visitor is told so, and lands on the own-profile tab (service mode)', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-invited-'));
+  const { createInvite } = await import('../src/invites.js');
+  const code = createInvite(dir, 'Sam D.');
+  const app = await startPublic(t, { service: true, invites: () => JSON.parse(readFileSync(join(dir, 'invites.json'), 'utf8')) });
+  const guest = await app.visit('203.0.113.8', `/?i=${code}`);
+  assert.equal(JSON.parse((await guest.get('/api/status')).text).invited, true);
+  const passer = await app.visit('203.0.113.9');
+  assert.equal(JSON.parse((await passer.get('/api/status')).text).invited, false);
+  assert.ok(!(await guest.get('/api/status')).text.includes('Sam D.'), 'the label is the owner\'s note, never shown');
+  const page = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+  assert.match(page, /if \(service && invited && !ownTabOffered\) \{\n\s+ownTabOffered = true;\n\s+\$\('tab-sources'\)\.click\(\);/);
+});
+
+test('the opinions received: the owner\'s page lists them, newest first; never in public', async (t) => {
+  const kept = [{ at: '2026-11-24T10:00:00Z', invite: 'Sam D.', title: 'SRE', rating: 4, comment: 'Clair.' }, { at: '2026-11-25T10:00:00Z', invite: null, title: 'Cloud', rating: 2, comment: 'Long.' }];
+  const app = await start({ feedbackList: () => kept });
+  t.after(() => app.server.close());
+  const got = await call(app.port, { path: '/api/feedback', headers: { 'X-CSRF-Token': TOKEN } });
+  assert.equal(got.status, 200);
+  assert.deepEqual(JSON.parse(got.text).map((entry) => entry.title), ['Cloud', 'SRE']);
+  const open = await startPublic(t, { feedbackList: () => kept });
+  const visitor = await open.visit();
+  assert.equal((await visitor.get('/api/feedback')).status, 404);
 });
 
 // 6.2: the add-on in service mode posts from its own origin

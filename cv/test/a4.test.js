@@ -223,3 +223,22 @@ test('4.x: the A4 page knows the docx palettes and draws with them', async () =>
   assert.match(css, /\.a4 h1 \{[^}]*color: var\(--primary/);
   assert.match(readFileSync(new URL('../web/cv.html', import.meta.url), 'utf8'), /<select id="palette">/);
 });
+
+// 2026-11-24: what the CV says of the offer's keywords, and the CV as plain
+// text for the online forms that want it pasted.
+test('the keywords the visible CV covers, and the ones it leaves out', () => {
+  const { keywordCoverage } = runInContext(`${SOURCE}\n;({ keywordCoverage });`, createContext({ URLSearchParams }));
+  const result = keywordCoverage(['Kubernetes', 'Terraform (lab)', 'Go', 'PostgreSQL'], 'SRE — Kubernetes et terraform en prod ; Google Cloud.');
+  assert.deepEqual([...result.covered], ['Kubernetes', 'Terraform (lab)']);
+  assert.deepEqual([...result.missing], ['Go', 'PostgreSQL'], '"Go" is not inside "Google"');
+  assert.deepEqual(JSON.parse(JSON.stringify(keywordCoverage([], 'x'))), { covered: [], missing: [] });
+});
+
+test('the A4 page shows the coverage and copies the CV as text', () => {
+  const script = readFileSync(new URL('../web/cv.js', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../web/cv.html', import.meta.url), 'utf8');
+  assert.match(html, /<button id="copy-text" type="button"/);
+  assert.match(html, /<p id="coverage"/);
+  assert.match(script, /navigator\.clipboard\.writeText\(sheet\.innerText\)/);
+  assert.match(script, /keywordCoverage\(page\.keywords \?\? \[\], sheet\.innerText\)/);
+});

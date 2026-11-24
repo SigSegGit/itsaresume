@@ -39,6 +39,8 @@ property it proves.
 | fill says how many ranked items were left out: two pages only when some were | A4 2.61: two pages do not stretch the spacing |
 | the page offers the four options and lays out columns, two pages and highlights | — |
 | 4.x: the A4 page knows the docx palettes and draws with them | — |
+| the keywords the visible CV covers, and the ones it leaves out | A4: a keyword is a whole word |
+| the A4 page shows the coverage and copies the CV as text | — |
 
 ## `test/addon.test.js`
 
@@ -499,6 +501,7 @@ property it proves.
 | a live label is unique: a second invitation with it is refused until the first is revoked | Invite: a live label is unique |
 | invites.json is 0600 even over a stale world-readable temporary file | Invite: the file is the owner's alone |
 | §9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over | Invites (§9): a held lock makes the writer wait, then give up; Invites (§9): a stale lock is taken over; Invites (§9): the lock is released |
+| itsacv invite --many: one link per label of a file, a refused label named, the others made | Invites --many: a refused label does not stop the others |
 
 ## `test/layout.test.js`
 
@@ -1056,6 +1059,8 @@ property it proves.
 | without service mode a visitor cannot bring a profile | Sources (4.11): never from a public visitor |
 | the public status says whether a visitor may bring a profile (service mode) | Service tab: the public status says service mode |
 | the public page offers the own-profile tab in service mode, files only | Service tab: shown only in service mode; Service tab: a visitor sends no links |
+| an invited visitor is told so, and lands on the own-profile tab (service mode) | Outreach: an invited visitor is told so |
+| the opinions received: the owner's page lists them, newest first; never in public | Outreach: the opinions never in public; Outreach: the opinions newest first |
 | service mode: the add-on may create a job with a profile, and only that | Service (6.2): the add-on only creates jobs; Service (6.2): the add-on brings its own profile; Service (6.2): an extension origin, no other site |
 
 ## `test/split.test.js`
@@ -1165,6 +1170,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**771 tests, 610 of them covered by at least one sabotage defence.**
+**776 tests, 614 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

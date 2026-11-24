@@ -525,11 +525,17 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (path === '/api/applications') return send(response, 200, { rows, weekly: weekly(rows), statuses: STATUSES });
           return send(response, 200, applicationsCsv(rows), 'text/csv; charset=utf-8', { 'Content-Disposition': 'attachment; filename="candidatures.csv"' });
         }
+        // 2026-11-24: the opinions received, the owner's page only.
+        if (path === '/api/feedback') {
+          if (publicMode || !deps.feedbackList) throw new HttpError(404, 'not found');
+          return send(response, 200, [...deps.feedbackList()].sort((a, b) => String(b.at).localeCompare(String(a.at))));
+        }
         if (path === '/api/status') {
           const status = await deps.status();
           // busy: jobs running or queued, so the VM's auto-deploy waits for none.
           const busy = inFlight();
-          return send(response, 200, publicMode ? { ...publicStatus(status, publicMode.service), busy } : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}), busy });
+          // 2026-11-24: an invited visitor (LinkedIn outreach) is told so, never the label.
+          return send(response, 200, publicMode ? { ...publicStatus(status, publicMode.service), invited: Boolean(inviteOf(visitorOf(request))), busy } : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}), busy });
         }
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;

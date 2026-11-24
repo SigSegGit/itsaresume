@@ -108,7 +108,8 @@
     "web/cv.css",
     "test/a4.test.js",
     "src/applications.js",
-    "test/applications.test.js"
+    "test/applications.test.js",
+    "test/invites.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2484,6 +2485,22 @@
       "dead": "          if (!deps.applications) throw new HttpError(404, 'not found');\n          const rows",
       "expect": [
         "the applications are never on the public page"
+      ]
+    },
+    "A4: a keyword is a whole word": {
+      "file": "web/cv.js",
+      "live": "(regex && regex.test(text) ? covered : missing)",
+      "dead": "(text.toLowerCase().includes(keyword.toLowerCase().replace(/ \\(lab\\)$/, \"\")) ? covered : missing)",
+      "expect": [
+        "the keywords the visible CV covers, and the ones it leaves out"
+      ]
+    },
+    "Invites --many: a refused label does not stop the others": {
+      "file": "bin/itsacv.js",
+      "live": "            refused += 1;\n",
+      "dead": "            throw error;\n",
+      "expect": [
+        "itsacv invite --many: one link per label of a file, a refused label named, the others made"
       ]
     }
   }
