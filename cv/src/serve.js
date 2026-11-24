@@ -9,7 +9,7 @@ import { loadedFrom, loadProfile, readRun, runName, tailorOffer } from './run.js
 import { offerFromFile, profileFromSources, readOffer } from './sources.js';
 import { pageData } from './tailor.js';
 import { appendQaLog, SPLIT, withModel } from './qa.js';
-import { appendFeedback } from './feedback.js';
+import { appendFeedback, readFeedback } from './feedback.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
@@ -187,6 +187,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     },
     log: (entry) => appendQaLog(out, entry),
     feedback: (entry) => appendFeedback(out, entry),
+    feedbackList: () => readFeedback(out),
     // 2.31b: beside the runs, in a folder of its own (not a run: loadRuns skips it).
     saveComparison: (name, comparison, markdown) => {
       const dir = join(out, 'compare', runName('', new Date(), name));

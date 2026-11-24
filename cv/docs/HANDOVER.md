@@ -19,7 +19,11 @@ the decisions waiting for him, how to reach his machines — are in
   on LinkedIn through an invitation link, their opinion kept
   (`POST /api/jobs/:id/feedback`, `$OUT/feedback.jsonl`, "Votre avis sur ce
   CV" on each finished card). `itsacv invite --feedback` reads them per
-  invitation. The A4 page follows the palette (4.x); role
+  invitation; `--many FILE` makes one link per line; an invited visitor
+  lands on "Mon propre profil" (the status says `invited`, never the
+  label); the owner's page lists the opinions ("Avis reçus",
+  `GET /api/feedback`, 404 in public). The A4 page says which offer
+  keywords the visible CV holds and copies the CV as plain text. The A4 page follows the palette (4.x); role
   names are no longer asked (2.22). Every manual step is now a numbered
   sheet in `docs/RECETTE-MANUELLE.md` (add-on, Firefox print, Bionic
   variance, an invitation's whole journey, Stripe test mode, SMTP, 6.4g).

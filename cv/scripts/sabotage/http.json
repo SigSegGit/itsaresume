@@ -648,8 +648,8 @@
     },
     "Web: public status hides the assessment": {
       "file": "src/server.js",
-      "live": "publicMode ? { ...publicStatus(status, publicMode.service), busy } :",
-      "dead": "publicMode ? { ...status, busy } :",
+      "live": "publicMode ? { ...publicStatus(status, publicMode.service), invited:",
+      "dead": "publicMode ? { ...status, invited:",
       "expect": [
         "in public mode the status carries no verdicts, truth document or raw error"
       ]
@@ -961,7 +961,7 @@
     },
     "A4 page: print hides all but the sheet": {
       "file": "web/cv.css",
-      "live": "  #notice, #print { display: none; }",
+      "live": "  #notice, #print, #copy-text, #coverage { display: none; }",
       "dead": "",
       "expect": [
         "the A4 page prints alone, from a button wired in cv.js"

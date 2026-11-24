@@ -404,6 +404,30 @@
       "expect": [
         "the public page offers the own-profile tab in service mode, files only"
       ]
+    },
+    "Outreach: an invited visitor is told so": {
+      "file": "src/server.js",
+      "live": "invited: Boolean(inviteOf(visitorOf(request))),",
+      "dead": "invited: false,",
+      "expect": [
+        "an invited visitor is told so, and lands on the own-profile tab (service mode)"
+      ]
+    },
+    "Outreach: the opinions never in public": {
+      "file": "src/server.js",
+      "live": "if (publicMode || !deps.feedbackList) throw new HttpError(404, 'not found');",
+      "dead": "if (!deps.feedbackList) throw new HttpError(404, 'not found');",
+      "expect": [
+        "the opinions received: the owner's page lists them, newest first; never in public"
+      ]
+    },
+    "Outreach: the opinions newest first": {
+      "file": "src/server.js",
+      "live": "[...deps.feedbackList()].sort((a, b) => String(b.at).localeCompare(String(a.at)))",
+      "dead": "[...deps.feedbackList()]",
+      "expect": [
+        "the opinions received: the owner's page lists them, newest first; never in public"
+      ]
     }
   }
 }
