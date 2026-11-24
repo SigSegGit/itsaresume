@@ -11,6 +11,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { decrypt, encrypt, generateIdentity, parseIdentity, parseRecipient, recipientOf } from '../premium/age.js';
 import { createStore } from '../premium/accounts.js';
 import { backupRecipients, restoreJournal } from '../premium/journal.js';
@@ -45,8 +46,10 @@ test('age: what one encrypts only its identity decrypts, whatever the size; any 
   }
   const sealed = encrypt(Buffer.from('header'), [one.recipient]);
   const header = Buffer.from(sealed);
-  header[30] ^= 1;
-  assert.throws(() => decrypt(header, one.identity), 'the header is authenticated');
+  // One character of the header's MAC changed: only the MAC check sees it.
+  const at = header.indexOf('\n--- ') + 5;
+  header[at] = header[at] === 0x41 ? 0x42 : 0x41;
+  assert.throws(() => decrypt(header, one.identity), /MAC/, 'the header is authenticated');
   // Two encryptions of the same bytes differ (fresh file key and nonce).
   assert.notDeepEqual(encrypt(Buffer.from('x'), [one.recipient]), encrypt(Buffer.from('x'), [one.recipient]));
 });
@@ -97,6 +100,15 @@ test('the journal: a base, then a changeset per 5 minutes that saw writes; the r
     for (const file of files) assert.equal(readFileSync(join(dir, 'backup', file)).subarray(0, 21).toString(), 'age-encryption.org/v1');
     const restored = restoreJournal(join(dir, 'backup'), identity, join(dir, 'restored.db'));
     assert.deepEqual(restored.stats, store.stats());
+    assert.equal(restored.changes, 2);
+    // The owner's command, on his machine: the same result, exit 0.
+    writeFileSync(join(dir, 'key.txt'), `# public key: ${recipient}\n${identity}\n`);
+    const cli = spawnSync(process.execPath, [fileURLToPath(new URL('../premium/journal-restore.js', import.meta.url)), join(dir, 'backup'), join(dir, 'key.txt'), join(dir, 'cli.db')], { encoding: 'utf8' });
+    assert.equal(cli.status, 0, cli.stderr);
+    assert.deepEqual(JSON.parse(cli.stdout).stats, store.stats());
+    // A changeset lost in transit stops the restore instead of a silent gap.
+    rmSync(join(dir, 'backup', '20261125T1000.c000001.age'));
+    assert.throws(() => restoreJournal(join(dir, 'backup'), identity, join(dir, 'gap.db')), /changeset 1 of 20261125T1000 is missing/);
     assert.equal(restored.integrity, 'ok');
     const copy = createStore(join(dir, 'restored.db'));
     assert.deepEqual(copy.adminUsers(''), store.adminUsers(''));
@@ -137,7 +149,8 @@ test('the journal is off without a key; a key that is not an age recipient stops
   assert.deepEqual(backupRecipients({ PREMIUM_BACKUP_RECIPIENTS: ` ${recipient} ,` }), [recipient]);
   assert.throws(() => backupRecipients({ PREMIUM_BACKUP_RECIPIENTS: 'ssh-ed25519 AAAA' }), /PREMIUM_BACKUP_RECIPIENTS/);
   const server = readFileSync(new URL('../premium/server.js', import.meta.url), 'utf8');
-  assert.match(server, /setInterval\(\(\) => journal\.tick\(\), JOURNAL_EVERY_MS\)/);
+  assert.match(server, /setInterval\(\(\) => logged\('journal', \(\) => journal\.tick\(\)\), JOURNAL_EVERY_MS\)/);
+  assert.match(server, /journal: journal\?\.status\(\) \?\? null/);
   const script = readFileSync(new URL('../deploy/vm-generator/itsanas-premium.sh', import.meta.url), 'utf8');
   assert.match(script, /SNAPSHOTS="\$\{ITSACV_DATA:-\$HOME\/itsacv-data\}\/premium\/backup"/, 'ITSaNAS syncs the encrypted journal, never the plain snapshots');
 });

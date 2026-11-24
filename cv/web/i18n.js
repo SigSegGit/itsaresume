@@ -119,6 +119,8 @@
     "Aucun avis pour l’instant.": "No opinion yet.",
     "Lien pour {label} : {link}": "Link for {label}: {link}",
     "Prix dit": "Price said",
+    "Journal chiffré : chaîne {chain}, {changes} fichier(s) de changements, dernier écrit {at}.": "Encrypted journal: chain {chain}, {changes} change file(s), last written {at}.",
+    "Journal chiffré : désactivé (aucune clé age donnée).": "Encrypted journal: off (no age key given).",
     "Contact": "Contact",
     "Canal": "Channel",
     "Brouillon de relance": "Follow-up draft",

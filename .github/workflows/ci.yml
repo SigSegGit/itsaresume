@@ -189,6 +189,10 @@ jobs:
           cache-dependency-path: cv/package-lock.json
       - run: npm ci
         if: needs.changes.outputs.cv == 'true'
+      # 2026-11-25: the official age tool, so the premium journal's files are
+      # proven to open without this code (test/premium-journal.test.js).
+      - run: sudo apt-get install -y age
+        if: needs.changes.outputs.cv == 'true' && matrix.os == 'ubuntu-latest'
       - run: npm test
         if: needs.changes.outputs.cv == 'true'
       # 6.3: the add-on, zipped, downloadable from the run's page.

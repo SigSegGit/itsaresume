@@ -94,7 +94,7 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null, outreach = null }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null, outreach = null, journal = null }) {
   // 6.9: attempts limited (limits.js); a refusal says when to come back.
   const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
   // 6.10: a link to this site as the visitor reached it (behind the proxy:
@@ -273,7 +273,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
           copy.close();
         }
       }
-      return { snapshots: list, newest };
+      return { snapshots: list, newest, journal: journal?.status() ?? null };
     },
     'GET /api/packs': (request, url) => {
       const asked = url.searchParams.get('currency');
@@ -623,10 +623,36 @@ async function main(argv) {
   const accounts = createStore(join(data, 'premium.db'));
   accounts.purge();
   accounts.backup(join(data, 'snapshots'));
+  // 2026-11-25: the encrypted journal (a base a day, changes every 5 min), for
+  // the owner's age key only: the folder ITSaNAS syncs. No key, no journal.
+  const { backupRecipients, JOURNAL_EVERY_MS } = await import('./journal.js');
+  const recipients = backupRecipients(process.env);
+  const logged = (what, run) => {
+    try {
+      run();
+    } catch (error) {
+      console.error(`premium: the ${what} failed: ${error.message}`);
+    }
+  };
+  let journal = null;
+  if (recipients.length) {
+    journal = accounts.openJournal({ dir: join(data, 'backup'), recipients });
+    journal.start();
+    setInterval(() => logged('journal', () => journal.tick()), JOURNAL_EVERY_MS).unref();
+    for (const signal of ['SIGTERM', 'SIGINT']) {
+      process.once(signal, () => {
+        logged('last journal entry', () => journal.close());
+        process.exit(0);
+      });
+    }
+  } else {
+    console.warn('premium: PREMIUM_BACKUP_RECIPIENTS unset, no encrypted journal (only the plain hourly snapshots)');
+  }
   setInterval(() => accounts.backup(join(data, 'snapshots')), 3600000).unref();
   const routerStatus = async () => (await fetch(new URL('/status', router))).json();
   const app = createPremiumApp({
     routerStatus,
+    journal,
     // The generator's folder (invites.json, QA log, opinions) and the public host.
     outreach: option('out', null) ? { out: option('out', null), host: option('public-host', process.env.CV_HOST ?? '') } : null,
     store: accounts,
