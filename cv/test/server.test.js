@@ -1337,6 +1337,31 @@ test('a pdf or docx offer is read as text, in local and public mode', async (t) 
   assert.equal((await visitor.post('/api/offer-text', { name: 'offre.docx', data })).status, 200);
 });
 
+// 2026-11-24 (the owner: LinkedIn offers as phone screenshots): an image
+// offer is transcribed on the owner's page only (a model call on his quota);
+// its body may hold a phone screenshot, the public host refuses it.
+test('an image offer is transcribed on the owner's page, refused on the public host', async (t) => {
+  const seen = [];
+  const offerText = async (name, buffer) => {
+    seen.push([name, buffer.length]);
+    return `text of ${name}`;
+  };
+  const app = await start({ offerText });
+  t.after(() => { app.server.closeAllConnections(); app.server.close(); });
+  const screenshot = Buffer.alloc(2 * 1024 * 1024, 7).toString('base64');
+  const answer = await post(app, '/api/offer-text', { name: 'Capture LinkedIn.png', data: screenshot });
+  assert.equal(answer.status, 200, answer.text);
+  assert.deepEqual(JSON.parse(answer.text), { text: 'text of Capture LinkedIn.png' });
+  for (const name of ['o.jpg', 'o.jpeg', 'o.webp']) assert.equal((await post(app, '/api/offer-text', { name, data: 'AAAA' })).status, 200, name);
+  assert.equal((await post(app, '/api/offer-text', { name: 'o.svg', data: 'AAAA' })).status, 400);
+  const big = await post(app, '/api/jobs', { offers: [{ title: 'x', text: 'y'.repeat(2 * 1024 * 1024) }] });
+  assert.equal(big.status, 413, 'the larger limit is for an image offer alone');
+  const pub = await startPublic(t, { offerText });
+  const visitor = await pub.visit();
+  assert.equal((await visitor.post('/api/offer-text', { name: 'o.png', data: 'AAAA' })).status, 403);
+  assert.deepEqual(seen.map(([name]) => name), ['Capture LinkedIn.png', 'o.jpg', 'o.jpeg', 'o.webp']);
+});
+
 // 6.1 (the owner, 2026-11-18: a "service" mode beside his own page): in
 // public mode with `service`, a run may carry the candidate's own profile
 // files (never links: the server fetches nothing for a visitor); its CV is
