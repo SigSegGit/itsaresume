@@ -17,19 +17,28 @@ const SPACING = { min: 1, start: 1.15, max: 1.5, step: 0.05 };
 const TARGET = 0.95;
 /** Items per experience at detail 1 (concise). */
 const CONCISE = 2;
-const DEFAULTS = { layout: 'linear', highlight: 1, detail: 2, pages: 1 };
-const CHOICES = { layout: ['linear', 'columns'], highlight: [0, 1, 2, 3], detail: [1, 2, 3], pages: [1, 2] };
+// 4.x: the docx palettes (src/style.js, test/a4.test.js keeps them equal).
+const PALETTES = {
+  marine: { primary: '1B2A4A', accent: 'B8935A', light: 'EAE4D6' },
+  bordeaux: { primary: '5B1A2A', accent: 'C28F5C', light: 'F1E6DA' },
+  foret: { primary: '1F3A2E', accent: '7A9A5B', light: 'E6EDE3' },
+  ardoise: { primary: '2F3E46', accent: '52796F', light: 'E3ECE8' },
+  graphite: { primary: '222222', accent: '888888', light: 'EEEEEE' },
+};
+const DEFAULTS = { layout: 'linear', highlight: 1, detail: 2, pages: 1, palette: 'marine' };
+const CHOICES = { layout: ['linear', 'columns'], highlight: [0, 1, 2, 3], detail: [1, 2, 3], pages: [1, 2], palette: Object.keys(PALETTES) };
 
 const round = (value) => Math.round(value * 100) / 100;
 
-/** The options from a query string; anything unknown falls back to its default. */
-function options(search) {
+/** The options from a query string; anything unknown falls back to its default (the run's palette first). */
+function options(search, palette = null) {
   const params = new URLSearchParams(search);
   const chosen = {};
+  const defaults = { ...DEFAULTS, ...(CHOICES.palette.includes(palette) ? { palette } : {}) };
   for (const [name, values] of Object.entries(CHOICES)) {
     const raw = params.get(name);
     const value = typeof values[0] === 'number' ? Number(raw) : raw;
-    chosen[name] = raw !== null && values.includes(value) ? value : DEFAULTS[name];
+    chosen[name] = raw !== null && values.includes(value) ? value : defaults[name];
   }
   return chosen;
 }
@@ -157,6 +166,8 @@ function render(page, sheet, chosen = DEFAULTS) {
   sheet.classList.toggle('columns', chosen.layout === 'columns');
   sheet.classList.toggle('pages-2', chosen.pages === 2);
   sheet.classList.toggle('dense', chosen.highlight === 3);
+  const colours = PALETTES[chosen.palette] ?? PALETTES.marine;
+  for (const [role, hex] of Object.entries(colours)) sheet.style?.setProperty?.(`--${role}`, `#${hex}`);
   const padding = () => {
     const style = getComputedStyle(sheet);
     return parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
@@ -259,7 +270,7 @@ async function start() {
   await document.fonts?.ready;
   const controls = Object.fromEntries(Object.keys(CHOICES).map((name) => [name, document.getElementById(name)]));
   const draw = () => {
-    const chosen = options(location.search);
+    const chosen = options(location.search, page.palette);
     for (const [name, control] of Object.entries(controls)) if (control) control.value = String(chosen[name]);
     const notes = [];
     let result;

@@ -32,12 +32,13 @@ property it proves.
 | the A4 page prints alone, from a button wired in cv.js | A4 page: the button prints; A4 page: print hides all but the sheet |
 | the fill is measured on the content, not on the fixed A4 box | A4 page: the fill is measured on the content |
 | an experience reads title, organisation, then dates (no float before the title) | A4 page: title before dates |
-| options: defaults, and anything unknown falls back to them | A4 2.61: unknown options fall back to defaults |
+| options: defaults, and anything unknown falls back to them | A4 (4.x): an address palette wins, else the run's; A4 2.61: unknown options fall back to defaults |
 | highlight: off, first on the page, first per block, every one; whole words only | A4 2.61: highlight levels 1-2 mark a keyword once; A4 2.61: highlight on whole words only |
 | reused: the offer keywords an experience already says, none it does not | — |
 | detail 1 keeps two items per experience; detail 3 lifts the reference cap | A4 2.61: detail 1 keeps CONCISE items per experience |
 | fill says how many ranked items were left out: two pages only when some were | A4 2.61: two pages do not stretch the spacing |
 | the page offers the four options and lays out columns, two pages and highlights | — |
+| 4.x: the A4 page knows the docx palettes and draws with them | — |
 
 ## `test/addon.test.js`
 
@@ -308,6 +309,14 @@ property it proves.
 | source texts are read from the files the profile names, next to the profile | Evidence: a source file stays next to the profile |
 | the model is never shown a skill the evidence rules out, and may not claim it | Evidence: the free text may not name a ruled-out skill; Evidence: the pipeline checks the answer against the verdicts |
 | a quote from a source with a text must be found in it, word for word | Evidence: a quote must be in its source; Evidence: a quote survives line wrapping and case |
+
+## `test/feedback.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| an opinion on a CV: a rating 1-5 and a short comment, kept with the run's name | Feedback: the rating is a whole number from 1 to 5; Feedback: the comment is bounded; Feedback: only a known run |
+| feedback.jsonl: one JSON line per opinion, the owner's alone | Feedback: the file is the owner's alone |
+| 4.x: the A4 page data carries the palette the run was made with | A4 (4.x): the run's palette reaches the page |
 
 ## `test/fit.test.js`
 
@@ -833,6 +842,7 @@ property it proves.
 | readRuns reads each run with an analysis, skips the others, and names the unreadable | Questions: a run that wrote no analysis is not read; Questions: an unreadable run is named, not fatal |
 | itsacv questions prints the questions of every run, or of the runs named, minus the answers beside the profile | Questions: the command subtracts answers.json beside the profile; Questions: the command reads the runs named |
 | 2.22c: the page’s questions come from the runs in out/ and answers.json beside the profile, with the levels and groups to answer with | Questions page: the runs of out/, not readRuns' wrapper |
+| 2.22: a role the listing took for a skill ("Architectes", "QA", "Product Owner") is not asked; a skill near it is | Questions (2.22): a role is not asked; Questions (2.22): a role is the whole name only |
 
 ## `test/rank.test.js`
 
@@ -1139,6 +1149,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**755 tests, 597 of them covered by at least one sabotage defence.**
+**760 tests, 601 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

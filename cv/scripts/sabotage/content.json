@@ -101,7 +101,12 @@
     "test/anchor.test.js",
     "test/linear.test.js",
     "tools/pack-addon.mjs",
-    "test/pack-addon.test.js"
+    "test/pack-addon.test.js",
+    "src/feedback.js",
+    "test/feedback.test.js",
+    "web/cv.js",
+    "web/cv.css",
+    "test/a4.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2334,6 +2339,70 @@
     },
     "Add-on zip (6.3): the scripts' imports are followed": {"file": "tools/pack-addon.mjs", "live": "if (/\\.(html|js)$/.test(name)) queue.push(", "dead": "if (false) queue.push(", "expect": ["the add-on zip holds the manifest and every file it reaches, named by its version"]},
     "Add-on zip (6.3): a missing file stops the pack": {"file": "tools/pack-addon.mjs", "live": "throw new Error(`the add-on reaches ${name}, which is missing`);", "dead": "continue;", "expect": ["a file the manifest never reaches stays out; a reached file missing stops the pack"]},
-    "Add-on zip (6.3): one fixed date": {"file": "tools/pack-addon.mjs", "live": "{ date: FIXED, binary: true }", "dead": "{ binary: true }", "expect": ["the same files give the same zip, byte for byte: every entry has one fixed date"]}
+    "Add-on zip (6.3): one fixed date": {"file": "tools/pack-addon.mjs", "live": "{ date: FIXED, binary: true }", "dead": "{ binary: true }", "expect": ["the same files give the same zip, byte for byte: every entry has one fixed date"]},
+    "Questions (2.22): a role is not asked": {
+      "file": "src/questions.js",
+      "live": "if (!name || isRole(name)) continue;",
+      "dead": "if (!name) continue;",
+      "expect": [
+        "2.22: a role the listing took for a skill (\"Architectes\", \"QA\", \"Product Owner\") is not asked; a skill near it is"
+      ]
+    },
+    "Questions (2.22): a role is the whole name only": {
+      "file": "src/questions.js",
+      "live": "const ROLE = /^(?:",
+      "dead": "const ROLE = /(?:",
+      "expect": [
+        "2.22: a role the listing took for a skill (\"Architectes\", \"QA\", \"Product Owner\") is not asked; a skill near it is"
+      ]
+    },
+    "Feedback: the rating is a whole number from 1 to 5": {
+      "file": "src/server.js",
+      "live": "if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "an opinion on a CV: a rating 1-5 and a short comment, kept with the run's name"
+      ]
+    },
+    "Feedback: the comment is bounded": {
+      "file": "src/server.js",
+      "live": "if (comment.length > COMMENT_MAX) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "an opinion on a CV: a rating 1-5 and a short comment, kept with the run's name"
+      ]
+    },
+    "Feedback: only a known run": {
+      "file": "src/server.js",
+      "live": "&& jobs.get(opinion[1]);",
+      "dead": "&& (jobs.get(opinion[1]) ?? { id: opinion[1] });",
+      "expect": [
+        "an opinion on a CV: a rating 1-5 and a short comment, kept with the run's name"
+      ]
+    },
+    "Feedback: the file is the owner's alone": {
+      "file": "src/feedback.js",
+      "live": "  chmodSync(file, 0o600);\n",
+      "dead": "  chmodSync(file, 0o644);\n",
+      "expect": [
+        "feedback.jsonl: one JSON line per opinion, the owner's alone"
+      ]
+    },
+    "A4 (4.x): the run's palette reaches the page": {
+      "file": "src/server.js",
+      "live": "palette: job.style?.palette ?? null",
+      "dead": "palette: null",
+      "expect": [
+        "4.x: the A4 page data carries the palette the run was made with"
+      ]
+    },
+    "A4 (4.x): an address palette wins, else the run's": {
+      "file": "web/cv.js",
+      "live": "...(CHOICES.palette.includes(palette) ? { palette } : {})",
+      "dead": "",
+      "expect": [
+        "options: defaults, and anything unknown falls back to them"
+      ]
+    }
   }
 }

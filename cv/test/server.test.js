@@ -180,7 +180,7 @@ test('2.24a: a done job gives its page as data; a job without one is 404', async
     const old = list.find((job) => job.title === 'B');
     const got = await call(app.port, { path: `/api/jobs/${fresh.id}/page` });
     assert.equal(got.status, 200);
-    assert.deepEqual(JSON.parse(got.text), page);
+    assert.deepEqual(JSON.parse(got.text), { ...page, palette: 'marine' }, 'the run palette rides along (4.x)');
     assert.equal((await call(app.port, { path: `/api/jobs/${old.id}/page` })).status, 404);
   } finally {
     app.server.close();

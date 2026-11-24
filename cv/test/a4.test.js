@@ -156,7 +156,7 @@ test('options: defaults, and anything unknown falls back to them', () => {
   assert.deepEqual({ ...options('') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1, palette: 'marine' });
   assert.deepEqual({ ...options('?layout=columns&highlight=3&detail=1&pages=2&palette=bordeaux') }, { layout: 'columns', highlight: 3, detail: 1, pages: 2, palette: 'bordeaux' });
   assert.deepEqual({ ...options('?layout=x&highlight=9&detail=-1&pages=3&palette=rose') }, { layout: 'linear', highlight: 1, detail: 2, pages: 1, palette: 'marine' });
-  assert.equal(options('', 'foret').palette, 'foret', 'the run's palette when the address names none');
+  assert.equal(options('', 'foret').palette, 'foret', 'the palette of the run when the address names none');
   assert.equal(options('?palette=graphite', 'foret').palette, 'graphite', 'the address wins');
 });
 

@@ -192,8 +192,8 @@ The English privacy notice says the French one prevails.
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is
   for its holder's own use; serving other people's previews with it may break
-  its terms. For the public service, the preview should use the API (Haiku 5.5
-  costs ~$0.01 per run) or the local model.
+  its terms. The owner's decision (2026-11-24): no paid API until he sells;
+  when he does, the API (Haiku 5.5, ~$0.01 a run) replaces the subscription.
 - **Paid mode**: the demo sends it to the router; production needs an API key
   and an adapter in `server.js` `main()` (the `analyse` dependency).
 - **Real payment**: the code is there (6.12, Stripe); left: the owner's

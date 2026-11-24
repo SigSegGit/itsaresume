@@ -19,6 +19,7 @@ import { cleanName } from './guard.js';
 import { LINKEDIN_FILES } from './import.js';
 import { ID } from './profiles.js';
 import { resolveStyle } from './style.js';
+import { COMMENT_MAX } from './feedback.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { OFFER_FILES } from './sources.js';
 import { MODELS } from './qa.js';
@@ -542,7 +543,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         // 2.24a: the CV as ranked data, for the browser's A4 page.
         if (match[3]) {
           if (!job.result?.page) throw new HttpError(404, 'not found');
-          return send(response, 200, job.result.page);
+          // 4.x: the page follows the palette the run was made with.
+          return send(response, 200, { ...job.result.page, palette: job.style?.palette ?? null });
         }
         if (!match[2]) return send(response, 200, view(job, { detail: true, publicMode }));
         const type = DOWNLOADS[match[2]];
@@ -641,6 +643,19 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           if (error instanceof HttpError) throw error;
           throw new HttpError(400, error.message ?? String(error));
         }
+      }
+      // 2026-11-24: an opinion on a CV (a rating 1-5, a short comment), kept
+      // for the owner with the run's name and invitation; the run's visitor only.
+      const opinion = path.match(/^\/api\/jobs\/([0-9a-f-]{36})\/feedback$/);
+      if (opinion) {
+        const job = deps.feedback && (!publicMode || visitors.get(visitor)?.has(opinion[1])) && jobs.get(opinion[1]);
+        if (!job) throw new HttpError(404, 'not found');
+        const rating = body?.rating;
+        const comment = String(body?.comment ?? '').trim();
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new HttpError(400, 'rating: a whole number from 1 to 5');
+        if (comment.length > COMMENT_MAX) throw new HttpError(400, `comment: at most ${COMMENT_MAX} characters`);
+        await deps.feedback({ at: new Date().toISOString(), job: job.id, title: job.title ?? null, invite: job.invite ?? null, model: job.model ?? null, rating, comment });
+        return send(response, 200, { ok: true });
       }
       // 2.31a: a run renamed by its owner; the name is kept beside the run.
       const renaming = path.match(/^\/api\/jobs\/([0-9a-f-]{36})\/title$/);

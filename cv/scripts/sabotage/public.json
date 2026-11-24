@@ -340,8 +340,8 @@
     },
     "A4 2.61: unknown options fall back to defaults": {
       "file": "web/cv.js",
-      "live": "chosen[name] = raw !== null && values.includes(value) ? value : DEFAULTS[name];",
-      "dead": "chosen[name] = raw !== null ? value : DEFAULTS[name];",
+      "live": "chosen[name] = raw !== null && values.includes(value) ? value : defaults[name];",
+      "dead": "chosen[name] = raw !== null ? value : defaults[name];",
       "expect": [
         "options: defaults, and anything unknown falls back to them"
       ]
