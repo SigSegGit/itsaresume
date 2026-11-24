@@ -10,6 +10,7 @@ import { loadedFrom, loadProfile, tailorOffer, RunError } from '../src/run.js';
 import { splitOffers } from '../src/split.js';
 import { serve } from '../src/serve.js';
 import { createInvite, loadInvites, revokeInvite, usageByInvite } from '../src/invites.js';
+import { FEEDBACK_FILE, feedbackByInvite } from '../src/feedback.js';
 import { QA_LOG } from '../src/qa.js';
 import { readAnswers } from '../src/answers.js';
 import { formatQuestions, gatherQuestions, readRunDirs, readRuns } from '../src/questions.js';
@@ -28,7 +29,7 @@ const USAGE = `usage:
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
                [--ban-after N] [--ban-hours N] [--invite-only] [--service]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
-  itsacv invite --list | --usage | --revoke <label|code> [--out DIR]
+  itsacv invite --list | --usage | --feedback | --revoke <label|code> [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
   itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
   itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
@@ -43,6 +44,7 @@ const USAGE = `usage:
   invite     an invitation link for one ESN (printed): the jobs of a page opened
              with it name the label in <out>/qa-log.jsonl; --list shows them,
              --usage the jobs and tokens per backend of each, read from that log,
+             --feedback the opinions given on the CVs (feedback.jsonl), per invitation,
              --revoke ends one (by label or code), at once, no restart
   questions  what the offers ask that no profile skill meets, most asked first, minus
              what answers.json (beside the profile) already answers: of every run in
@@ -96,7 +98,7 @@ else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
 const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
-const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--service': ['service', true], '--list': ['list', true], '--usage': ['usage', true], '--csv': ['csv', true], '--run': ['run', true] };
+const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--service': ['service', true], '--list': ['list', true], '--usage': ['usage', true], '--feedback': ['feedback', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
   process.stderr.write(`itsacv: ${message}\n`);
@@ -127,6 +129,7 @@ function parse(argv) {
     service: false,
     list: false,
     usage: false,
+    feedback: false,
     csv: false,
     revoke: null,
     top: '3',
@@ -148,7 +151,7 @@ function parse(argv) {
     else options.files.push(arg);
   }
   if (command === 'invite') {
-    if (!options.list && !options.usage && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
+    if (!options.list && !options.usage && !options.feedback && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
   if (!['serve', 'questions', 'matrix'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
@@ -194,7 +197,10 @@ async function main() {
 
   if (options.command === 'invite') {
     try {
-      if (options.usage) {
+      if (options.feedback) {
+        const file = join(options.out, FEEDBACK_FILE);
+        process.stdout.write(feedbackByInvite(existsSync(file) ? readFileSync(file, 'utf8') : ''));
+      } else if (options.usage) {
         const log = join(options.out, QA_LOG);
         process.stdout.write(usageByInvite(existsSync(log) ? readFileSync(log, 'utf8') : ''));
       } else if (options.list) {

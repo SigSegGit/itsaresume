@@ -101,6 +101,10 @@ dans le fichier des avis, avec le libellé de l'invitation :
 ```bash
 tail -n 3 $DATA/out/feedback.jsonl
 ```
+Pour lire les avis, par personne (note moyenne, puis chaque commentaire) :
+```bash
+cd ~/itsaresume/cv/deploy/vm-generator && docker compose exec generator node bin/itsacv.js invite --feedback --out /data/out
+```
 Pour voir la consommation par personne :
 ```bash
 cd ~/itsaresume/cv/deploy/vm-generator && docker compose exec generator node bin/itsacv.js invite --usage --out /data/out
