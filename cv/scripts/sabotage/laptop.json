@@ -61,7 +61,8 @@
     "src/coverage.js",
     "deploy/laptop/bionic-up.sh",
     "test/bionic-up.test.js",
-    "src/compare.js"
+    "src/compare.js",
+    "src/feedback.js"
   ],
   "defences": {
     "Wake (2.34): an unloaded model is loaded before the job": {

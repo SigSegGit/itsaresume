@@ -57,7 +57,8 @@
     "test/split.test.js",
     "src/links.js",
     "src/coverage.js",
-    "src/compare.js"
+    "src/compare.js",
+    "src/feedback.js"
   ],
   "defences": {
     "Injection: the analysis prompt fences the offer": {

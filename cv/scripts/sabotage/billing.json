@@ -53,7 +53,8 @@
     "test/wake.test.js",
     "src/links.js",
     "src/coverage.js",
-    "src/compare.js"
+    "src/compare.js",
+    "src/feedback.js"
   ],
   "defences": {
     "Models (2.35): a limit waits for the reset it gave": {

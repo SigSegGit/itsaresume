@@ -50,7 +50,8 @@
     "src/report.js",
     "src/run.js",
     "src/sources.js",
-    "src/word.js"
+    "src/word.js",
+    "src/feedback.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {
