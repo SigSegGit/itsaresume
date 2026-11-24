@@ -281,7 +281,7 @@ Profil recherché : expérience de la production critique, esprit d'équipe.
 Contrat : CDI, télétravail partiel.`;
 
 /** A public app: its own host name, a clock the test moves, small caps. */
-async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, ...ban } = {}) {
+async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3, status, invites, inviteOnly, log, profiles, maxVisitors, maxJobs, state, restore, offerText, service, serviceTtlMs, feedbackList, ...ban } = {}) {
   const clock = { now: Date.parse('2026-09-28T10:00:00Z') };
   const calls = { tailored: 0 };
   const dirs = new Map();
@@ -295,6 +295,7 @@ async function startPublic(t, { perDay = 5, perVisitorPerHour = 2, maxQueued = 3
       ...(state ? { state } : {}),
       ...(restore ? { restore } : {}),
       ...(offerText ? { offerText } : {}),
+      ...(feedbackList ? { feedbackList } : {}),
       // A run as the owner sees it: notes on his past applications, the report.
       reuse: (offer) => (offer.includes('Déjà vue') ? { ...fakeResult(offer), reused: true } : null),
       tailor: async ({ offer, onStep }) => {
@@ -1414,7 +1415,7 @@ test('the opinions received: the owner\'s page lists them, newest first; never i
   const got = await call(app.port, { path: '/api/feedback', headers: { 'X-CSRF-Token': TOKEN } });
   assert.equal(got.status, 200);
   assert.deepEqual(JSON.parse(got.text).map((entry) => entry.title), ['Cloud', 'SRE']);
-  const open = await startPublic(t, {});
+  const open = await startPublic(t, { feedbackList: () => kept });
   const visitor = await open.visit();
   assert.equal((await visitor.get('/api/feedback')).status, 404);
 });

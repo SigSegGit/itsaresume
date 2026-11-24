@@ -29,7 +29,7 @@ const USAGE = `usage:
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
                [--ban-after N] [--ban-hours N] [--invite-only] [--service]]
   itsacv invite <label> [--out DIR] [--public-host NAME]
-  itsacv invite --list | --usage | --feedback | --revoke <label|code> [--out DIR]
+  itsacv invite --list | --usage | --feedback | --revoke <label|code> | --many FILE [--out DIR]
   itsacv questions [<run-dir>...] [--profile FILE] [--out DIR]
   itsacv matrix [<run-dir>...] [--profile FILE] [--profiles DIR] [--out DIR] [--csv]
   itsacv rank <offer.txt>... [--top K] [--run] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS]
@@ -45,6 +45,7 @@ const USAGE = `usage:
              with it name the label in <out>/qa-log.jsonl; --list shows them,
              --usage the jobs and tokens per backend of each, read from that log,
              --feedback the opinions given on the CVs (feedback.jsonl), per invitation,
+             --many one link per line of FILE ("label<TAB>link"; a refused label on stderr, exit 2),
              --revoke ends one (by label or code), at once, no restart
   questions  what the offers ask that no profile skill meets, most asked first, minus
              what answers.json (beside the profile) already answers: of every run in
@@ -97,7 +98,7 @@ failed (the CV is written, the report says what was not done); 1 anything
 else. With several offers, each runs whatever happened to the others, and
 the exit code is the highest.`;
 
-const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
+const VALUED = ['--profile', '--profiles', '--out', '--url', '--port', '--timeout', '--public-host', '--per-day', '--per-hour', '--max-queued', '--ban-after', '--ban-hours', '--revoke', '--many', '--top', '--id', '--addon-origin', '--offer', '--threshold', '--template', '--palette'];
 const FLAGS = { '--no-layout': ['layout', false], '--split': ['split', true], '--invite-only': ['inviteOnly', true], '--service': ['service', true], '--list': ['list', true], '--usage': ['usage', true], '--feedback': ['feedback', true], '--csv': ['csv', true], '--run': ['run', true] };
 
 function fail(code, message) {
@@ -132,6 +133,7 @@ function parse(argv) {
     feedback: false,
     csv: false,
     revoke: null,
+    many: null,
     top: '3',
     id: null,
     addonOrigin: null,
@@ -151,7 +153,7 @@ function parse(argv) {
     else options.files.push(arg);
   }
   if (command === 'invite') {
-    if (!options.list && !options.usage && !options.feedback && options.revoke === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
+    if (!options.list && !options.usage && !options.feedback && options.revoke === null && options.many === null && options.files.length !== 1) fail(2, `invite takes one label (quote it)\n\n${USAGE}`);
     return options;
   }
   if (!['serve', 'questions', 'matrix'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
@@ -197,7 +199,21 @@ async function main() {
 
   if (options.command === 'invite') {
     try {
-      if (options.feedback) {
+      if (options.many !== null) {
+        // 2026-11-24: the LinkedIn outreach, one link per person of a list.
+        mkdirSync(options.out, { recursive: true });
+        const host = options.publicHost ? `https://${options.publicHost}` : '';
+        let refused = 0;
+        for (const label of readFileSync(options.many, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter(Boolean)) {
+          try {
+            process.stdout.write(`${label}\t${host}/?i=${createInvite(options.out, label)}\n`);
+          } catch (error) {
+            refused += 1;
+            process.stderr.write(`itsacv: ${label}: ${error.message}\n`);
+          }
+        }
+        if (refused) process.exitCode = 2;
+      } else if (options.feedback) {
         const file = join(options.out, FEEDBACK_FILE);
         process.stdout.write(feedbackByInvite(existsSync(file) ? readFileSync(file, 'utf8') : ''));
       } else if (options.usage) {

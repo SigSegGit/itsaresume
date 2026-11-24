@@ -231,7 +231,7 @@ test('the keywords the visible CV covers, and the ones it leaves out', () => {
   const result = keywordCoverage(['Kubernetes', 'Terraform (lab)', 'Go', 'PostgreSQL'], 'SRE — Kubernetes et terraform en prod ; Google Cloud.');
   assert.deepEqual([...result.covered], ['Kubernetes', 'Terraform (lab)']);
   assert.deepEqual([...result.missing], ['Go', 'PostgreSQL'], '"Go" is not inside "Google"');
-  assert.deepEqual({ ...keywordCoverage([], 'x') }, { covered: [], missing: [] });
+  assert.deepEqual(JSON.parse(JSON.stringify(keywordCoverage([], 'x'))), { covered: [], missing: [] });
 });
 
 test('the A4 page shows the coverage and copies the CV as text', () => {

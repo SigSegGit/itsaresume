@@ -130,7 +130,7 @@ test('itsacv invite --many: one link per label of a file, a refused label named,
   const out = fresh();
   createInvite(out, 'Ana');
   const list = join(out, 'people.txt');
-  writeFileSync(list, 'Sam D.\n\n  Lou B.  \nAna\n');
+  writeFileSync(list, 'Ana\nSam D.\n\n  Lou B.  \n');
   const made = spawnSync(process.execPath, [CLI, 'invite', '--many', list, '--out', out, '--public-host', 'cv.example.org'], { encoding: 'utf8' });
   assert.equal(made.status, 2, 'one label was refused');
   const lines = made.stdout.trim().split('\n');

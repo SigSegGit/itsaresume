@@ -90,9 +90,13 @@ génère son CV, elle donne son avis, tu le lis.
    cd ~/itsaresume/cv/deploy/vm-generator && docker compose exec generator node bin/itsacv.js invite "Prénom N." --out /data/out --public-host "$CV_HOST"
    ```
    La commande affiche `https://cv.<domaine>/?i=<code>` : c'est ce lien
-   que tu envoies.
-2. Ouvrir toi-même le lien dans une fenêtre privée. Onglet « Mon propre
-   profil » : joindre un profil **de test** (export LinkedIn `.zip`, ancien
+   que tu envoies. Pour plusieurs personnes d'un coup, un libellé par
+   ligne dans un fichier, puis :
+   ```bash
+   cd ~/itsaresume/cv/deploy/vm-generator && docker compose exec -T generator node bin/itsacv.js invite --many /dev/stdin --out /data/out --public-host "$CV_HOST" < personnes.txt
+   ```
+2. Ouvrir toi-même le lien dans une fenêtre privée : la page s'ouvre
+   directement sur l'onglet « Mon propre profil » (lien d'invitation). Là : joindre un profil **de test** (export LinkedIn `.zip`, ancien
    CV `.pdf`/`.docx`, ou JSON Resume), coller une offre, générer. (L'onglet
    « CV de … » génère ton CV à toi, pour un recruteur.)
 
@@ -121,6 +125,14 @@ Pour couper un lien : `... invite --revoke "Prénom N." --out /data/out`.
 Rappel (ta décision du 2026-11-24) : ces CV gratuits passent par ton
 abonnement Claude, pas par une API payante ; l'API viendra quand tu
 vendras.
+
+---
+
+**Aussi à vérifier** (page A4 du CV) : la ligne « Mots-clés de l'offre
+présents dans le CV : x/y — absents : … », et « Copier le texte du CV »
+qui met le CV en texte brut dans le presse-papiers (à coller dans un
+formulaire de candidature). Sur ta page locale, la carte « Avis reçus »
+liste les avis, les plus récents d'abord.
 
 ---
 

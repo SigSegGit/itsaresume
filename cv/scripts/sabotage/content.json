@@ -106,7 +106,8 @@
     "test/feedback.test.js",
     "web/cv.js",
     "web/cv.css",
-    "test/a4.test.js"
+    "test/a4.test.js",
+    "test/invites.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2426,6 +2427,22 @@
       "dead": "  return labels.map(",
       "expect": [
         "itsacv invite --feedback: the opinions per invitation, mean rating, newest comments first"
+      ]
+    },
+    "A4: a keyword is a whole word": {
+      "file": "web/cv.js",
+      "live": "(regex && regex.test(text) ? covered : missing)",
+      "dead": "(text.toLowerCase().includes(keyword.toLowerCase().replace(/ \\(lab\\)$/, \"\")) ? covered : missing)",
+      "expect": [
+        "the keywords the visible CV covers, and the ones it leaves out"
+      ]
+    },
+    "Invites --many: a refused label does not stop the others": {
+      "file": "bin/itsacv.js",
+      "live": "            refused += 1;\n",
+      "dead": "            throw error;\n",
+      "expect": [
+        "itsacv invite --many: one link per label of a file, a refused label named, the others made"
       ]
     }
   }

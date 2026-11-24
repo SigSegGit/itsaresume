@@ -2,7 +2,7 @@
 // for their opinion. One JSON line per opinion in <out>/feedback.jsonl,
 // readable by the owner alone, never shown to a visitor.
 
-import { appendFileSync, chmodSync } from 'node:fs';
+import { appendFileSync, chmodSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const FEEDBACK_FILE = 'feedback.jsonl';
@@ -43,4 +43,18 @@ export function feedbackByInvite(text) {
     const head = `${label ?? '(no invitation)'}\t${plural(entries.length, 'opinion')}\tmean ${mean.toFixed(1)}/5\n`;
     return head + entries.map((entry) => `  ${String(entry.at).slice(0, 10)}\t${entry.rating}/5\t${oneLine(entry.title)}\t${oneLine(entry.comment)}\n`).join('');
   }).join('');
+}
+
+/** Every opinion kept, as objects (a line that is not JSON is skipped). */
+export function readFeedback(out) {
+  const file = join(out, FEEDBACK_FILE);
+  if (!existsSync(file)) return [];
+  return readFileSync(file, 'utf8').split('\n').flatMap((line) => {
+    try {
+      const entry = JSON.parse(line);
+      return entry && typeof entry === 'object' && Number.isInteger(entry.rating) ? [entry] : [];
+    } catch {
+      return [];
+    }
+  });
 }

@@ -51,6 +51,17 @@ const pattern = (keywords) => {
   return words.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${words.map(escape).join('|')})(?![\\p{L}\\p{N}])`, 'giu') : null;
 };
 
+/** 2026-11-24: the offer's keywords the visible CV says (whole words), and the ones it leaves out. */
+function keywordCoverage(keywords, text) {
+  const covered = [];
+  const missing = [];
+  for (const keyword of [...new Set(keywords)]) {
+    const regex = pattern([keyword]);
+    (regex && regex.test(text) ? covered : missing).push(keyword);
+  }
+  return { covered, missing };
+}
+
 /**
  * The text cut into segments, `mark` on the offer's keywords: level 0 none,
  * 1 and 2 a keyword's first occurrence not yet in `seen` (the caller keeps
@@ -263,6 +274,16 @@ async function start() {
     notice.hidden = !text;
   };
   document.getElementById('print').addEventListener('click', () => window.print());
+  // 2026-11-24: the CV as plain text, for the forms that want it pasted.
+  const copy = document.getElementById('copy-text');
+  copy?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(sheet.innerText);
+      copy.textContent = t('Copié !');
+    } catch {
+      copy.textContent = t('Copie impossible : sélectionnez le texte à la main.');
+    }
+  });
   const job = new URLSearchParams(location.search).get('job') ?? '';
   const response = await fetch(`/api/jobs/${encodeURIComponent(job)}/page`);
   if (!response.ok) return say(t('CV introuvable : relancez la génération depuis la page d’accueil.'));
@@ -286,6 +307,14 @@ async function start() {
     if (result.overflow) notes.push(t('Le contenu obligatoire dépasse la page, même à l’interligne minimal.'));
     else if (result.shrunk) notes.push(t('Le contenu obligatoire ne tenait qu’en resserrant l’interligne.'));
     say(notes.join(' '));
+    // 2026-11-24: what the visible CV says of the offer's keywords.
+    const coverage = document.getElementById('coverage');
+    if (coverage && page.keywords?.length) {
+      const { covered, missing } = keywordCoverage(page.keywords ?? [], sheet.innerText);
+      coverage.textContent = t('Mots-clés de l’offre présents dans le CV : {v0}/{v1}', { v0: covered.length, v1: covered.length + missing.length })
+        + (missing.length ? ` — ${t('absents')} : ${missing.join(', ')}` : '');
+      coverage.hidden = false;
+    }
   };
   for (const [name, control] of Object.entries(controls)) {
     control?.addEventListener('input', () => {
