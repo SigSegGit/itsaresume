@@ -373,6 +373,10 @@ export function createStore(file) {
         return row.credits + delta;
       });
     },
+    /** An admin action outside the accounts (an invitation made or revoked). */
+    noteAdmin(admin, target, action) {
+      run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(Date.now()), admin, String(target).slice(0, 200), String(action).slice(0, 200));
+    },
     adminLog(limit = 100) {
       return all('SELECT at, admin, target, action FROM admin_log ORDER BY id DESC LIMIT ?', limit);
     },

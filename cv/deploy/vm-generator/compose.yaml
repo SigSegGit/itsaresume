@@ -96,7 +96,9 @@ services:
         required: false
     volumes:
       - ${DATA:-~/itsacv-data}/premium:/data/premium
+      # 2026-11-24: the invitations, QA log and opinions, for the admin page.
+      - ${DATA:-~/itsacv-data}/out:/data/out
     entrypoint: ["sh", "-c"]
-    command: ["exec node premium/server.js --port 18791 --router \"$${ROUTER_URL:-http://127.0.0.1:8789}\" --data /data/premium --contact \"$${PREMIUM_CONTACT:-}\""]
+    command: ["exec node premium/server.js --port 18791 --router \"$${ROUTER_URL:-http://127.0.0.1:8789}\" --data /data/premium --out /data/out --public-host \"$$CV_HOST\" --contact \"$${PREMIUM_CONTACT:-}\""]
     init: true
     restart: unless-stopped
