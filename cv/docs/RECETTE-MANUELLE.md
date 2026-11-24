@@ -201,6 +201,23 @@ du compte.
 
 ---
 
+## 8. Le suivi de tes candidatures — [ ]
+
+**Il faut** : ta page locale (`itsacv serve`), quelques CV déjà générés.
+
+1. Carte « Mes candidatures » : chaque CV généré y est, le plus récent en
+   haut, « À envoyer ».
+2. Passer un CV à « Envoyée », écrire une remarque (« via LinkedIn »),
+   cliquer ailleurs.
+3. Recharger la page.
+
+**Attendu** : le statut et la remarque sont toujours là ; la ligne
+« Envoyées par semaine » compte 1 cette semaine ; le filtre « Envoyée »
+ne montre que celle-ci ; « Exporter en CSV » télécharge
+`candidatures.csv` (s'ouvre dans Excel).
+
+---
+
 ## Après la recette
 
 Me donner, pour chaque fiche : passée / ratée + ce qui a été noté. Une

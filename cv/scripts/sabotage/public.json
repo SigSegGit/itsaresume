@@ -53,7 +53,8 @@
     "src/word.js",
     "src/feedback.js",
     "web/app.js",
-    "web/index.html"
+    "web/index.html",
+    "src/applications.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {

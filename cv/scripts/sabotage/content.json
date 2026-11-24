@@ -106,7 +106,9 @@
     "test/feedback.test.js",
     "web/cv.js",
     "web/cv.css",
-    "test/a4.test.js"
+    "test/a4.test.js",
+    "src/applications.js",
+    "test/applications.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2426,6 +2428,62 @@
       "dead": "  return labels.map(",
       "expect": [
         "itsacv invite --feedback: the opinions per invitation, mean rating, newest comments first"
+      ]
+    },
+    "Applications: only a run folder with an analysis": {
+      "file": "src/applications.js",
+      "live": "RUN.test(String(run)) && existsSync(join(out, run, 'analysis.json'))",
+      "dead": "existsSync(join(out, run))",
+      "expect": [
+        "a status change is refused for an unknown status, a long note, or a folder that is not a run"
+      ]
+    },
+    "Applications: an unknown status is refused": {
+      "file": "src/applications.js",
+      "live": "  if (!STATUSES.includes(status)) throw",
+      "dead": "  if (false) throw",
+      "expect": [
+        "a status change is refused for an unknown status, a long note, or a folder that is not a run"
+      ]
+    },
+    "Applications: the day it was sent stays": {
+      "file": "src/applications.js",
+      "live": "const sent = before.sent ?? (status !== 'todo' ? day(now) : null);",
+      "dead": "const sent = status !== 'todo' ? day(now) : null;",
+      "expect": [
+        "a status is kept in the run folder; the day it was sent stays when it moves on"
+      ]
+    },
+    "Applications: newest first": {
+      "file": "src/applications.js",
+      "live": ".sort((a, b) => b.run.localeCompare(a.run));",
+      "dead": ";",
+      "expect": [
+        "every run folder with an analysis is an application, newest first, \"to send\" until told"
+      ]
+    },
+    "Applications: nothing older than eight weeks": {
+      "file": "src/applications.js",
+      "live": "if (slot && when < monday + 7 * DAY) slot.sent += 1;",
+      "dead": "if (when < monday + 7 * DAY) (slot ?? weeks[0]).sent += 1;",
+      "expect": [
+        "applications sent per week, the last eight weeks, Monday first"
+      ]
+    },
+    "Applications: a CSV cell never a formula": {
+      "file": "src/applications.js",
+      "live": "    if (/^[=+\\-@\\t\\r]/.test(text)) text = `'${text}`;\n",
+      "dead": "",
+      "expect": [
+        "the CSV: one row per application, a cell never opens as a formula"
+      ]
+    },
+    "Applications: never in public": {
+      "file": "src/server.js",
+      "live": "          if (publicMode || !deps.applications) throw new HttpError(404, 'not found');\n          const rows",
+      "dead": "          if (!deps.applications) throw new HttpError(404, 'not found');\n          const rows",
+      "expect": [
+        "the applications are never on the public page"
       ]
     }
   }

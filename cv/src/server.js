@@ -20,6 +20,7 @@ import { LINKEDIN_FILES } from './import.js';
 import { ID } from './profiles.js';
 import { resolveStyle } from './style.js';
 import { COMMENT_MAX } from './feedback.js';
+import { applicationsCsv, STATUSES, weekly } from './applications.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { OFFER_FILES } from './sources.js';
 import { MODELS } from './qa.js';
@@ -517,6 +518,13 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
+        // 2026-11-24: the owner's applications (src/applications.js), never in public.
+        if (path === '/api/applications' || path === '/api/applications.csv') {
+          if (publicMode || !deps.applications) throw new HttpError(404, 'not found');
+          const rows = deps.applications.list();
+          if (path === '/api/applications') return send(response, 200, { rows, weekly: weekly(rows), statuses: STATUSES });
+          return send(response, 200, applicationsCsv(rows), 'text/csv; charset=utf-8', { 'Content-Disposition': 'attachment; filename="candidatures.csv"' });
+        }
         if (path === '/api/status') {
           const status = await deps.status();
           // busy: jobs running or queued, so the VM's auto-deploy waits for none.
@@ -657,6 +665,16 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
         if (comment.length > COMMENT_MAX) throw new HttpError(400, `comment: at most ${COMMENT_MAX} characters`);
         await deps.feedback({ at: new Date().toISOString(), job: job.id, title: job.title ?? null, invite: job.invite ?? null, model: job.model ?? null, rating, comment });
         return send(response, 200, { ok: true });
+      }
+      // 2026-11-24: an application's status and note, the owner's page only.
+      const application = path.match(/^\/api\/applications\/([^/]+)$/);
+      if (application) {
+        if (publicMode || !deps.applications) throw new HttpError(404, 'not found');
+        try {
+          return send(response, 200, deps.applications.set(decodeURIComponent(application[1]), { status: body?.status, note: body?.note }));
+        } catch (error) {
+          throw new HttpError(400, error.message ?? String(error));
+        }
       }
       // 2.31a: a run renamed by its owner; the name is kept beside the run.
       const renaming = path.match(/^\/api\/jobs\/([0-9a-f-]{36})\/title$/);

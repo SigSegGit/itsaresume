@@ -112,6 +112,15 @@
       <p class="error" id="offers-error" role="alert" hidden></p>
     </section>
 
+    <section class="card" id="applications-card" aria-labelledby="applications-title" hidden>
+      <h2 id="applications-title" data-i18n>Mes candidatures</h2>
+      <p class="meta"><label for="applications-filter" data-i18n>Afficher</label>
+        <select id="applications-filter"></select>
+        <a href="/api/applications.csv" download="candidatures.csv" data-i18n>Exporter en CSV</a></p>
+      <p class="meta" id="applications-weekly"></p>
+      <table class="applications"><tbody id="applications-rows"></tbody></table>
+    </section>
+
     <section class="card" aria-labelledby="jobs-title">
       <h2 id="jobs-title"><span class="step">2</span> <span data-i18n>CV générés</span></h2>
       <p class="empty" id="jobs-empty" data-i18n>Les CV apparaîtront ici, un par offre, avec leur rapport : qualification, exigences couvertes, preuves.</p>

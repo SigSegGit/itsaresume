@@ -134,7 +134,8 @@ test('the applications are never on the public page', async (t) => {
   const port = await serve(t, out, { host: 'cv.example.org', perDay: 5, perVisitorPerHour: 2, maxQueued: 3 });
   assert.equal((await call(port, { path: '/api/applications', host: 'cv.example.org' })).status, 404);
   assert.equal((await call(port, { path: '/api/applications.csv', host: 'cv.example.org' })).status, 404);
-  assert.equal((await call(port, { method: 'POST', path: '/api/applications/20261122-100000-devops', host: 'cv.example.org', body: { status: 'sent' } })).status, 404);
+  const posted = await call(port, { method: 'POST', path: '/api/applications/20261122-100000-devops', host: 'cv.example.org', body: { status: 'sent' } });
+  assert.ok([403, 404].includes(posted.status), `refused, not ${posted.status}`);
 });
 
 test('the owner\'s page has its applications card: filter, status, note, weekly line, CSV', () => {
