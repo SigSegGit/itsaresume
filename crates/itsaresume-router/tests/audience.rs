@@ -67,7 +67,10 @@ fn a_customer_request_skips_the_subscription_the_owner_keeps_it() {
         .expect("known")
         .result
         .expect("answered");
-    assert_eq!(owner.backend, "claude-code", "the owner's request takes the first backend");
+    assert_eq!(
+        owner.backend, "claude-code",
+        "the owner's request takes the first backend"
+    );
 
     let customer = router
         .complete_as(&request, None, Audience::Customer)
@@ -75,7 +78,11 @@ fn a_customer_request_skips_the_subscription_the_owner_keeps_it() {
         .result
         .expect("answered");
     assert_eq!(customer.backend, "anthropic-api");
-    assert_eq!(sub_calls.load(Ordering::SeqCst), 1, "never asked for the customer");
+    assert_eq!(
+        sub_calls.load(Ordering::SeqCst),
+        1,
+        "never asked for the customer"
+    );
     assert_eq!(api_calls.load(Ordering::SeqCst), 1);
 }
 
@@ -88,7 +95,10 @@ fn a_customer_request_with_no_allowed_backend_is_refused_and_nothing_is_called()
         .complete_as(&Request::new("a CV"), None, Audience::Customer)
         .expect("known");
     assert!(matches!(outcome.result, Err(RouteError::NotAllowed { .. })));
-    assert_eq!(calls.load(Ordering::SeqCst) + local_calls.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        calls.load(Ordering::SeqCst) + local_calls.load(Ordering::SeqCst),
+        0
+    );
     let journal = std::fs::read_to_string(dir.path().join("journal.jsonl")).expect("journal");
     assert!(journal.contains("\"outcome\":\"not_allowed\""), "{journal}");
     assert!(journal.contains("\"audience\":\"customer\""), "{journal}");
@@ -100,7 +110,11 @@ fn naming_a_subscription_backend_does_not_get_a_customer_through() {
     let (api, _) = billed("anthropic-api", Billing::Api);
     let (router, _dir) = router(vec![subscription, api]);
     let outcome = router
-        .complete_as(&Request::new("a CV"), Some("claude-code"), Audience::Customer)
+        .complete_as(
+            &Request::new("a CV"),
+            Some("claude-code"),
+            Audience::Customer,
+        )
         .expect("known");
     assert!(matches!(outcome.result, Err(RouteError::NotAllowed { .. })));
     assert_eq!(calls.load(Ordering::SeqCst), 0);
@@ -149,15 +163,28 @@ model = "llama"
     let billings: Vec<Billing> = config.backends.iter().map(|b| b.billing()).collect();
     assert_eq!(
         billings,
-        vec![Billing::Subscription, Billing::Api, Billing::Local, Billing::Free]
+        vec![
+            Billing::Subscription,
+            Billing::Api,
+            Billing::Local,
+            Billing::Free
+        ]
     );
-    assert_eq!(config.customer_billing(), vec![Billing::Api, Billing::Local]);
     assert_eq!(
-        Config::parse("journal = \"j\"\n").expect("parses").customer_billing(),
+        config.customer_billing(),
+        vec![Billing::Api, Billing::Local]
+    );
+    assert_eq!(
+        Config::parse("journal = \"j\"\n")
+            .expect("parses")
+            .customer_billing(),
         vec![Billing::Api],
         "absent: the API alone"
     );
-    assert!(Config::parse("journal = \"j\"\ncustomer_billing = [\"subscription\"]\n").is_err() == false);
+    assert!(
+        Config::parse("journal = \"j\"\ncustomer_billing = [\"subscription\"]\n").is_ok(),
+        "the owner may allow it, knowingly"
+    );
     assert!(
         Config::parse("journal = \"j\"\ncustomer_billing = [\"anything\"]\n").is_err(),
         "an unknown billing is refused"
@@ -176,11 +203,36 @@ fn an_api_key_never_sits_in_the_configuration() {
 
 #[test]
 fn the_fake_key_runs_on_the_subscription_but_is_billed_as_the_api() {
-    let fake = anthropic_api_backend("claude-haiku-5-5", Some(FAKE_API_KEY.into()), None, std::time::Duration::from_secs(5));
-    assert_eq!(fake.kind(), "claude-code", "the fake key leads to the subscription (test only)");
-    let real = anthropic_api_backend("claude-haiku-5-5", Some("sk-ant-real".into()), None, std::time::Duration::from_secs(5));
+    let fake = anthropic_api_backend(
+        "claude-haiku-5-5",
+        Some(FAKE_API_KEY.into()),
+        None,
+        std::time::Duration::from_secs(5),
+    );
+    assert_eq!(
+        fake.kind(),
+        "claude-code",
+        "the fake key leads to the subscription (test only)"
+    );
+    let real = anthropic_api_backend(
+        "claude-haiku-5-5",
+        Some("sk-ant-real".into()),
+        None,
+        std::time::Duration::from_secs(5),
+    );
     assert_eq!(real.kind(), "anthropic-api");
-    let none = anthropic_api_backend("claude-haiku-5-5", None, None, std::time::Duration::from_secs(5));
-    let refused = none.complete(&Request::new("x")).expect_err("no key, nothing sent");
-    assert!(refused.message().contains("ANTHROPIC_API_KEY"), "{}", refused.message());
+    let none = anthropic_api_backend(
+        "claude-haiku-5-5",
+        None,
+        None,
+        std::time::Duration::from_secs(5),
+    );
+    let refused = none
+        .complete(&Request::new("x"))
+        .expect_err("no key, nothing sent");
+    assert!(
+        refused.message().contains("ANTHROPIC_API_KEY"),
+        "{}",
+        refused.message()
+    );
 }

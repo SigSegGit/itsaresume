@@ -1,9 +1,12 @@
 //! Routes an inference request to the first backend able to answer it.
 //!
-//! Every backend this crate knows is free at the point of use: a Claude
-//! subscription driven through the `claude` CLI, a local LM Studio server, and
-//! (later) a small local model. No backend is billed per token, and the set of
-//! backends is closed on purpose — see `docs/HANDOVER.md` §1.
+//! Every backend is billed one known way ([`Billing`]): a Claude subscription
+//! driven through the `claude` CLI, a free tier, a local LM Studio server, or
+//! (2026-11-24, the owner) Anthropic's API for customers. Each request is the
+//! owner's or a customer's ([`Audience`]); a customer's never reaches a
+//! billing the configuration does not allow it (`customer_billing`, the API
+//! alone by default). The set of backends stays closed on purpose — see
+//! `docs/HANDOVER.md` §1.
 
 pub mod backend;
 pub mod claude_code;
@@ -16,6 +19,8 @@ pub mod router;
 pub mod server;
 pub mod stats;
 
-pub use backend::{Backend, BackendError, Completion, Kind, Probe, Request, Usage};
+pub use backend::{
+    Audience, Backend, BackendError, Billing, Completion, Kind, Probe, Request, Usage,
+};
 pub use journal::Journal;
 pub use router::{Answer, Attempt, BackendStatus, NoBackends, Outcome, RouteError, Router};

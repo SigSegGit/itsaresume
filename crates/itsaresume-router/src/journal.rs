@@ -57,6 +57,24 @@ impl Journal {
         outcome: &Outcome,
         elapsed: Duration,
     ) -> std::io::Result<()> {
+        self.record_for(
+            request,
+            asked,
+            outcome,
+            elapsed,
+            crate::backend::Audience::Owner,
+        )
+    }
+
+    /// As [`Journal::record_asked`]; a customer's request says so (2026-11-24).
+    pub fn record_for(
+        &self,
+        request: &Request,
+        asked: Option<&str>,
+        outcome: &Outcome,
+        elapsed: Duration,
+        audience: crate::backend::Audience,
+    ) -> std::io::Result<()> {
         let (label, backend, answer_chars) = match &outcome.result {
             Ok(answer) => (
                 "answered",
@@ -66,6 +84,7 @@ impl Journal {
             Err(RouteError::Stopped { backend, .. }) => ("stopped", Some(backend.as_str()), None),
             Err(RouteError::Unserved { .. }) => ("unserved", None, None),
             Err(RouteError::Exhausted) => ("exhausted", None, None),
+            Err(RouteError::NotAllowed { .. }) => ("not_allowed", None, None),
         };
         let attempts: Vec<Value> = outcome
             .attempts
@@ -89,6 +108,9 @@ impl Journal {
             "prompt_chars": request.prompt.chars().count(),
             "answer_chars": answer_chars,
         });
+        if audience == crate::backend::Audience::Customer {
+            entry["audience"] = json!(audience.as_str());
+        }
         // How it was asked (8.26); the schema itself is never written.
         if let Some(asked) = asked {
             entry["backend_asked"] = json!(asked);

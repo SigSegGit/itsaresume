@@ -788,3 +788,20 @@ fn the_status_carries_the_usage_level_of_the_last_answer() {
         "{status}"
     );
 }
+
+/// 2026-11-24: a request says whose it is; a customer's never reaches a
+/// billing `customer_billing` leaves out (the scripted backend is local, and
+/// customers get the API alone by default).
+#[test]
+fn a_customer_request_with_no_allowed_backend_is_403_and_the_owner_is_served() {
+    let (address, _dir) = start(vec![answers("local", "from local")]);
+    let (status, body) = post(address, r#"{"prompt": "a CV", "audience": "customer"}"#);
+    assert_eq!(status, 403, "{body}");
+    assert_eq!(body["error"]["kind"], "not_allowed");
+    let (status, body) = post(address, r#"{"prompt": "a CV", "audience": "owner"}"#);
+    assert_eq!(status, 200, "{body}");
+    let (status, _) = post(address, r#"{"prompt": "a CV"}"#);
+    assert_eq!(status, 200, "the owner's when it does not say");
+    let (status, body) = post(address, r#"{"prompt": "a CV", "audience": "everyone"}"#);
+    assert_eq!(status, 400, "{body}");
+}

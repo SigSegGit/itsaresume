@@ -314,7 +314,7 @@ fn a_bad_configuration_or_usage_exits_2() {
     let bad = dir.path().join("bad.toml");
     std::fs::write(
         &bad,
-        "journal = \"j.jsonl\"\n[[backend]]\nkind = \"anthropic-api\"\n",
+        "journal = \"j.jsonl\"\n[[backend]]\nkind = \"pay-per-token\"\n",
     )
     .expect("write");
 
@@ -324,7 +324,7 @@ fn a_bad_configuration_or_usage_exits_2() {
         &[],
     );
     assert_eq!(output.status.code(), Some(2), "{output:?}");
-    assert!(String::from_utf8_lossy(&output.stderr).contains("anthropic-api"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("pay-per-token"));
 
     for args in [&[][..], &["frobnicate"][..], &["complete", "--config"][..]] {
         let output = run(args, "", &[]);

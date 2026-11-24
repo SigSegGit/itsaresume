@@ -30,7 +30,8 @@
     "crates/itsaresume-router/tests/router.rs",
     "crates/itsaresume-router/tests/server.rs",
     "crates/itsaresume-router/tests/system_file_collision.rs",
-    "crates/itsaresume-router/tests/openai.rs"
+    "crates/itsaresume-router/tests/openai.rs",
+    "crates/itsaresume-router/tests/audience.rs"
   ],
   "defences": {
     "Groq (2.37): a rate limit is waited out, then asked again": {
@@ -984,6 +985,55 @@
       "expect": [
         "an_overage_refusal_names_the_limits_reset",
         "an_overage_latch_lifts_by_itself_once_the_limit_has_reset"
+      ]
+    },
+    "Audience: a customer sees only the allowed billings": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "audience == Audience::Owner || self.customer_billing.contains(&backend.billing())",
+      "dead": "true",
+      "expect": [
+        "a_customer_request_skips_the_subscription_the_owner_keeps_it",
+        "naming_a_subscription_backend_does_not_get_a_customer_through"
+      ]
+    },
+    "Audience: customers get the API alone by default": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "            customer_billing: vec![Billing::Api],",
+      "dead": "            customer_billing: vec![Billing::Api, Billing::Local],",
+      "expect": [
+        "a_customer_request_with_no_allowed_backend_is_refused_and_nothing_is_called"
+      ]
+    },
+    "Audience: the configuration defaults to the API alone": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": ".unwrap_or_else(|| vec![Billing::Api])",
+      "dead": ".unwrap_or_else(|| vec![Billing::Api, Billing::Subscription])",
+      "expect": [
+        "each_kind_is_billed_its_way_and_customer_billing_parses"
+      ]
+    },
+    "Audience: claude-code is the subscription": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "Self::ClaudeCode { .. } => Billing::Subscription,",
+      "dead": "Self::ClaudeCode { .. } => Billing::Api,",
+      "expect": [
+        "each_kind_is_billed_its_way_and_customer_billing_parses"
+      ]
+    },
+    "Audience: a customer request is read as one": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "Value::String(audience) if audience == \"customer\" => Audience::Customer,",
+      "dead": "Value::String(audience) if audience == \"customer\" => Audience::Owner,",
+      "expect": [
+        "a_customer_request_with_no_allowed_backend_is_403_and_the_owner_is_served"
+      ]
+    },
+    "Audience: the fake key runs on the subscription, a real one on the API": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "    if key.as_deref() == Some(FAKE_API_KEY) {\n        let program",
+      "dead": "    if key.is_some() {\n        let program",
+      "expect": [
+        "the_fake_key_runs_on_the_subscription_but_is_billed_as_the_api"
       ]
     }
   }

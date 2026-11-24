@@ -5,7 +5,7 @@
 //! a fallback kind; `GET /healthz` → 200 (docs/ARCHITECTURE.md, HTTP endpoint).
 //! Every answer carries `"contract"`: [`CONTRACT`].
 
-use crate::backend::{Kind, Request as Inference};
+use crate::backend::{Audience, Kind, Request as Inference};
 use crate::router::{Attempt, RouteError, Router};
 use serde_json::{Value, json};
 use std::io::Read;
@@ -179,7 +179,7 @@ fn status(router: &Router) -> Value {
         .into_iter()
         .map(|backend| {
             let mut entry =
-                json!({"name": backend.name, "kind": backend.kind, "state": backend.state});
+                json!({"name": backend.name, "kind": backend.kind, "billing": backend.billing, "state": backend.state});
             if let Some(reason) = backend.reason {
                 entry["reason"] = json!(reason);
             }
@@ -273,12 +273,12 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
     if raw.len() > MAX_BODY_BYTES {
         return too_large();
     }
-    let (inference, only) = match parse(&raw) {
+    let (inference, only, audience) = match parse(&raw) {
         Ok(parsed) => parsed,
         Err(message) => return error(400, "bad_request", &message),
     };
 
-    let outcome = match router.complete_on(&inference, only.as_deref()) {
+    let outcome = match router.complete_as(&inference, only.as_deref(), audience) {
         Ok(outcome) => outcome,
         Err(unknown) => return error(400, "bad_request", &unknown.to_string()),
     };
@@ -310,6 +310,14 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
                 "attempts": attempts,
             }}),
         ),
+        Err(RouteError::NotAllowed { audience }) => (
+            403,
+            json!({"error": {
+                "kind": "not_allowed",
+                "message": format!("no configured backend may serve a {} request (customer_billing)", audience.as_str()),
+                "attempts": attempts,
+            }}),
+        ),
         Err(RouteError::Exhausted) => (
             503,
             json!({"error": {
@@ -325,7 +333,7 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
     (status, body)
 }
 
-fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
+fn parse(raw: &[u8]) -> Result<(Inference, Option<String>, Audience), String> {
     let value: Value = serde_json::from_slice(raw)
         .map_err(|problem| format!("the body is not JSON: {problem}"))?;
     let prompt = value["prompt"]
@@ -355,6 +363,13 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
         Value::String(kind) if kind == "classify" => Kind::Classify,
         _ => return Err("\"kind\" must be \"generate\" or \"classify\"".into()),
     };
+    // 2026-11-24: whose request: the owner's unless it says a customer's.
+    let audience = match &value["audience"] {
+        Value::Null => Audience::Owner,
+        Value::String(audience) if audience == "owner" => Audience::Owner,
+        Value::String(audience) if audience == "customer" => Audience::Customer,
+        _ => return Err("\"audience\" must be \"owner\" or \"customer\"".into()),
+    };
     Ok((
         Inference {
             prompt: prompt.to_owned(),
@@ -363,6 +378,7 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>), String> {
             kind,
         },
         only,
+        audience,
     ))
 }
 

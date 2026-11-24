@@ -82,11 +82,11 @@ fn an_unknown_backend_kind_is_refused() {
         r#"
         journal = "j.jsonl"
         [[backend]]
-        kind = "anthropic-api"
+        kind = "pay-per-token"
         "#,
     )
     .expect_err("an unknown kind must not parse");
-    assert!(error.to_string().contains("anthropic-api"), "{error}");
+    assert!(error.to_string().contains("pay-per-token"), "{error}");
 }
 
 /// No backend has a credential field, and none can be smuggled in.

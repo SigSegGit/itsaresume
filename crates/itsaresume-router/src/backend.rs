@@ -17,6 +17,55 @@ pub struct Request {
     pub kind: Kind,
 }
 
+/// Whose request it is (2026-11-24): the owner's own use, or a customer's.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Audience {
+    /// The owner, for himself: any configured backend.
+    #[default]
+    Owner,
+    /// Someone the owner serves (a free trial, a paying customer): only the
+    /// billings `customer_billing` allows.
+    Customer,
+}
+
+impl Audience {
+    /// As the journal and the HTTP API write it.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Owner => "owner",
+            Self::Customer => "customer",
+        }
+    }
+}
+
+/// How a backend is paid for (2026-11-24).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Billing {
+    /// A personal subscription (Claude Pro/Max, a Google account): the
+    /// holder's own use.
+    Subscription,
+    /// An API billed per token to the owner's account.
+    Api,
+    /// A free tier with no payment method behind it.
+    Free,
+    /// A model on the owner's own machine.
+    Local,
+}
+
+impl Billing {
+    /// As the configuration, the status and the journal write it.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Subscription => "subscription",
+            Self::Api => "api",
+            Self::Free => "free",
+            Self::Local => "local",
+        }
+    }
+}
+
 /// The kind of a request (M2): a backend serves the kinds it declares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -159,8 +208,8 @@ pub(crate) fn excerpt(text: &str, max_chars: usize) -> String {
     }
 }
 
-/// An inference backend. The set of implementations is closed: every one of
-/// them is free at the point of use (docs/HANDOVER.md §1, decision 1).
+/// An inference backend. The set of implementations is closed; each says how
+/// it is billed, and the router keeps a customer off what is not allowed.
 pub trait Backend: Send + Sync {
     /// A short stable name, as written in the journal (`claude-code`, …).
     fn name(&self) -> &str;
@@ -168,6 +217,12 @@ pub trait Backend: Send + Sync {
     /// What it is (`claude-code`, `lm-studio`): its name unless configured otherwise.
     fn kind(&self) -> &str {
         self.name()
+    }
+
+    /// How it is paid for; local unless it says otherwise (the configuration
+    /// sets it for every configured backend).
+    fn billing(&self) -> Billing {
+        Billing::Local
     }
 
     /// Whether this backend serves requests of `kind` (all, by default).

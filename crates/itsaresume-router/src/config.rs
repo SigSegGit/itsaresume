@@ -1,6 +1,6 @@
 //! The configuration file (`config.local.toml`; `config.example.toml` shows it).
 
-use crate::backend::{Backend, Kind};
+use crate::backend::{Backend, Billing, Kind};
 use crate::claude_code::ClaudeCodeBackend;
 use crate::gemini_cli::{GeminiCliBackend, Login};
 use crate::journal::Journal;
@@ -22,6 +22,32 @@ pub const MAX_TIMEOUT_SECS: u64 = 86_400;
 /// 8.59: the default pause before an overloaded backend is tried again.
 pub const OVERLOAD_RETRY_SECS: u64 = 15;
 
+/// 2026-11-24 (the owner): while `ANTHROPIC_API_KEY` is this value, an
+/// `anthropic-api` backend runs on the Claude subscription, to test the
+/// customer route before a real key exists. Billed as the API all the same,
+/// and said loudly at start; a real key replaces it, nothing else changes.
+pub const FAKE_API_KEY: &str = "fake-key-uses-the-subscription";
+
+/// An `anthropic-api` backend: the API with a real key, the subscription's
+/// `claude` (`program`, else `claude`) with [`FAKE_API_KEY`], or nothing
+/// sent without a key.
+pub fn anthropic_api_backend(
+    model: &str,
+    key: Option<String>,
+    program: Option<&Path>,
+    timeout: Duration,
+) -> Box<dyn Backend> {
+    if key.as_deref() == Some(FAKE_API_KEY) {
+        let program = program.map_or_else(|| PathBuf::from("claude"), Path::to_path_buf);
+        return Box::new(
+            ClaudeCodeBackend::new(program)
+                .with_timeout(timeout)
+                .with_model(model),
+        );
+    }
+    Box::new(OpenAiBackend::anthropic(model, key).with_timeout(timeout))
+}
+
 /// The whole file.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -41,6 +67,9 @@ pub struct Config {
     /// 8.59: the pause before an overloaded backend (503, "high demand") is
     /// tried once more; absent, 15 s; 0, never.
     pub overload_retry_secs: Option<u64>,
+    /// 2026-11-24: the billings a customer's request may reach; absent, the
+    /// API alone (a subscription is its holder's own use).
+    customer_billing: Option<Vec<Billing>>,
 }
 
 /// One backend. The list of kinds is closed, and no kind has a credential.
@@ -107,6 +136,21 @@ pub enum BackendConfig {
         /// Seconds before giving up.
         timeout_secs: Option<u64>,
     },
+    /// 2026-11-24: Anthropic's API, for customers; the key comes from
+    /// `ANTHROPIC_API_KEY` (never a field here). With [`FAKE_API_KEY`] it
+    /// runs on the subscription's `program` (tests only).
+    AnthropicApi {
+        /// The name requests and the journal use (default: the kind).
+        name: Option<String>,
+        /// The request kinds it takes (default: all).
+        serves: Option<Vec<Kind>>,
+        /// The model id (the cheapest that does the job).
+        model: String,
+        /// Seconds before giving up.
+        timeout_secs: Option<u64>,
+        /// The `claude` executable used while the key is the fake one.
+        program: Option<PathBuf>,
+    },
     /// LM Studio's OpenAI-compatible server.
     LmStudio {
         /// The name requests and the journal use (default: the kind).
@@ -136,6 +180,7 @@ impl BackendConfig {
             | Self::GeminiCli { timeout_secs, .. }
             | Self::Openai { timeout_secs, .. }
             | Self::Groq { timeout_secs, .. }
+            | Self::AnthropicApi { timeout_secs, .. }
             | Self::LmStudio { timeout_secs, .. } => timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS),
         };
         Duration::from_secs(seconds)
@@ -149,6 +194,9 @@ impl BackendConfig {
             Self::GeminiCli { name, .. } => name.clone().unwrap_or_else(|| "gemini-cli".into()),
             Self::Openai { name, .. } => name.clone().unwrap_or_else(|| "openai".into()),
             Self::Groq { name, .. } => name.clone().unwrap_or_else(|| "groq".into()),
+            Self::AnthropicApi { name, .. } => {
+                name.clone().unwrap_or_else(|| "anthropic-api".into())
+            }
             Self::LmStudio { name, .. } => name.clone().unwrap_or_else(|| "lm-studio".into()),
         }
     }
@@ -159,10 +207,25 @@ impl BackendConfig {
         | Self::GeminiCli { serves, .. }
         | Self::Openai { serves, .. }
         | Self::Groq { serves, .. }
+        | Self::AnthropicApi { serves, .. }
         | Self::LmStudio { serves, .. }) = self;
         serves
             .clone()
             .unwrap_or_else(|| vec![Kind::Generate, Kind::Classify])
+    }
+
+    /// How it is paid for (2026-11-24): the kind decides, never a setting.
+    pub fn billing(&self) -> Billing {
+        match self {
+            Self::ClaudeCode { .. } => Billing::Subscription,
+            Self::GeminiCli { login, .. } => match login {
+                Login::Account => Billing::Subscription,
+                Login::FreeTierKey => Billing::Free,
+            },
+            Self::Openai { .. } | Self::Groq { .. } => Billing::Free,
+            Self::AnthropicApi { .. } => Billing::Api,
+            Self::LmStudio { .. } => Billing::Local,
+        }
     }
 
     /// How many completions may reach the backend at once (`None`: no limit).
@@ -171,7 +234,8 @@ impl BackendConfig {
             Self::ClaudeCode { .. }
             | Self::GeminiCli { .. }
             | Self::Openai { .. }
-            | Self::Groq { .. } => None,
+            | Self::Groq { .. }
+            | Self::AnthropicApi { .. } => None,
             Self::LmStudio { max_concurrent, .. } => Some(max_concurrent.unwrap_or(1)),
         }
     }
@@ -235,6 +299,16 @@ impl BackendConfig {
                 )
                 .with_timeout(self.timeout()),
             ),
+            Self::AnthropicApi { model, program, .. } => {
+                let key = std::env::var(crate::openai::ANTHROPIC_KEY_ENV).ok();
+                if key.as_deref() == Some(FAKE_API_KEY) {
+                    eprintln!(
+                        "itsaresume: WARNING backend \"{}\" uses the fake API key: customers' requests run on the Claude subscription (tests only; set a real ANTHROPIC_API_KEY before serving customers)",
+                        self.name()
+                    );
+                }
+                anthropic_api_backend(model, key, program.as_deref(), self.timeout())
+            }
             Self::Groq { model, .. } => Box::new(
                 OpenAiBackend::groq(model, std::env::var(crate::openai::GROQ_KEY_ENV).ok())
                     .with_timeout(self.timeout()),
@@ -277,6 +351,14 @@ impl Config {
         let text = std::fs::read_to_string(path)
             .map_err(|error| ConfigError(format!("cannot read {}: {error}", path.display())))?;
         Self::parse(&text)
+    }
+
+    /// The billings a customer's request may reach: the configured list,
+    /// else the API alone.
+    pub fn customer_billing(&self) -> Vec<Billing> {
+        self.customer_billing
+            .clone()
+            .unwrap_or_else(|| vec![Billing::Api])
     }
 
     /// The router this configuration describes.
@@ -332,15 +414,18 @@ impl Config {
                 Box::new(Named {
                     name: backend.name(),
                     serves: backend.serves(),
+                    billing: backend.billing(),
                     inner: backend.build(&self.journal),
                 })
             })
             .collect();
         let router = Router::new(backends, Journal::new(&self.journal))
             .map_err(|error| ConfigError(format!("invalid configuration: {error}")))?;
-        let router = router.with_overload_retry(Duration::from_secs(
-            self.overload_retry_secs.unwrap_or(OVERLOAD_RETRY_SECS),
-        ));
+        let router = router
+            .with_overload_retry(Duration::from_secs(
+                self.overload_retry_secs.unwrap_or(OVERLOAD_RETRY_SECS),
+            ))
+            .with_customer_billing(self.customer_billing());
         Ok(self
             .check_every_backend_secs
             .iter()
@@ -354,6 +439,7 @@ impl Config {
 struct Named {
     name: String,
     serves: Vec<Kind>,
+    billing: Billing,
     inner: Box<dyn Backend>,
 }
 
@@ -368,6 +454,10 @@ impl Backend for Named {
 
     fn serves(&self, kind: Kind) -> bool {
         self.serves.contains(&kind)
+    }
+
+    fn billing(&self) -> Billing {
+        self.billing
     }
 
     fn probe(&self) -> Option<crate::backend::Probe> {

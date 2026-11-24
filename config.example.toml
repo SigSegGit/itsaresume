@@ -15,8 +15,24 @@ journal = "itsaresume-journal.jsonl"
 # unreachable hands over to the next one; any other error stops the request
 # (see docs/ARCHITECTURE.md, "Why Other never falls back").
 #
-# Only two kinds exist, and neither can carry an API key. That is deliberate:
-# no backend of this project is ever billed per token.
+# No kind carries a credential in this file: a key comes from the router's
+# environment (OPENAI_API_KEY, GROQ_API_KEY, ANTHROPIC_API_KEY).
+#
+# Who may spend what (2026-11-24): each backend is billed one way, set by its
+# kind: claude-code and gemini-cli (account) are a subscription, openai, groq
+# and gemini-cli (free-tier-key) a free tier, lm-studio local, anthropic-api
+# the API. A request says whose it is ("audience": "owner", the default, or
+# "customer"). A customer's request only reaches the billings below; a
+# subscription is its holder's own use, so leave it out.
+customer_billing = ["api"]
+
+# The API for customers. While ANTHROPIC_API_KEY=fake-key-uses-the-subscription
+# it runs on the subscription's `claude` (tests only, said at start); a real
+# key sends customers' requests to Anthropic's API, billed per token.
+# [[backend]]
+# kind = "anthropic-api"
+# model = "claude-haiku-5-5"
+# program = "claude"
 
 [[backend]]
 kind = "claude-code"
