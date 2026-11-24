@@ -156,3 +156,11 @@ test('2.22c: the page’s questions come from the runs in out/ and answers.json 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('2.22: a role the listing took for a skill ("Architectes", "QA", "Product Owner") is not asked; a skill near it is', () => {
+  const questions = gatherQuestions([run('a', 'offer one', [
+    req('Architectes'), req('QA'), req('Product Owner'), req('équipes de développement'), req('Développeurs'), req('Scrum Master'),
+    req('Architecture hexagonale'), req('Rust'),
+  ])], { profile: profile() });
+  assert.deepEqual(asked(questions).sort(), ['Architecture hexagonale', 'Rust']);
+});
