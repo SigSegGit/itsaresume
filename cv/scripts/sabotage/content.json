@@ -109,7 +109,8 @@
     "test/a4.test.js",
     "src/applications.js",
     "test/applications.test.js",
-    "test/invites.test.js"
+    "test/invites.test.js",
+    "src/image.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -170,10 +171,10 @@
     },
     "Degree: an engineering school is a degree": {
       "file": "src/normalize.js",
-      "live": "([\u00e9e]coles?\\s+d['\u2019]\\s*ing[\u00e9e]nieurs?|engineering\\s+school|dipl",
+      "live": "([ée]coles?\\s+d['’]\\s*ing[ée]nieurs?|engineering\\s+school|dipl",
       "dead": "(dipl",
       "expect": [
-        "a Bac+5 in the education meets \"\u00e9cole d'ing\u00e9nieurs ou \u00e9quivalent\""
+        "a Bac+5 in the education meets \"école d'ingénieurs ou équivalent\""
       ]
     },
     "Profile: bullet skills must exist": {
@@ -510,7 +511,7 @@
     },
     "Instructions: the report section is titled": {
       "file": "src/report.js",
-      "live": "'## Instructions in the offer \u2014 not applied'",
+      "live": "'## Instructions in the offer — not applied'",
       "dead": "'## Instructions'",
       "expect": [
         "the report lists the instructions of the offer as not applied, only when there are some"
@@ -526,7 +527,7 @@
     },
     "Importance: \"un plus\" only as a verdict": {
       "file": "src/importance.js",
-      "live": "'un\\\\s+(?:vrai\\\\s+|gros\\\\s+|r\u00e9el\\\\s+)?plus(?=\\\\s*(?:[).,;:!]|$))',",
+      "live": "'un\\\\s+(?:vrai\\\\s+|gros\\\\s+|réel\\\\s+)?plus(?=\\\\s*(?:[).,;:!]|$))',",
       "dead": "'un\\\\s+plus',",
       "expect": [
         "\"Un plus grand nombre de clusters PostgreSQL.\": PostgreSQL is left to the model"
@@ -537,15 +538,15 @@
       "live": "'(?:is|would be|will be|as|considered)\\\\s+a\\\\s+(?:big\\\\s+|real\\\\s+|huge\\\\s+)?plus',",
       "dead": "'a\\\\s+plus',",
       "expect": [
-        "\"Il y a plus de 10 serveurs Linux \u00e0 administrer.\": Linux is left to the model"
+        "\"Il y a plus de 10 serveurs Linux à administrer.\": Linux is left to the model"
       ]
     },
-    "Importance: \"souhait\u00e9\" is no cue": {
+    "Importance: \"souhaité\" is no cue": {
       "file": "src/importance.js",
       "live": "'souhaitables?',",
-      "dead": "'souhaitables?', 'souhait\u00e9e?s?',",
+      "dead": "'souhaitables?', 'souhaitée?s?',",
       "expect": [
-        "\"Profil souhait\u00e9 : | - PostgreSQL | \": PostgreSQL is left to the model"
+        "\"Profil souhaité : | - PostgreSQL | \": PostgreSQL is left to the model"
       ]
     },
     "Importance: a must anywhere wins": {
@@ -553,7 +554,7 @@
       "live": "return votes.has('must') ? 'must' : votes.has('nice') ? 'nice' : null;",
       "dead": "return votes.has('nice') ? 'nice' : votes.has('must') ? 'must' : null;",
       "expect": [
-        "\"Kafka serait un plus. | Comp\u00e9tences requises : Kafka, Linux.\": Kafka is must"
+        "\"Kafka serait un plus. | Compétences requises : Kafka, Linux.\": Kafka is must"
       ]
     },
     "Importance: the predicate closes the enumeration": {
@@ -561,7 +562,7 @@
       "live": "[clause, ...clauses.slice(index + 1), ...clauses.slice(0, index).reverse()]",
       "dead": "[clause, ...clauses.slice(0, index).reverse()]",
       "expect": [
-        "\"Une connaissance de Kafka, Terraform et Ansible serait appr\u00e9ci\u00e9e.\": Kafka is nice"
+        "\"Une connaissance de Kafka, Terraform et Ansible serait appréciée.\": Kafka is nice"
       ]
     },
     "Importance: an opening cue reaches the clause after it": {
@@ -569,7 +570,7 @@
       "live": ", ...clauses.slice(0, index).reverse()]",
       "dead": "]",
       "expect": [
-        "\"Id\u00e9alement, une premi\u00e8re exp\u00e9rience GCP.\": GCP is nice"
+        "\"Idéalement, une première expérience GCP.\": GCP is nice"
       ]
     },
     "Importance: a header above a list sets its section": {
@@ -585,7 +586,7 @@
       "live": "if (own) lineCue = own;",
       "dead": "void own;",
       "expect": [
-        "\"Comp\u00e9tences obligatoires : Ansible, DevOps.\": DevOps is must"
+        "\"Compétences obligatoires : Ansible, DevOps.\": DevOps is must"
       ]
     },
     "Importance: a negated must cue is no must": {
@@ -593,7 +594,7 @@
       "live": "].map((alternative) => `${NEGATED}${alternative}`));",
       "dead": "]);",
       "expect": [
-        "\"La connaissance d'Ansible n'est pas obligatoire mais sera appr\u00e9ci\u00e9e.\": Ansible is nice",
+        "\"La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.\": Ansible is nice",
         "\"Kubernetes is not required for this role.\": Kubernetes is left to the model",
         "importance on the corpus: the code is wrong exactly where a label says it is known to be",
         "importance on the corpus: a name the offer excludes is never a must"
@@ -669,7 +670,7 @@
       "live": "[skill.name, ...(skill.aliases ?? []), ...terms].flatMap",
       "dead": "[skill.name].flatMap",
       "expect": [
-        "the owner\u2019s skills are placed on concepts by their names, aliases and terms, in either language"
+        "the owner’s skills are placed on concepts by their names, aliases and terms, in either language"
       ]
     },
     "Lexicon: siblings are near": {
@@ -714,10 +715,10 @@
     },
     "Must stay no: a NoSQL database is its own category": {
       "file": "data/tech.json",
-      "live": "\"fr\": \"Bases de donn\u00e9es NoSQL\",",
-      "dead": "\"fr\": \"NoSQL (cat\u00e9gorie)\",",
+      "live": "\"fr\": \"Bases de données NoSQL\",",
+      "dead": "\"fr\": \"NoSQL (catégorie)\",",
       "expect": [
-        "\"Base de donn\u00e9es NoSQL\" is not met through PostgreSQL and Oracle"
+        "\"Base de données NoSQL\" is not met through PostgreSQL and Oracle"
       ]
     },
     "Must stay no: MongoDB sits under NoSQL": {
@@ -725,7 +726,7 @@
       "live": "\"id\": \"tech:nosql\",",
       "dead": "\"id\": \"tech:nosql-unlinked\",",
       "expect": [
-        "\"Bases de donn\u00e9es NoSQL\" is met through MongoDB when the profile holds it"
+        "\"Bases de données NoSQL\" is met through MongoDB when the profile holds it"
       ]
     },
     "Page: an unpicked short mission fills only what the main missions leave open": {
@@ -909,7 +910,7 @@
       "live": "if (kindOf(experience) === 'main' && ids.length < UNSELECTED_BULLETS) {",
       "dead": "if (false) {",
       "expect": [
-        "the main missions are always on the CV, in order, after the founder\u2019s R&D"
+        "the main missions are always on the CV, in order, after the founder’s R&D"
       ]
     },
     "Rules: short missions with nothing to show are left out": {
@@ -1019,7 +1020,7 @@
     },
     "Provenance: confidence marks are not text": {
       "file": "src/evidence.js",
-      "live": ".replace(/\\s*\\[(?:\u2714|~|\u2718|LAB)[^\\]]*\\]/g, '')",
+      "live": ".replace(/\\s*\\[(?:✔|~|✘|LAB)[^\\]]*\\]/g, '')",
       "dead": ".replace(/(?!)/g, '')",
       "expect": [
         "each bullet traces to the truth document, and brings no number of its own"
@@ -1140,8 +1141,8 @@
     },
     "Report: the bullets the CV shows": {
       "file": "src/report.js",
-      "live": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** \u2014 ${line(shown.org)}: ${shown.bullets.length} bullet(s)`);",
-      "dead": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** \u2014 ${line(shown.org)}: 1 bullet(s)`);",
+      "live": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** — ${line(shown.org)}: ${shown.bullets.length} bullet(s)`);",
+      "dead": "for (const shown of rendered) lines.push(`- **${line(shown.title)}** — ${line(shown.org)}: 1 bullet(s)`);",
       "expect": [
         "the report counts the bullets the CV shows, not the model's picks"
       ]
@@ -1527,8 +1528,8 @@
     },
     "OPS concept (2026-10-29): deploying applications is CI/CD": {
       "file": "data/tech.json",
-      "live": "\"d\u00e9ploiement des applications\",",
-      "dead": "\"d\u00e9ploiement des applications-sabotaged\",",
+      "live": "\"déploiement des applications\",",
+      "dead": "\"déploiement des applications-sabotaged\",",
       "expect": [
         "deploying applications is CI/CD: a pipeline skill meets it"
       ]
@@ -1636,8 +1637,8 @@
       "live": "const extra = rest.filter((word) => !IGNORED.has(word) &&",
       "dead": "const extra = rest.filter((word) => true &&",
       "expect": [
-        "\"Exp\u00e9rience SQL\" marked no is met through the profile's expert PostgreSQL",
-        "\"Ma\u00eetrise du SQL\" marked no is met through the profile's expert PostgreSQL"
+        "\"Expérience SQL\" marked no is met through the profile's expert PostgreSQL",
+        "\"Maîtrise du SQL\" marked no is met through the profile's expert PostgreSQL"
       ]
     },
     "Coverage (2.28b): every concept named must be held": {
@@ -1719,7 +1720,7 @@
       "live": "&& !namesTechnology(name) &&",
       "dead": "&&",
       "expect": [
-        "\"Bases de donn\u00e9es relationnelles\" is a technology, not a personal quality"
+        "\"Bases de données relationnelles\" is a technology, not a personal quality"
       ]
     },
     "Coverage (2.28b): an evidence-blocked skill meets nothing": {
@@ -1839,7 +1840,7 @@
       "live": "return firmer({ match: 'adjacent', skills: held,",
       "dead": "return ((found) => found)({ match: 'adjacent', skills: held,",
       "expect": [
-        "a skill name and term lift what its concept leaves near: Mont\u00e9es de version PostgreSQL"
+        "a skill name and term lift what its concept leaves near: Montées de version PostgreSQL"
       ]
     },
     "Vocabulary (2.28b): the words answer where no concept does": {
@@ -1887,7 +1888,7 @@
       "live": "    const degree = requirement.never || requirement.kind === 'quality'",
       "dead": "    const degree = true ? null : requirement.never || requirement.kind === 'quality'",
       "expect": [
-        "a Bac+5 in the education meets \"Dipl\u00f4me ing\u00e9nieur ou Master informatique\""
+        "a Bac+5 in the education meets \"Diplôme ingénieur ou Master informatique\""
       ]
     },
     "Degree: Scrum Master is no degree": {
@@ -1956,8 +1957,8 @@
     },
     "Import (4.2): a bullet is a sentence of the file": {
       "file": "src/import.js",
-      "live": "    const sentences = highlights.length ? highlights : clean(job.summary) ? [clean(job.summary)] : [`${position} \u2014 ${org}`];",
-      "dead": "    const sentences = [`${position} \u2014 ${org}`];",
+      "live": "    const sentences = highlights.length ? highlights : clean(job.summary) ? [clean(job.summary)] : [`${position} — ${org}`];",
+      "dead": "    const sentences = [`${position} — ${org}`];",
       "expect": [
         "4.2: every bullet is a sentence of the file: a highlight, else the summary, else position and company"
       ]
@@ -2092,8 +2093,8 @@
     },
     "Score: a title that also says lead or senior is not capped": {
       "file": "src/score.js",
-      "live": "(?:lead|senior|s[\u00e9e]nior|",
-      "dead": "(?:s[\u00e9e]nior|",
+      "live": "(?:lead|senior|s[ée]nior|",
+      "dead": "(?:s[ée]nior|",
       "expect": [
         "a junior or first-level title caps a senior profile in the low band"
       ]
@@ -2124,7 +2125,7 @@
     },
     "Qualities (2.48): problem solving, independence, continuous learning": {
       "file": "src/text.js",
-      "live": "  .concat(['problem solving', 'r\u00e9solution probl\u00e8m', 'independen', 'ind\u00e9pendan', 'continuous learning', 'apprentissage continu'])",
+      "live": "  .concat(['problem solving', 'résolution problèm', 'independen', 'indépendan', 'continuous learning', 'apprentissage continu'])",
       "dead": "  .concat([])",
       "expect": [
         "problem solving, working independently and continuous learning are personal qualities"
@@ -2203,7 +2204,14 @@
         "the page is measured without the made_by footer, the final CV keeps it"
       ]
     },
-    "Footer (2.63): the footer is in the body font": {"file": "src/render.js", "live": "const fonts = font ? `<w:rFonts", "dead": "const fonts = false ? `<w:rFonts", "expect": ["the made_by footer is in the body font, in both templates"]},
+    "Footer (2.63): the footer is in the body font": {
+      "file": "src/render.js",
+      "live": "const fonts = font ? `<w:rFonts",
+      "dead": "const fonts = false ? `<w:rFonts",
+      "expect": [
+        "the made_by footer is in the body font, in both templates"
+      ]
+    },
     "Offer files (2.53): a docx offer is its paragraphs": {
       "file": "src/sources.js",
       "live": "  if (kind === '.docx') return docxText(buffer);",
@@ -2212,7 +2220,7 @@
         "a docx offer is its paragraphs, one per line"
       ]
     },
-    "Add-on (6.2): the token only from the page\u2019s meta": {
+    "Add-on (6.2): the token only from the page’s meta": {
       "file": "addon/service.js",
       "live": "  return /<meta name=\"csrf-token\" content=\"([0-9a-f]{48})\">/.exec(String(html))?.[1] ?? null;",
       "dead": "  return /content=\"([^\"]+)\"/.exec(String(html))?.[1] ?? null;",
@@ -2230,7 +2238,7 @@
     },
     "Add-on (6.2): no path in a file name": {
       "file": "addon/service.js",
-      "live": "throw new Error(`nom de fichier refus\u00e9 : ${name}`);",
+      "live": "throw new Error(`nom de fichier refusé : ${name}`);",
       "dead": "void 0;",
       "expect": [
         "6.2: a profile is packed as the server takes it, and refused otherwise"
@@ -2246,10 +2254,10 @@
     },
     "Add-on (6.2): https only": {
       "file": "addon/service.js",
-      "live": "  if (url.protocol !== 'https:') throw new Error('le site du service doit \u00eatre en https');",
+      "live": "  if (url.protocol !== 'https:') throw new Error('le site du service doit être en https');",
       "dead": "",
       "expect": [
-        "6.2: the request carries the offer, the profile and the token, to the site\u2019s own paths"
+        "6.2: the request carries the offer, the profile and the token, to the site’s own paths"
       ]
     },
     "Add-on (6.2): no cookie": {
@@ -2257,7 +2265,7 @@
       "live": "      credentials: 'omit',",
       "dead": "",
       "expect": [
-        "6.2: the request carries the offer, the profile and the token, to the site\u2019s own paths"
+        "6.2: the request carries the offer, the profile and the token, to the site’s own paths"
       ]
     },
     "Add-on (6.2): the profile is never synced": {
@@ -2313,7 +2321,7 @@
       "live": "  if (founder > 0) experiences.unshift(...experiences.splice(founder, 1));",
       "dead": "",
       "expect": [
-        "2.59: the founder\u2019s R&D experience comes first when it is shown"
+        "2.59: the founder’s R&D experience comes first when it is shown"
       ]
     },
     "Founder (2.59): only when it tells something": {
@@ -2321,7 +2329,7 @@
       "live": "=== 'rnd' && shown.bullet_ids.length > 0);",
       "dead": "=== 'rnd');",
       "expect": [
-        "2.59: the founder\u2019s R&D experience comes first when it is shown"
+        "2.59: the founder’s R&D experience comes first when it is shown"
       ]
     },
     "Linear (2.62): lists joined in place": {
@@ -2334,15 +2342,36 @@
     },
     "Linear (2.62): glance and languages joined with dots": {
       "file": "src/render.js",
-      "live": "dots: ' \u00b7 ' }",
+      "live": "dots: ' · ' }",
       "dead": "dots: ', ' }",
       "expect": [
         "2.62: his order, one line per paragraph, lists joined in place"
       ]
     },
-    "Add-on zip (6.3): the scripts' imports are followed": {"file": "tools/pack-addon.mjs", "live": "if (/\\.(html|js)$/.test(name)) queue.push(", "dead": "if (false) queue.push(", "expect": ["the add-on zip holds the manifest and every file it reaches, named by its version"]},
-    "Add-on zip (6.3): a missing file stops the pack": {"file": "tools/pack-addon.mjs", "live": "throw new Error(`the add-on reaches ${name}, which is missing`);", "dead": "continue;", "expect": ["a file the manifest never reaches stays out; a reached file missing stops the pack"]},
-    "Add-on zip (6.3): one fixed date": {"file": "tools/pack-addon.mjs", "live": "{ date: FIXED, binary: true }", "dead": "{ binary: true }", "expect": ["the same files give the same zip, byte for byte: every entry has one fixed date"]},
+    "Add-on zip (6.3): the scripts' imports are followed": {
+      "file": "tools/pack-addon.mjs",
+      "live": "if (/\\.(html|js)$/.test(name)) queue.push(",
+      "dead": "if (false) queue.push(",
+      "expect": [
+        "the add-on zip holds the manifest and every file it reaches, named by its version"
+      ]
+    },
+    "Add-on zip (6.3): a missing file stops the pack": {
+      "file": "tools/pack-addon.mjs",
+      "live": "throw new Error(`the add-on reaches ${name}, which is missing`);",
+      "dead": "continue;",
+      "expect": [
+        "a file the manifest never reaches stays out; a reached file missing stops the pack"
+      ]
+    },
+    "Add-on zip (6.3): one fixed date": {
+      "file": "tools/pack-addon.mjs",
+      "live": "{ date: FIXED, binary: true }",
+      "dead": "{ binary: true }",
+      "expect": [
+        "the same files give the same zip, byte for byte: every entry has one fixed date"
+      ]
+    },
     "Questions (2.22): a role is not asked": {
       "file": "src/questions.js",
       "live": "if (!name || isRole(name)) continue;",
