@@ -22,10 +22,12 @@ import { listingOf, rankListed, rankMarkdown, rankProfiles } from '../src/rank.j
 import { importProfile, writeProfile } from '../src/import.js';
 import { resolveStyle } from '../src/style.js';
 import { profileFromSources, readOffer } from '../src/sources.js';
+import { isImageFile, offerFromImage } from '../src/image.js';
 
 const USAGE = `usage:
-  itsacv tailor <offer.txt>... [--template NAME] [--palette NAME] [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
+  itsacv tailor <offer.txt|.png|.jpg>...[--template NAME] [--palette NAME] [--split] [--profile FILE] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
   itsacv split <email.txt> [--url URL] [--timeout SECONDS]
+  itsacv transcribe <offer.png|jpg|jpeg|webp> [--url URL] [--timeout SECONDS]
   itsacv serve [--port PORT] [--profile FILE] [--profiles DIR] [--out DIR] [--url URL] [--timeout SECONDS] [--no-layout]
                [--public-host NAME [--per-day N] [--per-hour N] [--max-queued N]
                [--ban-after N] [--ban-hours N] [--invite-only] [--service [--service-invite-only] [--per-invite N]]]
@@ -110,7 +112,7 @@ function fail(code, message) {
 
 function parse(argv) {
   const [command, ...rest] = argv;
-  if (!['tailor', 'split', 'serve', 'invite', 'applications', 'questions', 'matrix', 'rank', 'match', 'import', 'fit'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
+  if (!['tailor', 'transcribe', 'split', 'serve', 'invite', 'applications', 'questions', 'matrix', 'rank', 'match', 'import', 'fit'].includes(command)) fail(2, `a command is needed\n\n${USAGE}`);
   const options = {
     command,
     files: [],
@@ -165,11 +167,24 @@ function parse(argv) {
   if (!['serve', 'questions', 'matrix', 'applications'].includes(command) && options.files.length === 0) fail(2, `${command} needs a file\n\n${USAGE}`);
   if ((command === 'rank' || command === 'match') && !/^[1-9]\d*$/.test(options.top)) fail(2, '--top: a whole number, 1 or more');
   if (command === 'split' && options.files.length !== 1) fail(2, `split takes one file\n\n${USAGE}`);
+  if (command === 'transcribe' && (options.files.length !== 1 || !isImageFile(options.files[0]))) fail(2, `transcribe takes one image (png, jpg, jpeg, webp)\n\n${USAGE}`);
   if (!/^\d+(\.\d+)?$/.test(options.timeout) || !(Number(options.timeout) > 0)) {
     fail(2, `--timeout (or ITSACV_TIMEOUT) needs a number of seconds above 0, not "${options.timeout}"\n\n${USAGE}`);
   }
   return options;
 }
+
+/** 2026-11-24: an offer file's text; an image is transcribed, then checked (src/image.js). */
+const offerOf = async (file, llm) => {
+  if (!isImageFile(file)) return read(file);
+  let buffer;
+  try {
+    buffer = readFileSync(file);
+  } catch (error) {
+    return fail(2, error.message);
+  }
+  return offerFromImage({ name: basename(file), buffer, llm }).catch((error) => fail(2, error.message));
+};
 
 const read = (file) => {
   try {
@@ -188,7 +203,7 @@ async function main() {
   } catch (error) {
     fail(2, error.message);
   }
-  const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs });
+  const llm = ({ system, prompt, schema, backend, kind, image }) => complete({ url: options.url, system, prompt, schema, backend, kind, image, timeoutMs });
 
   // 4.2/4.3: another person's profile, compiled and checked before it is written.
   if (options.command === 'import') {
@@ -314,6 +329,11 @@ async function main() {
     return;
   }
 
+  if (options.command === 'transcribe') {
+    process.stdout.write(`${await offerOf(options.files[0], llm)}\n`);
+    return;
+  }
+
   if (options.command === 'split') {
     const { offers, repairs } = await splitOffers({ text: read(options.files[0]), llm }).catch((error) => fail(4, error.message));
     for (const repair of repairs) process.stderr.write(`itsacv: ${repair}\n`);
@@ -378,7 +398,7 @@ async function main() {
   }
   const offers = [];
   for (const file of options.files) {
-    const text = read(file);
+    const text = await offerOf(file, llm);
     if (!options.split) offers.push(text);
     else {
       const found = await splitOffers({ text, llm }).catch((error) => fail(4, error.message));

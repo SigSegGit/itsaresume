@@ -1340,7 +1340,7 @@ test('a pdf or docx offer is read as text, in local and public mode', async (t) 
 // 2026-11-24 (the owner: LinkedIn offers as phone screenshots): an image
 // offer is transcribed on the owner's page only (a model call on his quota);
 // its body may hold a phone screenshot, the public host refuses it.
-test('an image offer is transcribed on the owner's page, refused on the public host', async (t) => {
+test("an image offer is transcribed on the owner's page, refused on the public host", async (t) => {
   const seen = [];
   const offerText = async (name, buffer) => {
     seen.push([name, buffer.length]);
@@ -1354,7 +1354,7 @@ test('an image offer is transcribed on the owner's page, refused on the public h
   assert.deepEqual(JSON.parse(answer.text), { text: 'text of Capture LinkedIn.png' });
   for (const name of ['o.jpg', 'o.jpeg', 'o.webp']) assert.equal((await post(app, '/api/offer-text', { name, data: 'AAAA' })).status, 200, name);
   assert.equal((await post(app, '/api/offer-text', { name: 'o.svg', data: 'AAAA' })).status, 400);
-  const big = await post(app, '/api/jobs', { offers: [{ title: 'x', text: 'y'.repeat(2 * 1024 * 1024) }] });
+  const big = await post(app, '/api/jobs', { offers: [{ title: 'x', text: 'y'.repeat(600 * 1024) }] });
   assert.equal(big.status, 413, 'the larger limit is for an image offer alone');
   const pub = await startPublic(t, { offerText });
   const visitor = await pub.visit();

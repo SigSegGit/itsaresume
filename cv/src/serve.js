@@ -7,6 +7,7 @@ import { dirname, join } from 'node:path';
 import { createApp } from './server.js';
 import { loadedFrom, loadProfile, readRun, runName, tailorOffer } from './run.js';
 import { offerFromFile, profileFromSources, readOffer } from './sources.js';
+import { isImageFile, offerFromImage } from './image.js';
 import { pageData } from './tailor.js';
 import { appendQaLog, SPLIT, withModel } from './qa.js';
 import { cvFile, draftFor, listApplications, setApplication } from './applications.js';
@@ -209,7 +210,9 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     },
     invites: () => loadInvites(out),
     // 2.53: an offer dropped as a document, its text.
-    offerText: (name, buffer) => offerFromFile(name, buffer),
+    // 2026-11-24: an image, transcribed by a model that reads images, then
+    // checked (src/image.js); the server lets only the owner send one.
+    offerText: (name, buffer) => (isImageFile(name) ? offerFromImage({ name, buffer, llm: withModel(llm, 'auto') }) : offerFromFile(name, buffer)),
     // 2.44: the public caps, bans and visitors, so a deploy does not reset them.
     state: publicMode
       ? {

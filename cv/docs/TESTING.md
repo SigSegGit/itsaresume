@@ -459,6 +459,22 @@ property it proves.
 | i18n: no French left outside t() in the page scripts | — |
 | i18n: every premium server message has its French | — |
 
+## `test/image.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| an image offer is sent once, as an image, to be transcribed as untrusted text | Image: the transcriber is told the image is untrusted |
+| a transcription wrapped in a code fence is unwrapped | — |
+| the kind of an image is read from its bytes, and must match its name | Image: its bytes must match its name |
+| an image too large is refused before any model call | Image: its bytes must match its name; Image: its size is capped before any call |
+| an image that is not a job offer is refused, saying so | Image: the transcription must read as a job offer |
+| an image that carries an instruction to an AI is refused, quoting it | Image: an instruction to an AI refuses it |
+| a link in the image is removed from the text: nothing will follow it | Image: its links are removed |
+| the client sends the image to the router beside the prompt | Image: the client sends it to the router |
+| itsacv transcribe prints the offer an image holds | Image: the CLI passes it to the client |
+| itsacv tailor takes an image offer, and refuses one that is no offer before any analysis | Image: the transcription must read as a job offer; Image: tailor reads an image offer through the checks |
+| the page takes an image offer from the file picker | — |
+
 ## `test/import.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -1075,6 +1091,7 @@ property it proves.
 | the public page pitches the tool to a recruiter, with its source and a sample offer | Showcase (2.47): the public status names the role; Showcase (2.47): the sample offer is served; Showcase (2.47): the page has its demo button; Showcase (2.47): the source link is the real one |
 | compare: the queue still holds one place per model | Compare: the queue holds one place per model |
 | a pdf or docx offer is read as text, in local and public mode | Offer files (2.53): only pdf, docx, txt, md are read; Offer files (2.53): no path in the file name; Offer files (2.53): the data is required |
+| an image offer is transcribed on the owner's page, refused on the public host | Image: the public host never transcribes one; Image: the larger body is for an image offer alone |
 | service mode: a visitor brings a profile, the CV is served then removed, nothing kept | Service (6.1): no link is fetched for a visitor; Service (6.1): a service CV expires; Service (6.1): a service CV is never in the public state; Service (6.1): the view says it is a service run; Service (6.1): the folder is removed on expiry |
 | without service mode a visitor cannot bring a profile | Sources (4.11): never from a public visitor |
 | the public status says whether a visitor may bring a profile (service mode) | Service tab: the public status says service mode |
@@ -1204,6 +1221,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**800 tests, 629 of them covered by at least one sabotage defence.**
+**812 tests, 639 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

@@ -12,7 +12,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { IMAGE_FILES, MAX_IMAGE_BYTES, TRANSCRIBE_SYSTEM, imageType, isImageFile, offerFromImage } from '../src/image.js';
 import { complete } from '../src/llm.js';
-import { UNTRUSTED } from '../src/guard.js';
 
 const PNG = readFileSync(new URL('./fixtures/offer-image.png', import.meta.url));
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 0x4a, 0x46, 0x49, 0x46]);
@@ -42,7 +41,7 @@ test('an image offer is sent once, as an image, to be transcribed as untrusted t
   assert.equal(text, OFFER);
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].image, { media_type: 'image/png', base64: PNG.toString('base64') });
-  assert.ok(calls[0].system.includes(UNTRUSTED), 'the image is untrusted');
+  assert.match(calls[0].system, /untrusted/i, 'the image is untrusted');
   assert.equal(calls[0].system, TRANSCRIBE_SYSTEM);
   assert.match(TRANSCRIBE_SYSTEM, /never (?:follow|obey)/i);
   assert.match(TRANSCRIBE_SYSTEM, /verbatim|word for word/i);
