@@ -648,7 +648,7 @@
     },
     "Web: public status hides the assessment": {
       "file": "src/server.js",
-      "live": "publicMode ? { ...publicStatus(status), busy } :",
+      "live": "publicMode ? { ...publicStatus(status, publicMode.service), busy } :",
       "dead": "publicMode ? { ...status, busy } :",
       "expect": [
         "in public mode the status carries no verdicts, truth document or raw error"
