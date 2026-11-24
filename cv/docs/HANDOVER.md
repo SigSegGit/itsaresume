@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 6.4g
-TITLE: Haiku by default (6.5), add-on zipped by CI (6.3), footer font (2.63); 6.4g waits for the owner's run on the VM
-WRITTEN-AT: 2026-11-23
+TITLE: noterms replayed and refused (6.5), the premium backup node runs on the VM (6.4g); 6.4g waits for the restore on a second machine
+WRITTEN-AT: 2026-11-24
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -1844,8 +1844,13 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   `itsaresume`, port 9800, the snapshots folder as its ITSaNAS folder; the
   owner types the passphrase and keeps the 24 words, the script never writes
   them), `premium/restore-check.js` (a copy opened, integrity, counts against
-  the live base; tested). **Left**: the owner runs the script on the VM, then
-  `restore-check.js` on a second machine of the account; tick when it says ok.
+  the live base; tested). 2026-11-24: the node runs on the VM (registered,
+  48 snapshots, one complete copy elsewhere within minutes); the script now
+  pledges 2G (like every account of the fleet; the snapshots weigh a few
+  MB) and registers again a node the coordinator lost; `restore-check.js`
+  on the VM (latest snapshot against the live base): integrity ok, same
+  counts. **Left**: `restore-check.js` on a second machine of the account
+  (`itsanas login --username itsaresume`); tick when it says ok.
 - [x] **6.7** (2026-11-20, the owner) Fewer markets, every page in their
   language. Four currencies (EUR, GBP, USD, CHF; `en-*` elsewhere → USD,
   the rest → EUR). `web/i18n.js` (one classic script, both servers, loaded
@@ -1951,9 +1956,15 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   Haiku vs Sonnet on the 10 real offers (2026-11-23, "Comparer"): 95.2 %
   requirement agreement, same qualification on all, mean score gap 1.5,
   one retry on Haiku (Safran). `ITSACV_PROMPT=compact,shortlist,noterms`
-  now leaves the terms out (-1.45k tokens); its replay on the 10 offers is
-  **next** (a scripted run of both stalled after 6 offers: run it from the
-  page's "Comparer", one batch at a time).
+  now leaves the terms out (-1.45k tokens). **Replayed 2026-11-24, refused
+  as the default**: on the 8 dated real offers, Haiku both ways, same
+  listing (`~/.itsaresume/migrations/noterms-replay.mjs`): 159/165
+  requirements agree, same qualification on all 8, but 4 honest "yes"
+  become adjacent without the terms (training workshops, industrialisation,
+  architecture, RCA/post-mortems; score -9 at worst) and none is gained;
+  25 % faster (10-53 s against 30-78 s). The terms carry those readings:
+  the 5k target needs another cut that keeps them (e.g. only the terms
+  of the shortlisted skills), measured the same way.
   **Haiku is now the default** (`src/models.js`) while its use is light
   (not limited, usage allowed); else Sonnet, then the free tiers as before.
 - [x] **2.63** (seen on the RTE CV, 2026-11-23) The made_by footer took

@@ -71,6 +71,18 @@ else
         dc run --rm client register || fail "register (invite-only coordinator? ITSANAS_INVITE=<code> bash $0)"
     fi
 fi
+# Like any app that keeps its base on ITSaNAS: it offers space so others hold
+# its copies (2G, as every account of the fleet; the snapshots weigh a few MB).
+if grep -q '^pledge=0$' "$home/pledge.state" 2>/dev/null || [ ! -f "$home/pledge.state" ]; then
+    dc stop >/dev/null 2>&1
+    dc run --rm client pledge "${ITSANAS_PREMIUM_PLEDGE:-2G}" || fail "pledge"
+fi
+# A node registered while the coordinator lost its claim (seen 2026-11-24,
+# after an interrupted first run) is registered again; register is idempotent.
+if $SUDO docker logs "itsanas-$ACCT-client-1" 2>&1 | tail -50 | grep -q "is not claimed by any registered account"; then
+    dc stop >/dev/null 2>&1
+    dc run --rm client register || fail "register again"
+fi
 dc up -d || fail "start $ACCT"
 sleep 3
 say "Account id: $($SUDO docker logs "itsanas-$ACCT-client-1" 2>&1 | sed -n 's/^ *user id *//p' | head -1)"
