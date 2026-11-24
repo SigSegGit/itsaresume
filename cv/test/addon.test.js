@@ -78,3 +78,18 @@ test('6.2: the profile is kept in chrome.storage.local only, never synced', () =
   assert.match(popup, /chrome\.storage\.local\.get\(\['profile'/);
   for (const code of [options, popup]) assert.doesNotMatch(code, /storage\.sync\.\w+\([^)]*profile/);
 });
+
+test('the add-on takes the invitation link or its code, and sends the code with the job', async () => {
+  const { inviteCode } = await import('../addon/service.js');
+  const code = 'a'.repeat(24);
+  assert.equal(inviteCode(`https://cv.example.org/?i=${code}`), code);
+  assert.equal(inviteCode(`  ${code} `), code);
+  assert.equal(inviteCode('https://cv.example.org/'), null);
+  assert.equal(inviteCode('not a code'), null);
+  const { init } = serviceJob({ site: 'https://cv.example.org/', token: 't', title: 'SRE', text: 'Senior SRE', sources: [], invite: code });
+  assert.equal(JSON.parse(init.body).invite, code);
+  assert.equal(JSON.parse(serviceJob({ site: 'https://cv.example.org/', token: 't', title: 'SRE', text: 'x', sources: [] }).init.body).invite, undefined);
+  const { readFileSync } = await import('node:fs');
+  assert.match(readFileSync(new URL('../addon/options.html', import.meta.url), 'utf8'), /<input id="invite"/);
+  assert.match(readFileSync(new URL('../addon/popup.js', import.meta.url), 'utf8'), /serviceJob\(\{ site, token, title: tab\.title, text, sources: profile, invite \}\)/);
+});

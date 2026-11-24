@@ -53,6 +53,7 @@ property it proves.
 | 6.2: a profile is packed as the server takes it, and refused otherwise | Add-on (6.2): only the profile kinds; Add-on (6.2): no path in a file name; Add-on (6.2): a file the server takes |
 | 6.2: the request carries the offer, the profile and the token, to the site’s own paths | Add-on (6.2): https only; Add-on (6.2): no cookie |
 | 6.2: the profile is kept in chrome.storage.local only, never synced | Add-on (6.2): the profile is never synced |
+| the add-on takes the invitation link or its code, and sends the code with the job | — |
 
 ## `test/anchor.test.js`
 
@@ -1074,6 +1075,7 @@ property it proves.
 | red team: an invitation gives a fixed number of own-profile CVs, whoever opens it | Trials: an invitation gives a fixed number of own-profile CVs |
 | red team: with serviceInviteOnly, a stranger cannot bring a profile; an invited visitor can | Trials: own profile on invitation only when asked |
 | a run on a visitor's own profile reaches the router as a customer's | — |
+| red team: the add-on carries its invitation code; it counts on that invitation, a wrong one is nobody | Add-on invite: a code in the body names its invitation |
 | service mode: the add-on may create a job with a profile, and only that | Service (6.2): the add-on only creates jobs; Service (6.2): the add-on brings its own profile; Service (6.2): an extension origin, no other site |
 
 ## `test/split.test.js`
@@ -1192,6 +1194,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**793 tests, 626 of them covered by at least one sabotage defence.**
+**795 tests, 627 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

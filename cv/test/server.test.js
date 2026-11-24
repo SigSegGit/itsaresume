@@ -1458,6 +1458,26 @@ test('a run on a visitor\'s own profile reaches the router as a customer\'s', ()
 // 6.2: the add-on in service mode posts from its own origin
 // (chrome-extension://<id>) with the visitor token the public page issued;
 // that origin may create a job carrying a profile, and nothing else.
+test('red team: the add-on carries its invitation code; it counts on that invitation, a wrong one is nobody', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-addon-invite-'));
+  const { createInvite, revokeInvite } = await import('../src/invites.js');
+  const code = createInvite(dir, 'Sam D.');
+  const gone = createInvite(dir, 'Old');
+  revokeInvite(dir, 'Old');
+  const ADDON = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
+  const sources = [{ name: 'cv.txt', data: Buffer.from('Sam Doe, SRE').toString('base64') }];
+  const app = await startPublic(t, { service: true, serviceInviteOnly: true, perInvite: 1, perVisitorPerHour: 10, perDay: 50, maxQueued: 20, invites: () => JSON.parse(readFileSync(join(dir, 'invites.json'), 'utf8')) });
+  const fromAddon = async (value) => {
+    const visitor = await app.visit();
+    return (await call(app.port, { method: 'POST', path: '/api/jobs', headers: { ...app.host, 'X-Forwarded-For': '203.0.113.9', Origin: ADDON, 'X-CSRF-Token': visitor.token, 'Content-Type': 'application/json' }, body: JSON.stringify(value) })).status;
+  };
+  assert.equal(await fromAddon({ offers: [{ title: 'A', text: PUBLIC_OFFER('A') }], sources }), 403, 'no code: invited visitors only');
+  assert.equal(await fromAddon({ offers: [{ title: 'B', text: PUBLIC_OFFER('B') }], sources, invite: gone }), 403, 'a revoked code is nobody');
+  assert.equal(await fromAddon({ offers: [{ title: 'C', text: PUBLIC_OFFER('C') }], sources, invite: 'not-a-code' }), 403);
+  assert.equal(await fromAddon({ offers: [{ title: 'D', text: PUBLIC_OFFER('D') }], sources, invite: code }), 202);
+  assert.equal(await fromAddon({ offers: [{ title: 'E', text: PUBLIC_OFFER('E') }], sources, invite: code }), 429, 'the same quota as the link');
+});
+
 test('service mode: the add-on may create a job with a profile, and only that', async (t) => {
   const ADDON = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
   const sources = [{ name: 'cv.txt', data: Buffer.from('Sam Doe, SRE').toString('base64') }];

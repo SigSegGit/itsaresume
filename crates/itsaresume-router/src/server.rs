@@ -195,7 +195,18 @@ fn status(router: &Router) -> Value {
             entry
         })
         .collect();
-    json!({ "backends": backends })
+    // 2026-11-24: customers' spend today against the day's ceilings.
+    let budget = router.customer_budget();
+    json!({
+        "backends": backends,
+        "customer_budget": {
+            "day": budget.day,
+            "tokens": budget.tokens,
+            "requests": budget.requests,
+            "tokens_limit": budget.tokens_limit,
+            "requests_limit": budget.requests_limit,
+        },
+    })
 }
 
 /// No browser, JSON only, and at most `MAX_CONCURRENT_COMPLETIONS` at once.
@@ -315,6 +326,14 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
             json!({"error": {
                 "kind": "not_allowed",
                 "message": format!("no configured backend may serve a {} request (customer_billing)", audience.as_str()),
+                "attempts": attempts,
+            }}),
+        ),
+        Err(RouteError::OverBudget { what }) => (
+            429,
+            json!({"error": {
+                "kind": "over_budget",
+                "message": format!("today's ceiling on customers' {what} is reached"),
                 "attempts": attempts,
             }}),
         ),

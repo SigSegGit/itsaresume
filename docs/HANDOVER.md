@@ -14,13 +14,12 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
-**2026-11-24.** Audience routing (decision 1 amended): `Billing` per
-backend, `Audience` per request (`"audience": "customer"` in the body),
-`customer_billing` in the configuration, `RouteError::NotAllowed` (HTTP
-403, journal `not_allowed`, `audience` written for a customer), the
-`anthropic-api` kind through Anthropic's OpenAI-compatible endpoint, and
-the fake key for tests (`FAKE_API_KEY`). Tests `tests/audience.rs` (7) and
-one in `tests/server.rs`; 6 defences in `router-billing.json`.
+**2026-11-24.** Decision 1 amended: `Billing` per backend, `Audience` per
+request, `customer_billing` (403 `not_allowed`), `anthropic-api` with the
+fake key for tests; a day's ceiling on customers' spend
+(`customer_daily_tokens`/`_requests`, reserved under a lock, read back from
+the journal, 429 `over_budget`, `/status` `customer_budget`). Tests
+`tests/audience.rs`, `tests/budget.rs`; 9 defences in `router-billing.json`.
 
 **2026-09-27.** M0 and M1 merged (PR #1, #2). Fixed then, each red then
 green: a flaky usage test (`BrokenPipe`, not a stale artefact: issue #3),
