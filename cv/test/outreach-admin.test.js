@@ -22,7 +22,7 @@ const LOG = [
   { invite: 'Bob C.', status: 'done', at: '2026-11-22T10:00:00Z' },
 ].map((entry) => JSON.stringify(entry)).join('\n');
 const FEEDBACK = [
-  { invite: 'Ana B.', rating: 4, comment: 'Clair', at: '2026-11-22T09:00:00Z' },
+  { invite: 'Ana B.', rating: 4, comment: 'Clair', price: 10, at: '2026-11-22T09:00:00Z' },
   { invite: 'Ana B.', rating: 2, comment: '', at: '2026-11-23T09:00:00Z' },
   { invite: null, rating: 5, comment: 'anonyme', at: '2026-11-23T09:00:00Z' },
 ].map((entry) => JSON.stringify(entry)).join('\n');
@@ -32,11 +32,11 @@ test('funnelRows: per invitation, live code, asked, made, opinions, mean, last a
   const rows = funnelRows(invites, `${LOG}\nnot json`, FEEDBACK);
   assert.deepEqual(rows.map((row) => row.label), ['Ana B.', 'Bob C.', 'Cleo D.']);
   const [ana, bob, cleo] = rows;
-  assert.deepEqual({ ...ana, comments: undefined }, { label: 'Ana B.', live: true, code: 'aaa', asked: 2, made: 1, opinions: 2, mean: 3, last: '2026-11-23T09:00:00Z', comments: undefined });
-  assert.deepEqual(ana.comments, [{ rating: 2, comment: '', at: '2026-11-23T09:00:00Z' }, { rating: 4, comment: 'Clair', at: '2026-11-22T09:00:00Z' }], 'newest first');
+  assert.deepEqual({ ...ana, comments: undefined }, { label: 'Ana B.', live: true, code: 'aaa', asked: 2, made: 1, opinions: 2, mean: 3, price: 10, last: '2026-11-23T09:00:00Z', comments: undefined });
+  assert.deepEqual(ana.comments, [{ rating: 2, comment: '', price: null, at: '2026-11-23T09:00:00Z' }, { rating: 4, comment: 'Clair', price: 10, at: '2026-11-22T09:00:00Z' }], 'newest first; the mean price over the opinions that gave one');
   assert.equal(bob.live, false);
   assert.equal(bob.code, null, 'a revoked invitation shows no code');
-  assert.deepEqual({ asked: cleo.asked, opinions: cleo.opinions, mean: cleo.mean, last: cleo.last }, { asked: 0, opinions: 0, mean: null, last: null });
+  assert.deepEqual({ asked: cleo.asked, opinions: cleo.opinions, mean: cleo.mean, price: cleo.price, last: cleo.last }, { asked: 0, opinions: 0, mean: null, price: null, last: null });
   // The CLI's --funnel reads the same rows.
   assert.equal(outreachFunnel(invites, LOG, FEEDBACK).split('\n')[0], 'Ana B.\tlive\t2 asked\t1 made\t2 opinions (3.0/5)\tlast 2026-11-23');
 });
