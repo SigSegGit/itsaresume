@@ -42,6 +42,18 @@ async function showStats() {
   table('revenue', [t('Devise'), t('Commandes'), t('Total'), t('Simulées')], revenue.map((row) => [row.currency, row.orders, row.total, row.simulated]));
 }
 
+/* 2026-11-24: customers' spend today, its cost, the day's revenue. */
+async function showApiSpend() {
+  const { budget, estimate, revenue_today: revenue } = await api('api/admin/api-spend');
+  const sold = Object.entries(revenue).map(([currency, total]) => globalThis.i18n.money(total, currency)).join(' + ') || '0';
+  $('api-spend-line').textContent = budget
+    ? t('{v0} requêtes / {v1} · {v2} jetons / {v3} · coût estimé {v4} · ventes du jour {v5}', {
+      v0: budget.requests, v1: budget.requests_limit ?? '∞', v2: budget.tokens, v3: budget.tokens_limit ?? '∞',
+      v4: globalThis.i18n.money(estimate.eur, 'EUR'), v5: sold,
+    })
+    : t('Routeur injoignable : dépense inconnue.');
+}
+
 async function showSnapshots() {
   const { snapshots, newest } = await api('api/admin/snapshots');
   $('newest').textContent = newest
@@ -101,6 +113,7 @@ async function showLog() {
 async function start() {
   try {
     await showStats();
+    await showApiSpend();
   } catch (error) {
     $('denied').textContent = error.status === 403 ? t('Réservé aux administrateurs.') : t('Connectez-vous d’abord (Mon compte).');
     $('denied').hidden = false;

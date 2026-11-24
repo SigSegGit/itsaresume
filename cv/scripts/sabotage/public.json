@@ -453,6 +453,14 @@
       "expect": [
         "red team: the add-on carries its invitation code; it counts on that invitation, a wrong one is nobody"
       ]
+    },
+    "API spend: never on the public status": {
+      "file": "src/server.js",
+      "live": "profiles: _others, customer_budget: _spend, ...rest } = status;",
+      "dead": "profiles: _others, ...rest } = status;",
+      "expect": [
+        "the public status never shows what customers cost the owner"
+      ]
     }
   }
 }

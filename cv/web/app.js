@@ -182,7 +182,7 @@ async function showFeedback() {
 let ownTabOffered = false;
 async function refreshStatus() {
   try {
-    const { profile, profiles, router, models, layout, public: open, styles, service, invited } = await api('/api/status');
+    const { profile, profiles, router, models, layout, public: open, styles, service, invited, customer_budget: budget } = await api('/api/status');
     // 4.12: the CV's template and palette, the default selected.
     if (styles) {
       const fill = (id, names, chosen) => $(id).replaceChildren(...names.map((name) => h('option', { value: name, text: STYLE_LABELS[name] ?? name, ...(name === chosen ? { selected: true } : {}) })));
@@ -235,6 +235,12 @@ async function refreshStatus() {
       $('status-profile').title = profile.truth ?? '';
     }
     setPill('status-router', router.up ? 'ok' : 'bad', router.up ? t('Routeur joignable') : t('Routeur injoignable'));
+    // 2026-11-24: customers' spend today against the router's ceilings.
+    $('status-customers').hidden = !budget;
+    if (budget) {
+      const full = (budget.requests_limit != null && budget.requests >= budget.requests_limit) || (budget.tokens_limit != null && budget.tokens >= budget.tokens_limit);
+      setPill('status-customers', full ? 'bad' : 'ok', t('Clients aujourd’hui : {v0}/{v1} requêtes', { v0: budget.requests, v1: budget.requests_limit ?? '∞' }));
+    }
     setPill('status-layout', layout.word || layout.libre ? 'ok' : 'warn', layout.word ? t('Word : PDF et page pleine') : layout.libre ? t('LibreOffice : PDF et page pleine') : t('Sans moteur de mise en page : DOCX seul'));
   } catch (error) {
     setPill('status-profile', 'bad', `Statut indisponible : ${error.message}`);

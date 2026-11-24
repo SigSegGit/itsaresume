@@ -1455,6 +1455,13 @@ test('a run on a visitor\'s own profile reaches the router as a customer\'s', ()
   assert.match(source, /llm: counted\(withModel\(billed, sources && publicMode \? 'auto' : model\), onAnswer\)/);
 });
 
+test('the public status never shows what customers cost the owner', async (t) => {
+  const app = await startPublic(t, { status: async () => ({ profile: { name: 'Alex' }, router: { up: true }, layout: { word: false }, customer_budget: { tokens: 5, requests: 1 } }) });
+  const visitor = await app.visit();
+  const status = JSON.parse((await visitor.get('/api/status')).text);
+  assert.equal(status.customer_budget, undefined);
+});
+
 // 6.2: the add-on in service mode posts from its own origin
 // (chrome-extension://<id>) with the visitor token the public page issued;
 // that origin may create a job carrying a profile, and nothing else.

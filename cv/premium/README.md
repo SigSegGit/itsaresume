@@ -196,6 +196,10 @@ needs a confirmed address (when addresses are checked) and has a daily
 ceiling per address (`previewIp`, 10) and for the whole site
 (`previewAll`, 200), whatever the number of accounts.
 
+The admin page's "Coût API du jour" shows customers' spend today (the
+router's count) against its ceilings, its estimated cost and the day's real
+revenue.
+
 ## Before going public (not done by the demo)
 
 - **Preview on a personal subscription**: a Claude Pro/Max subscription is

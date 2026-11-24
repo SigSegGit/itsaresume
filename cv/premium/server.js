@@ -13,7 +13,7 @@ import { readFileSync, mkdirSync, appendFileSync, existsSync, readdirSync, statS
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENCIES, localPacks, currencyFor } from './pricing.js';
+import { costTable, PAID_MODEL, RUN, costPerCv, API_PRICES, EUR_PER_USD, CURRENCIES, localPacks, currencyFor, estimateCost } from './pricing.js';
 import { redact } from './preview.js';
 import { createLimiter, clientIp, DEFAULT_LIMITS } from './limits.js';
 import { CHAT } from './accounts.js';
@@ -94,7 +94,7 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null }) {
   // 6.9: attempts limited (limits.js); a refusal says when to come back.
   const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
   // 6.10: a link to this site as the visitor reached it (behind the proxy:
@@ -149,6 +149,24 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
     'GET /api/admin/stats': (request) => {
       admin(request);
       return { stats: store.stats(), revenue: store.revenue(), integrity: store.verify() };
+    },
+    // 2026-11-24: what customers cost today (the router's count), against the
+    // ceilings, its estimated API cost, and the day's real revenue.
+    'GET /api/admin/api-spend': async (request) => {
+      admin(request);
+      let budget = null;
+      try {
+        budget = (await routerStatus?.())?.customer_budget ?? null;
+      } catch {
+        budget = null;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const revenue = {};
+      for (const order of store.adminOrders(10000)) {
+        if (!String(order.at).startsWith(today) || order.simulated || order.refunded_at) continue;
+        revenue[order.currency] = Math.round(((revenue[order.currency] ?? 0) + order.price) * 100) / 100;
+      }
+      return { budget, estimate: estimateCost(budget?.tokens ?? 0), revenue_today: revenue };
     },
     'GET /api/admin/users': (request, url) => {
       admin(request);
@@ -564,7 +582,9 @@ async function main(argv) {
   accounts.purge();
   accounts.backup(join(data, 'snapshots'));
   setInterval(() => accounts.backup(join(data, 'snapshots')), 3600000).unref();
+  const routerStatus = async () => (await fetch(new URL('/status', router))).json();
   const app = createPremiumApp({
+    routerStatus,
     store: accounts,
     // 6.8: comma-separated admin addresses, from $DATA/.env (never the repository).
     admins: option('admins', process.env.PREMIUM_ADMINS ?? '').split(','),

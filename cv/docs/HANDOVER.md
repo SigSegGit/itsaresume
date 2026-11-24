@@ -13,6 +13,12 @@ the decisions waiting for him, how to reach his machines — are in
 
 ## 0. Where things stand (2026-11-24)
 
+- **2026-11-24, what customers cost, where the owner looks**: the premium
+  admin page's "Coût API du jour" (`GET /api/admin/api-spend`: the router's
+  `customer_budget`, `estimateCost` at the paid model's prices, the day's
+  real revenue; the router down says so), the local page's header pill;
+  never on the public status. 4 tests, 3 defences.
+
 - **2026-11-24, the add-on carries its invitation** (0.3.1): its options
   take the link the owner sent; the code goes with the job (`invite`),
   names that invitation on the server (a revoked or wrong code is

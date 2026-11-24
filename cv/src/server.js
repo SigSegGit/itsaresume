@@ -136,7 +136,8 @@ const PUBLIC_FILES = new Set(['cv.pdf', 'cv.docx']);
  */
 function publicStatus(status, service = false) {
   // The other profiles' names (4.1) are people's: never listed publicly.
-  const { profile = {}, profiles: _others, ...rest } = status;
+  // 2026-11-24: what customers cost the owner is his alone.
+  const { profile = {}, profiles: _others, customer_budget: _spend, ...rest } = status;
   const shown = profile.error !== undefined
     ? { error: 'profil indisponible' }
     : { name: profile.name, title: profile.title, skills: profile.skills, lab: profile.lab, never: profile.never };

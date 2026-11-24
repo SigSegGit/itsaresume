@@ -102,3 +102,15 @@ export function currencyFor(acceptLanguage = '') {
   }
   return /^en\b/i.test(tags[0]) ? 'USD' : 'EUR';
 }
+
+/**
+ * 2026-11-24: the API cost of `tokens` counted by the router for customers,
+ * at `model`'s prices, read and written in a generation's proportion (RUN:
+ * five parts read for one written). Cents, rounded.
+ */
+export function estimateCost(tokens, model = PAID_MODEL) {
+  const price = API_PRICES[model];
+  const written = RUN.output / (RUN.input + RUN.output);
+  const usd = Math.round((tokens * ((1 - written) * price.input + written * price.output)) / 1e4) / 100;
+  return { usd, eur: Math.round(usd * EUR_PER_USD * 100) / 100 };
+}
