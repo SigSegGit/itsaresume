@@ -163,3 +163,22 @@ test('ITSACV_PROMPT=noterms leaves the skills\' terms out of the catalogue (6.5)
     assert.match(without, /postgresql — PostgreSQL/);
   }
 });
+
+// 6.5 (2026-11-24): noterms lost 4 honest yes on 8 real offers, each carried
+// by a term the offer itself names; "offerterms" keeps only those terms.
+test('ITSACV_PROMPT=offerterms keeps only the terms the offer names (6.5)', async () => {
+  const { promptOptions } = await import('../src/prompt.js');
+  assert.deepEqual(promptOptions({ ITSACV_PROMPT: 'compact,shortlist,offerterms' }), { compact: true, shortlist: true, offerTerms: true });
+  const profile = JSON.parse(readFileSync(new URL('./fixtures/profile.synthetic.json', import.meta.url), 'utf8'));
+  profile.skills.find((entry) => entry.id === 'postgresql').terms = ['bases relationnelles', 'réplication'];
+  const offer = 'Vous administrez nos Bases Relationnelles en production.';
+  for (const compact of [true, false]) {
+    const kept = buildPrompt(profile, offer, [], { compact, offerTerms: true }).prompt;
+    assert.match(kept, /bases relationnelles/);
+    assert.doesNotMatch(kept, /réplication/);
+    assert.match(kept, /postgresql — PostgreSQL/);
+  }
+  // A word inside another is not the term ("RUN" is not in "runtime").
+  profile.skills.find((entry) => entry.id === 'postgresql').terms = ['run'];
+  assert.doesNotMatch(buildPrompt(profile, 'un runtime Java', [], { compact: true, offerTerms: true }).prompt, /\brun\b/);
+});
