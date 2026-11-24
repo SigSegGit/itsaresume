@@ -147,3 +147,57 @@ test('the owner\'s page has its applications card: filter, status, note, weekly 
   assert.match(app, /api\(`\/api\/applications\/\$\{encodeURIComponent\(row\.run\)\}`, \{ status: select\.value, note: note\.value \}\)/);
   assert.match(app, /if \(!open\) showApplications\(\);/);
 });
+
+// 2026-11-24 (2): what to follow up, the response rate, each CV's files,
+// and the same list in the terminal.
+test('an application sent over a week ago with no news is to follow up; the summary counts it', async () => {
+  const { followUp, summary } = await import('../src/applications.js');
+  const now = Date.parse('2026-11-30T09:00:00Z');
+  const rows = [
+    { status: 'sent', at: '2026-11-20', sent: '2026-11-20' },
+    { status: 'sent', at: '2026-11-25', sent: '2026-11-25' },
+    { status: 'interview', at: '2026-11-21', sent: '2026-11-10' },
+    { status: 'rejected', at: '2026-11-22', sent: '2026-11-12' },
+    { status: 'todo', at: null, sent: null },
+  ];
+  assert.deepEqual(rows.map((row) => followUp(row, now)), [true, false, false, false, false]);
+  assert.deepEqual(summary(rows, now), { total: 5, sent: 4, interviews: 1, rate: 25, followUps: 1 });
+  assert.equal(summary([], now).rate, null, 'no rate before anything is sent');
+});
+
+test('each application lists its CV files; the owner\'s page serves them, nothing else', async (t) => {
+  const out = outWithRuns();
+  writeFileSync(join(out, '20261120-090000-ingenieur-sre', 'cv.pdf'), '%PDF-1.7 fake');
+  const row = listApplications(out).find((entry) => entry.run === '20261120-090000-ingenieur-sre');
+  assert.deepEqual(row.files, ['cv.pdf']);
+  const port = await serve(t, out);
+  const pdf = await call(port, { path: '/api/applications/20261120-090000-ingenieur-sre/cv.pdf' });
+  assert.equal(pdf.status, 200);
+  assert.match(pdf.type, /^application\/pdf/);
+  assert.equal((await call(port, { path: '/api/applications/20261120-090000-ingenieur-sre/cv.docx' })).status, 404, 'not made');
+  assert.equal((await call(port, { path: '/api/applications/20261120-090000-ingenieur-sre/analysis.json' })).status, 404, 'only the CV');
+  assert.equal((await call(port, { path: '/api/applications/..%2F..%2Fetc/cv.pdf' })).status, 404);
+  const listed = JSON.parse((await call(port, { path: '/api/applications' })).text);
+  assert.equal(typeof listed.summary.total, 'number');
+  assert.ok(listed.rows.every((entry) => typeof entry.follow_up === 'boolean'));
+});
+
+test('itsacv applications: the list in the terminal, or as CSV', async () => {
+  const out = outWithRuns();
+  setApplication(out, '20261120-090000-ingenieur-sre', { status: 'sent' }, Date.parse('2026-11-01T09:00:00Z'));
+  const cli = new URL('../bin/itsacv.js', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
+  const { spawnSync } = await import('node:child_process');
+  const text = spawnSync(process.execPath, [cli, 'applications', '--out', out], { encoding: 'utf8' });
+  assert.equal(text.status, 0, text.stderr);
+  assert.match(text.stdout, /^2026-11-22\ttodo\t55\tFintech — DevOps AWS\n2026-11-20\tsent\t80\tIngénieur SRE\tfollow up\n/);
+  assert.match(text.stdout, /2 applications, 1 sent, 0 interviews, 1 to follow up\n$/);
+  const csv = spawnSync(process.execPath, [cli, 'applications', '--csv', '--out', out], { encoding: 'utf8' });
+  assert.match(csv.stdout, /^run,date,title,score,status,since,sent,note\n/);
+});
+
+test('the applications card shows the summary, the follow-ups and the CV links', () => {
+  const app = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+  assert.match(app, /row\.follow_up \? h\('span', \{ class: 'chip warn', text: t\('À relancer'\) \}\) : null/);
+  assert.match(app, /href: `\/api\/applications\/\$\{encodeURIComponent\(row\.run\)\}\/\$\{file\}`/);
+  assert.match(app, /t\('\{v0\} candidatures · {v1} envoyées · {v2} entretiens \(\{v3\}\) · {v4} à relancer'/);
+});
