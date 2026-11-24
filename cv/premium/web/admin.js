@@ -64,10 +64,10 @@ async function showInvites() {
     return;
   }
   const header = el('tr');
-  header.append(...[t('Libellé'), t('État'), t('Demandés'), t('Faits'), t('Avis'), t('Note'), t('Dernière activité'), ''].map((name) => el('th', name)));
+  header.append(...[t('Libellé'), t('État'), t('Demandés'), t('Faits'), t('Avis'), t('Note'), t('Prix dit'), t('Dernière activité'), ''].map((name) => el('th', name)));
   const rows = invitations.map((row) => {
     const line = el('tr');
-    line.append(...[row.label, row.live ? t('actif') : t('révoqué'), row.asked, row.made, row.opinions, row.mean === null ? '—' : `${row.mean}/5`, when(row.last)].map((cell) => el('td', cell)));
+    line.append(...[row.label, row.live ? t('actif') : t('révoqué'), row.asked, row.made, row.opinions, row.mean === null ? '—' : `${row.mean}/5`, row.price === null ? '—' : `${row.price} €`, when(row.last)].map((cell) => el('td', cell)));
     const actions = el('td');
     if (row.link) {
       const copy = el('button', t('Copier le lien'));
@@ -93,7 +93,7 @@ async function showInvites() {
   const opinions = invitations.flatMap((row) => row.comments.map((comment) => ({ ...comment, label: row.label })))
     .sort((a, b) => String(b.at).localeCompare(String(a.at)));
   $('opinions').replaceChildren(...(opinions.length
-    ? opinions.map((row) => el('li', `${when(row.at)} — ${row.label} — ${row.rating}/5${row.comment ? ` — ${row.comment}` : ''}`))
+    ? opinions.map((row) => el('li', `${when(row.at)} — ${row.label} — ${row.rating}/5${row.price === null ? '' : ` — ${row.price} €`}${row.comment ? ` — ${row.comment}` : ''}`))
     : [el('li', t('Aucun avis pour l’instant.'))]));
 }
 

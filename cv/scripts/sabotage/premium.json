@@ -749,6 +749,14 @@
       "expect": [
         "the page and the VM: an Invitations card, the premium container reads the generator's folder"
       ]
+    },
+    "Invitations: the mean price counts only the opinions that gave one": {
+      "file": "src/invites.js",
+      "live": ".map((entry) => entry.price).filter(Number.isInteger);",
+      "dead": ".map((entry) => entry.price ?? 0);",
+      "expect": [
+        "funnelRows: per invitation, live code, asked, made, opinions, mean, last activity, comments"
+      ]
     }
   }
 }

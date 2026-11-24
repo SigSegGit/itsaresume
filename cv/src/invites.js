@@ -165,6 +165,12 @@ const jsonLines = (text) => String(text ?? '').split('\n').flatMap((line) => {
   }
 });
 
+/** The mean of the prices said (euros, one decimal), null when none was. */
+const meanPrice = (given) => {
+  const prices = given.map((entry) => entry.price).filter(Number.isInteger);
+  return prices.length ? Math.round((prices.reduce((sum, price) => sum + price, 0) / prices.length) * 10) / 10 : null;
+};
+
 /**
  * 2026-11-24: per invitation, live or revoked, its live code (null once
  * revoked), the own-profile CVs asked and made (QA log), the opinions given
@@ -189,8 +195,9 @@ export function funnelRows(invites, log, feedback) {
       made: asked.filter((entry) => entry.status === 'done').length,
       opinions: given.length,
       mean: given.length ? Math.round((given.reduce((sum, entry) => sum + entry.rating, 0) / given.length) * 10) / 10 : null,
+      price: meanPrice(given),
       last,
-      comments: given.map(({ rating, comment, at }) => ({ rating, comment: String(comment ?? ''), at: at ?? null })).sort((a, b) => String(b.at).localeCompare(String(a.at))),
+      comments: given.map(({ rating, comment, price, at }) => ({ rating, comment: String(comment ?? ''), price: Number.isInteger(price) ? price : null, at: at ?? null })).sort((a, b) => String(b.at).localeCompare(String(a.at))),
     };
   });
 }
