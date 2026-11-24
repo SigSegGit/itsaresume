@@ -56,6 +56,48 @@ pub enum RouteError {
         /// Whose request it was.
         audience: Audience,
     },
+    /// 2026-11-24: the day's ceiling on customers' spend is reached
+    /// (`customer_daily_tokens` or `customer_daily_requests`): nothing asked.
+    OverBudget {
+        /// Which ceiling: `tokens` or `requests`.
+        what: &'static str,
+    },
+}
+
+/// 2026-11-24: what customers' requests spent today (UTC), and the ceilings.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct CustomerBudget {
+    /// The UTC day counted (`YYYY-MM-DD`).
+    pub day: String,
+    /// Tokens of the customer requests answered today (all kinds summed).
+    pub tokens: u64,
+    /// Customer requests answered today.
+    pub requests: u64,
+    /// The day's token ceiling, if any.
+    pub tokens_limit: Option<u64>,
+    /// The day's request ceiling, if any.
+    pub requests_limit: Option<u64>,
+}
+
+fn today() -> String {
+    humantime::format_rfc3339(SystemTime::now()).to_string()[..10].to_owned()
+}
+
+/// A new UTC day starts the count again; the ceilings stay.
+fn roll(budget: &mut CustomerBudget) {
+    let day = today();
+    if budget.day != day {
+        *budget = CustomerBudget {
+            day,
+            tokens_limit: budget.tokens_limit,
+            requests_limit: budget.requests_limit,
+            ..CustomerBudget::default()
+        };
+    }
+}
+
+fn usage_tokens(usage: &crate::backend::Usage) -> u64 {
+    usage.input + usage.output + usage.cache_read + usage.cache_creation
 }
 
 impl fmt::Display for RouteError {
@@ -69,6 +111,9 @@ impl fmt::Display for RouteError {
                 "no configured backend may serve a {} request (customer_billing)",
                 audience.as_str()
             ),
+            Self::OverBudget { what } => {
+                write!(f, "today's ceiling on customers' {what} is reached")
+            }
         }
     }
 }
@@ -136,6 +181,8 @@ pub struct Router {
     overload_retry: Duration,
     /// 2026-11-24: the billings a customer's request may reach.
     customer_billing: Vec<Billing>,
+    /// 2026-11-24: customers' spend today and its ceilings.
+    budget: Mutex<CustomerBudget>,
 }
 
 /// Whether an outage is a model overloaded for a moment (503, "high
@@ -197,6 +244,7 @@ impl Router {
             check_periods: HashMap::new(),
             overload_retry: Duration::ZERO,
             customer_billing: vec![Billing::Api],
+            budget: Mutex::new(CustomerBudget::default()),
         })
     }
 
@@ -205,6 +253,85 @@ impl Router {
     pub fn with_customer_billing(mut self, billings: Vec<Billing>) -> Self {
         self.customer_billing = billings;
         self
+    }
+
+    /// Ceilings on customers' spend a day (tokens, requests); the day's
+    /// spend so far is read back from the journal, so a restart forgets none.
+    #[must_use]
+    pub fn with_customer_budget(self, tokens: Option<u64>, requests: Option<u64>) -> Self {
+        let day = today();
+        let (mut spent, mut answered) = (0, 0);
+        if let Ok(text) = std::fs::read_to_string(self.journal.path()) {
+            for line in text.lines() {
+                let Ok(entry) = serde_json::from_str::<serde_json::Value>(line) else {
+                    continue;
+                };
+                let ours = entry["audience"] == "customer"
+                    && entry["outcome"] == "answered"
+                    && entry["ts"].as_str().is_some_and(|ts| ts.starts_with(&day));
+                if !ours {
+                    continue;
+                }
+                answered += 1;
+                spent += ["input", "output", "cache_read", "cache_creation"]
+                    .iter()
+                    .map(|key| entry["usage"][key].as_u64().unwrap_or(0))
+                    .sum::<u64>();
+            }
+        }
+        if let Ok(mut budget) = self.budget.lock() {
+            *budget = CustomerBudget {
+                day,
+                tokens: spent,
+                requests: answered,
+                tokens_limit: tokens,
+                requests_limit: requests,
+            };
+        }
+        self
+    }
+
+    /// Customers' spend today and the ceilings (a new day starts at zero).
+    pub fn customer_budget(&self) -> CustomerBudget {
+        self.budget
+            .lock()
+            .map(|mut budget| {
+                roll(&mut budget);
+                budget.clone()
+            })
+            .unwrap_or_default()
+    }
+
+    /// One customer request admitted, or the ceiling it would pass.
+    fn reserve(&self) -> Option<&'static str> {
+        let Ok(mut budget) = self.budget.lock() else {
+            return Some("requests");
+        };
+        roll(&mut budget);
+        if budget
+            .tokens_limit
+            .is_some_and(|limit| budget.tokens >= limit)
+        {
+            return Some("tokens");
+        }
+        if budget
+            .requests_limit
+            .is_some_and(|limit| budget.requests >= limit)
+        {
+            return Some("requests");
+        }
+        budget.requests += 1;
+        None
+    }
+
+    /// An admitted customer request's end: its tokens, or its place back.
+    fn settle(&self, result: &Result<Answer, RouteError>) {
+        if let Ok(mut budget) = self.budget.lock() {
+            match result {
+                Ok(answer) => budget.tokens += answer.usage.as_ref().map_or(0, usage_tokens),
+                Err(_) => budget.requests = budget.requests.saturating_sub(1),
+            }
+        }
     }
 
     /// Pause `pause` and try an overloaded backend once more (8.59).
@@ -341,15 +468,25 @@ impl Router {
                 audience == Audience::Owner || self.customer_billing.contains(&backend.billing())
             })
             .collect();
+        let customer = audience == Audience::Customer && !allowed.is_empty();
+        // Reserved under the lock: two customer requests at once cannot both
+        // pass the last place under the ceiling.
+        let over = if customer { self.reserve() } else { None };
+        let refused = |error| Outcome {
+            result: Err(error),
+            attempts: Vec::new(),
+            journal_error: None,
+        };
         let mut outcome = if allowed.is_empty() {
-            Outcome {
-                result: Err(RouteError::NotAllowed { audience }),
-                attempts: Vec::new(),
-                journal_error: None,
-            }
+            refused(RouteError::NotAllowed { audience })
+        } else if let Some(what) = over {
+            refused(RouteError::OverBudget { what })
         } else {
             self.route(request, &allowed)
         };
+        if customer && over.is_none() {
+            self.settle(&outcome.result);
+        }
         if let Err(error) =
             self.journal
                 .record_for(request, asked, &outcome, started.elapsed(), audience)

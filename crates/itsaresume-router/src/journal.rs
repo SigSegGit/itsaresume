@@ -85,6 +85,7 @@ impl Journal {
             Err(RouteError::Unserved { .. }) => ("unserved", None, None),
             Err(RouteError::Exhausted) => ("exhausted", None, None),
             Err(RouteError::NotAllowed { .. }) => ("not_allowed", None, None),
+            Err(RouteError::OverBudget { .. }) => ("over_budget", None, None),
         };
         let attempts: Vec<Value> = outcome
             .attempts

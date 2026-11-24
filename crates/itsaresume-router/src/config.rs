@@ -70,6 +70,11 @@ pub struct Config {
     /// 2026-11-24: the billings a customer's request may reach; absent, the
     /// API alone (a subscription is its holder's own use).
     customer_billing: Option<Vec<Billing>>,
+    /// 2026-11-24: the most tokens customers' requests may spend a UTC day;
+    /// absent, no ceiling (set one before serving customers).
+    pub customer_daily_tokens: Option<u64>,
+    /// 2026-11-24: the most customer requests answered a UTC day.
+    pub customer_daily_requests: Option<u64>,
 }
 
 /// One backend. The list of kinds is closed, and no kind has a credential.
@@ -425,7 +430,8 @@ impl Config {
             .with_overload_retry(Duration::from_secs(
                 self.overload_retry_secs.unwrap_or(OVERLOAD_RETRY_SECS),
             ))
-            .with_customer_billing(self.customer_billing());
+            .with_customer_billing(self.customer_billing())
+            .with_customer_budget(self.customer_daily_tokens, self.customer_daily_requests);
         Ok(self
             .check_every_backend_secs
             .iter()

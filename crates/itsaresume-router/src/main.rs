@@ -272,7 +272,11 @@ fn complete(
             eprintln!("itsaresume: every backend failed with a quota or an outage");
             ExitCode::from(EXIT_EXHAUSTED)
         }
-        Err(error @ (RouteError::Unserved { .. } | RouteError::NotAllowed { .. })) => {
+        Err(
+            error @ (RouteError::Unserved { .. }
+            | RouteError::NotAllowed { .. }
+            | RouteError::OverBudget { .. }),
+        ) => {
             eprintln!("itsaresume: {error}");
             ExitCode::from(EXIT_USAGE)
         }

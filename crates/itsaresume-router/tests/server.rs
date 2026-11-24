@@ -805,3 +805,35 @@ fn a_customer_request_with_no_allowed_backend_is_403_and_the_owner_is_served() {
     let (status, body) = post(address, r#"{"prompt": "a CV", "audience": "everyone"}"#);
     assert_eq!(status, 400, "{body}");
 }
+
+/// 2026-11-24: past the day's ceiling a customer's request is 429; the
+/// status shows the day's spend against the ceilings.
+#[test]
+fn a_customer_over_the_day_s_ceiling_is_429_and_the_status_shows_the_spend() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let router = Router::new(
+        vec![answers("local", "ok")],
+        Journal::new(dir.path().join("journal.jsonl")),
+    )
+    .expect("backends")
+    .with_customer_billing(vec![itsaresume_router::Billing::Local])
+    .with_customer_budget(None, Some(1));
+    let server = Server::bind(router, "127.0.0.1:0").expect("bind");
+    let address = server.local_addr();
+    thread::spawn(move || server.run());
+    assert_eq!(
+        post(address, r#"{"prompt": "a", "audience": "customer"}"#).0,
+        200
+    );
+    let (status, body) = post(address, r#"{"prompt": "b", "audience": "customer"}"#);
+    assert_eq!(status, 429, "{body}");
+    assert_eq!(body["error"]["kind"], "over_budget");
+    let mut response = agent()
+        .get(&format!("http://{address}/status"))
+        .call()
+        .expect("status");
+    let status: Value =
+        serde_json::from_str(&response.body_mut().read_to_string().expect("a body")).expect("json");
+    assert_eq!(status["customer_budget"]["requests"], 1);
+    assert_eq!(status["customer_budget"]["requests_limit"], 1);
+}

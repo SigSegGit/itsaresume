@@ -69,13 +69,23 @@ fn past_the_day_s_tokens_a_customer_is_refused_before_any_backend_the_owner_is_n
         .expect("backends")
         .with_customer_budget(Some(1000), None);
     assert!(ask(&router, Audience::Customer).is_ok());
-    assert!(ask(&router, Audience::Customer).is_ok(), "600 spent, under 1000: asked");
+    assert!(
+        ask(&router, Audience::Customer).is_ok(),
+        "600 spent, under 1000: asked"
+    );
     assert!(matches!(
         ask(&router, Audience::Customer),
         Err(RouteError::OverBudget { .. })
     ));
-    assert_eq!(calls.load(Ordering::SeqCst), 2, "refused before the backend");
-    assert!(ask(&router, Audience::Owner).is_ok(), "the owner's own use is never capped");
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        2,
+        "refused before the backend"
+    );
+    assert!(
+        ask(&router, Audience::Owner).is_ok(),
+        "the owner's own use is never capped"
+    );
     let budget = router.customer_budget();
     assert_eq!((budget.tokens, budget.requests), (1200, 2));
     let journal = std::fs::read_to_string(dir.path().join("j.jsonl")).expect("journal");
@@ -119,7 +129,11 @@ fn a_restart_reads_the_day_s_customer_spend_back_from_the_journal() {
         .expect("backends")
         .with_customer_budget(Some(1000), None);
     let budget = router.customer_budget();
-    assert_eq!((budget.tokens, budget.requests), (600, 1), "the owner's line and the old day left out");
+    assert_eq!(
+        (budget.tokens, budget.requests),
+        (600, 1),
+        "the owner's line and the old day left out"
+    );
 }
 
 #[test]
@@ -136,5 +150,52 @@ fn the_budget_is_configured_and_shown() {
         .expect("backends")
         .with_customer_budget(Some(100), Some(5));
     let budget = router.customer_budget();
-    assert_eq!((budget.tokens_limit, budget.requests_limit), (Some(100), Some(5)));
+    assert_eq!(
+        (budget.tokens_limit, budget.requests_limit),
+        (Some(100), Some(5))
+    );
+}
+
+struct Slow;
+
+impl Backend for Slow {
+    fn name(&self) -> &str {
+        "anthropic-api"
+    }
+
+    fn billing(&self) -> Billing {
+        Billing::Api
+    }
+
+    fn complete(&self, _request: &Request) -> Result<Completion, BackendError> {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        Ok(Completion {
+            text: "ok".into(),
+            rate_limit: None,
+            usage: None,
+        })
+    }
+}
+
+#[test]
+fn customers_at_the_same_moment_never_pass_the_request_ceiling() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let router = Arc::new(
+        Router::new(
+            vec![Box::new(Slow)],
+            Journal::new(dir.path().join("j.jsonl")),
+        )
+        .expect("backends")
+        .with_customer_budget(None, Some(3)),
+    );
+    let answered: usize = (0..8)
+        .map(|_| {
+            let router = Arc::clone(&router);
+            std::thread::spawn(move || usize::from(ask(&router, Audience::Customer).is_ok()))
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .map(|handle| handle.join().expect("thread"))
+        .sum();
+    assert_eq!(answered, 3);
 }

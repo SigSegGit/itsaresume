@@ -23,4 +23,6 @@ pub use backend::{
     Audience, Backend, BackendError, Billing, Completion, Kind, Probe, Request, Usage,
 };
 pub use journal::Journal;
-pub use router::{Answer, Attempt, BackendStatus, NoBackends, Outcome, RouteError, Router};
+pub use router::{
+    Answer, Attempt, BackendStatus, CustomerBudget, NoBackends, Outcome, RouteError, Router,
+};
