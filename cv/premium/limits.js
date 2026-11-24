@@ -66,4 +66,7 @@ export const DEFAULT_LIMITS = {
   forgotIp: { max: 10, windowMs: 3600000 },
   register: { max: 5, windowMs: 3600000 },
   verify: { max: 3, windowMs: 3600000 },
+  // 2026-11-24: free previews, a day: per address, and for the whole site.
+  previewIp: { max: 10, windowMs: 86400000 },
+  previewAll: { max: 200, windowMs: 86400000 },
 };

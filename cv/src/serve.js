@@ -9,12 +9,12 @@ import { loadedFrom, loadProfile, readRun, runName, tailorOffer } from './run.js
 import { offerFromFile, profileFromSources, readOffer } from './sources.js';
 import { pageData } from './tailor.js';
 import { appendQaLog, SPLIT, withModel } from './qa.js';
-import { cvFile, listApplications, setApplication } from './applications.js';
+import { cvFile, draftFor, listApplications, setApplication } from './applications.js';
 import { appendFeedback, readFeedback } from './feedback.js';
 import { splitOffers } from './split.js';
 import { jobView } from './view.js';
 import { findReusable, loadRuns } from './intake.js';
-import { contractProblem, counted } from './llm.js';
+import { asCustomer, contractProblem, counted } from './llm.js';
 import { loadInvites } from './invites.js';
 import { DEFAULT_PROFILE, listProfiles } from './profiles.js';
 import { modelMenu } from './models.js';
@@ -147,6 +147,9 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       const offer = !publicMode && /^https?:\/\/\S+$/.test(given.trim()) ? await readOffer(given.trim()) : given;
       // 4.11: the run's own sources, in a temporary folder removed when the run ends: nothing kept.
       let loaded;
+      // 2026-11-24: a visitor's own profile is a customer's run: the router
+      // keeps it off the owner's subscription, and it takes no hand-picked model.
+      const billed = sources && publicMode ? asCustomer(llm) : llm;
       if (sources || links) {
         const tmp = mkdtempSync(join(tmpdir(), 'itsacv-sources-'));
         try {
@@ -156,7 +159,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
             return path;
           });
           onStep('sources');
-          loaded = loadedFrom((await profileFromSources([...specs, ...(links ?? [])], { llm: counted(withModel(llm, 'auto'), onAnswer) })).profile);
+          loaded = loadedFrom((await profileFromSources([...specs, ...(links ?? [])], { llm: counted(withModel(billed, 'auto'), onAnswer) })).profile);
         } finally {
           rmSync(tmp, { recursive: true, force: true });
         }
@@ -167,7 +170,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
       }
       // 8.44: the local model asked for while it sleeps is woken; the job waits.
       if (model === 'local') await ensureLocal({ out, backends: () => routerBackends(url), onStep, warm: () => withModel(llm, 'local')({ system: 'Answer with OK.', prompt: 'OK' }) });
-      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(llm, model), onAnswer), listingLlm: counted(withModel(llm, 'auto'), onAnswer), outDir: sources && publicMode ? mkdtempSync(join(tmpdir(), 'itsacv-service-')) : out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold, style });
+      const result = await tailorOffer({ loaded, offer, llm: counted(withModel(billed, sources && publicMode ? 'auto' : model), onAnswer), listingLlm: counted(withModel(billed, 'auto'), onAnswer), outDir: sources && publicMode ? mkdtempSync(join(tmpdir(), 'itsacv-service-')) : out, useWord, onStep, profileId: sources || links ? 'sources' : profile, title, split: SPLIT.has(model), minScore: threshold, style });
       return { ...result, view: jobView(result, loaded), page: pageData(loaded.profile, result.analysis) };
     },
     // Public mode: the same offer is answered from its best-rated run, with no model call.
@@ -188,7 +191,7 @@ export async function serve({ profile: profilePath, profilesDir, out, url, port,
     },
     log: (entry) => appendQaLog(out, entry),
     feedback: (entry) => appendFeedback(out, entry),
-    applications: { list: () => listApplications(out), set: (run, change) => setApplication(out, run, change), file: (run, name) => cvFile(out, run, name) },
+    applications: { list: () => listApplications(out), set: (run, change) => setApplication(out, run, change), file: (run, name) => cvFile(out, run, name), draft: (run, lang) => draftFor(out, run, loadProfile(profiles().get(DEFAULT_PROFILE)).profile, lang) },
     feedbackList: () => readFeedback(out),
     // 2.31b: beside the runs, in a folder of its own (not a run: loadRuns skips it).
     saveComparison: (name, comparison, markdown) => {

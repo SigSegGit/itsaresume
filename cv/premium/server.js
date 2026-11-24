@@ -434,7 +434,13 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
         }
       }
       needProfile({ profile });
+      // 2026-11-24, red team: a free preview is a model call; throwaway
+      // accounts get none unconfirmed, and an address and the site have a
+      // daily ceiling, whatever the number of accounts.
+      verified(user);
       if (!store.previewAllowed(user)) throw new HttpError(429, 'free previews used up for today');
+      allow('previewIp', clientIp(request));
+      allow('previewAll', 'site');
       let analysis;
       try {
         analysis = await analyse({ profile, offer, mode: 'preview' });
@@ -546,11 +552,13 @@ async function main(argv) {
   mkdirSync(data, { recursive: true });
   const { createStore } = await import('./accounts.js');
   const { analyse } = await import('../src/pipeline.js');
-  const { complete } = await import('../src/llm.js');
+  const { asCustomer, complete } = await import('../src/llm.js');
   const { pageData } = await import('../src/tailor.js');
   const { fromJsonResume } = await import('../src/import.js');
   const { validateProfile } = await import('../src/profile.js');
-  const llm = ({ system, prompt, schema, backend, kind }) => complete({ url: router, system, prompt, schema, backend, kind });
+  // 2026-11-24: every premium call is a customer's: the router decides what
+  // it may reach (customer_billing: the API, never the owner's subscription).
+  const llm = asCustomer(({ system, prompt, schema, backend, kind, audience }) => complete({ url: router, system, prompt, schema, backend, kind, audience }));
   // 6.4f: one SQLite file; hourly snapshots in snapshots/, the folder a sync copies.
   const accounts = createStore(join(data, 'premium.db'));
   accounts.purge();

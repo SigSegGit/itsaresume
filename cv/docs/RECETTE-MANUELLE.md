@@ -235,6 +235,48 @@ cd D:\GitHub\itsaresume\cv; node bin/itsacv.js applications --out $HOME\.itsares
 
 ---
 
+## 9. La route « client » du routeur, avec la fausse clé — [ ]
+
+**Il faut** : le routeur local, ta config avec un backend `anthropic-api`.
+
+1. Dans `config.local.toml` (jamais commité), ajouter :
+   ```toml
+   customer_billing = ["api"]
+
+   [[backend]]
+   kind = "anthropic-api"
+   model = "claude-haiku-5-5"
+   program = "claude"
+   ```
+2. Démarrer le routeur avec la fausse clé :
+   ```powershell
+   $env:ANTHROPIC_API_KEY = "fake-key-uses-the-subscription"; cargo run -q -- serve
+   ```
+3. Une requête client :
+   ```powershell
+   Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8787/v1/complete -ContentType 'application/json' -Body '{"prompt":"Reply ok","audience":"customer"}'
+   ```
+
+**Attendu** : au démarrage, la ligne « WARNING … uses the fake API key » ;
+la réponse vient de `anthropic-api` (et non de `claude-code`) ; le journal
+porte `"audience":"customer"`. Sans backend `anthropic-api`, la même
+requête répond 403 `not_allowed`. Quand tu vendras : une vraie clé dans
+`ANTHROPIC_API_KEY`, rien d'autre à changer.
+
+---
+
+## 10. Les essais gratuits ne s'exploitent pas — [ ]
+
+1. Un lien d'invitation ouvert par 4 personnes (4 fenêtres privées) : les 3
+   premiers CV sur leur propre profil passent, le 4e répond « Cette
+   invitation donne 3 CV … déjà utilisés ».
+2. Sans lien, dans une fenêtre privée : « Mon propre profil » refuse
+   (« sur invitation »), le CV de ton profil reste possible.
+3. Premium : un compte dont l'adresse n'est pas confirmée n'a pas
+   d'aperçu gratuit.
+
+---
+
 ## Après la recette
 
 Me donner, pour chaque fiche : passée / ratée + ce qui a été noté. Une

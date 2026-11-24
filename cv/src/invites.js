@@ -153,3 +153,31 @@ export function usageByInvite(log) {
     })
     .join('');
 }
+
+/**
+ * `itsacv invite --funnel` (2026-11-24): per invitation, live or revoked,
+ * the own-profile CVs asked and made (QA log), the opinions given
+ * (feedback.jsonl) and the last activity. A line that is not JSON is skipped.
+ */
+export function outreachFunnel(invites, log, feedback) {
+  const lines = (text) => String(text ?? '').split('\n').flatMap((line) => {
+    try {
+      const entry = JSON.parse(line);
+      return entry && typeof entry === 'object' ? [entry] : [];
+    } catch {
+      return [];
+    }
+  });
+  const runs = lines(log);
+  const opinions = lines(feedback).filter((entry) => Number.isInteger(entry.rating));
+  const labels = [...new Set(Object.values(invites ?? {}).map((invite) => invite.label).filter((label) => typeof label === 'string'))].sort();
+  return labels.map((label) => {
+    const live = Object.values(invites).some((invite) => invite.label === label && !invite.revoked);
+    const asked = runs.filter((entry) => entry.invite === label);
+    const made = asked.filter((entry) => entry.status === 'done').length;
+    const given = opinions.filter((entry) => entry.invite === label);
+    const mean = given.length ? ` (${(given.reduce((sum, entry) => sum + entry.rating, 0) / given.length).toFixed(1)}/5)` : '';
+    const last = [...asked, ...given].map((entry) => String(entry.at ?? '')).filter(Boolean).sort().at(-1);
+    return `${label}\t${live ? 'live' : 'revoked'}\t${asked.length} asked\t${made} made\t${plural(given.length, 'opinion')}${mean}\t${last ? `last ${last.slice(0, 10)}` : 'never used'}\n`;
+  }).join('');
+}

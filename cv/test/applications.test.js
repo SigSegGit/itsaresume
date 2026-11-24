@@ -46,7 +46,7 @@ test('a status is kept in the run folder; the day it was sent stays when it move
   setApplication(out, run, { status: 'sent', note: '  via le site\n de Fintech ' }, Date.parse('2026-11-21T09:00:00Z'));
   setApplication(out, run, { status: 'interview' }, Date.parse('2026-11-25T09:00:00Z'));
   const saved = JSON.parse(readFileSync(join(out, run, 'application.json'), 'utf8'));
-  assert.deepEqual(saved, { status: 'interview', at: '2026-11-25', sent: '2026-11-21', note: 'via le site de Fintech' });
+  assert.deepEqual(saved, { status: 'interview', at: '2026-11-25', sent: '2026-11-21', note: 'via le site de Fintech', contact: '', channel: null });
   const row = listApplications(out).find((entry) => entry.run === run);
   assert.equal(row.status, 'interview');
   assert.equal(row.sent, '2026-11-21');
@@ -75,8 +75,8 @@ test('applications sent per week, the last eight weeks, Monday first', () => {
 test('the CSV: one row per application, a cell never opens as a formula', () => {
   const csv = applicationsCsv([{ run: 'r1', date: '2026-11-20', title: '=HYPERLINK("x")', score: 80, status: 'sent', at: '2026-11-21', sent: '2026-11-21', note: 'a, b' }]);
   const [head, row] = csv.trim().split('\n');
-  assert.equal(head, 'run,date,title,score,status,since,sent,note');
-  assert.match(row, /^r1,2026-11-20,"'=HYPERLINK\(""x""\)",80,sent,2026-11-21,2026-11-21,"a, b"$/);
+  assert.equal(head, 'run,date,title,score,status,since,sent,note,contact,channel');
+  assert.match(row, /^r1,2026-11-20,"'=HYPERLINK\(""x""\)",80,sent,2026-11-21,2026-11-21,"a, b",,$/);
 });
 
 const TOKEN = 'e'.repeat(48);
@@ -146,7 +146,7 @@ test('the owner\'s page has its applications card: filter, status, note, weekly 
   assert.match(html, /<section class="card" id="applications-card"[^>]*hidden>/);
   assert.match(html, /<select id="applications-filter"/);
   assert.match(html, /href="\/api\/applications\.csv"/);
-  assert.match(app, /api\(`\/api\/applications\/\$\{encodeURIComponent\(row\.run\)\}`, \{ status: select\.value, note: note\.value \}\)/);
+  assert.match(app, /api\(`\/api\/applications\/\$\{encodeURIComponent\(row\.run\)\}`, \{ status: select\.value, note: note\.value, contact: contact\.value, channel: channel\.value \}\)/);
   assert.match(app, /if \(!open\) showApplications\(\);/);
 });
 
@@ -195,7 +195,7 @@ test('itsacv applications: the list in the terminal, or as CSV', async () => {
   assert.match(text.stdout, /^2026-11-22\ttodo\t55\tFintech — DevOps AWS\n2026-11-20\tsent\t80\tIngénieur SRE\tfollow up\n/);
   assert.match(text.stdout, /2 applications, 1 sent, 0 interviews, 1 to follow up\n$/);
   const csv = spawnSync(process.execPath, [cli, 'applications', '--csv', '--out', out], { encoding: 'utf8' });
-  assert.match(csv.stdout, /^run,date,title,score,status,since,sent,note\n/);
+  assert.match(csv.stdout, /^run,date,title,score,status,since,sent,note,contact,channel\n/);
 });
 
 test('the applications card shows the summary, the follow-ups and the CV links', () => {
@@ -230,6 +230,7 @@ test('the week in one screen: sent, answers, follow-ups, and what moved', async 
     { date: '2026-11-10', title: 'DevOps', status: 'interview', at: '2026-11-25', sent: '2026-11-12' },
     { date: '2026-11-01', title: 'Cloud', status: 'sent', at: '2026-11-03', sent: '2026-11-03' },
     { date: '2026-11-26', title: 'Data', status: 'todo', at: null, sent: null },
+    { date: '2026-10-30', title: 'Old', status: 'rejected', at: '2026-11-05', sent: '2026-11-01' },
   ];
   assert.equal(weekReport(rows, now), [
     'Week of 2026-11-23',

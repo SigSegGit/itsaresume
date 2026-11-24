@@ -14,6 +14,14 @@ never for this file: re-derive them.
 
 ## 0. Real state
 
+**2026-11-24.** Audience routing (decision 1 amended): `Billing` per
+backend, `Audience` per request (`"audience": "customer"` in the body),
+`customer_billing` in the configuration, `RouteError::NotAllowed` (HTTP
+403, journal `not_allowed`, `audience` written for a customer), the
+`anthropic-api` kind through Anthropic's OpenAI-compatible endpoint, and
+the fake key for tests (`FAKE_API_KEY`). Tests `tests/audience.rs` (7) and
+one in `tests/server.rs`; 6 defences in `router-billing.json`.
+
 **2026-09-27.** M0 and M1 merged (PR #1, #2). Fixed then, each red then
 green: a flaky usage test (`BrokenPipe`, not a stale artefact: issue #3),
 `sabotage.py` now prints the failed test's own output (`why_red`), a cut or
@@ -70,9 +78,19 @@ defence goes into the plan of its surface; then run
 Changing any of these is a closed question to Nicolas — two options and their
 consequences — before any code. Never a quiet decision.
 
-1. **Zero pay-per-use.** No backend is billed per token, now or as a future
-   fallback: no Anthropic or OpenAI API key, no paid OpenAI-compatible
-   provider, no credential field in any backend. If the idea comes up, ask.
+1. **Zero pay-per-use for the owner.** His own requests are never billed
+   per token. **Amended by Nicolas 2026-11-24:** customers' requests (the
+   premium service, a visitor's own-profile CV) go to Anthropic's API
+   (`anthropic-api`, its key in `ANTHROPIC_API_KEY`, never in a file), and
+   the router decides it, not a feature: every backend is billed one way
+   (subscription, api, free, local, set by its kind), every request says
+   its audience (owner by default, or customer), and a customer's request
+   only reaches `customer_billing` (the API alone by default; naming a
+   backend is no way around). The subscription stays his own use, as
+   Anthropic's terms want. Until he sells, `ANTHROPIC_API_KEY=
+   fake-key-uses-the-subscription` runs the customer route on the
+   subscription (said at start, tests only). Still no credential field in
+   any backend.
 2. **Backends and their order**: Claude Code on Nicolas's Pro/Max plan →
    LM Studio on the XPS 15 (RTX 4070) over Tailscale → a micro-model on the
    Pi 4B or the Freebox Delta VM. The micro-model does light

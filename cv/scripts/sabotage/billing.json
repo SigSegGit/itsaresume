@@ -228,16 +228,16 @@
     },
     "Client: a call's kind reaches the router": {
       "file": "src/llm.js",
-      "live": ", ...(kind ? { kind } : {}) });",
-      "dead": " });",
+      "live": ", ...(kind ? { kind } : {}), ...(audience",
+      "dead": ", ...(audience",
       "expect": [
         "a call marked classify sends its kind; an unmarked call sends none"
       ]
     },
     "Client: a call without a kind sends none": {
       "file": "src/llm.js",
-      "live": ", ...(kind ? { kind } : {}) });",
-      "dead": ", kind: kind ?? 'generate' });",
+      "live": ", ...(kind ? { kind } : {}), ...(audience",
+      "dead": ", kind: kind ?? 'generate', ...(audience",
       "expect": [
         "a call marked classify sends its kind; an unmarked call sends none"
       ]
@@ -300,8 +300,8 @@
     },
     "Tokens: serve() counts the real pipeline's answers": {
       "file": "src/serve.js",
-      "live": "llm: counted(withModel(llm, model), onAnswer),",
-      "dead": "llm: withModel(llm, model),",
+      "live": "llm: counted(withModel(billed, sources && publicMode ? 'auto' : model), onAnswer),",
+      "dead": "llm: withModel(billed, sources && publicMode ? 'auto' : model),",
       "expect": [
         "serve() writes each job's tokens per backend to the QA log, through the real pipeline"
       ]
@@ -320,6 +320,22 @@
       "dead": "    || (local.available && 'local') || (openai.available && 'openai') || (groq.available && 'groq') || fallback;",
       "expect": [
         "Claude spent hands the default to Gemini before the slow local model"
+      ]
+    },
+    "Audience: a customer's call says so": {
+      "file": "src/llm.js",
+      "live": "...(audience === 'customer' ? { audience } : {})",
+      "dead": "",
+      "expect": [
+        "a customer's call says so to the router; the owner's says nothing"
+      ]
+    },
+    "Audience: asCustomer marks every call": {
+      "file": "src/llm.js",
+      "live": "return (call) => llm({ ...call, audience: 'customer' });",
+      "dead": "return llm;",
+      "expect": [
+        "a customer's call says so to the router; the owner's says nothing"
       ]
     }
   }

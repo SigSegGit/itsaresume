@@ -13,6 +13,21 @@ the decisions waiting for him, how to reach his machines — are in
 
 ## 0. Where things stand (2026-11-24)
 
+- **2026-11-24, customers on the API, free trials red-teamed.** The router
+  decides who may spend what (router HANDOVER decision 1): premium's calls
+  and a visitor's own-profile runs are a customer's (`asCustomer` in
+  `src/llm.js`; an own-profile run takes no hand-picked model), the owner's
+  runs his own. Red team of the free trials, each closed with a test and a
+  defence: a premium preview needs a confirmed address and has a daily
+  ceiling per address (10) and for the site (200, `previewIp`,
+  `previewAll`); an invitation gives 3 own-profile CVs whoever opens it
+  (`--per-invite`, kept across a deploy); `--service-invite-only` (on, on
+  the VM) keeps own-profile CVs for invited visitors (the add-on's service
+  mode then needs an invitation too: left open). Applications: a contact
+  and a channel each, `itsacv applications --week`, a follow-up draft from
+  the facts only (no model; "Brouillon de relance"), `itsacv invite
+  --funnel` per invitation (asked, made, opinions, last activity).
+
 - **2026-11-24, applications tracked** (`src/applications.js`): every run
   folder is an application; the owner's page shows "Mes candidatures"
   (status: to send, sent, interview, offer received, rejected; a note; a
