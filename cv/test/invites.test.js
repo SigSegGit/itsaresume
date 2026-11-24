@@ -125,3 +125,18 @@ test('§9: two owners writing invites.json at once lose nothing (a lock file), a
   assert.equal(revokeInvite(out, 'G'), 1);
   assert.throws(() => readFileSync(lock), /ENOENT/, 'the lock is released');
 });
+
+test('itsacv invite --many: one link per label of a file, a refused label named, the others made', () => {
+  const out = fresh();
+  createInvite(out, 'Ana');
+  const list = join(out, 'people.txt');
+  writeFileSync(list, 'Sam D.\n\n  Lou B.  \nAna\n');
+  const made = spawnSync(process.execPath, [CLI, 'invite', '--many', list, '--out', out, '--public-host', 'cv.example.org'], { encoding: 'utf8' });
+  assert.equal(made.status, 2, 'one label was refused');
+  const lines = made.stdout.trim().split('\n');
+  assert.equal(lines.length, 2);
+  assert.match(lines[0], /^Sam D\.\thttps:\/\/cv\.example\.org\/\?i=[0-9a-f]{24}$/);
+  assert.match(lines[1], /^Lou B\.\thttps:\/\/cv\.example\.org\/\?i=[0-9a-f]{24}$/);
+  assert.match(made.stderr, /Ana.*already live/);
+  assert.deepEqual(Object.values(loadInvites(out)).map((invite) => invite.label).sort(), ['Ana', 'Lou B.', 'Sam D.']);
+});

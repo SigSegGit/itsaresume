@@ -1393,6 +1393,32 @@ test('the public page offers the own-profile tab in service mode, files only', (
   assert.match(readFileSync(new URL('../web/index.html', import.meta.url), 'utf8'), /id="links-row"/);
 });
 
+test('an invited visitor is told so, and lands on the own-profile tab (service mode)', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'itsacv-invited-'));
+  const { createInvite } = await import('../src/invites.js');
+  const code = createInvite(dir, 'Sam D.');
+  const app = await startPublic(t, { service: true, invites: () => JSON.parse(readFileSync(join(dir, 'invites.json'), 'utf8')) });
+  const guest = await app.visit('203.0.113.8', `/?i=${code}`);
+  assert.equal(JSON.parse((await guest.get('/api/status')).text).invited, true);
+  const passer = await app.visit('203.0.113.9');
+  assert.equal(JSON.parse((await passer.get('/api/status')).text).invited, false);
+  assert.ok(!(await guest.get('/api/status')).text.includes('Sam D.'), 'the label is the owner\'s note, never shown');
+  const page = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+  assert.match(page, /if \(service && invited && !ownTabOffered\) \{\n\s+ownTabOffered = true;\n\s+\$\('tab-sources'\)\.click\(\);/);
+});
+
+test('the opinions received: the owner\'s page lists them, newest first; never in public', async (t) => {
+  const kept = [{ at: '2026-11-24T10:00:00Z', invite: 'Sam D.', title: 'SRE', rating: 4, comment: 'Clair.' }, { at: '2026-11-25T10:00:00Z', invite: null, title: 'Cloud', rating: 2, comment: 'Long.' }];
+  const app = await start({ feedbackList: () => kept });
+  t.after(() => app.server.close());
+  const got = await call(app.port, { path: '/api/feedback', headers: { 'X-CSRF-Token': TOKEN } });
+  assert.equal(got.status, 200);
+  assert.deepEqual(JSON.parse(got.text).map((entry) => entry.title), ['Cloud', 'SRE']);
+  const open = await startPublic(t, {});
+  const visitor = await open.visit();
+  assert.equal((await visitor.get('/api/feedback')).status, 404);
+});
+
 // 6.2: the add-on in service mode posts from its own origin
 // (chrome-extension://<id>) with the visitor token the public page issued;
 // that origin may create a job carrying a profile, and nothing else.
