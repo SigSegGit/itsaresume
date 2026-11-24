@@ -1373,6 +1373,26 @@ test('without service mode a visitor cannot bring a profile', async (t) => {
   assert.equal((await visitor.post('/api/jobs', { offers: [{ title: 'SRE', text: PUBLIC_OFFER('Senior SRE') }], sources })).status, 403);
 });
 
+// 2026-11-24: people met on LinkedIn get their own CV from the public page,
+// without the add-on: the page shows its "own profile" tab only when the
+// status says service mode is on, and sends files, never links.
+test('the public status says whether a visitor may bring a profile (service mode)', async (t) => {
+  const on = await startPublic(t, { service: true });
+  const visitorOn = await on.visit();
+  assert.equal(JSON.parse((await visitorOn.get('/api/status')).text).service, true);
+  const off = await startPublic(t);
+  const visitorOff = await off.visit();
+  assert.equal(JSON.parse((await visitorOff.get('/api/status')).text).service, false);
+});
+
+test('the public page offers the own-profile tab in service mode, files only', () => {
+  const app = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
+  assert.match(app, /\$\('sources-card'\)\.hidden = !status\.service;/);
+  assert.match(app, /\$\('links-row'\)\.hidden = true;/);
+  assert.match(app, /return \{ sources: files, \.\.\.\(open \? \{\} : \{ links \}\), threshold/);
+  assert.match(readFileSync(new URL('../web/index.html', import.meta.url), 'utf8'), /id="links-row"/);
+});
+
 // 6.2: the add-on in service mode posts from its own origin
 // (chrome-extension://<id>) with the visitor token the public page issued;
 // that origin may create a job carrying a profile, and nothing else.
