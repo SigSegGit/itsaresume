@@ -353,6 +353,30 @@
       "expect": [
         "2.61: the page carries the offer keywords for highlighting, profile names only"
       ]
+    },
+    "Invites (§9): a held lock makes the writer wait, then give up": {
+      "file": "src/invites.js",
+      "live": "      if (Date.now() > until) throw new Error",
+      "dead": "      if (true) break; if (Date.now() > until) throw new Error",
+      "expect": [
+        "§9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over"
+      ]
+    },
+    "Invites (§9): a stale lock is taken over": {
+      "file": "src/invites.js",
+      "live": "      if (age > STALE_MS) {",
+      "dead": "      if (false) {",
+      "expect": [
+        "§9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over"
+      ]
+    },
+    "Invites (§9): the lock is released": {
+      "file": "src/invites.js",
+      "live": "    try { unlinkSync(lock); } catch { /* already gone */ }",
+      "dead": "",
+      "expect": [
+        "§9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over"
+      ]
     }
   }
 }

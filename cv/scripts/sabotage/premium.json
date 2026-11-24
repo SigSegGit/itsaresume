@@ -44,7 +44,9 @@
     "test/premium-smtp.test.js",
     "premium/stripe.js",
     "test/premium-stripe.test.js",
-    "premium/web/checkout.js"
+    "premium/web/checkout.js",
+    "premium/receipt.js",
+    "test/premium-orders.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -493,8 +495,8 @@
     },
     "Stripe (6.12): only a paid event credits": {
       "file": "premium/server.js",
-      "live": "|| session.payment_status !== 'paid') return",
-      "dead": ") return",
+      "live": "includes(event?.type) && object.payment_status === 'paid') {",
+      "dead": "includes(event?.type)) {",
       "expect": [
         "with Stripe: a forged, unpaid or wrong-amount event credits nothing"
       ]
@@ -529,6 +531,78 @@
       "dead": "",
       "expect": [
         "without Stripe the demo is unchanged: credits at once, simulated; no webhook route"
+      ]
+    },
+    "Orders (6.13): a receipt only for the account's own paid order": {
+      "file": "premium/server.js",
+      "live": "if (!found || found.pending) throw new HttpError(404, 'no such order');",
+      "dead": "if (!found) throw new HttpError(404, 'no such order');",
+      "expect": [
+        "a pending order (Stripe not yet paid) has no receipt"
+      ]
+    },
+    "Orders (6.13): the account's orders are its own": {
+      "file": "premium/accounts.js",
+      "live": "FROM orders WHERE email = ? ORDER BY at DESC', user.email)",
+      "dead": "FROM orders ORDER BY at DESC')",
+      "expect": [
+        "the account lists its own orders, newest first; a receipt per paid order, text, in the page language"
+      ]
+    },
+    "Orders (6.13): a refunded order's receipt says so": {
+      "file": "premium/receipt.js",
+      "live": "if (order.refunded_at) lines.push(words.refunded(String(order.refunded_at).slice(0, 10)));",
+      "dead": "",
+      "expect": [
+        "a receipt: a refunded order says it, a pending one has none"
+      ]
+    },
+    "Orders (6.13): a demo order's receipt says no money was taken": {
+      "file": "premium/receipt.js",
+      "live": "if (order.simulated) lines.push(words.simulated);",
+      "dead": "",
+      "expect": [
+        "the account lists its own orders, newest first; a receipt per paid order, text, in the page language"
+      ]
+    },
+    "Stripe (6.14): only a full refund is automatic": {
+      "file": "premium/server.js",
+      "live": "if (event?.type === 'charge.refunded' && object.refunded === true)",
+      "dead": "if (event?.type === 'charge.refunded')",
+      "expect": [
+        "6.14: a refund made at Stripe takes back the credits left, once; an unknown or partial refund changes nothing"
+      ]
+    },
+    "Stripe (6.14): a refund counts once": {
+      "file": "premium/accounts.js",
+      "live": "        if (order.refunded_at) return 'already';\n",
+      "dead": "",
+      "expect": [
+        "6.14: a refund made at Stripe takes back the credits left, once; an unknown or partial refund changes nothing"
+      ]
+    },
+    "Stripe (6.14): the paid event keeps the payment reference": {
+      "file": "premium/server.js",
+      "live": "currency: object.currency, ref: object.payment_intent })",
+      "dead": "currency: object.currency })",
+      "expect": [
+        "6.14: a refund made at Stripe takes back the credits left, once; an unknown or partial refund changes nothing"
+      ]
+    },
+    "Stripe (6.14): an expired Checkout drops only a pending order": {
+      "file": "premium/server.js",
+      "live": "if (event?.type === 'checkout.session.expired') return { received: true, order: store.dropPending(object.client_reference_id) };",
+      "dead": "",
+      "expect": [
+        "6.14: an expired Checkout drops its pending order; a paid one is never dropped"
+      ]
+    },
+    "Stripe (6.14): a delayed method's paid event credits": {
+      "file": "premium/server.js",
+      "live": "['checkout.session.completed', 'checkout.session.async_payment_succeeded']",
+      "dead": "['checkout.session.completed']",
+      "expect": [
+        "6.14: a delayed payment method (async_payment_succeeded) credits as a card does"
       ]
     }
   }

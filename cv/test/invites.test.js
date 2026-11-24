@@ -105,3 +105,23 @@ test('invites.json is 0600 even over a stale world-readable temporary file', { s
   createInvite(out, 'Alten');
   assert.equal(statSync(join(out, 'invites.json')).mode & 0o777, 0o600);
 });
+
+test('§9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over', async () => {
+  const out = fresh();
+  const { spawn } = await import('node:child_process');
+  const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
+  await Promise.all(labels.map((label) => new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [CLI, 'invite', label, '--out', out, '--public-host', 'cv.example.org']);
+    child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`invite ${label}: ${code}`))));
+  })));
+  assert.deepEqual(Object.values(loadInvites(out)).map((invite) => invite.label).sort(), labels);
+  const lock = join(out, 'invites.json.lock');
+  writeFileSync(lock, 'held');
+  assert.throws(() => createInvite(out, 'G', { waitMs: 50 }), /busy/);
+  const { utimesSync } = await import('node:fs');
+  const old = new Date(Date.now() - 120_000);
+  utimesSync(lock, old, old);
+  assert.match(createInvite(out, 'G', { waitMs: 50 }), /^[0-9a-f]{24}$/, 'a lock left by a crashed run is taken over');
+  assert.equal(revokeInvite(out, 'G'), 1);
+  assert.throws(() => readFileSync(lock), /ENOENT/, 'the lock is released');
+});

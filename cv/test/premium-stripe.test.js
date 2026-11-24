@@ -145,3 +145,58 @@ test('without Stripe the demo is unchanged: credits at once, simulated; no webho
     server.close();
   }
 });
+
+const signed = (event) => ({ raw: event, headers: { 'stripe-signature': sign(event, Math.floor(Date.now() / 1000)) } });
+
+test('6.14: a refund made at Stripe takes back the credits left, once; an unknown or partial refund changes nothing', async () => {
+  const { server, call, token } = await serve(fakePayments());
+  try {
+    const { json: { order: { id } } } = await call('/api/checkout', { token, body: { pack: 'pack5', currency: 'EUR' } });
+    const paid = JSON.stringify({ id: 'evt_p', type: 'checkout.session.completed', data: { object: { id: 'cs_1', client_reference_id: id, payment_status: 'paid', amount_total: 499, currency: 'eur', payment_intent: 'pi_1' } } });
+    await call('/api/stripe/webhook', signed(paid));
+    assert.equal((await call('/api/me', { token })).json.credits, 5);
+    const refund = (intent, refunded = true, evt = 'evt_r') => JSON.stringify({ id: evt, type: 'charge.refunded', data: { object: { id: 'ch_1', payment_intent: intent, refunded, amount_refunded: refunded ? 499 : 100 } } });
+    assert.equal((await call('/api/stripe/webhook', signed(refund('pi_1', false, 'evt_partial')))).status, 200);
+    assert.equal((await call('/api/me', { token })).json.credits, 5, 'a partial refund is the owner\'s call, not automatic');
+    assert.equal((await call('/api/stripe/webhook', signed(refund('pi_other')))).status, 200, 'not ours: answered, ignored');
+    assert.equal((await call('/api/stripe/webhook', signed(refund('pi_1')))).json.order, 'refunded');
+    assert.equal((await call('/api/stripe/webhook', signed(refund('pi_1')))).json.order, 'already', 'Stripe retries: once');
+    assert.equal((await call('/api/me', { token })).json.credits, 0);
+    const me = (await call('/api/me', { token })).json;
+    assert.ok(me.orders[0].refunded_at, 'the customer sees it refunded');
+  } finally {
+    server.close();
+  }
+});
+
+test('6.14: an expired Checkout drops its pending order; a paid one is never dropped', async () => {
+  const { server, call, token } = await serve(fakePayments());
+  try {
+    const { json: { order: { id } } } = await call('/api/checkout', { token, body: { pack: 'pack5', currency: 'EUR' } });
+    const expired = JSON.stringify({ id: 'evt_e', type: 'checkout.session.expired', data: { object: { id: 'cs_1', client_reference_id: id, payment_status: 'unpaid' } } });
+    assert.equal((await call('/api/stripe/webhook', signed(expired))).json.order, 'dropped');
+    assert.equal((await call(`/api/orders/${id}`, { token })).status, 404);
+    const late = paidEvent(id, { id: 'evt_late' });
+    assert.equal((await call('/api/stripe/webhook', signed(late))).status, 400, 'paid after expiry: no order to credit, Stripe shows the failure');
+
+    const { json: { order: { id: kept } } } = await call('/api/checkout', { token, body: { pack: 'pack5', currency: 'EUR' } });
+    await call('/api/stripe/webhook', signed(paidEvent(kept, { id: 'evt_k' })));
+    const again = JSON.stringify({ id: 'evt_e2', type: 'checkout.session.expired', data: { object: { id: 'cs_2', client_reference_id: kept } } });
+    assert.equal((await call('/api/stripe/webhook', signed(again))).json.order, 'none');
+    assert.equal((await call('/api/me', { token })).json.credits, 5);
+  } finally {
+    server.close();
+  }
+});
+
+test('6.14: a delayed payment method (async_payment_succeeded) credits as a card does', async () => {
+  const { server, call, token } = await serve(fakePayments());
+  try {
+    const { json: { order: { id } } } = await call('/api/checkout', { token, body: { pack: 'pack5', currency: 'EUR' } });
+    const event = JSON.stringify({ id: 'evt_a', type: 'checkout.session.async_payment_succeeded', data: { object: { id: 'cs_1', client_reference_id: id, payment_status: 'paid', amount_total: 499, currency: 'eur' } } });
+    assert.equal((await call('/api/stripe/webhook', signed(event))).json.order, 'credited');
+    assert.equal((await call('/api/me', { token })).json.credits, 5);
+  } finally {
+    server.close();
+  }
+});

@@ -13,6 +13,10 @@ the decisions waiting for him, how to reach his machines — are in
 
 ## 0. Where things stand (2026-11-23)
 
+- **2026-11-23, 6.13 and 6.14**: each premium account lists its orders
+  with a receipt; Stripe's refunds, expired Checkouts and delayed methods
+  are handled from their signed events; the invitations file has a lock.
+
 - **2026-11-23, 2.62 a linear docx template** (`templates/linear.docx`,
   built by `tools/linear-template.mjs`): one column like the owner's own
   CV, chosen with `--template linear` or the page's "Présentation"
@@ -1842,6 +1846,21 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   receipt and waits for the credits. Tests `test/premium-stripe.test.js`,
   8 defences. Left to the owner: his Stripe account, the webhook endpoint,
   invoices, VAT, terms of sale (`premium/README.md`).
+- [x] **6.13** (2026-11-23) The customer's orders: `/api/me` lists the
+  account's own (newest first, no address, no payment reference), the page
+  shows "Mes commandes", each with a receipt (`GET
+  /api/orders/:id/receipt[?lang=en]`, plain text, `premium/receipt.js`:
+  order, date, pack, amount, "demo payment" or "refunded on" when so, "not
+  an invoice"); none for a pending order or another account's.
+  `test/premium-orders.test.js`, 4 defences.
+- [x] **6.14** (2026-11-23) Stripe's other events, signed as 6.12: a full
+  refund made in Stripe's dashboard (`charge.refunded`, `refunded: true`)
+  takes back the credits left, once, logged as by `stripe` (the payment
+  reference is kept on the order for that); a partial refund changes
+  nothing (the owner's call, then the admin page); an expired Checkout
+  (`checkout.session.expired`) drops its pending order; a delayed method
+  (`checkout.session.async_payment_succeeded`) credits as a card. The
+  owner subscribes the endpoint to those four events. 3 tests, 5 defences.
 - [ ] **6.6** (2026-11-19, the owner) Paid CV coaching: a separate product,
   paid apart (not credits), on a stronger model (Sonnet or Opus 5.5): a guided
   session on the profile and a target offer, with a written plan. Price it
@@ -1959,10 +1978,11 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   unreadable `invites.json` was a 500 (fails closed now); two live
   invitations could share a label; a backend named `constructor` reached
   a prototype in the token sums. **Left open:** (the backoff, the prune
-  and the caps, bans and visitors across a deploy: fixed by 2.44) the
-  visitors' job lists still die with a restart; `createInvite`/`revokeInvite` run
-  at the same time can lose one update (no lock: the owner runs one at a
-  time); calls that fail before an answer count no tokens.
+  and the caps, bans, visitors and their finished jobs across a deploy:
+  fixed by 2.44; `createInvite`/`revokeInvite` at the same time: a lock
+  file since 2026-11-23, a stale one taken over after a minute, test and 3
+  defences in `public.json`) calls that fail before an answer count no
+  tokens.
   Fixed 2026-10-31: finished jobs were never dropped from memory (`jobs`
   grew with reused offers); past `MAX_JOBS` (1000, `publicMode.maxJobs`)
   the oldest finished job goes, from `jobs` and its visitor's list.

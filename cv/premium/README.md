@@ -167,13 +167,20 @@ STRIPE_WEBHOOK_SECRET=whsec_...      # the endpoint's signing secret
 ```
 
 In Stripe's dashboard, one webhook endpoint `https://<host>/<prefix>/api/stripe/webhook`
-for `checkout.session.completed`. "Payer par carte" opens Stripe Checkout
+for `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+`checkout.session.expired` and `charge.refunded` (6.14). "Payer par carte" opens Stripe Checkout
 for the pack's price in the page's currency; the order waits
 (`pending_orders`, gone after a week unpaid) and is credited only by the
 signed event (5 minutes, HMAC-SHA256), when paid and for the order's own
 amount and currency, once (Stripe's retries change nothing). Back from
 Stripe, `checkout.html?order=…` shows the receipt and updates itself until
 the credits arrive. Without the keys: the simulated payment, unchanged.
+
+A full refund made in Stripe's dashboard takes back the credits left (once,
+in the admin log as `stripe`); a partial one changes nothing: record it
+from the admin page if credits must go. An expired Checkout drops its
+order. Each account sees its orders and downloads a receipt per paid one
+("Mes commandes", 6.13; a receipt is not an invoice).
 
 ## Languages (6.7)
 

@@ -73,6 +73,8 @@ export function createStore(file) {
   // 6.10: the address confirmed, on databases made before the column existed.
   if (!db.prepare('PRAGMA table_info(users)').all().some((column) => column.name === 'verified_at')) db.exec('ALTER TABLE users ADD COLUMN verified_at TEXT');
   if (!db.prepare('PRAGMA table_info(orders)').all().some((column) => column.name === 'refunded_at')) db.exec('ALTER TABLE orders ADD COLUMN refunded_at TEXT');
+  // 6.14: the provider's payment reference, so its refund finds the order.
+  if (!db.prepare('PRAGMA table_info(orders)').all().some((column) => column.name === 'payment_ref')) db.exec('ALTER TABLE orders ADD COLUMN payment_ref TEXT');
   const one = (sql, ...args) => db.prepare(sql).get(...args);
   const all = (sql, ...args) => db.prepare(sql).all(...args);
   const run = (sql, ...args) => db.prepare(sql).run(...args);
@@ -119,6 +121,18 @@ export function createStore(file) {
     for (const table of ['users', 'sessions', 'resets', 'verifications', 'jobs', 'chat', 'pending_orders']) run(`DELETE FROM ${table} WHERE email = ?`, email);
     // The orders stay for the accounts, pseudonymous.
     run('UPDATE orders SET email = NULL WHERE email = ?', email);
+  };
+  // 6.8b, 6.14: a refunded order: the credits it gave that are left go back, logged.
+  const takeBack = (order, admin, why, now) => {
+    let taken = 0;
+    if (order.email) {
+      const row = one('SELECT credits FROM users WHERE email = ?', order.email);
+      taken = row ? Math.min(row.credits, order.credits) : 0;
+      if (taken) run('UPDATE users SET credits = credits - ? WHERE email = ?', taken, order.email);
+    }
+    run('UPDATE orders SET refunded_at = ? WHERE id = ?', iso(now), order.id);
+    run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, order.email ?? '(erased)', `refund ${order.id}: ${why.slice(0, 200)} (credits -${taken})`);
+    return taken;
   };
   const credit = (user, delta) => {
     run('UPDATE users SET credits = credits + ? WHERE email = ?', delta, user.email);
@@ -170,7 +184,7 @@ export function createStore(file) {
       return order;
     },
     /** 6.12: the paid event: credits the order once, for its own amount and currency. */
-    confirmPaid(id, { amount, currency }) {
+    confirmPaid(id, { amount, currency, ref = null }) {
       return transaction(() => {
         const pending = one('SELECT * FROM pending_orders WHERE id = ?', String(id));
         if (!pending) {
@@ -182,16 +196,36 @@ export function createStore(file) {
         if (!user) throw new Error('no such account');
         credit(user, pending.credits);
         run('UPDATE users SET chat_left = COALESCE(chat_left, ?) WHERE email = ?', CHAT.free, pending.email);
-        run('INSERT INTO orders (id, email, pack, credits, currency, price, simulated, at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)', pending.id, pending.email, pending.pack, pending.credits, pending.currency, pending.price, new Date().toISOString());
+        run('INSERT INTO orders (id, email, pack, credits, currency, price, simulated, at, payment_ref) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)', pending.id, pending.email, pending.pack, pending.credits, pending.currency, pending.price, new Date().toISOString(), ref == null ? null : String(ref));
         run('DELETE FROM pending_orders WHERE id = ?', pending.id);
         return 'credited';
       });
+    },
+    /** 6.14: the provider's full refund of a payment: as refundOrder, by the provider's reference. */
+    refundPaid(ref, now = Date.now()) {
+      if (!ref) return 'unknown';
+      return transaction(() => {
+        const order = one('SELECT id, email, credits, refunded_at FROM orders WHERE payment_ref = ?', String(ref));
+        if (!order) return 'unknown';
+        if (order.refunded_at) return 'already';
+        takeBack(order, 'stripe', 'refunded at the payment provider', now);
+        return 'refunded';
+      });
+    },
+    /** 6.14: an expired Checkout: its order was never paid, it goes. */
+    dropPending(id) {
+      return run('DELETE FROM pending_orders WHERE id = ?', String(id ?? '')).changes ? 'dropped' : 'none';
+    },
+    /** 6.13: the account's own orders, newest first, what a receipt needs. */
+    ordersOf(user) {
+      return all('SELECT id, at, pack, credits, currency, price, simulated, refunded_at FROM orders WHERE email = ? ORDER BY at DESC', user.email)
+        .map((row) => ({ ...row, simulated: Boolean(row.simulated) }));
     },
     hasPaid(user) {
       return Boolean(one('SELECT 1 AS x FROM orders WHERE email = ? LIMIT 1', user.email));
     },
     order(user, id) {
-      const row = one('SELECT * FROM orders WHERE id = ? AND email = ?', id, user.email);
+      const row = one('SELECT id, email, pack, credits, currency, price, simulated, at, refunded_at FROM orders WHERE id = ? AND email = ?', id, user.email);
       if (row) return { ...row, simulated: Boolean(row.simulated), pending: false };
       const pending = one('SELECT * FROM pending_orders WHERE id = ? AND email = ?', id, user.email);
       return pending ? { ...pending, simulated: false, pending: true } : null;
@@ -374,15 +408,7 @@ export function createStore(file) {
         const order = one('SELECT id, email, credits, refunded_at FROM orders WHERE id = ?', String(id));
         if (!order) throw new Error('no such order');
         if (order.refunded_at) throw new Error('already refunded');
-        let taken = 0;
-        if (order.email) {
-          const row = one('SELECT credits FROM users WHERE email = ?', order.email);
-          taken = row ? Math.min(row.credits, order.credits) : 0;
-          if (taken) run('UPDATE users SET credits = credits - ? WHERE email = ?', taken, order.email);
-        }
-        run('UPDATE orders SET refunded_at = ? WHERE id = ?', iso(now), order.id);
-        run('INSERT INTO admin_log (at, admin, target, action) VALUES (?, ?, ?, ?)', iso(now), admin, order.email ?? '(erased)', `refund ${order.id}: ${why.slice(0, 200)} (credits -${taken})`);
-        return { id: order.id, credits_taken: taken };
+        return { id: order.id, credits_taken: takeBack(order, admin, why, now) };
       });
     },
     /** 6.8b: an account erased by an admin (a mailed request): as deleteAccount, logged. */

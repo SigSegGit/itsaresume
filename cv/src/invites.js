@@ -3,7 +3,7 @@
 // codes live in <out>/invites.json, readable by the owner alone; the server
 // reads the file at each use, so a revocation needs no restart.
 
-import { chmodSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { chmodSync, closeSync, existsSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 
@@ -28,36 +28,72 @@ function save(out, invites) {
   renameSync(temporary, file);
 }
 
+// §9: two owner commands at once (create, revoke) each read then write the
+// whole file: one would lose the other's change. A lock file, made with
+// O_EXCL, serialises them; one older than STALE_MS is a crashed run's.
+const STALE_MS = 60_000;
+
+function locked(out, work, waitMs = 5000) {
+  const lock = join(out, `${INVITES_FILE}.lock`);
+  const until = Date.now() + waitMs;
+  for (;;) {
+    try {
+      closeSync(openSync(lock, 'wx', 0o600));
+      break;
+    } catch (error) {
+      // Windows answers EPERM while the last holder's file is being deleted.
+      if (error.code !== 'EEXIST' && error.code !== 'EPERM') throw error;
+      let age = 0;
+      try { age = Date.now() - statSync(lock).mtimeMs; } catch { continue; }
+      if (age > STALE_MS) {
+        try { unlinkSync(lock); } catch { /* another run took it over first */ }
+        continue;
+      }
+      if (Date.now() > until) throw new Error(`invites.json is busy (${lock}): another itsacv invite is running`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
+    }
+  }
+  try {
+    return work();
+  } finally {
+    try { unlinkSync(lock); } catch { /* already gone */ }
+  }
+}
+
 /** A new invitation for `label`; returns its code. */
-export function createInvite(out, label) {
+export function createInvite(out, label, { waitMs } = {}) {
   const clean = String(label ?? '').trim();
   // eslint-disable-next-line no-control-regex
   if (!clean || clean.length > LABEL_MAX || /[\u0000-\u001f\u007f]/.test(clean)) {
     throw new Error(`an invitation label is 1 to ${LABEL_MAX} characters on one line`);
   }
-  const invites = loadInvites(out);
-  // One live invitation per label, so --usage and --revoke name one ESN.
-  if (Object.values(invites).some((invite) => invite.label === clean && !invite.revoked)) {
-    throw new Error(`an invitation "${clean}" is already live: revoke it first, or choose another label`);
-  }
-  const code = randomBytes(12).toString('hex');
-  invites[code] = { label: clean };
-  save(out, invites);
-  return code;
+  return locked(out, () => {
+    const invites = loadInvites(out);
+    // One live invitation per label, so --usage and --revoke name one ESN.
+    if (Object.values(invites).some((invite) => invite.label === clean && !invite.revoked)) {
+      throw new Error(`an invitation "${clean}" is already live: revoke it first, or choose another label`);
+    }
+    const code = randomBytes(12).toString('hex');
+    invites[code] = { label: clean };
+    save(out, invites);
+    return code;
+  }, waitMs);
 }
 
 /** Revokes every invitation whose code or label is `which`; returns how many. */
-export function revokeInvite(out, which) {
-  const invites = loadInvites(out);
-  let count = 0;
-  for (const [code, invite] of Object.entries(invites)) {
-    if ((code === which || invite.label === which) && !invite.revoked) {
-      invite.revoked = true;
-      count += 1;
+export function revokeInvite(out, which, { waitMs } = {}) {
+  return locked(out, () => {
+    const invites = loadInvites(out);
+    let count = 0;
+    for (const [code, invite] of Object.entries(invites)) {
+      if ((code === which || invite.label === which) && !invite.revoked) {
+        invite.revoked = true;
+        count += 1;
+      }
     }
-  }
-  if (count) save(out, invites);
-  return count;
+    if (count) save(out, invites);
+    return count;
+  }, waitMs);
 }
 
 /**
