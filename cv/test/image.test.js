@@ -184,3 +184,15 @@ test('the page takes an image offer from the file picker', () => {
   const app = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
   assert.match(app, /\\\.\(pdf\|docx\|png\|jpe\?g\|webp\)\$\/i\.test\(file\.name\)/);
 });
+
+// 2026-11-24, the owner's real screenshot: a LinkedIn-style offer names its
+// stack, place and day rate, not "mission", "profil" or "contrat".
+test('an offer in the LinkedIn style (stack, lieu, TJM) reads as an offer', async () => {
+  const linkedin = `Expert DevOps senior. Lyon. 600 € par jour.
+Un acteur fictif du secteur industriel renforce son équipe outillage et observabilité.
+Le travail : concevoir les tableaux de bord, automatiser le déploiement de la supervision, former les équipes.
+La stack : Grafana, Ansible, GitLab CI/CD, Kubernetes.
+Les conditions : expertise confirmée en supervision. Lieu : Lyon. TJM selon profil.`;
+  const { llm } = llmSaying(linkedin);
+  assert.equal(await offerFromImage({ name: 'o.png', buffer: PNG, llm }), linkedin);
+});
