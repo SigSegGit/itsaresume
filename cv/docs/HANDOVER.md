@@ -18,7 +18,8 @@ the decisions waiting for him, how to reach his machines — are in
   when he sells). What serves now is his outreach: a free CV for people met
   on LinkedIn through an invitation link, their opinion kept
   (`POST /api/jobs/:id/feedback`, `$OUT/feedback.jsonl`, "Votre avis sur ce
-  CV" on each finished card). The A4 page follows the palette (4.x); role
+  CV" on each finished card). `itsacv invite --feedback` reads them per
+  invitation. The A4 page follows the palette (4.x); role
   names are no longer asked (2.22). Every manual step is now a numbered
   sheet in `docs/RECETTE-MANUELLE.md` (add-on, Firefox print, Bionic
   variance, an invitation's whole journey, Stripe test mode, SMTP, 6.4g).

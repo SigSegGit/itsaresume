@@ -13,3 +13,34 @@ export function appendFeedback(out, entry) {
   appendFileSync(file, `${JSON.stringify(entry)}\n`, { mode: 0o600 });
   chmodSync(file, 0o600);
 }
+
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+const oneLine = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();
+
+/**
+ * `itsacv invite --feedback`: per invitation, the opinions' count and mean,
+ * then each one newest first (day, rating, run, comment on one line). No
+ * invitation comes last; a line that is not JSON is skipped.
+ */
+export function feedbackByInvite(text) {
+  const byInvite = new Map();
+  for (const line of String(text).split('\n')) {
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!entry || typeof entry !== 'object' || !Number.isInteger(entry.rating)) continue;
+    const label = typeof entry.invite === 'string' ? entry.invite : null;
+    byInvite.set(label, [...(byInvite.get(label) ?? []), entry]);
+  }
+  const labels = [...byInvite.keys()].filter((label) => label !== null).sort();
+  if (byInvite.has(null)) labels.push(null);
+  return labels.map((label) => {
+    const entries = byInvite.get(label).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const mean = entries.reduce((sum, entry) => sum + entry.rating, 0) / entries.length;
+    const head = `${label ?? '(no invitation)'}\t${plural(entries.length, 'opinion')}\tmean ${mean.toFixed(1)}/5\n`;
+    return head + entries.map((entry) => `  ${String(entry.at).slice(0, 10)}\t${entry.rating}/5\t${oneLine(entry.title)}\t${oneLine(entry.comment)}\n`).join('');
+  }).join('');
+}

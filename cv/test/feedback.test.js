@@ -89,3 +89,27 @@ test('4.x: the A4 page data carries the palette the run was made with', async (t
   const job = await oneJob(port, { palette: 'foret' });
   assert.equal(JSON.parse((await call(port, { path: `/api/jobs/${job.id}/page` })).text).palette, 'foret');
 });
+
+test('itsacv invite --feedback: the opinions per invitation, mean rating, newest comments first', async () => {
+  const { feedbackByInvite } = await import('../src/feedback.js');
+  const lines = [
+    { at: '2026-11-24T10:00:00Z', invite: 'Sam D.', title: 'SRE', rating: 4, comment: 'Clair.' },
+    { at: '2026-11-25T10:00:00Z', invite: 'Sam D.', title: 'DevOps', rating: 2, comment: 'Trop long.\nVraiment.' },
+    { at: '2026-11-25T11:00:00Z', invite: null, title: 'Cloud', rating: 5, comment: '' },
+  ].map((entry) => JSON.stringify(entry)).join('\n') + '\nnot json\n';
+  assert.equal(feedbackByInvite(lines), [
+    'Sam D.\t2 opinions\tmean 3.0/5',
+    '  2026-11-25\t2/5\tDevOps\tTrop long. Vraiment.',
+    '  2026-11-24\t4/5\tSRE\tClair.',
+    '(no invitation)\t1 opinion\tmean 5.0/5',
+    '  2026-11-25\t5/5\tCloud\t',
+    '',
+  ].join('\n'));
+  const out = mkdtempSync(join(tmpdir(), 'itsacv-feedback-cli-'));
+  appendFeedback(out, { at: '2026-11-24T10:00:00Z', invite: 'Ana', title: 'SRE', rating: 5, comment: 'Top' });
+  const cli = new URL('../bin/itsacv.js', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
+  const { spawnSync } = await import('node:child_process');
+  const run = spawnSync(process.execPath, [cli, 'invite', '--feedback', '--out', out], { encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /^Ana\t1 opinion\tmean 5\.0\/5\n {2}2026-11-24\t5\/5\tSRE\tTop\n$/);
+});
