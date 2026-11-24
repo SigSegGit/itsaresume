@@ -19,6 +19,10 @@ the decisions waiting for him, how to reach his machines — are in
   filter; sent per week over eight weeks; CSV export). Kept in the run
   folder (`application.json`, the day first sent stays), so a restart
   loses nothing; never in public. 8 tests, 7 defences (content.json).
+  Then: "À relancer" on what was sent over 7 days ago with no news, the
+  card's counts (sent, interviews and their rate, follow-ups), each
+  row's CV (PDF, Word; never another file of the run), and
+  `itsacv applications [--csv]` in the terminal. 4 tests, 4 defences.
 
 - **2026-11-24, after a Rodin review**: the premium gets no new feature
   until the owner's decisions (sales status, VAT, terms of sale; the API

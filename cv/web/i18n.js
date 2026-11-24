@@ -95,6 +95,8 @@
     "Aucun moyen de paiement n'est conservé ici. Détails :": "No means of payment is kept here. Details:",
     "Télécharger mes données": "Download my data",
     "Mes candidatures": "My applications",
+    "{v0} candidatures · {v1} envoyées · {v2} entretiens ({v3}) · {v4} à relancer": "{v0} applications · {v1} sent · {v2} interviews ({v3}) · {v4} to follow up",
+    "À relancer": "Follow up",
     "Afficher": "Show",
     "Exporter en CSV": "Export as CSV",
     "Toutes": "All",

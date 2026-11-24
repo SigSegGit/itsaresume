@@ -126,6 +126,7 @@ itsacv invite "Alten" --out <out> --public-host cv.example.org   # prints https:
 itsacv invite --list --out <out>
 itsacv invite --usage --out <out>                                  # per ESN: jobs, tokens per backend
 itsacv invite --feedback --out <out>                               # per invitation: the opinions given on the CVs
+itsacv applications --out <out> [--csv]                            # the applications tracked on the page, follow-ups marked
 itsacv invite --many people.txt --out <out> --public-host cv.example.org  # one link per line: "label<TAB>link"
 itsacv invite --revoke "Alten" --out <out>                         # at once, no restart
 ```

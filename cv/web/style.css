@@ -359,3 +359,4 @@ table.applications td { padding: 4px 6px; border-top: 1px solid var(--line, #ddd
 table.applications td:nth-child(2) { width: 45%; }
 table.applications input { width: 100%; box-sizing: border-box; }
 table.applications tr[hidden] { display: none; }
+table.applications a.cv-file { margin-left: 6px; font-size: 12px; }

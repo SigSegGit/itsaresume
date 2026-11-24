@@ -20,7 +20,7 @@ import { LINKEDIN_FILES } from './import.js';
 import { ID } from './profiles.js';
 import { resolveStyle } from './style.js';
 import { COMMENT_MAX } from './feedback.js';
-import { applicationsCsv, STATUSES, weekly } from './applications.js';
+import { applicationsCsv, followUp, STATUSES, summary, weekly } from './applications.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { OFFER_FILES } from './sources.js';
 import { MODELS } from './qa.js';
@@ -518,11 +518,18 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           return send(response, 200, html, 'text/html; charset=utf-8', issued.cookie ? { 'Set-Cookie': issued.cookie } : {});
         }
         if (STATIC[path]) return send(response, 200, readFileSync(join(WEB, STATIC[path][0])), STATIC[path][1]);
+        // 2026-11-24: an application's CV (cv.pdf, cv.docx), the owner's page only.
+        const cvOf = path.match(/^\/api\/applications\/([^/]+)\/(cv\.(?:pdf|docx))$/);
+        if (cvOf) {
+          const file = !publicMode && deps.applications?.file?.(decodeURIComponent(cvOf[1]), cvOf[2]);
+          if (!file) throw new HttpError(404, 'not found');
+          return send(response, 200, readFileSync(file), DOWNLOADS[cvOf[2]], { 'Content-Disposition': 'attachment; filename="' + cvOf[2] + '"' });
+        }
         // 2026-11-24: the owner's applications (src/applications.js), never in public.
         if (path === '/api/applications' || path === '/api/applications.csv') {
           if (publicMode || !deps.applications) throw new HttpError(404, 'not found');
           const rows = deps.applications.list();
-          if (path === '/api/applications') return send(response, 200, { rows, weekly: weekly(rows), statuses: STATUSES });
+          if (path === '/api/applications') return send(response, 200, { rows: rows.map((row) => ({ ...row, follow_up: followUp(row) })), weekly: weekly(rows), summary: summary(rows), statuses: STATUSES });
           return send(response, 200, applicationsCsv(rows), 'text/csv; charset=utf-8', { 'Content-Disposition': 'attachment; filename="candidatures.csv"' });
         }
         // 2026-11-24: the opinions received, the owner's page only.

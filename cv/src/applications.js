@@ -52,6 +52,7 @@ export function listApplications(out) {
         at: saved.at ?? null,
         sent: saved.sent ?? null,
         note: typeof saved.note === 'string' ? saved.note : '',
+        files: CV_FILES.filter((name) => existsSync(join(dir, name))),
       };
     })
     .sort((a, b) => b.run.localeCompare(a.run));
@@ -95,4 +96,41 @@ export function applicationsCsv(rows) {
   };
   const columns = [['run', 'run'], ['date', 'date'], ['title', 'title'], ['score', 'score'], ['status', 'status'], ['since', 'at'], ['sent', 'sent'], ['note', 'note']];
   return `${columns.map(([name]) => name).join(',')}\n${rows.map((row) => columns.map(([, key]) => cell(row[key])).join(',')).join('\n')}${rows.length ? '\n' : ''}`;
+}
+
+export const FOLLOW_UP_DAYS = 7;
+/** The files of a run the owner may open from his page: the CV only. */
+export const CV_FILES = ['cv.pdf', 'cv.docx'];
+
+/** Sent over FOLLOW_UP_DAYS ago with no news since: time to follow it up. */
+export function followUp(row, now = Date.now()) {
+  return row.status === 'sent' && Boolean(row.at) && now - Date.parse(row.at) > FOLLOW_UP_DAYS * DAY;
+}
+
+/** Counts for the card's line: sent, interviews (an offer counts), their rate, follow-ups. */
+export function summary(rows, now = Date.now()) {
+  const sent = rows.filter((row) => row.status !== 'todo').length;
+  const interviews = rows.filter((row) => row.status === 'interview' || row.status === 'offer').length;
+  return {
+    total: rows.length,
+    sent,
+    interviews,
+    rate: sent ? Math.round((interviews / sent) * 100) : null,
+    followUps: rows.filter((row) => followUp(row, now)).length,
+  };
+}
+
+/** The CV file `name` of `run`, as a path, or null: never another file, never outside <out>. */
+export function cvFile(out, run, name) {
+  if (!isRun(out, run) || !CV_FILES.includes(name)) return null;
+  const file = join(out, run, name);
+  return existsSync(file) ? file : null;
+}
+
+/** `itsacv applications`: one line each, then the counts. */
+export function applicationsText(rows, now = Date.now()) {
+  const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+  const lines = rows.map((row) => [row.date, row.status, row.score ?? '', row.title, ...(followUp(row, now) ? ['follow up'] : [])].join('\t'));
+  const counts = summary(rows, now);
+  return `${lines.map((line) => `${line}\n`).join('')}${plural(counts.total, 'application')}, ${counts.sent} sent, ${plural(counts.interviews, 'interview')}, ${counts.followUps} to follow up\n`;
 }

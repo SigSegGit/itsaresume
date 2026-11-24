@@ -87,6 +87,10 @@ property it proves.
 | the owner's page reads and changes the applications; the CSV downloads | — |
 | the applications are never on the public page | Applications: never in public |
 | the owner's page has its applications card: filter, status, note, weekly line, CSV | — |
+| an application sent over a week ago with no news is to follow up; the summary counts it | Follow-ups: only a sent application; Follow-ups: after a week only; Follow-ups: an offer counts as an interview |
+| each application lists its CV files; the owner's page serves them, nothing else | CV files: never another file of the run |
+| itsacv applications: the list in the terminal, or as CSV | — |
+| the applications card shows the summary, the follow-ups and the CV links | — |
 
 ## `test/bionic-up.test.js`
 
@@ -1170,6 +1174,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**776 tests, 614 of them covered by at least one sabotage defence.**
+**780 tests, 616 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

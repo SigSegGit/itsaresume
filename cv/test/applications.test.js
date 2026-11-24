@@ -10,7 +10,7 @@ import { request } from 'node:http';
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { applicationsCsv, listApplications, setApplication, weekly, STATUSES } from '../src/applications.js';
+import { applicationsCsv, cvFile, listApplications, setApplication, weekly, STATUSES } from '../src/applications.js';
 import { createApp } from '../src/server.js';
 
 function outWithRuns() {
@@ -105,6 +105,7 @@ async function serve(t, out, publicMode) {
       applications: {
         list: () => listApplications(out),
         set: (run, change) => setApplication(out, run, change),
+        file: (run, name) => cvFile(out, run, name),
       },
     },
   });
@@ -170,6 +171,7 @@ test('each application lists its CV files; the owner\'s page serves them, nothin
   writeFileSync(join(out, '20261120-090000-ingenieur-sre', 'cv.pdf'), '%PDF-1.7 fake');
   const row = listApplications(out).find((entry) => entry.run === '20261120-090000-ingenieur-sre');
   assert.deepEqual(row.files, ['cv.pdf']);
+  assert.equal(cvFile(out, '20261120-090000-ingenieur-sre', 'analysis.json'), null, 'never another file of the run');
   const port = await serve(t, out);
   const pdf = await call(port, { path: '/api/applications/20261120-090000-ingenieur-sre/cv.pdf' });
   assert.equal(pdf.status, 200);
