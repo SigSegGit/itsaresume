@@ -67,7 +67,12 @@ function routerContract(url) {
 }
 
 /** The router's backends (GET /status, 8.43), or undefined: down, or older than the route. */
-function routerBackends(url) {
+async function routerBackends(url) {
+  return (await routerStatus(url))?.backends;
+}
+
+/** The router's whole /status, or undefined. */
+function routerStatus(url) {
   return new Promise((resolve) => {
     const call = request(new URL('/status', url), { method: 'GET', timeout: 5000 }, (response) => {
       let body = '';
@@ -76,7 +81,7 @@ function routerBackends(url) {
       response.on('end', () => {
         try {
           const parsed = JSON.parse(body);
-          resolve(response.statusCode === 200 && Array.isArray(parsed.backends) ? parsed.backends : undefined);
+          resolve(response.statusCode === 200 && Array.isArray(parsed.backends) ? parsed : undefined);
         } catch {
           resolve(undefined);
         }
@@ -111,8 +116,10 @@ async function status({ profilePath, url, useWord, out }) {
   const word = useWord && process.platform === 'win32';
   // ADR-11: on Linux, LibreOffice makes the PDF; $ITSACV_SOFFICE says it is there.
   const libre = useWord && !word && Boolean(process.env.ITSACV_SOFFICE);
-  const [up, backends] = await Promise.all([routerUp(url), routerBackends(url)]);
-  return { profile, router: { up }, models: modelMenu(up ? backends : null, undefined, { awake: laptopAwake(out) }), layout: { word, libre } };
+  const [up, routed] = await Promise.all([routerUp(url), routerStatus(url)]);
+  const backends = routed?.backends;
+  // 2026-11-24: customers' spend today (the owner's page only: never public).
+  return { profile, router: { up }, models: modelMenu(up ? backends : null, undefined, { awake: laptopAwake(out) }), layout: { word, libre }, customer_budget: routed?.customer_budget ?? null };
 }
 
 export async function serve({ profile: profilePath, profilesDir, out, url, port, useWord, llm, publicMode = null, addon = null }) {

@@ -192,8 +192,8 @@
     },
     "Profile: public status lists no profiles": {
       "file": "src/server.js",
-      "live": "const { profile = {}, profiles: _others, ...rest } = status;",
-      "dead": "const { profile = {}, ...rest } = status;",
+      "live": "const { profile = {}, profiles: _others, customer_budget: _spend, ...rest } = status;",
+      "dead": "const { profile = {}, customer_budget: _spend, ...rest } = status;",
       "expect": [
         "in public mode the profiles are neither listed nor chosen: another than the default is 400"
       ]

@@ -47,7 +47,8 @@
     "premium/web/checkout.js",
     "premium/receipt.js",
     "test/premium-orders.test.js",
-    "test/trials.test.js"
+    "test/trials.test.js",
+    "test/api-spend.test.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {
@@ -628,6 +629,22 @@
       "dead": "",
       "expect": [
         "red team: accounts from many addresses hit the site's daily preview ceiling"
+      ]
+    },
+    "API spend: admins only": {
+      "file": "premium/server.js",
+      "live": "    'GET /api/admin/api-spend': async (request) => {\n      admin(request);\n",
+      "dead": "    'GET /api/admin/api-spend': async (request) => {\n",
+      "expect": [
+        "the admin page: customers' spend against the ceilings, its cost, the day's real revenue; admins only"
+      ]
+    },
+    "API spend: a simulated order is no revenue": {
+      "file": "premium/server.js",
+      "live": "|| order.simulated || order.refunded_at) continue;",
+      "dead": "|| order.refunded_at) continue;",
+      "expect": [
+        "the admin page: customers' spend against the ceilings, its cost, the day's real revenue; admins only"
       ]
     }
   }
