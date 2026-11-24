@@ -91,8 +91,15 @@ génère son CV, elle donne son avis, tu le lis.
    ```
    La commande affiche `https://cv.<domaine>/?i=<code>` : c'est ce lien
    que tu envoies.
-2. Ouvrir toi-même le lien dans une fenêtre privée, coller une offre,
-   générer.
+2. Ouvrir toi-même le lien dans une fenêtre privée. Onglet « Mon propre
+   profil » : joindre un profil **de test** (export LinkedIn `.zip`, ancien
+   CV `.pdf`/`.docx`, ou JSON Resume), coller une offre, générer. (L'onglet
+   « CV de … » génère ton CV à toi, pour un recruteur.)
+
+   Pour la personne contactée : son export LinkedIn se demande dans
+   LinkedIn → Préférences → Confidentialité des données → « Obtenir une
+   copie de vos données » ; un ancien CV en PDF suffit aussi. Rien n'est
+   gardé : le CV est servi puis effacé au bout de 30 minutes.
 3. Sur la carte du CV terminé : « Votre avis sur ce CV » → une note, un
    commentaire → « Envoyer mon avis ».
 

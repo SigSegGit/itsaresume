@@ -1387,9 +1387,9 @@ test('the public status says whether a visitor may bring a profile (service mode
 
 test('the public page offers the own-profile tab in service mode, files only', () => {
   const app = readFileSync(new URL('../web/app.js', import.meta.url), 'utf8');
-  assert.match(app, /\$\('sources-card'\)\.hidden = !status\.service;/);
+  assert.match(app, /\$\('sources-card'\)\.hidden = !service;/);
   assert.match(app, /\$\('links-row'\)\.hidden = true;/);
-  assert.match(app, /return \{ sources: files, \.\.\.\(open \? \{\} : \{ links \}\), threshold/);
+  assert.match(app, /return \{ sources: files, \.\.\.\(local \? \{ links \} : \{\}\), threshold/);
   assert.match(readFileSync(new URL('../web/index.html', import.meta.url), 'utf8'), /id="links-row"/);
 });
 

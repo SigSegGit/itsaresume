@@ -109,7 +109,7 @@ function showPitch(profile) {
 
 async function refreshStatus() {
   try {
-    const { profile, profiles, router, models, layout, public: open, styles } = await api('/api/status');
+    const { profile, profiles, router, models, layout, public: open, styles, service } = await api('/api/status');
     // 4.12: the CV's template and palette, the default selected.
     if (styles) {
       const fill = (id, names, chosen) => $(id).replaceChildren(...names.map((name) => h('option', { value: name, text: STYLE_LABELS[name] ?? name, ...(name === chosen ? { selected: true } : {}) })));
@@ -140,7 +140,11 @@ async function refreshStatus() {
       $('foot-owner').textContent = t('Aucune candidature envoyée, rien de conservé hors du CV généré · l’offre est analysée par une IA sous contrôle du code · zéro facturation au token');
       rankAllowed = false;
       $('import-row').hidden = true;
-      $('sources-card').hidden = true;
+      // 2026-11-24: in service mode a visitor brings their own profile (files only).
+      $('sources-card').hidden = !service;
+      $('links-row').hidden = true;
+      $('tab-stored').textContent = t('CV de {v0}', { v0: profile.name ?? t('ce candidat') });
+      $('tab-sources').textContent = t('Mon propre profil');
       $('drop-help').textContent = t('Colle le texte d’une offre d’emploi : tu obtiens le CV de {v0} adapté à l’offre, et une évaluation honnête de l’adéquation. Une offre à la fois ; une offre déjà traitée est servie aussitôt.', { v0: profile.name ?? 'ce candidat' });
     }
     if (profile.error) setPill('status-profile', 'bad', t('Profil invalide'));
@@ -357,9 +361,10 @@ function setupOffers() {
       for (let at = 0; at < bytes.length; at += 0x8000) binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
       return { name: file.name, data: btoa(binary) };
     }));
-    const links = $('source-links').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-    if (!files.length && !links.length) throw new Error(t('ajoute au moins un fichier ou un lien du candidat'));
-    return { sources: files, links, threshold: Number($('threshold').value) };
+    const links = local ? $('source-links').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [];
+    if (!files.length && !links.length) throw new Error(local ? t('ajoute au moins un fichier ou un lien du candidat') : t('ajoute au moins un fichier de ton profil'));
+    // Public: no link is ever fetched for a visitor; files only.
+    return { sources: files, ...(local ? { links } : {}), threshold: Number($('threshold').value) };
   };
   $('generate').addEventListener('click', async () => {
     showError(null);

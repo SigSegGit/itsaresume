@@ -22,6 +22,9 @@ the decisions waiting for him, how to reach his machines — are in
   names are no longer asked (2.22). Every manual step is now a numbered
   sheet in `docs/RECETTE-MANUELLE.md` (add-on, Firefox print, Bionic
   variance, an invitation's whole journey, Stripe test mode, SMTP, 6.4g).
+  A visitor brings their own profile from the public page too (service
+  mode: the status says `service`, the page shows "Mon propre profil",
+  files only, never links), so a person met on LinkedIn needs no add-on.
   6.5(c) measured: a listing by code alone finds 92 % of the corpus labels
   but lists 849 names for 246 (3.5x noise, each a scored row): refused.
 

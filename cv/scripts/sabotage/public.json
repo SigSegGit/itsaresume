@@ -51,7 +51,9 @@
     "src/run.js",
     "src/sources.js",
     "src/word.js",
-    "src/feedback.js"
+    "src/feedback.js",
+    "web/app.js",
+    "web/index.html"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {
@@ -377,6 +379,30 @@
       "dead": "",
       "expect": [
         "§9: two owners writing invites.json at once lose nothing (a lock file), a stale lock is taken over"
+      ]
+    },
+    "Service tab: the public status says service mode": {
+      "file": "src/server.js",
+      "live": "public: true, service: Boolean(service) };",
+      "dead": "public: true, service: false };",
+      "expect": [
+        "the public status says whether a visitor may bring a profile (service mode)"
+      ]
+    },
+    "Service tab: shown only in service mode": {
+      "file": "web/app.js",
+      "live": "$('sources-card').hidden = !service;",
+      "dead": "$('sources-card').hidden = false;",
+      "expect": [
+        "the public page offers the own-profile tab in service mode, files only"
+      ]
+    },
+    "Service tab: a visitor sends no links": {
+      "file": "web/app.js",
+      "live": "...(local ? { links } : {}),",
+      "dead": "links,",
+      "expect": [
+        "the public page offers the own-profile tab in service mode, files only"
       ]
     }
   }
