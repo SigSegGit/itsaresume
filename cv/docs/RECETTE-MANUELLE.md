@@ -84,8 +84,16 @@ passage (ou la sortie complète du script).
 Le parcours de ta prospection : un lien d'invitation par personne, elle
 génère son CV, elle donne son avis, tu le lis.
 
-1. Créer le lien sur la VM (un libellé par personne, sans données
-   sensibles : un prénom et une initiale suffisent) :
+1. Créer le lien **depuis la page admin** (`https://cv.<domaine>/premium/admin.html`,
+   connecté avec ton adresse admin) : carte « Invitations », un libellé par
+   personne (un prénom et une initiale suffisent), « Créer le lien », puis
+   « Copier le lien ». La même carte montre, par personne : CV demandés,
+   faits, avis, note, dernière activité, et les commentaires reçus ;
+   « Révoquer » coupe un lien. **Attendu** : le lien commence par
+   `https://cv.<domaine>/?i=`, la ligne apparaît dans le tableau et dans le
+   journal des actions admin.
+
+   Ou, en ligne de commande sur la VM :
    ```bash
    cd ~/itsaresume/cv/deploy/vm-generator && docker compose exec generator node bin/itsacv.js invite "Prénom N." --out /data/out --public-host "$CV_HOST"
    ```

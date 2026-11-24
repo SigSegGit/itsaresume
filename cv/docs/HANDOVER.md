@@ -13,6 +13,14 @@ the decisions waiting for him, how to reach his machines — are in
 
 ## 0. Where things stand (2026-11-24)
 
+- **2026-11-24, the outreach from the admin page**: the premium admin
+  page's "Invitations" card makes a link per person, lists each one's
+  funnel (asked, made, opinions, mean, last activity) and its comments,
+  copies and revokes (by label only; each action in the admin log).
+  `funnelRows`/`outreachOf` (`src/invites.js`) feed it and the CLI's
+  `--funnel`; the premium container mounts the generator's `out` folder
+  (`--out /data/out --public-host`). 6 tests, 12 defences (premium.json).
+
 - **2026-11-24, what customers cost, where the owner looks**: the premium
   admin page's "Coût API du jour" (`GET /api/admin/api-spend`: the router's
   `customer_budget`, `estimateCost` at the paid model's prices, the day's
