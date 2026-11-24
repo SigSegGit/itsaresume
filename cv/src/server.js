@@ -130,13 +130,14 @@ const PUBLIC_FILES = new Set(['cv.pdf', 'cv.docx']);
  * owner's sources judge the profile (verdicts, the truth document), and no
  * raw error (a path, a router address).
  */
-function publicStatus(status) {
+function publicStatus(status, service = false) {
   // The other profiles' names (4.1) are people's: never listed publicly.
   const { profile = {}, profiles: _others, ...rest } = status;
   const shown = profile.error !== undefined
     ? { error: 'profil indisponible' }
     : { name: profile.name, title: profile.title, skills: profile.skills, lab: profile.lab, never: profile.never };
-  return { ...rest, profile: shown, public: true };
+  // 2026-11-24: whether a visitor may bring their own profile (service mode).
+  return { ...rest, profile: shown, public: true, service: Boolean(service) };
 }
 
 /** A job as the page sees it. */
@@ -520,7 +521,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
           const status = await deps.status();
           // busy: jobs running or queued, so the VM's auto-deploy waits for none.
           const busy = inFlight();
-          return send(response, 200, publicMode ? { ...publicStatus(status), busy } : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}), busy });
+          return send(response, 200, publicMode ? { ...publicStatus(status, publicMode.service), busy } : { ...status, ...(deps.profiles ? { profiles: deps.profiles() } : {}), busy });
         }
         if (path === '/api/jobs') {
           const mine = publicMode ? visitors.get(visitorOf(request)) ?? new Set() : null;
