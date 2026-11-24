@@ -107,6 +107,45 @@ function showPitch(profile) {
   });
 }
 
+/* 2026-11-24: the owner's applications, one per run folder (src/applications.js). */
+const statusLabel = (status) => ({ todo: t('À envoyer'), sent: t('Envoyée'), interview: t('Entretien'), offer: t('Offre reçue'), rejected: t('Refusée') })[status] ?? status;
+let applicationsShown = false;
+async function showApplications() {
+  if (applicationsShown) return;
+  let data;
+  try {
+    data = await api('/api/applications');
+  } catch {
+    return;
+  }
+  applicationsShown = true;
+  $('applications-card').hidden = data.rows.length === 0;
+  const filter = $('applications-filter');
+  filter.replaceChildren(h('option', { value: '', text: t('Toutes') }), ...data.statuses.map((status) => h('option', { value: status, text: statusLabel(status) })));
+  $('applications-weekly').textContent = t('Envoyées par semaine : {v0}', { v0: data.weekly.map((week) => `${week.week.slice(5)} ${week.sent}`).join(' · ') });
+  const rows = data.rows.map((row) => {
+    const select = h('select', { 'aria-label': t('Statut') }, data.statuses.map((status) => h('option', { value: status, text: statusLabel(status), ...(status === row.status ? { selected: true } : {}) })));
+    const note = h('input', { type: 'text', value: row.note, maxLength: 500, placeholder: t('Remarque'), 'aria-label': t('Remarque') });
+    const save = async () => {
+      try {
+        Object.assign(row, await api(`/api/applications/${encodeURIComponent(row.run)}`, { status: select.value, note: note.value }));
+        tr.dataset.status = row.status;
+      } catch (failure) {
+        showError(failure.message);
+      }
+    };
+    select.addEventListener('change', save);
+    note.addEventListener('change', save);
+    const tr = h('tr', { 'data-status': row.status },
+      h('td', { text: row.date }), h('td', { text: row.title }), h('td', { text: row.score == null ? '' : `${row.score}/100` }), h('td', {}, select), h('td', {}, note));
+    return tr;
+  });
+  $('applications-rows').replaceChildren(...rows);
+  filter.addEventListener('change', () => {
+    for (const tr of rows) tr.hidden = Boolean(filter.value) && tr.dataset.status !== filter.value;
+  });
+}
+
 /* 2026-11-24: the opinions people gave on their CVs, on the owner's page only. */
 async function showFeedback() {
   let entries = [];
@@ -134,6 +173,7 @@ async function refreshStatus() {
       $('style-row').hidden = false;
     }
     local = !open;
+    if (!open) showApplications();
     $('questions-link').hidden = Boolean(open);
     if (!open) showFeedback();
     applyModels(models);

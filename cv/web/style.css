@@ -352,3 +352,10 @@ td .chip { margin: 0 4px 2px 0; }
 .pitch-points li + li {
   margin-top: 0.4rem;
 }
+
+/* 2026-11-24: the owner's applications. */
+table.applications { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.applications td { padding: 4px 6px; border-top: 1px solid var(--line, #ddd); vertical-align: middle; }
+table.applications td:nth-child(2) { width: 45%; }
+table.applications input { width: 100%; box-sizing: border-box; }
+table.applications tr[hidden] { display: none; }

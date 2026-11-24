@@ -13,6 +13,13 @@ the decisions waiting for him, how to reach his machines — are in
 
 ## 0. Where things stand (2026-11-24)
 
+- **2026-11-24, applications tracked** (`src/applications.js`): every run
+  folder is an application; the owner's page shows "Mes candidatures"
+  (status: to send, sent, interview, offer received, rejected; a note; a
+  filter; sent per week over eight weeks; CSV export). Kept in the run
+  folder (`application.json`, the day first sent stays), so a restart
+  loses nothing; never in public. 8 tests, 7 defences (content.json).
+
 - **2026-11-24, after a Rodin review**: the premium gets no new feature
   until the owner's decisions (sales status, VAT, terms of sale; the API
   when he sells). What serves now is his outreach: a free CV for people met
