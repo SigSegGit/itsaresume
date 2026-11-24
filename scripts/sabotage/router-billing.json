@@ -32,7 +32,8 @@
     "crates/itsaresume-router/tests/system_file_collision.rs",
     "crates/itsaresume-router/tests/openai.rs",
     "crates/itsaresume-router/tests/audience.rs",
-    "crates/itsaresume-router/tests/budget.rs"
+    "crates/itsaresume-router/tests/budget.rs",
+    "crates/itsaresume-router/tests/image.rs"
   ],
   "defences": {
     "Groq (2.37): a rate limit is waited out, then asked again": {
@@ -1059,6 +1060,81 @@
       "dead": "&& entry[\"ts\"].as_str().is_some();",
       "expect": [
         "a_restart_reads_the_day_s_customer_spend_back_from_the_journal"
+      ]
+    },
+    "Image: only a backend that reads images gets one": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".filter(|backend| request.image.is_none() || backend.sees_images())",
+      "dead": ".filter(|_backend| true)",
+      "expect": [
+        "a_text_only_backend_never_gets_an_image",
+        "with_no_backend_that_reads_images_the_request_is_refused_unasked",
+        "the_http_api_says_when_no_backend_reads_images"
+      ]
+    },
+    "Image: a configured backend says whether it reads images": {
+      "file": "crates/itsaresume-router/src/config.rs",
+      "live": "        self.inner.sees_images()",
+      "dead": "        false",
+      "expect": [
+        "a_configured_claude_code_backend_still_reads_images"
+      ]
+    },
+    "Image: claude reads it, nothing else does": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "    /// The CLI reads an image in a stream-json message (2026-11-24).\n    fn sees_images(&self) -> bool {\n        true",
+      "dead": "    /// The CLI reads an image in a stream-json message (2026-11-24).\n    fn sees_images(&self) -> bool {\n        false",
+      "expect": [
+        "only_claude_code_says_it_reads_images"
+      ]
+    },
+    "Image: the CLI is asked for stream-json input": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "        if request.image.is_some() {\n            stream_json(&mut arguments);",
+      "dead": "        if request.image.is_none() {\n            stream_json(&mut arguments);",
+      "expect": [
+        "claude_gets_the_image_in_a_stream_json_message_with_tools_still_off",
+        "without_an_image_the_flags_and_stdin_are_unchanged"
+      ]
+    },
+    "Image: the image block reaches the CLI": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": "Some(image) => image_message(image, &prompt_for(request)),",
+      "dead": "Some(_) => prompt_for(request),",
+      "expect": [
+        "claude_gets_the_image_in_a_stream_json_message_with_tools_still_off"
+      ]
+    },
+    "Image: the stream's JSON lines are read": {
+      "file": "crates/itsaresume-router/src/claude_code.rs",
+      "live": ".or_else(|error| json_lines(stdout).ok_or(error))",
+      "dead": "",
+      "expect": [
+        "claude_gets_the_image_in_a_stream_json_message_with_tools_still_off"
+      ]
+    },
+    "Image: only raster types are accepted": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "if !crate::backend::IMAGE_TYPES.contains(&media_type) {",
+      "dead": "if media_type.is_empty() {",
+      "expect": [
+        "the_http_api_refuses_a_malformed_image_or_a_type_it_does_not_know"
+      ]
+    },
+    "Image: the base64 must be well formed": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "    if !well_formed {",
+      "dead": "    if well_formed && false {",
+      "expect": [
+        "the_http_api_refuses_a_malformed_image_or_a_type_it_does_not_know"
+      ]
+    },
+    "Image: a phone screenshot fits the body limit": {
+      "file": "crates/itsaresume-router/src/server.rs",
+      "live": "pub const MAX_BODY_BYTES: usize = 8 * 1024 * 1024;",
+      "dead": "pub const MAX_BODY_BYTES: usize = 1024 * 1024;",
+      "expect": [
+        "the_http_api_takes_an_image_and_a_phone_screenshot_fits"
       ]
     }
   }

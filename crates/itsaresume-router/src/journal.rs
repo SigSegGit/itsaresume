@@ -83,6 +83,7 @@ impl Journal {
             ),
             Err(RouteError::Stopped { backend, .. }) => ("stopped", Some(backend.as_str()), None),
             Err(RouteError::Unserved { .. }) => ("unserved", None, None),
+            Err(RouteError::NoVision) => ("no_vision", None, None),
             Err(RouteError::Exhausted) => ("exhausted", None, None),
             Err(RouteError::NotAllowed { .. }) => ("not_allowed", None, None),
             Err(RouteError::OverBudget { .. }) => ("over_budget", None, None),

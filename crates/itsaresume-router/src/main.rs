@@ -236,6 +236,7 @@ fn complete(
             system,
             schema,
             kind,
+            image: None,
         },
         only,
     ) {
@@ -274,6 +275,7 @@ fn complete(
         }
         Err(
             error @ (RouteError::Unserved { .. }
+            | RouteError::NoVision
             | RouteError::NotAllowed { .. }
             | RouteError::OverBudget { .. }),
         ) => {

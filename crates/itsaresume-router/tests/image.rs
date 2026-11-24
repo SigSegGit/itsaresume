@@ -4,7 +4,8 @@
 //! hands it to a text-only one, and says so when none reads images.
 
 use itsaresume_router::claude_code::ClaudeCodeBackend;
-use itsaresume_router::server::{MAX_BODY_BYTES, Server};
+use itsaresume_router::config::Config;
+use itsaresume_router::server::Server;
 use itsaresume_router::{
     Backend, BackendError, Completion, Image, Journal, Request, RouteError, Router,
 };
@@ -63,7 +64,10 @@ fn claude_gets_the_image_in_a_stream_json_message_with_tools_still_off() {
     let has_pair = |a: &str, b: &str| args.windows(2).any(|w| w[0] == a && w[1] == b);
     assert!(has_pair("--input-format", "stream-json"), "{args:?}");
     assert!(has_pair("--output-format", "stream-json"), "{args:?}");
-    assert!(has_pair("--tools", ""), "tools must stay disabled: {args:?}");
+    assert!(
+        has_pair("--tools", ""),
+        "tools must stay disabled: {args:?}"
+    );
     assert!(has_pair("--setting-sources", ""), "{args:?}");
 
     let lines: Vec<&str> = stdin.lines().filter(|l| !l.trim().is_empty()).collect();
@@ -79,7 +83,10 @@ fn claude_gets_the_image_in_a_stream_json_message_with_tools_still_off() {
     assert_eq!(content[1]["text"], "Transcribe the text of this image.");
 
     let completion = outcome.expect("the observed stream is understood");
-    assert_eq!(completion.text, "Offre : Ingenieur Test\n\nPython, Docker, Lyon");
+    assert_eq!(
+        completion.text,
+        "Offre : Ingenieur Test\n\nPython, Docker, Lyon"
+    );
     assert_eq!(completion.usage.expect("usage").output, 26);
 }
 
@@ -114,7 +121,10 @@ fn the_billing_tripwire_holds_on_the_stream() {
         std::fs::read_to_string(fixture("observed-image-stream.verbose.jsonl")).expect("fixture");
     std::fs::write(
         &metered,
-        observed.replace("\"apiKeySource\": \"none\"", "\"apiKeySource\": \"ANTHROPIC_API_KEY\""),
+        observed.replace(
+            "\"apiKeySource\": \"none\"",
+            "\"apiKeySource\": \"ANTHROPIC_API_KEY\"",
+        ),
     )
     .expect("write");
     let mut env: Vec<(OsString, OsString)> = std::env::vars_os().collect();
@@ -123,7 +133,9 @@ fn the_billing_tripwire_holds_on_the_stream() {
         .with_workdir(root.path().join("work"))
         .complete_with_env(&image_request(), env);
     match outcome {
-        Err(BackendError::Other(message)) => assert!(message.contains("billing tripwire"), "{message}"),
+        Err(BackendError::Other(message)) => {
+            assert!(message.contains("billing tripwire"), "{message}")
+        }
         other => panic!("expected the billing tripwire, got {other:?}"),
     }
 }
@@ -193,7 +205,11 @@ fn a_text_only_backend_never_gets_an_image() {
     );
     let outcome = router.complete(&image_request());
     assert_eq!(outcome.result.expect("served").text, "seen: true");
-    assert_eq!(calls.load(Ordering::SeqCst), 0, "the blind backend was asked");
+    assert_eq!(
+        calls.load(Ordering::SeqCst),
+        0,
+        "the blind backend was asked"
+    );
 }
 
 #[test]
@@ -249,7 +265,12 @@ fn the_http_api_takes_an_image_and_a_phone_screenshot_fits() {
     assert_eq!(status, 200, "{body}");
     assert_eq!(body["text"], "seen: true");
     // A 1080x2340 phone screenshot is ~0.6 MB of JPEG, a few MB of PNG.
-    assert!(MAX_BODY_BYTES >= 8 * 1024 * 1024, "{MAX_BODY_BYTES}");
+    let big = "A".repeat(4 * 1024 * 1024);
+    let (status, body) = post(
+        address,
+        &json!({"prompt": "Transcribe.", "image": {"media_type": "image/png", "base64": big}}),
+    );
+    assert_eq!(status, 200, "{body}");
 }
 
 #[test]
@@ -280,4 +301,50 @@ fn the_http_api_says_when_no_backend_reads_images() {
     assert_eq!(status, 400, "{body}");
     assert_eq!(body["error"]["kind"], "no_vision");
     assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+/// Every configured backend is wrapped (its name, kinds, billing): the
+/// wrapper must say what the CLI reads, or no image would ever be served.
+#[test]
+fn a_configured_claude_code_backend_still_reads_images() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let config = |backend: &str| {
+        format!(
+            "journal = {:?}
+[[backend]]
+{backend}
+",
+            dir.path().join("j.jsonl").to_string_lossy()
+        )
+    };
+    let claude = config(&format!(
+        "kind = \"claude-code\"
+program = {FAKE:?}
+timeout_secs = 20"
+    ));
+    let outcome = Config::parse(&claude)
+        .expect("valid")
+        .router()
+        .expect("a router")
+        .complete(&image_request());
+    assert!(
+        !matches!(outcome.result, Err(RouteError::NoVision)),
+        "claude-code was not tried: {:?}",
+        outcome.result
+    );
+    let lm = config(
+        "kind = \"lm-studio\"
+base_url = \"http://127.0.0.1:1/v1\"
+model = \"m\"",
+    );
+    let outcome = Config::parse(&lm)
+        .expect("valid")
+        .router()
+        .expect("a router")
+        .complete(&image_request());
+    assert!(
+        matches!(outcome.result, Err(RouteError::NoVision)),
+        "{:?}",
+        outcome.result
+    );
 }
