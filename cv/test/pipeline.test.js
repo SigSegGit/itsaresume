@@ -92,6 +92,23 @@ test('an answer that only needs safe repairs is accepted at once, the repairs re
   assert.match(report(analysis, profile(), { backend: 'fake', attempts, repairs }), /acme-pg is a bullet/);
 });
 
+// The same Haiku answers: "fit" never closed, so every later key sat inside
+// it and the root was left open. Closed, then the answer's own keys found
+// under "fit" go back to the top: accepted at once, the repair said.
+test('an answer whose keys sit inside an unclosed "fit" is put back in shape, the repair reported', async () => {
+  const { language, fit, ...rest } = valid();
+  const text = `{"language": ${JSON.stringify(language)}, "fit": ${JSON.stringify({ ...fit, ...rest })}`;
+  const llm = async ({ system }) => ({ text: system === LISTING_SYSTEM ? EMPTY_LISTING : text, backend: 'fake' });
+  const { analysis, attempts, repairs } = await analyse({ profile: profile(), offer: OFFER, llm });
+  assert.equal(attempts, 1);
+  assert.deepEqual(analysis, normalize(valid(), profile()).analysis);
+  assert.match(repairs.join('\n'), /moved out of "fit": requirements, headline, summary, experiences, skill_groups/);
+  // A key the answer has at the top is never overwritten from "fit".
+  const both = JSON.stringify({ ...valid(), fit: { ...fit, headline: 'Kafka lead' } });
+  const kept = await analyse({ profile: profile(), offer: OFFER, llm: async ({ system }) => ({ text: system === LISTING_SYSTEM ? EMPTY_LISTING : both, backend: 'fake' }) });
+  assert.equal(kept.analysis.headline, valid().headline);
+});
+
 test('an answer still invalid after the retry is refused, not rendered', async () => {
   const llm = async () => ({ text: JSON.stringify({ ...valid(), headline: 'Kafka lead' }), backend: 'fake' });
   await assert.rejects(analyse({ profile: profile(), offer: OFFER, llm }), /Kafka/);

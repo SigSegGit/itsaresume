@@ -19,6 +19,9 @@ const SHAPE = {
   skill_groups: [{ id: 'group-id', skills: ['skill-id'] }],
 };
 
+/** The analysis answer's top-level keys, in the order the prompt shows them. */
+export const ANSWER_KEYS = Object.keys(SHAPE);
+
 export const SYSTEM = `You assess how well a candidate fits a job offer and choose, from the candidate's catalogue, what a CV tailored to that offer should show.
 
 Answer with ONE JSON object and nothing else, of this shape:

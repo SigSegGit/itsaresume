@@ -7,7 +7,7 @@
 // The model gets one retry, told exactly what was wrong; an answer still
 // invalid after that is refused, never rendered, and kept for diagnosis.
 
-import { analysisSchema, buildPrompt, buildSplitPrompts, promptOptions, retryPrompt } from './prompt.js';
+import { ANSWER_KEYS, analysisSchema, buildPrompt, buildSplitPrompts, promptOptions, retryPrompt } from './prompt.js';
 import { extractJson } from './llm.js';
 import { validateAnalysis } from './analysis.js';
 import { normalize } from './normalize.js';
@@ -20,6 +20,24 @@ export const MAX_ATTEMPTS = 2;
  * `profile` is the one the CV may draw from (restricted by the evidence,
  * src/evidence.js); `assessment`, when given, is checked again on the answer.
  */
+/**
+ * 2026-11-24 (Haiku): an answer that never closed "fit" holds its later keys
+ * inside it. Those of the answer's own keys the top lacks go back there; a
+ * key the top has is never overwritten.
+ */
+export function liftFromFit(answer) {
+  const fit = answer?.fit;
+  if (!fit || typeof fit !== 'object' || Array.isArray(fit)) return { answer, repairs: [] };
+  const moved = ANSWER_KEYS.filter((key) => key !== 'fit' && Object.hasOwn(fit, key) && !Object.hasOwn(answer, key));
+  if (!moved.length) return { answer, repairs: [] };
+  const lifted = { ...answer, fit: { ...fit } };
+  for (const key of moved) {
+    lifted[key] = fit[key];
+    delete lifted.fit[key];
+  }
+  return { answer: lifted, repairs: [`the answer's keys were moved out of "fit": ${moved.join(', ')}`] };
+}
+
 export async function analyse({ profile, offer, llm: call, listingLlm = null, assessment, structured = false, listingCache = null, prompt: options = promptOptions(), split = false, onStep = () => {} }) {
   // Every raw answer, in call order (2.8): a replay re-normalizes the stored
   // analysis, so a rule acting on the model's own answer shows only here.
@@ -96,10 +114,11 @@ export async function analyse({ profile, offer, llm: call, listingLlm = null, as
     let analysis;
     let repairs = [];
     try {
-      const merged = mergeListed(extractJson(text), listed);
+      const lifted = liftFromFit(extractJson(text));
+      const merged = mergeListed(lifted.answer, listed);
       const normalised = normalize(merged.analysis, profile, { assessment, offer });
       analysis = normalised.analysis;
-      repairs = [...merged.repairs, ...normalised.repairs];
+      repairs = [...lifted.repairs, ...merged.repairs, ...normalised.repairs];
       errors = validateAnalysis(analysis, profile, { language, assessment, offer }).errors;
     } catch (error) {
       errors = [error.message];
