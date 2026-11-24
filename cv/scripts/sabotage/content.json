@@ -2262,8 +2262,8 @@
     },
     "Add-on (6.2): the profile is never synced": {
       "file": "addon/options.js",
-      "live": "    await chrome.storage.local.set({ profile, site: address });",
-      "dead": "    await chrome.storage.sync.set({ profile, site: address });",
+      "live": "    await chrome.storage.local.set({ profile, site: address, invite: code ?? '' });",
+      "dead": "    await chrome.storage.sync.set({ profile, site: address, invite: code ?? '' });",
       "expect": [
         "6.2: the profile is kept in chrome.storage.local only, never synced"
       ]

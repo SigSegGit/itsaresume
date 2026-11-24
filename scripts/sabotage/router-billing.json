@@ -31,7 +31,8 @@
     "crates/itsaresume-router/tests/server.rs",
     "crates/itsaresume-router/tests/system_file_collision.rs",
     "crates/itsaresume-router/tests/openai.rs",
-    "crates/itsaresume-router/tests/audience.rs"
+    "crates/itsaresume-router/tests/audience.rs",
+    "crates/itsaresume-router/tests/budget.rs"
   ],
   "defences": {
     "Groq (2.37): a rate limit is waited out, then asked again": {
@@ -1034,6 +1035,30 @@
       "dead": "    if key.is_some() {\n        let program",
       "expect": [
         "the_fake_key_runs_on_the_subscription_but_is_billed_as_the_api"
+      ]
+    },
+    "Budget: a customer past the day's tokens is refused": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": ".is_some_and(|limit| budget.tokens >= limit)\n        {\n            return Some(\"tokens\");",
+      "dead": ".is_some_and(|limit| budget.tokens > limit + limit)\n        {\n            return Some(\"tokens\");",
+      "expect": [
+        "past_the_day_s_tokens_a_customer_is_refused_before_any_backend_the_owner_is_not"
+      ]
+    },
+    "Budget: a place is reserved under the lock": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "        budget.requests += 1;\n        None",
+      "dead": "        None",
+      "expect": [
+        "customers_at_the_same_moment_never_pass_the_request_ceiling"
+      ]
+    },
+    "Budget: a restart reads the day back": {
+      "file": "crates/itsaresume-router/src/router.rs",
+      "live": "&& entry[\"ts\"].as_str().is_some_and(|ts| ts.starts_with(&day));",
+      "dead": "&& entry[\"ts\"].as_str().is_some();",
+      "expect": [
+        "a_restart_reads_the_day_s_customer_spend_back_from_the_journal"
       ]
     }
   }

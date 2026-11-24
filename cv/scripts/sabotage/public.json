@@ -445,6 +445,14 @@
       "expect": [
         "red team: with serviceInviteOnly, a stranger cannot bring a profile; an invited visitor can"
       ]
+    },
+    "Add-on invite: a code in the body names its invitation": {
+      "file": "src/server.js",
+      "live": "?? (typeof body?.invite === 'string' ? invitationOf(invites(), body.invite) : null)",
+      "dead": "?? (typeof body?.invite === 'string' ? body.invite : null)",
+      "expect": [
+        "red team: the add-on carries its invitation code; it counts on that invitation, a wrong one is nobody"
+      ]
     }
   }
 }

@@ -716,7 +716,8 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       }
       if (path === '/api/jobs') {
         if (publicMode) checkBan(request);
-        const invite = publicMode ? inviteOf(visitor) : null;
+        // 2026-11-24: the add-on (no cookie) brings its invitation's code in the body.
+        const invite = publicMode ? inviteOf(visitor) ?? (typeof body?.invite === 'string' ? invitationOf(invites(), body.invite) : null) : null;
         if (publicMode?.inviteOnly && !invite) {
           throw new HttpError(403, 'Accès sur invitation : ouvre le lien que tu as reçu, ou demande-en un.');
         }

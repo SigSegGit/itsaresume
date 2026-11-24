@@ -36,7 +36,7 @@ send.addEventListener('click', async () => {
 // a fresh visitor token from the public page, the job, its progress, the PDF.
 const service = document.getElementById('service');
 const pdf = document.getElementById('pdf');
-const { site = '', profile = [] } = await chrome.storage.local.get(['profile', 'site']);
+const { site = '', profile = [], invite = '' } = await chrome.storage.local.get(['profile', 'site', 'invite']);
 service.hidden = !(site && profile.length);
 service.disabled = !text;
 service.addEventListener('click', async () => {
@@ -45,7 +45,7 @@ service.addEventListener('click', async () => {
     status.textContent = 'Connexion au service…';
     const token = tokenFromPage(await (await fetch(new URL('/', site), { credentials: 'omit' })).text());
     if (!token) throw new Error('le site ne répond pas comme le service attendu');
-    const { url: post, init } = serviceJob({ site, token, title: tab.title, text, sources: profile });
+    const { url: post, init } = serviceJob({ site, token, title: tab.title, text, sources: profile, invite });
     const answer = await fetch(post, init);
     const body = await answer.json().catch(() => ({}));
     if (!answer.ok) throw new Error(`${answer.status} ${body.error ?? ''}`);

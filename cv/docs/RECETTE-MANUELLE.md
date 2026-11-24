@@ -277,6 +277,22 @@ requête répond 403 `not_allowed`. Quand tu vendras : une vraie clé dans
 
 ---
 
+## 11. Le plafond du jour des clients — [ ]
+
+1. Dans `config.local.toml` : `customer_daily_requests = 2`.
+2. Avec la fausse clé (fiche 9), trois requêtes `"audience":"customer"`.
+
+**Attendu** : les deux premières répondent, la troisième 429
+`over_budget` ; `GET http://127.0.0.1:8787/status` montre
+`customer_budget` (`requests: 2`, `requests_limit: 2`). Une requête sans
+`audience` (la tienne) passe toujours.
+
+**Sur l'add-on** (fiche 1) : coller le lien d'invitation dans ses options ;
+« Mon CV pour cette offre (service) » marche alors sur la VM (sur
+invitation), et compte sur le quota de ce lien.
+
+---
+
 ## Après la recette
 
 Me donner, pour chaque fiche : passée / ratée + ce qui a été noté. Une

@@ -26,6 +26,12 @@ journal = "itsaresume-journal.jsonl"
 # subscription is its holder's own use, so leave it out.
 customer_billing = ["api"]
 
+# A day's ceiling on customers' spend (UTC), whatever gets through: past it
+# a customer's request is refused (HTTP 429) before any backend is asked.
+# The owner's own requests never count. /status shows the day's spend.
+customer_daily_tokens = 2000000
+customer_daily_requests = 300
+
 # The API for customers. While ANTHROPIC_API_KEY=fake-key-uses-the-subscription
 # it runs on the subscription's `claude` (tests only, said at start); a real
 # key sends customers' requests to Anthropic's API, billed per token.

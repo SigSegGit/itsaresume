@@ -3,7 +3,7 @@
 // host is granted on save, by the user: nothing else is reachable.
 // 6.2: service mode, the candidate's own profile, kept in
 // chrome.storage.local only (never sync), sent only to the service site.
-import { packProfile } from './service.js';
+import { inviteCode, packProfile } from './service.js';
 
 const url = document.getElementById('url');
 const key = document.getElementById('key');
@@ -11,8 +11,10 @@ const saved = document.getElementById('saved');
 const site = document.getElementById('site');
 const kept = document.getElementById('kept');
 chrome.storage.sync.get(['url', 'key']).then((stored) => { url.value = stored.url ?? ''; key.value = stored.key ?? ''; });
-chrome.storage.local.get(['site', 'profile']).then((stored) => {
+const invite = document.getElementById('invite');
+chrome.storage.local.get(['site', 'profile', 'invite']).then((stored) => {
   site.value = stored.site ?? '';
+  invite.value = stored.invite ?? '';
   kept.textContent = stored.profile?.length ? `profil : ${stored.profile.map((file) => file.name).join(', ')}` : 'aucun profil';
 });
 document.getElementById('save').addEventListener('click', async () => {
@@ -29,7 +31,10 @@ document.getElementById('keep').addEventListener('click', async () => {
     const files = await Promise.all([...document.getElementById('files').files].map(async (file) => ({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) })));
     const profile = packProfile(files);
     if (!(await chrome.permissions.request({ origins: [`${new URL(address).origin}/*`] }))) throw new Error('accès au site refusé');
-    await chrome.storage.local.set({ profile, site: address });
+    // 2026-11-24: the invitation the owner sent; own-profile CVs may need one.
+    const code = invite.value.trim() ? inviteCode(invite.value) : null;
+    if (invite.value.trim() && !code) throw new Error('lien d\'invitation illisible');
+    await chrome.storage.local.set({ profile, site: address, invite: code ?? '' });
     kept.textContent = `profil : ${profile.map((file) => file.name).join(', ')}`;
   } catch (error) {
     kept.textContent = `refusé : ${error.message}`;

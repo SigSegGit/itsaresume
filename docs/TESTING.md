@@ -224,6 +224,12 @@ cannot be stated in one sentence does not belong here — or in the code.
 | `a_customer_request_with_no_allowed_backend_is_refused_and_nothing_is_called` | `tests/audience.rs` | No allowed billing: `NotAllowed`, nothing called, journal `not_allowed` and `audience` | Audience: customers get the API alone by default |
 | `each_kind_is_billed_its_way_and_customer_billing_parses` | `tests/audience.rs` | Each kind has its billing; `customer_billing` parses, defaults to the API alone, refuses an unknown billing | Audience: claude-code is the subscription; Audience: the configuration defaults to the API alone |
 | `the_fake_key_runs_on_the_subscription_but_is_billed_as_the_api` | `tests/audience.rs` | The fake key runs on the subscription; a real key on the API; no key, nothing sent | Audience: the fake key runs on the subscription, a real one on the API |
+| `past_the_day_s_tokens_a_customer_is_refused_before_any_backend_the_owner_is_not` | `tests/budget.rs` | Past `customer_daily_tokens` a customer's request is refused before any backend; the owner's never counts | Budget: a customer past the day's tokens is refused |
+| `customers_at_the_same_moment_never_pass_the_request_ceiling` | `tests/budget.rs` | Eight customers at once against a ceiling of three: three answered (a place is reserved under the lock) | Budget: a place is reserved under the lock |
+| `a_restart_reads_the_day_s_customer_spend_back_from_the_journal` | `tests/budget.rs` | A restart reads today's customer spend from the journal; the owner's lines and older days left out | Budget: a restart reads the day back |
+| `a_request_cap_holds_even_when_no_tokens_are_reported` | `tests/budget.rs` | `customer_daily_requests` holds when a backend reports no tokens | — |
+| `the_budget_is_configured_and_shown` | `tests/budget.rs` | The two ceilings parse and are kept | — |
+| `a_customer_over_the_day_s_ceiling_is_429_and_the_status_shows_the_spend` | `tests/server.rs` | HTTP: past the ceiling 429 `over_budget`; `/status` shows `customer_budget` | — |
 | `a_customer_request_with_no_allowed_backend_is_403_and_the_owner_is_served` | `tests/server.rs` | HTTP: `audience` read; a customer with no allowed backend is 403, the owner 200, a bad audience 400 | Audience: a customer request is read as one |
 | `the_billings_allowed_to_customers_are_configurable` | `tests/audience.rs` | `with_customer_billing` widens what a customer may reach | — |
 | `an_api_key_never_sits_in_the_configuration` | `tests/audience.rs` | An `api_key` field on `anthropic-api` is refused | — |

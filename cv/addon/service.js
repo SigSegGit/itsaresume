@@ -35,14 +35,21 @@ function siteOf(site) {
   return url;
 }
 
-export function serviceJob({ site, token, title, text, sources }) {
+/** 2026-11-24: the invitation code of a link (`…/?i=<code>`) or a bare code, else null. */
+export function inviteCode(given) {
+  const text = String(given ?? '').trim();
+  const code = /[?&]i=([0-9a-f]{24})(?:&|#|$)/.exec(text)?.[1] ?? (/^[0-9a-f]{24}$/.test(text) ? text : null);
+  return code;
+}
+
+export function serviceJob({ site, token, title, text, sources, invite }) {
   return {
     url: new URL('/api/jobs', siteOf(site)).href,
     init: {
       method: 'POST',
       credentials: 'omit',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': token },
-      body: JSON.stringify({ offers: [{ title: String(title ?? '').slice(0, 80), text }], sources }),
+      body: JSON.stringify({ offers: [{ title: String(title ?? '').slice(0, 80), text }], sources, ...(invite ? { invite } : {}) }),
     },
   };
 }

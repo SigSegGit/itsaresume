@@ -13,6 +13,13 @@ the decisions waiting for him, how to reach his machines — are in
 
 ## 0. Where things stand (2026-11-24)
 
+- **2026-11-24, the add-on carries its invitation** (0.3.1): its options
+  take the link the owner sent; the code goes with the job (`invite`),
+  names that invitation on the server (a revoked or wrong code is
+  nobody) and counts on its quota. With `--service-invite-only` the
+  add-on's own-profile CV works again for invited people. The router caps
+  customers' spend a day (router HANDOVER §0).
+
 - **2026-11-24, customers on the API, free trials red-teamed.** The router
   decides who may spend what (router HANDOVER decision 1): premium's calls
   and a visitor's own-profile runs are a customer's (`asCustomer` in
