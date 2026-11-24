@@ -990,7 +990,7 @@
     "Audience: a customer sees only the allowed billings": {
       "file": "crates/itsaresume-router/src/router.rs",
       "live": "audience == Audience::Owner || self.customer_billing.contains(&backend.billing())",
-      "dead": "true",
+      "dead": "!backend.name().is_empty()",
       "expect": [
         "a_customer_request_skips_the_subscription_the_owner_keeps_it",
         "naming_a_subscription_backend_does_not_get_a_customer_through"
