@@ -121,6 +121,8 @@
     "Prix dit": "Price said",
     "Journal chiffré : chaîne {chain}, {changes} fichier(s) de changements, dernier écrit {at}.": "Encrypted journal: chain {chain}, {changes} change file(s), last written {at}.",
     "Journal chiffré : désactivé (aucune clé age donnée).": "Encrypted journal: off (no age key given).",
+    "Copies ITSaNAS : {state}, {have} sur {want} machines, ligne écrite {at}.": "ITSaNAS copies: {state}, {have} of {want} machines, line written {at}.",
+    "Copies ITSaNAS : non surveillées (PREMIUM_ITSANAS_HOME absent).": "ITSaNAS copies: not watched (PREMIUM_ITSANAS_HOME unset).",
     "Contact": "Contact",
     "Canal": "Channel",
     "Brouillon de relance": "Follow-up draft",

@@ -1885,7 +1885,16 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   on the VM (latest snapshot against the live base): integrity ok, same
   counts. 2026-11-25: replaced by the encrypted journal (above). **Left**
   (recette §7): his age key on the VM, the script run again, the restore
-  on his PC; tick when it says ok.
+  on his PC; tick when it says ok. 2026-11-25, the alert:
+  `premium/backup-watch.js` reads the first line of the node's
+  `status.snapshot` (`copies HAVE of WANT`, `snapshot T`; format owned by
+  ITSaNAS `safety.rs`) every minute from its home mounted read-only at
+  `/data/itsanas` (`PREMIUM_ITSANAS_HOME`; compose `ITSANAS_HOME`, default
+  `~/itsanas-data/itsaresume/home`). States ok / short / behind (< 2 copies
+  for 10 min) / stale (line older than 5 min) / missing; the last three mail
+  `PREMIUM_ADMINS` once per incident and once at its end, and show on the
+  admin page. `readCopies` is the one parser: swap it for `itsanas copies
+  --newest` when ITSaNAS ships it.
 - [x] **6.7** (2026-11-20, the owner) Fewer markets, every page in their
   language. Four currencies (EUR, GBP, USD, CHF; `en-*` elsewhere → USD,
   the rest → EUR). `web/i18n.js` (one classic script, both servers, loaded
