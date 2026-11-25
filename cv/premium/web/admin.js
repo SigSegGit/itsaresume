@@ -98,10 +98,13 @@ async function showInvites() {
 }
 
 async function showSnapshots() {
-  const { snapshots, newest } = await api('api/admin/snapshots');
+  const { snapshots, newest, journal } = await api('api/admin/snapshots');
   $('newest').textContent = newest
     ? t('Dernière : {name}, intégrité {integrity}, {users} compte(s).', { name: newest.name, integrity: newest.integrity, users: newest.stats.users })
     : t('Aucune sauvegarde.');
+  $('journal').textContent = journal
+    ? t('Journal chiffré : chaîne {chain}, {changes} fichier(s) de changements, dernier écrit {at}.', { chain: journal.chain, changes: journal.changes, at: when(journal.last_at) })
+    : t('Journal chiffré : désactivé (aucune clé age donnée).');
   $('snapshots').replaceChildren(...snapshots.slice(0, 10).map((row) => el('li', `${row.name} — ${kb(row.bytes)}`)));
 }
 
