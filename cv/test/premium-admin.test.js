@@ -163,6 +163,20 @@ test('admin: the snapshots are listed with their size and the newest is verified
   }
 });
 
+test('admin: the ITSaNAS backup watch is read with the snapshots, null when there is none', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'premium-admin-'));
+  const watched = await serve({ snapshots: dir, backupWatch: { status: () => ({ state: 'behind', have: 1, want: 2 }) } });
+  const bare = await serve({ snapshots: dir });
+  try {
+    assert.deepEqual((await watched.call('/api/admin/snapshots', { token: watched.boss })).json.backup, { state: 'behind', have: 1, want: 2 });
+    assert.equal((await bare.call('/api/admin/snapshots', { token: bare.boss })).json.backup, null);
+  } finally {
+    watched.server.close();
+    bare.server.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('admin page: served, and its script only sets textContent', async () => {
   const { server, call } = await serve();
   try {

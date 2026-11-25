@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BEHIND_AFTER_MS, STALE_AFTER_MS, createBackupWatch, readCopies } from '../premium/backup-watch.js';
@@ -117,4 +117,17 @@ test('a failing mail does not stop the watch, and is tried again at the next che
   await watch.idle();
   assert.equal(tries, 2, 'sent once it went through');
   rmSync(home, { recursive: true });
+});
+
+test('wired: the service watches the node home it is given, mails the admins, the VM mounts that home read-only', () => {
+  const server = readFileSync(new URL('../premium/server.js', import.meta.url), 'utf8');
+  assert.match(server, /process\.env\.PREMIUM_ITSANAS_HOME/);
+  assert.match(server, /setInterval\(\(\) => backupWatch\.check\(\), WATCH_EVERY_MS\)/);
+  assert.match(server, /admins: \[\.\.\.adminSet\]|for \(const to of admins\)/);
+  assert.match(server, /backup: backupWatch\?\.status\(\) \?\? null/);
+  const compose = readFileSync(new URL('../deploy/vm-generator/compose.yaml', import.meta.url), 'utf8');
+  assert.match(compose, /itsanas-data\/itsaresume\/home:\/data\/itsanas:ro/, 'the node home, read-only');
+  assert.match(compose, /PREMIUM_ITSANAS_HOME: \/data\/itsanas/);
+  const page = readFileSync(new URL('../premium/web/admin.js', import.meta.url), 'utf8');
+  assert.match(page, /backup\.state/);
 });
