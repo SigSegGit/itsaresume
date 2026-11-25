@@ -126,7 +126,7 @@ test('wired: the service watches the node home it is given, mails the admins, th
   assert.match(server, /admins: \[\.\.\.adminSet\]|for \(const to of admins\)/);
   assert.match(server, /backup: backupWatch\?\.status\(\) \?\? null/);
   const compose = readFileSync(new URL('../deploy/vm-generator/compose.yaml', import.meta.url), 'utf8');
-  assert.match(compose, /itsanas-data\/itsaresume\/home:\/data\/itsanas:ro/, 'the node home, read-only');
+  assert.match(compose, /itsanas-data\/itsaresume\/home\}:\/data\/itsanas:ro/, 'the node home, read-only');
   assert.match(compose, /PREMIUM_ITSANAS_HOME: \/data\/itsanas/);
   const page = readFileSync(new URL('../premium/web/admin.js', import.meta.url), 'utf8');
   assert.match(page, /backup\.state/);

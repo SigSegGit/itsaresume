@@ -98,6 +98,12 @@ services:
       - ${DATA:-~/itsacv-data}/premium:/data/premium
       # 2026-11-24: the invitations, QA log and opinions, for the admin page.
       - ${DATA:-~/itsacv-data}/out:/data/out
+      # 2026-11-25: the ITSaNAS node that copies premium/backup away
+      # (itsanas-premium.sh), read-only: the watch reads its status.snapshot.
+      # A directory, not the file: the node replaces it by a rename.
+      - ${ITSANAS_HOME:-~/itsanas-data/itsaresume/home}:/data/itsanas:ro
+    environment:
+      PREMIUM_ITSANAS_HOME: /data/itsanas
     entrypoint: ["sh", "-c"]
     command: ["exec node premium/server.js --port 18791 --router \"$${ROUTER_URL:-http://127.0.0.1:8789}\" --data /data/premium --out /data/out --public-host \"$$CV_HOST\" --contact \"$${PREMIUM_CONTACT:-}\""]
     init: true
