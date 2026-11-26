@@ -55,7 +55,8 @@
     "web/app.js",
     "web/index.html",
     "src/applications.js",
-    "src/image.js"
+    "src/image.js",
+    "src/contract.js"
   ],
   "defences": {
     "Intake: an offer holds several offer words": {

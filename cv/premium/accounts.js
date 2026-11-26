@@ -13,6 +13,7 @@ import { mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { PACKS } from './pricing.js';
+import { createJournal } from './journal.js';
 
 export const MIN_PASSWORD = 8;
 export const PREVIEWS_PER_DAY = 3;
@@ -441,6 +442,10 @@ export function createStore(file) {
       const snapshots = readdirSync(dir).filter((name) => /^premium-\d{10}\.db$/.test(name)).sort();
       for (const old of snapshots.slice(0, -RETENTION.snapshots)) rmSync(join(dir, old), { force: true });
       return path;
+    },
+    /** 2026-11-25: the encrypted journal of this base (premium/journal.js). */
+    openJournal({ dir, recipients, now }) {
+      return createJournal({ db, dir, recipients, now });
     },
     close() {
       db.close();

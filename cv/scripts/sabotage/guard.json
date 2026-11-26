@@ -80,7 +80,8 @@
     "src/compare.js",
     "src/feedback.js",
     "src/applications.js",
-    "src/image.js"
+    "src/image.js",
+    "src/contract.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {

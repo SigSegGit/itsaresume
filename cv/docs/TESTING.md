@@ -179,6 +179,18 @@ property it proves.
 | compareRuns: rows line up by the listed requirements they cover, not by each model's names | Comparison (2.38): a row is keyed by the listed requirements it covers |
 | compareRuns: a listed word inside a longer name is not that requirement ("SQL" is not "SQL Server") | Comparison (2.38): a listed word inside a longer name is not that requirement |
 
+## `test/contract.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the contract is read from the offer: freelance, permanent, or either | Contract: an offer naming both kinds, or neither, is any |
+| the glance line follows the offer contract; an offer that says neither keeps both | Contract: the glance line follows the offer's kind |
+| the date of availability is shown until it has passed | Contract: a passed date of availability is not shown |
+| closing sentences join the profile section for the kinds they name; their link is kept | Contract: a closing sentence shows for its kind only |
+| a link of the profile section is clickable in the docx | Contract: a profile link is clickable |
+| the profile checks the new fields | Contract: a profile link must be https |
+| a run records the contract it read from the offer | Contract: a run reads the contract from the offer |
+
 ## `test/core.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -785,6 +797,7 @@ property it proves.
 | admin routes: 401 without a session, 403 for a customer, open to a listed admin | Admin: a customer is refused |
 | admin routes: no admin configured, nobody is one | Admin: no admin configured, nobody is one |
 | admin: the snapshots are listed with their size and the newest is verified | — |
+| admin: the ITSaNAS backup watch is read with the snapshots, null when there is none | Backup watch: shown to the admins |
 | admin page: served, and its script only sets textContent | — |
 | admin: a refund is recorded once, takes back the credits left, and leaves the revenue | Admin: an order is refunded once; Admin: a refunded order leaves the revenue |
 | admin: an erasure from the page needs a reason, keeps the orders without the address, and is logged | — |
@@ -792,12 +805,34 @@ property it proves.
 | admin: the failed jobs, newest first, with their error | — |
 | admin routes (6.8b): orders, CSV, refund, erase and failed jobs, admins only | Admin: an admin does not erase itself |
 
+## `test/premium-backup-watch.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the status line read: copies, the time it was written, and nothing invented | Backup watch: only the first line counts |
+| two copies or more: ok, and no mail | — |
+| fewer than 2 copies: quiet for 10 minutes, then one mail, then one when it is back | Backup watch: fewer than 2 copies is short; Backup watch: 10 minutes of grace, then behind; Backup watch: one mail per incident |
+| a line written long ago, or no line at all, is an alert at once: the node is not there | Backup watch: an old line is stale; Backup watch: a missing line alerts |
+| a failing mail does not stop the watch, and is tried again at the next check | Backup watch: a failed mail is tried again |
+| wired: the service watches the node home it is given, mails the admins, the VM mounts that home read-only | — |
+
 ## `test/premium-e2e.test.js`
 
 | Property (the test name) | Sabotage defences |
 |---|---|
 | e2e: preview, pay to save a profile, chat quota and refill, generate, export, reset, delete | Pay: saving a profile needs a purchase; Chat: the quota stops the chat; Recovery: a reset link is used once; Recovery: a reset closes the old sessions |
 | 6.4e: under a prefix (cv.<domain>/premium/): relative links, the reused A4 page reads this site | — |
+
+## `test/premium-journal.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| age: an identity and its recipient, in the age encodings; a wrong one refused | age: a bech32 checksum is checked |
+| age: what one encrypts only its identity decrypts, whatever the size; any change is refused | age: the header MAC is checked; age: no identity, no plaintext |
+| age: the official tool decrypts what this code encrypts, and the reverse | — |
+| the journal: a base, then a changeset per 5 minutes that saw writes; the restore is the live base | Journal: files are encrypted; Journal: a file appears only whole; Journal: nothing written when nothing changed; Journal: a missing changeset stops the restore |
+| the journal: a new base a day, the last 7 chains kept, a restore takes the newest whole chain | Journal: a new base a day; Journal: old chains go |
+| the journal is off without a key; a key that is not an age recipient stops the server at start | Journal: a key must be an age recipient |
 
 ## `test/premium-limits.test.js`
 
@@ -1237,6 +1272,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**823 tests, 648 of them covered by at least one sabotage defence.**
+**843 tests, 665 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

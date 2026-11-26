@@ -111,7 +111,9 @@
     "test/applications.test.js",
     "test/invites.test.js",
     "src/image.js",
-    "web/app.js"
+    "web/app.js",
+    "src/contract.js",
+    "test/contract.test.js"
   ],
   "defences": {
     "Groq (2.37): a split model's analysis is two calls": {
@@ -2619,6 +2621,62 @@
       "dead": "price: Number(price.value) });",
       "expect": [
         "an opinion may say what the CV would be worth: one of the offered amounts, or nothing"
+      ]
+    },
+    "Contract: an offer naming both kinds, or neither, is any": {
+      "file": "src/contract.js",
+      "live": "if (freelance === permanent) return 'any';",
+      "dead": "if (false) return 'any';",
+      "expect": [
+        "the contract is read from the offer: freelance, permanent, or either"
+      ]
+    },
+    "Contract: the glance line follows the offer's kind": {
+      "file": "src/tailor.js",
+      "live": "t(line[contract] ?? line)",
+      "dead": "t(line)",
+      "expect": [
+        "the glance line follows the offer contract; an offer that says neither keeps both"
+      ]
+    },
+    "Contract: a passed date of availability is not shown": {
+      "file": "src/contract.js",
+      "live": "  if (date < today) return null;\n",
+      "dead": "",
+      "expect": [
+        "the date of availability is shown until it has passed"
+      ]
+    },
+    "Contract: a closing sentence shows for its kind only": {
+      "file": "src/tailor.js",
+      "live": "!item.when || item.when === contract",
+      "dead": "true",
+      "expect": [
+        "closing sentences join the profile section for the kinds they name; their link is kept"
+      ]
+    },
+    "Contract: a run reads the contract from the offer": {
+      "file": "src/run.js",
+      "live": "  analysis.contract = offerContract(offer);\n",
+      "dead": "",
+      "expect": [
+        "a run records the contract it read from the offer"
+      ]
+    },
+    "Contract: a profile link is clickable": {
+      "file": "src/render.js",
+      "live": "for (const link of model.links ?? []) addLink(zip, link);",
+      "dead": "",
+      "expect": [
+        "a link of the profile section is clickable in the docx"
+      ]
+    },
+    "Contract: a profile link must be https": {
+      "file": "src/profile.js",
+      "live": "/^https:\\/\\/[^\\s\"<>]+$/.test(url)",
+      "dead": "true",
+      "expect": [
+        "the profile checks the new fields"
       ]
     }
   }

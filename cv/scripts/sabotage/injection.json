@@ -65,7 +65,8 @@
     "bin/itsacv.js",
     "test/server.test.js",
     "test/client.test.js",
-    "web/sample-offer.js"
+    "web/sample-offer.js",
+    "src/contract.js"
   ],
   "defences": {
     "Injection: the analysis prompt fences the offer": {

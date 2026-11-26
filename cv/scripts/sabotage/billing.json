@@ -56,7 +56,8 @@
     "src/compare.js",
     "src/feedback.js",
     "src/applications.js",
-    "src/image.js"
+    "src/image.js",
+    "src/contract.js"
   ],
   "defences": {
     "Models (2.35): a limit waits for the reset it gave": {
