@@ -1,7 +1,7 @@
 <!-- ITSACV-STATE
 NEXT: 6.4g
-TITLE: outreach from the admin page, price asked, Haiku's unclosed fit repaired, terms cuts refused (6.5); 6.4g waits for the restore on a second machine
-WRITTEN-AT: 2026-11-24
+TITLE: premium base journaled every 5 min, encrypted for the owner's age key (6.4g); waits for his key and the restore (recette 7)
+WRITTEN-AT: 2026-11-25
 -->
 
 # Handover — the CV generator (`cv/`)
@@ -11,7 +11,21 @@ Read §0 and §1 only, then act. The router is the repository root (its own
 the decisions waiting for him, how to reach his machines — are in
 `~/.itsaresume/HANDOVER-prive.md`, never in the repository.
 
-## 0. Where things stand (2026-11-24)
+## 0. Where things stand (2026-11-25)
+
+- **2026-11-25, the premium base journaled, encrypted for the owner**
+  (`premium/journal.js`, `premium/age.js`): with `PREMIUM_BACKUP_RECIPIENTS`
+  (his `age1…` key, in `$DATA/.env`), a base a day (VACUUM INTO) then a
+  SQLite changeset per 5 minutes that saw writes (`createSession`), each an
+  age v1 file (X25519, node:crypto only) written once under its final name
+  in `$DATA/premium/backup`, the last 7 chains kept; the folder ITSaNAS now
+  syncs (`itsanas-premium.sh`). Restore on his machine:
+  `node premium/journal-restore.js <folder> <identity> <out.db>`; the
+  official `age` opens every file (CI installs it and checks both ways).
+  The admin card says the journal's state. 6 tests, 10 defences
+  (premium.json). Plain hourly snapshots stay on the VM only. ITSaNAS's
+  answer on a "live" mode (2026-11-25, study only): already 10-60 s per
+  new file; the blocker is a second always-on holder for the account.
 
 - **2026-11-24, the outreach from the admin page**: the premium admin
   page's "Invitations" card makes a link per person, lists each one's
@@ -1869,8 +1883,18 @@ three full runs on 2026-09-30, none in six more: name it when it shows.
   pledges 2G (like every account of the fleet; the snapshots weigh a few
   MB) and registers again a node the coordinator lost; `restore-check.js`
   on the VM (latest snapshot against the live base): integrity ok, same
-  counts. **Left**: `restore-check.js` on a second machine of the account
-  (`itsanas login --username itsaresume`); tick when it says ok.
+  counts. 2026-11-25: replaced by the encrypted journal (above). **Left**
+  (recette §7): his age key on the VM, the script run again, the restore
+  on his PC; tick when it says ok. 2026-11-25, the alert:
+  `premium/backup-watch.js` reads the first line of the node's
+  `status.snapshot` (`copies HAVE of WANT`, `snapshot T`; format owned by
+  ITSaNAS `safety.rs`) every minute from its home mounted read-only at
+  `/data/itsanas` (`PREMIUM_ITSANAS_HOME`; compose `ITSANAS_HOME`, default
+  `~/itsanas-data/itsaresume/home`). States ok / short / behind (< 2 copies
+  for 10 min) / stale (line older than 5 min) / missing; the last three mail
+  `PREMIUM_ADMINS` once per incident and once at its end, and show on the
+  admin page. `readCopies` is the one parser: swap it for `itsanas copies
+  --newest` when ITSaNAS ships it.
 - [x] **6.7** (2026-11-20, the owner) Fewer markets, every page in their
   language. Four currencies (EUR, GBP, USD, CHF; `en-*` elsewhere → USD,
   the rest → EUR). `web/i18n.js` (one classic script, both servers, loaded

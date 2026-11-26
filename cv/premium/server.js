@@ -94,7 +94,7 @@ const sessionCookie = (token, age = 30 * 86400) => ({ 'set-cookie': `${COOKIE}=$
  * 'preview' or 'paid'; pageOf(profile, analysis) → the A4 page's data;
  * profileOf(resume) → a checked profile (throws what is wrong).
  */
-export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null, outreach = null }) {
+export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = null, mailer = { send: async (mail) => console.log(`[mail to ${mail.to}] ${mail.subject}\n${mail.text}`) }, contact = '', demoPaid = false, admins = [], snapshots = null, limits = {}, requireVerified = false, payments = null, routerStatus = null, outreach = null, journal = null, backupWatch = null }) {
   // 6.9: attempts limited (limits.js); a refusal says when to come back.
   const limiter = Object.fromEntries(Object.entries(DEFAULT_LIMITS).map(([name, rule]) => [name, createLimiter({ ...rule, ...(limits[name] ?? {}) })]));
   // 6.10: a link to this site as the visitor reached it (behind the proxy:
@@ -273,7 +273,7 @@ export function createPremiumApp({ store, analyse, pageOf, profileOf, chat = nul
           copy.close();
         }
       }
-      return { snapshots: list, newest };
+      return { snapshots: list, newest, journal: journal?.status() ?? null, backup: backupWatch?.status() ?? null };
     },
     'GET /api/packs': (request, url) => {
       const asked = url.searchParams.get('currency');
@@ -623,15 +623,65 @@ async function main(argv) {
   const accounts = createStore(join(data, 'premium.db'));
   accounts.purge();
   accounts.backup(join(data, 'snapshots'));
+  // 2026-11-25: the encrypted journal (a base a day, changes every 5 min), for
+  // the owner's age key only: the folder ITSaNAS syncs. No key, no journal.
+  const { backupRecipients, JOURNAL_EVERY_MS } = await import('./journal.js');
+  const recipients = backupRecipients(process.env);
+  const logged = (what, run) => {
+    try {
+      run();
+    } catch (error) {
+      console.error(`premium: the ${what} failed: ${error.message}`);
+    }
+  };
+  let journal = null;
+  if (recipients.length) {
+    journal = accounts.openJournal({ dir: join(data, 'backup'), recipients });
+    journal.start();
+    setInterval(() => logged('journal', () => journal.tick()), JOURNAL_EVERY_MS).unref();
+    for (const signal of ['SIGTERM', 'SIGINT']) {
+      process.once(signal, () => {
+        logged('last journal entry', () => journal.close());
+        process.exit(0);
+      });
+    }
+  } else {
+    console.warn('premium: PREMIUM_BACKUP_RECIPIENTS unset, no encrypted journal (only the plain hourly snapshots)');
+  }
   setInterval(() => accounts.backup(join(data, 'snapshots')), 3600000).unref();
+  // 6.11: SMTP when PREMIUM_SMTP_URL is set; else the demo mail, the console and the data folder's outbox.
+  const mailer = mailerFromEnv(process.env) ?? { send: async (mail) => {
+    appendFileSync(join(data, 'outbox.log'), `${new Date().toISOString()} to ${mail.to}: ${mail.subject}\n${mail.text}\n\n`);
+    console.log(`[mail to ${mail.to}] ${mail.text}`);
+  } };
+  // 6.8: comma-separated admin addresses, from $DATA/.env (never the repository).
+  const admins = option('admins', process.env.PREMIUM_ADMINS ?? '').split(',').map((email) => email.trim()).filter(Boolean);
+  // 2026-11-25: the ITSaNAS node's home (read-only), so the admins hear when
+  // the journal has fewer than 2 copies elsewhere, or the node went quiet.
+  let backupWatch = null;
+  const nodeHome = option('itsanas-home', process.env.PREMIUM_ITSANAS_HOME ?? '');
+  if (nodeHome) {
+    const { createBackupWatch, WATCH_EVERY_MS } = await import('./backup-watch.js');
+    backupWatch = createBackupWatch({
+      home: nodeHome,
+      alert: async (mail) => {
+        console.error(`premium: ${mail.subject}
+${mail.text}`);
+        for (const to of admins) await mailer.send({ to, ...mail });
+      },
+    });
+    backupWatch.check();
+    setInterval(() => backupWatch.check(), WATCH_EVERY_MS).unref();
+  }
   const routerStatus = async () => (await fetch(new URL('/status', router))).json();
   const app = createPremiumApp({
     routerStatus,
+    journal,
+    backupWatch,
     // The generator's folder (invites.json, QA log, opinions) and the public host.
     outreach: option('out', null) ? { out: option('out', null), host: option('public-host', process.env.CV_HOST ?? '') } : null,
     store: accounts,
-    // 6.8: comma-separated admin addresses, from $DATA/.env (never the repository).
-    admins: option('admins', process.env.PREMIUM_ADMINS ?? '').split(','),
+    admins,
     snapshots: join(data, 'snapshots'),
     // The demo has no API key: the paid mode goes to the router as well.
     analyse: async ({ profile, offer }) => (await analyse({ profile, offer, llm })).analysis,
@@ -646,13 +696,9 @@ async function main(argv) {
     // 6.10/6.11: on once a real mailer sends the links (the demo's only writes them to the outbox).
     requireVerified: verificationRequired(process.env),
     contact: option('contact', process.env.PREMIUM_CONTACT ?? ''),
-    // 6.11: SMTP when PREMIUM_SMTP_URL is set; else the demo mail, the console and the data folder's outbox.
-    // 6.12: Stripe when its two keys are set; else the simulated payment.
+    // 6.11: the mailer above. 6.12: Stripe when its two keys are set; else the simulated payment.
     payments: stripeFromEnv(process.env),
-    mailer: mailerFromEnv(process.env) ?? { send: async (mail) => {
-      appendFileSync(join(data, 'outbox.log'), `${new Date().toISOString()} to ${mail.to}: ${mail.subject}\n${mail.text}\n\n`);
-      console.log(`[mail to ${mail.to}] ${mail.text}`);
-    } },
+    mailer,
     // The profile chat: helps to say what the profile holds, never invents.
     chat: async ({ profile, history, message }) => (await llm({
       system: 'You help a person improve their own professional profile for CVs. Ask about facts they have not written down, suggest clearer wording of what they said, never invent an employer, a skill, a level, a number or a result. Answer in the language of the message, briefly.',

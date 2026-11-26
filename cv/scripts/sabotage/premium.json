@@ -55,6 +55,12 @@
     "test/outreach-admin.test.js",
     "deploy/vm-generator/compose.yaml",
     "premium/web/admin.html",
+    "premium/age.js",
+    "premium/journal.js",
+    "premium/journal-restore.js",
+    "test/premium-journal.test.js",
+    "premium/backup-watch.js",
+    "test/premium-backup-watch.test.js",
     "src/contract.js"
   ],
   "defences": {
@@ -757,6 +763,150 @@
       "dead": ".map((entry) => entry.price ?? 0);",
       "expect": [
         "funnelRows: per invitation, live code, asked, made, opinions, mean, last activity, comments"
+      ]
+    },
+    "age: the header MAC is checked": {
+      "file": "premium/age.js",
+      "live": "if (given.length !== mac.length || !timingSafeEqual(given, mac)) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "age: what one encrypts only its identity decrypts, whatever the size; any change is refused"
+      ]
+    },
+    "age: a bech32 checksum is checked": {
+      "file": "premium/age.js",
+      "live": "polymod([...expand(hrp), ...values]) !== 1)",
+      "dead": "false)",
+      "expect": [
+        "age: an identity and its recipient, in the age encodings; a wrong one refused"
+      ]
+    },
+    "age: no identity, no plaintext": {
+      "file": "premium/age.js",
+      "live": "if (!fileKey) throw new Error('age: no identity",
+      "dead": "if (false) throw new Error('age: no identity",
+      "expect": [
+        "age: what one encrypts only its identity decrypts, whatever the size; any change is refused"
+      ]
+    },
+    "Journal: files are encrypted": {
+      "file": "premium/journal.js",
+      "live": "writeFileSync(temporary, encrypt(bytes, recipients), { mode: 0o600 });",
+      "dead": "writeFileSync(temporary, bytes, { mode: 0o600 });",
+      "expect": [
+        "the journal: a base, then a changeset per 5 minutes that saw writes; the restore is the live base"
+      ]
+    },
+    "Journal: a file appears only whole": {
+      "file": "premium/journal.js",
+      "live": "    renameSync(temporary, join(dir, name));\n",
+      "dead": "",
+      "expect": [
+        "the journal: a base, then a changeset per 5 minutes that saw writes; the restore is the live base"
+      ]
+    },
+    "Journal: nothing written when nothing changed": {
+      "file": "premium/journal.js",
+      "live": "    if (!changes.length) return;\n",
+      "dead": "",
+      "expect": [
+        "the journal: a base, then a changeset per 5 minutes that saw writes; the restore is the live base"
+      ]
+    },
+    "Journal: a new base a day": {
+      "file": "premium/journal.js",
+      "live": "      if (now() - baseAt >= BASE_EVERY_MS) base();",
+      "dead": "",
+      "expect": [
+        "the journal: a new base a day, the last 7 chains kept, a restore takes the newest whole chain"
+      ]
+    },
+    "Journal: old chains go": {
+      "file": "premium/journal.js",
+      "live": "for (const old of chains.slice(0, -CHAINS_KEPT))",
+      "dead": "for (const old of [])",
+      "expect": [
+        "the journal: a new base a day, the last 7 chains kept, a restore takes the newest whole chain"
+      ]
+    },
+    "Journal: a missing changeset stops the restore": {
+      "file": "premium/journal.js",
+      "live": "if (number !== index + 1) throw",
+      "dead": "if (false) throw",
+      "expect": [
+        "the journal: a base, then a changeset per 5 minutes that saw writes; the restore is the live base"
+      ]
+    },
+    "Journal: a key must be an age recipient": {
+      "file": "premium/journal.js",
+      "live": "      parseRecipient(recipient);\n    } catch",
+      "dead": "      (recipient);\n    } catch",
+      "expect": [
+        "the journal is off without a key; a key that is not an age recipient stops the server at start"
+      ]
+    },
+    "Backup watch: fewer than 2 copies is short": {
+      "file": "premium/backup-watch.js",
+      "live": "    if (have >= COPIES_WANTED) {",
+      "dead": "    if (have >= 0) {",
+      "expect": [
+        "fewer than 2 copies: quiet for 10 minutes, then one mail, then one when it is back"
+      ]
+    },
+    "Backup watch: 10 minutes of grace, then behind": {
+      "file": "premium/backup-watch.js",
+      "live": "time - shortSince >= BEHIND_AFTER_MS ? 'behind'",
+      "dead": "time - shortSince >= 0 ? 'behind'",
+      "expect": [
+        "fewer than 2 copies: quiet for 10 minutes, then one mail, then one when it is back"
+      ]
+    },
+    "Backup watch: an old line is stale": {
+      "file": "premium/backup-watch.js",
+      "live": "    if (time - written > STALE_AFTER_MS) {",
+      "dead": "    if (false) {",
+      "expect": [
+        "a line written long ago, or no line at all, is an alert at once: the node is not there"
+      ]
+    },
+    "Backup watch: a missing line alerts": {
+      "file": "premium/backup-watch.js",
+      "live": "const ALERTS = new Set(['behind', 'stale', 'missing']);",
+      "dead": "const ALERTS = new Set(['behind', 'stale']);",
+      "expect": [
+        "a line written long ago, or no line at all, is an alert at once: the node is not there"
+      ]
+    },
+    "Backup watch: only the first line counts": {
+      "file": "premium/backup-watch.js",
+      "live": "String(text).split('\\n', 1)[0]",
+      "dead": "String(text)",
+      "expect": [
+        "the status line read: copies, the time it was written, and nothing invented"
+      ]
+    },
+    "Backup watch: one mail per incident": {
+      "file": "premium/backup-watch.js",
+      "live": "if (alarm !== told && (alarm || current.state === 'ok')) say(alarm);",
+      "dead": "if (alarm || current.state === 'ok') say(alarm);",
+      "expect": [
+        "fewer than 2 copies: quiet for 10 minutes, then one mail, then one when it is back"
+      ]
+    },
+    "Backup watch: a failed mail is tried again": {
+      "file": "premium/backup-watch.js",
+      "live": "      told = before;\n",
+      "dead": "",
+      "expect": [
+        "a failing mail does not stop the watch, and is tried again at the next check"
+      ]
+    },
+    "Backup watch: shown to the admins": {
+      "file": "premium/server.js",
+      "live": ", backup: backupWatch?.status() ?? null };",
+      "dead": " };",
+      "expect": [
+        "admin: the ITSaNAS backup watch is read with the snapshots, null when there is none"
       ]
     }
   }

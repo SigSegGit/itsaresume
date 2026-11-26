@@ -199,28 +199,49 @@ ligne `SMTP …`.
 
 ---
 
-## 7. La copie des sauvegardes premium par ITSaNAS (6.4g) — [ ]
+## 7. La sauvegarde chiffrée de la base premium (6.4g, 2026-11-25) — [ ]
 
-**Il faut** : la flotte ITSaNAS en place sur la VM, une deuxième machine
-du compte.
+Une base complète par jour, puis les changements toutes les 5 minutes,
+chaque fichier chiffré pour **ta** clé `age` avant qu'ITSaNAS ne le voie.
+Ni la VM, ni ITSaNAS, ni Claude ne peuvent les relire : seule ta clé privée
+les ouvre, et l'outil officiel `age` suffit (ce code n'est pas nécessaire).
 
-1. Sur la VM (**fait le 2026-11-24** : nœud enregistré, 2G offerts, une
-   copie ailleurs ; relancer le script est sans danger) :
+1. Sur ton PC, créer ta clé (une fois). Le fichier contient la clé
+   **privée** : garde-le hors ligne (clé USB, gestionnaire de mots de passe),
+   avec les 24 mots du compte ITSaNAS, jamais sur la VM ni dans un dépôt.
+   ```powershell
+   Set-Location D:\GitHub\itsaresume\cv
+   node premium/age.js keygen | Out-File -Encoding ascii C:\Users\SigSeg\age-premium.txt
+   Select-String "public key" C:\Users\SigSeg\age-premium.txt
+   ```
+   (Ou avec l'outil officiel : `winget install FiloSottile.age`, puis
+   `age-keygen -o C:\Users\SigSeg\age-premium.txt`.)
+   La ligne affichée `# public key: age1…` est la clé **publique** : elle
+   ne permet que de chiffrer, tu peux la donner à Claude.
+2. Sur la VM, la donner au service premium, le relancer, puis basculer
+   ITSaNAS sur le dossier chiffré (Claude peut le faire avec la clé publique) :
    ```bash
+   echo 'PREMIUM_BACKUP_RECIPIENTS=age1…' >> ~/itsacv-data/.env
+   cd ~/itsaresume/cv/deploy/vm-generator && docker compose up -d premium
    bash ~/itsaresume/cv/deploy/vm-generator/itsanas-premium.sh
    ```
-   Tu tapes la phrase de passe et tu notes les 24 mots toi-même (le script
-   ne les écrit nulle part). Pour changer la phrase de passe plus tard :
-   `itsanas passphrase --recovery`, nœud arrêté, puis la nouvelle dans
-   le `client.env` du compte (c'est ce qu'il lit au démarrage).
-2. Sur une autre machine du compte `itsaresume`, une fois la copie
-   synchronisée :
+   **Attendu** : la page admin (carte « Sauvegardes ») affiche « Journal
+   chiffré : chaîne …, dernier écrit … » ; le script finit sur
+   `Synced folder: …/premium/backup (N encrypted file(s))`. Les anciennes
+   copies en clair sortent d'ITSaNAS (elles disparaissent du dossier suivi).
+3. Le test de restauration, sur ton PC, avec ta clé privée :
    ```powershell
-   cd D:\GitHub\itsaresume\cv; node premium/restore-check.js <chemin\premium-AAAAMMJJHH.db>
+   Set-Location D:\GitHub\itsaresume\cv
+   scp -i C:\Users\SigSeg\.ssh\itsanas_session -P 22011 -r itsomeone@ngas.fr:itsacv-data/premium/backup C:\Users\SigSeg\premium-backup
+   node premium/journal-restore.js C:\Users\SigSeg\premium-backup C:\Users\SigSeg\age-premium.txt C:\Users\SigSeg\premium-restored.db
    ```
+   **Attendu** : `"integrity": "ok"` et les comptes de la base (code de
+   sortie 0). Puis supprimer `C:\Users\SigSeg\premium-backup` et
+   `premium-restored.db` (la base restaurée est en clair). Cocher 6.4g.
 
-**Attendu** : `restore-check` affiche les comptes et finit sur « ok »
-(code de sortie 0). Cocher alors 6.4g dans le handover.
+Changer la phrase de passe temporaire du compte ITSaNAS plus tard :
+`itsanas passphrase --recovery`, nœud arrêté, puis la nouvelle dans le
+`client.env` du compte (c'est ce qu'il lit au démarrage).
 
 ---
 

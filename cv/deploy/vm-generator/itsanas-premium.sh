@@ -23,14 +23,16 @@ COORD="${ITSANAS_COORD:-$(sed -n 's/^COORD=//p' "$FLEET" 2>/dev/null | head -1)}
 COORD_ID="${ITSANAS_COORD_ID:-$(sed -n 's/^COORD_ID=//p' "$FLEET" 2>/dev/null | head -1)}"
 CHECKOUT="$HOME/itsanas"
 DATA="$HOME/itsanas-data"
-SNAPSHOTS="${ITSACV_DATA:-$HOME/itsacv-data}/premium/snapshots"
+# 2026-11-25: the encrypted journal (premium/journal.js), never the plain
+# snapshots: PREMIUM_BACKUP_RECIPIENTS must be set for the premium service.
+SNAPSHOTS="${ITSACV_DATA:-$HOME/itsacv-data}/premium/backup"
 
 say() { printf '%s\n' "$*"; }
 fail() { say "FAILED: $*"; exit 1; }
 
 [ -f "$CHECKOUT/install/docker/compose.client.yml" ] || fail "no ITSaNAS checkout in $CHECKOUT (run fleet-docker.sh vm first)"
 [ -n "$COORD" ] && [ -n "$COORD_ID" ] || fail "no coordinator in $FLEET (or set ITSANAS_COORD and ITSANAS_COORD_ID)"
-[ -d "$SNAPSHOTS" ] || fail "no snapshots in $SNAPSHOTS (is the premium container running?)"
+[ -d "$SNAPSHOTS" ] || fail "no journal in $SNAPSHOTS (set PREMIUM_BACKUP_RECIPIENTS in $DATA/.env, restart the premium container)"
 if docker info >/dev/null 2>&1; then SUDO=""; else SUDO="sudo"; fi
 $SUDO docker image inspect itsanas-client:local >/dev/null 2>&1 || fail "no itsanas-client:local image (run fleet-docker.sh vm first)"
 
@@ -86,6 +88,6 @@ fi
 dc up -d || fail "start $ACCT"
 sleep 3
 say "Account id: $($SUDO docker logs "itsanas-$ACCT-client-1" 2>&1 | sed -n 's/^ *user id *//p' | head -1)"
-say "Synced folder: $SNAPSHOTS ($(ls "$SNAPSHOTS" | grep -c '^premium-.*\.db$') snapshot(s))."
-say "Another machine of the account: itsanas login --username $ACCT, then"
-say "node premium/restore-check.js <a synced premium-*.db> to prove it restores."
+say "Synced folder: $SNAPSHOTS ($(ls "$SNAPSHOTS" | grep -c '\.age$') encrypted file(s))."
+say "Another machine of the account: itsanas login --username $ACCT, then, with your age identity:"
+say "node premium/journal-restore.js <the synced folder> <identity file> restored.db"
