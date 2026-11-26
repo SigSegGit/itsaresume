@@ -64,6 +64,7 @@
     "src/compare.js",
     "src/feedback.js",
     "src/applications.js",
+    "src/image.js",
     "src/contract.js"
   ],
   "defences": {
@@ -173,8 +174,8 @@
     },
     "Client: the timeout is the owner's to set": {
       "file": "bin/itsacv.js",
-      "live": "complete({ url: options.url, system, prompt, schema, backend, kind, timeoutMs })",
-      "dead": "complete({ url: options.url, system, prompt, schema, backend, kind })",
+      "live": "complete({ url: options.url, system, prompt, schema, backend, kind, image, timeoutMs })",
+      "dead": "complete({ url: options.url, system, prompt, schema, backend, kind, image })",
       "expect": [
         "--timeout and ITSACV_TIMEOUT set how long one answer may take"
       ]

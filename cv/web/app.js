@@ -337,14 +337,17 @@ function renderOffers() {
 
 async function readFiles(fileList) {
   for (const file of fileList) {
-    // 2.53: a pdf or docx goes base64 in one request (256 KB at most).
-    if (file.size > (/\.(pdf|docx)$/i.test(file.name) ? 180 * 1024 : MAX_TEXT * 4)) {
+    // 2.53: a pdf or docx goes base64 in one request (256 KB at most);
+    // 2026-11-24: an image (a phone screenshot) up to 5 MB, the owner's page only.
+    const image = /\.(png|jpe?g|webp)$/i.test(file.name);
+    if (file.size > (image ? 5 * 1024 * 1024 : /\.(pdf|docx)$/i.test(file.name) ? 180 * 1024 : MAX_TEXT * 4)) {
       showError(`${file.name} : fichier trop gros.`);
       continue;
     }
-    const title = file.name.replace(/\.(txt|md|pdf|docx)$/i, '');
-    // 2.53: a pdf or docx is read by the server, its text comes back.
-    if (/\.(pdf|docx)$/i.test(file.name)) {
+    const title = file.name.replace(/\.(txt|md|pdf|docx|png|jpe?g|webp)$/i, '');
+    // 2.53: a pdf or docx is read by the server, its text comes back; an
+    // image is transcribed there by a model, then checked as an offer.
+    if (/\.(pdf|docx|png|jpe?g|webp)$/i.test(file.name)) {
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
         let binary = '';

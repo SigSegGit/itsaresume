@@ -20,7 +20,8 @@ pub mod server;
 pub mod stats;
 
 pub use backend::{
-    Audience, Backend, BackendError, Billing, Completion, Kind, Probe, Request, Usage,
+    Audience, Backend, BackendError, Billing, Completion, IMAGE_TYPES, Image, Kind, Probe, Request,
+    Usage,
 };
 pub use journal::Journal;
 pub use router::{

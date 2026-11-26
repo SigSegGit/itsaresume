@@ -74,6 +74,7 @@
     "web/sample-offer.js",
     "src/feedback.js",
     "src/applications.js",
+    "src/image.js",
     "src/contract.js"
   ],
   "defences": {
@@ -418,7 +419,7 @@
     },
     "Web: a body is bounded": {
       "file": "src/server.js",
-      "live": "request.on('end', () => (size > MAX_BODY ? reject(tooLarge()) : resolve(Buffer.concat(chunks).toString('utf8'))));",
+      "live": "request.on('end', () => (size > limit ? reject(tooLarge()) : resolve(Buffer.concat(chunks).toString('utf8'))));",
       "dead": "request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));",
       "expect": [
         "a POST from another origin, without the token, or not in JSON is refused"
@@ -626,7 +627,7 @@
     },
     "Web: a declared oversize is refused unread": {
       "file": "src/server.js",
-      "live": "if (Number(request.headers['content-length']) > DRAIN_LIMIT) {",
+      "live": "if (Number(request.headers['content-length']) > drain) {",
       "dead": "if (false) {",
       "expect": [
         "a declared oversize body is refused at once, unread"
@@ -1332,7 +1333,7 @@
     },
     "Offer files (2.53): only pdf, docx, txt, md are read": {
       "file": "src/server.js",
-      "live": "!OFFER_FILES.includes(kind)) {",
+      "live": "!(OFFER_FILES.includes(kind) || isImageFile(name))) {",
       "dead": "false) {",
       "expect": [
         "a pdf or docx offer is read as text, in local and public mode"

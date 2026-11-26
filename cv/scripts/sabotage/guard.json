@@ -80,6 +80,7 @@
     "src/compare.js",
     "src/feedback.js",
     "src/applications.js",
+    "src/image.js",
     "src/contract.js"
   ],
   "defences": {

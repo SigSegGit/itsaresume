@@ -55,6 +55,7 @@
     "web/app.js",
     "web/index.html",
     "src/applications.js",
+    "src/image.js",
     "src/contract.js"
   ],
   "defences": {

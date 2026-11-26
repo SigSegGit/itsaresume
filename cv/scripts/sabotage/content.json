@@ -110,6 +110,7 @@
     "src/applications.js",
     "test/applications.test.js",
     "test/invites.test.js",
+    "src/image.js",
     "web/app.js",
     "src/contract.js",
     "test/contract.test.js"

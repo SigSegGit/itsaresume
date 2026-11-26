@@ -24,6 +24,7 @@ export const OFFER_CHARS = { min: 200, max: 12_000 };
  */
 const OFFER_WORDS = `mission poste profil compétence expérience requis recherché responsabilité contrat cdi cdd freelance
   télétravail candidat équipe environnement technique recruter rejoindre opportunité
+  stack lieu tjm rémunération salaire
   role responsibility requirement required skill experience position team contract remote hybrid
   hiring recruiting join opportunity`.split(/\s+/);
 

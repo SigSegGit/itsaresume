@@ -466,6 +466,10 @@ impl Backend for Named {
         self.billing
     }
 
+    fn sees_images(&self) -> bool {
+        self.inner.sees_images()
+    }
+
     fn probe(&self) -> Option<crate::backend::Probe> {
         self.inner.probe()
     }

@@ -56,6 +56,7 @@ fn the_request_is_a_chat_completion_without_any_credential() {
         system: Some("You write CVs.".into()),
         schema: None,
         kind: Default::default(),
+        image: None,
     };
 
     backend(&base_url)

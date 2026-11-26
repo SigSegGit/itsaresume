@@ -109,8 +109,8 @@
     },
     "CLI: the schema reaches the request": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n            kind,\n        },\n        only,",
-      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind,\n        },\n        only,",
+      "live": "system,\n            schema,\n            kind,\n            image: None,\n        },\n        only,",
+      "dead": "system,\n            schema: schema.filter(|_| false),\n            kind,\n            image: None,\n        },\n        only,",
       "expect": [
         "the_schema_option_goes_in_the_prompt_and_its_json_comes_back"
       ]
@@ -205,8 +205,8 @@
     },
     "CLI: the kind reaches the request": {
       "file": "crates/itsaresume-router/src/main.rs",
-      "live": "system,\n            schema,\n            kind,\n        },",
-      "dead": "system,\n            schema,\n            kind: if kind == Kind::Classify { Kind::Generate } else { kind },\n        },",
+      "live": "system,\n            schema,\n            kind,\n            image: None,\n        },",
+      "dead": "system,\n            schema,\n            kind: if kind == Kind::Classify { Kind::Generate } else { kind },\n            image: None,\n        },",
       "expect": [
         "the_kind_option_reaches_a_classify_only_backend"
       ]

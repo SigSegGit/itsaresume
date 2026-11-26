@@ -15,7 +15,22 @@ pub struct Request {
     /// What is asked (M2): a generation, or a classification a small model
     /// can serve. Generation by default.
     pub kind: Kind,
+    /// An image the prompt is about (2026-11-24: a job offer as a phone
+    /// screenshot). Only a backend that [`Backend::sees_images`] gets it.
+    pub image: Option<Image>,
 }
+
+/// An image sent with a prompt: its media type and its bytes in base64.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Image {
+    /// `image/png`, `image/jpeg`, `image/webp` or `image/gif`.
+    pub media_type: String,
+    /// The file's bytes, standard base64.
+    pub base64: String,
+}
+
+/// The media types an [`Image`] may have: the raster formats Claude reads.
+pub const IMAGE_TYPES: [&str; 4] = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
 /// Whose request it is (2026-11-24): the owner's own use, or a customer's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
@@ -85,7 +100,14 @@ impl Request {
             system: None,
             schema: None,
             kind: Kind::Generate,
+            image: None,
         }
+    }
+
+    /// The same request, about `image`.
+    pub fn with_image(mut self, image: Image) -> Self {
+        self.image = Some(image);
+        self
     }
 
     /// The same request, of `kind`.
@@ -229,6 +251,12 @@ pub trait Backend: Send + Sync {
     fn serves(&self, kind: Kind) -> bool {
         let _ = kind;
         true
+    }
+
+    /// Whether it reads an image sent with the prompt (none does, by
+    /// default): the router never gives an image to one that does not.
+    fn sees_images(&self) -> bool {
+        false
     }
 
     /// What it says of itself without spending a request (8.43), or `None`

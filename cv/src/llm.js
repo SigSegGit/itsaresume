@@ -36,14 +36,16 @@ export function contractProblem(parsed) {
   return `itsaresume speaks contract ${String(parsed.contract).slice(0, 20)}; this client speaks contract ${CONTRACT_MAJOR}.x`;
 }
 
-export function complete({ url, system, prompt, backend, schema, kind, audience, timeoutMs = TIMEOUT_MS }) {
+export function complete({ url, system, prompt, backend, schema, kind, audience, image, timeoutMs = TIMEOUT_MS }) {
   const target = new URL(`${url.replace(/\/$/, '')}/v1/complete`);
   // A named backend is tried alone by the router (8.22): a measure per model.
   // A schema asks for structured output (8.24); an older router ignores it.
   // A kind (8.34) lets a classify-only backend take a call that only chooses.
   // 2026-11-24: a customer's call says so; the router keeps it off the
   // owner's subscription (customer_billing). The owner's says nothing.
-  const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}), ...(kind ? { kind } : {}), ...(audience === 'customer' ? { audience } : {}) });
+  // 2026-11-24: an image (an offer's screenshot) goes beside the prompt; the
+  // router gives it only to a backend that reads images.
+  const body = JSON.stringify({ prompt, system, ...(backend ? { backend } : {}), ...(schema ? { schema } : {}), ...(kind ? { kind } : {}), ...(audience === 'customer' ? { audience } : {}), ...(image ? { image } : {}) });
   return new Promise((resolve, reject) => {
     const outgoing = httpRequest(
       target,

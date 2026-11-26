@@ -54,12 +54,16 @@ const RATE_LIMIT_KEYS: [&str; 4] = ["status", "rateLimitType", "isUsingOverage",
 
 /// [`classify`], for a request that asked (`schema`) for structured output.
 pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendError> {
-    let messages: Vec<Value> = serde_json::from_str(stdout.trim()).map_err(|error| {
-        BackendError::Other(format!(
-            "claude output is not the expected JSON array ({error}; {} characters)",
-            stdout.chars().count()
-        ))
-    })?;
+    // 2026-11-24: with an image the CLI streams JSON lines (stream-json)
+    // instead of one array; the same messages, the same tripwires.
+    let messages: Vec<Value> = serde_json::from_str(stdout.trim())
+        .or_else(|error| json_lines(stdout).ok_or(error))
+        .map_err(|error| {
+            BackendError::Other(format!(
+                "claude output is not the expected JSON array ({error}; {} characters)",
+                stdout.chars().count()
+            ))
+        })?;
 
     let init = messages
         .iter()
@@ -185,6 +189,50 @@ pub fn classify_for(stdout: &str, schema: bool) -> Result<Completion, BackendErr
             result.to_string().chars().count()
         ))),
     }
+}
+
+/// Every non-empty line of `stdout` as one JSON object, or `None`.
+fn json_lines(stdout: &str) -> Option<Vec<Value>> {
+    let messages: Vec<Value> = stdout
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            serde_json::from_str::<Value>(line)
+                .ok()
+                .filter(Value::is_object)
+        })
+        .collect::<Option<_>>()?;
+    (!messages.is_empty()).then_some(messages)
+}
+
+/// 2026-11-24: the flags for a request with an image: the prompt goes as one
+/// stream-json user message (image block, then text), and the CLI requires
+/// stream-json output with it (observed on 2.1.322). Tools stay off.
+fn stream_json(arguments: &mut Vec<String>) {
+    if let Some(at) = arguments.iter().position(|a| a == "--output-format") {
+        arguments[at + 1] = "stream-json".into();
+    }
+    arguments.push("--input-format".into());
+    arguments.push("stream-json".into());
+}
+
+/// The stdin of a request with `image`: one user message, then a newline.
+fn image_message(image: &crate::backend::Image, prompt: &str) -> String {
+    let message = serde_json::json!({
+        "type": "user",
+        "message": {"role": "user", "content": [
+            {"type": "image", "source": {
+                "type": "base64",
+                "media_type": image.media_type,
+                "data": image.base64,
+            }},
+            {"type": "text", "text": prompt},
+        ]},
+    });
+    format!(
+        "{message}
+"
+    )
 }
 
 /// An `is_error: true` result, by HTTP status first, then by wording.
@@ -388,9 +436,13 @@ impl ClaudeCodeBackend {
         // the Linux VM, 2026-10-01: an analysis cut, refused as not JSON).
         let (answer_file, answer_handle) = SystemFile::create(&self.workdir, "answer")?;
 
+        let mut arguments = self.arguments_for(&system_file.path, request.schema.as_ref());
+        if request.image.is_some() {
+            stream_json(&mut arguments);
+        }
         let mut command = Command::new(&self.program);
         command
-            .args(self.arguments_for(&system_file.path, request.schema.as_ref()))
+            .args(arguments)
             .current_dir(&self.workdir)
             .env_clear()
             .envs(env.into_iter().filter(|(name, _)| !is_metered(name)))
@@ -420,7 +472,10 @@ impl ClaudeCodeBackend {
         // Write and read on threads: a large prompt and a large answer would
         // otherwise deadlock on full pipes.
         let stdin = child.stdin.take();
-        let prompt = prompt_for(request);
+        let prompt = match &request.image {
+            Some(image) => image_message(image, &prompt_for(request)),
+            None => prompt_for(request),
+        };
         let writer = thread::spawn(move || {
             if let Some(mut stdin) = stdin {
                 let _ = stdin.write_all(prompt.as_bytes());
@@ -676,6 +731,11 @@ pub(crate) fn drain(pipe: Option<impl Read + Send + 'static>) -> thread::JoinHan
 impl Backend for ClaudeCodeBackend {
     fn name(&self) -> &str {
         "claude-code"
+    }
+
+    /// The CLI reads an image in a stream-json message (2026-11-24).
+    fn sees_images(&self) -> bool {
+        true
     }
 
     fn complete(&self, request: &Request) -> Result<Completion, BackendError> {

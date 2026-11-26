@@ -23,6 +23,7 @@ import { COMMENT_MAX, PRICES } from './feedback.js';
 import { applicationsCsv, followUp, STATUSES, summary, weekly } from './applications.js';
 import { looksLikeOffer, OFFER_CHARS } from './intake.js';
 import { OFFER_FILES } from './sources.js';
+import { isImageFile } from './image.js';
 import { MODELS } from './qa.js';
 import { compareRuns, compareMarkdown, publicComparison } from './compare.js';
 import { addTokens } from './llm.js';
@@ -30,6 +31,8 @@ import { invitationOf } from './invites.js';
 import { DEFAULT_PROFILE } from './profiles.js';
 
 export const MAX_BODY = 256 * 1024;
+/** 2026-11-24: an image offer (a phone screenshot, base64) on the owner's page. */
+export const MAX_IMAGE_BODY = 8 * 1024 * 1024;
 export const MAX_OFFERS = 6;
 export const MAX_TEXT = 60_000;
 // 5.2b: offers ranked at once (no analysis, one cached listing each).
@@ -104,10 +107,11 @@ function send(response, status, body, type = 'application/json; charset=utf-8', 
  * length declared past DRAIN_LIMIT is refused unread, and there a reset is
  * accepted.
  */
-function readBody(request) {
+function readBody(request, limit = MAX_BODY) {
+  const drain = Math.max(DRAIN_LIMIT, 4 * limit);
   return new Promise((resolve, reject) => {
-    const tooLarge = () => new HttpError(413, `the request is larger than ${MAX_BODY} bytes`, { close: true });
-    if (Number(request.headers['content-length']) > DRAIN_LIMIT) {
+    const tooLarge = () => new HttpError(413, `the request is larger than ${limit} bytes`, { close: true });
+    if (Number(request.headers['content-length']) > drain) {
       reject(tooLarge());
       return;
     }
@@ -115,10 +119,10 @@ function readBody(request) {
     const chunks = [];
     request.on('data', (chunk) => {
       size += chunk.length;
-      if (size <= MAX_BODY) chunks.push(chunk);
-      else if (size > DRAIN_LIMIT) request.destroy();
+      if (size <= limit) chunks.push(chunk);
+      else if (size > drain) request.destroy();
     });
-    request.on('end', () => (size > MAX_BODY ? reject(tooLarge()) : resolve(Buffer.concat(chunks).toString('utf8'))));
+    request.on('end', () => (size > limit ? reject(tooLarge()) : resolve(Buffer.concat(chunks).toString('utf8'))));
     request.on('error', reject);
   });
 }
@@ -606,7 +610,7 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (!/^application\/json\b/.test(request.headers['content-type'] ?? '')) throw new HttpError(415, 'JSON only');
       let body;
       try {
-        body = JSON.parse(await readBody(request));
+        body = JSON.parse(await readBody(request, path === '/api/offer-text' && !publicMode ? MAX_IMAGE_BODY : MAX_BODY));
       } catch (error) {
         if (error instanceof HttpError) throw error;
         throw new HttpError(400, 'the body is not JSON');
@@ -623,8 +627,10 @@ export function createApp({ deps, token = randomBytes(24).toString('hex'), publi
       if (path === '/api/offer-text') {
         const name = body?.name;
         const kind = typeof name === 'string' ? (/\.[a-z0-9]+$/i.exec(name)?.[0] ?? '').toLowerCase() : '';
-        if (typeof name !== 'string' || !/^[^\\/:*?"<>|]{1,160}$/.test(name) || !OFFER_FILES.includes(kind)) {
-          throw new HttpError(400, `name: a file name ending in ${OFFER_FILES.join(', ')}`);
+        // 2026-11-24: an image is a model call on the owner's quota: his page alone.
+        if (publicMode && isImageFile(String(name))) throw new HttpError(403, 'une image d’offre n’est pas lue en accès public : colle le texte de l’offre');
+        if (typeof name !== 'string' || !/^[^\\/:*?"<>|]{1,160}$/.test(name) || !(OFFER_FILES.includes(kind) || isImageFile(name))) {
+          throw new HttpError(400, `name: a file name ending in ${OFFER_FILES.join(', ')}${publicMode ? '' : ', .png, .jpg, .jpeg, .webp'}`);
         }
         if (typeof body?.data !== 'string' || !body.data) throw new HttpError(400, 'data: the file, base64');
         let text;

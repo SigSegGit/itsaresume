@@ -50,6 +50,9 @@ pub enum RouteError {
         /// The kind asked for.
         kind: crate::backend::Kind,
     },
+    /// 2026-11-24: the request carries an image and no backend that would
+    /// serve it reads images: nothing was asked.
+    NoVision,
     /// 2026-11-24: no backend this audience may use (a customer's request
     /// and only billings `customer_billing` leaves out): nothing was asked.
     NotAllowed {
@@ -106,6 +109,7 @@ impl fmt::Display for RouteError {
             Self::Stopped { backend, error } => write!(f, "stopped by {backend}: {error}"),
             Self::Exhausted => write!(f, "every backend failed with a quota or an outage"),
             Self::Unserved { kind } => write!(f, "no configured backend serves {kind:?} requests"),
+            Self::NoVision => write!(f, "no configured backend reads images"),
             Self::NotAllowed { audience } => write!(
                 f,
                 "no configured backend may serve a {} request (customer_billing)",
@@ -550,6 +554,19 @@ impl Router {
         if serving.is_empty() {
             return Outcome {
                 result: Err(RouteError::Unserved { kind: request.kind }),
+                attempts,
+                journal_error: None,
+            };
+        }
+        // 2026-11-24: an image goes only to a backend that reads images; a
+        // text-only model would answer about an image it never saw.
+        let serving: Vec<&dyn Backend> = serving
+            .into_iter()
+            .filter(|backend| request.image.is_none() || backend.sees_images())
+            .collect();
+        if serving.is_empty() {
+            return Outcome {
+                result: Err(RouteError::NoVision),
                 attempts,
                 journal_error: None,
             };

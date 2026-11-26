@@ -25,7 +25,10 @@ pub const DEFAULT_LISTEN: &str = "127.0.0.1:8787";
 pub const CONTRACT: &str = "1.1";
 
 /// The largest request body accepted, in bytes.
-pub const MAX_BODY_BYTES: usize = 1024 * 1024;
+///
+/// 2026-11-24: 8 MiB, so a phone screenshot sent as an image (a few MB of
+/// PNG, once in base64) fits.
+pub const MAX_BODY_BYTES: usize = 8 * 1024 * 1024;
 
 /// Above this declared body size, the body is not even read (see
 /// `refuse_unread`); between `MAX_BODY_BYTES` and this, tiny_http drains it.
@@ -321,6 +324,14 @@ fn complete(router: &Router, request: &mut tiny_http::Request) -> (u16, Value) {
                 "attempts": attempts,
             }}),
         ),
+        Err(RouteError::NoVision) => (
+            400,
+            json!({"error": {
+                "kind": "no_vision",
+                "message": "no configured backend reads images",
+                "attempts": attempts,
+            }}),
+        ),
         Err(RouteError::NotAllowed { audience }) => (
             403,
             json!({"error": {
@@ -389,12 +400,17 @@ fn parse(raw: &[u8]) -> Result<(Inference, Option<String>, Audience), String> {
         Value::String(audience) if audience == "customer" => Audience::Customer,
         _ => return Err("\"audience\" must be \"owner\" or \"customer\"".into()),
     };
+    let image = match &value["image"] {
+        Value::Null => None,
+        image => Some(parse_image(image)?),
+    };
     Ok((
         Inference {
             prompt: prompt.to_owned(),
             system,
             schema,
             kind,
+            image,
         },
         only,
         audience,
@@ -441,4 +457,30 @@ pub fn drive<T>(
             Err(error) => return error,
         }
     }
+}
+
+/// 2026-11-24: `{"media_type": "image/png", "base64": "..."}`, a raster type
+/// Claude reads (no SVG: it is a document) and well-formed base64.
+fn parse_image(value: &Value) -> Result<crate::backend::Image, String> {
+    let shape =
+        "\"image\" must be {\"media_type\": \"image/png|jpeg|webp|gif\", \"base64\": \"...\"}";
+    let media_type = value["media_type"].as_str().ok_or(shape)?;
+    let base64 = value["base64"].as_str().ok_or(shape)?;
+    if !crate::backend::IMAGE_TYPES.contains(&media_type) {
+        return Err(format!("{shape}; {media_type:?} is not one of them"));
+    }
+    let body = base64.trim_end_matches('=');
+    let well_formed = !body.is_empty()
+        && base64.len() % 4 == 0
+        && base64.len() - body.len() <= 2
+        && body
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'+' || byte == b'/');
+    if !well_formed {
+        return Err("\"image\".\"base64\" is not standard base64".into());
+    }
+    Ok(crate::backend::Image {
+        media_type: media_type.to_owned(),
+        base64: base64.to_owned(),
+    })
 }
