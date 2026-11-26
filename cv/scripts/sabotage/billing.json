@@ -326,7 +326,7 @@
     "Audience: a customer's call says so": {
       "file": "src/llm.js",
       "live": "...(audience === 'customer' ? { audience } : {})",
-      "dead": "",
+      "dead": "...{}",
       "expect": [
         "a customer's call says so to the router; the owner's says nothing"
       ]

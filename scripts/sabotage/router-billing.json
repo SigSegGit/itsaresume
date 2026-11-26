@@ -1100,7 +1100,7 @@
     "Image: the image block reaches the CLI": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": "Some(image) => image_message(image, &prompt_for(request)),",
-      "dead": "Some(_) => prompt_for(request),",
+      "dead": "Some(_) => {\n                let _ = image_message;\n                prompt_for(request)\n            }",
       "expect": [
         "claude_gets_the_image_in_a_stream_json_message_with_tools_still_off"
       ]
@@ -1108,7 +1108,7 @@
     "Image: the stream's JSON lines are read": {
       "file": "crates/itsaresume-router/src/claude_code.rs",
       "live": ".or_else(|error| json_lines(stdout).ok_or(error))",
-      "dead": "",
+      "dead": ".or_else(|error| json_lines(stdout).filter(|_| false).ok_or(error))",
       "expect": [
         "claude_gets_the_image_in_a_stream_json_message_with_tools_still_off"
       ]
