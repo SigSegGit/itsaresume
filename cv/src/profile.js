@@ -132,6 +132,31 @@ export function validateProfile(profile) {
   }
   for (const fact of profile.profile_facts ?? []) neverIn(`fact ${fact.id}`, fact.fr, fact.en);
   (profile.glance ?? []).forEach((line, index) => neverIn(`glance line ${index + 1}`, line.fr, line.en));
+  // 2026-11-25: a glance line per contract, a date of availability, closing sentences.
+  (profile.glance ?? []).forEach((line, index) => {
+    for (const kind of ['freelance', 'permanent']) {
+      if (line[kind] === undefined) continue;
+      need(bilingual(line[kind]), `glance ${index + 1}: ${kind} needs fr and en`);
+      if (bilingual(line[kind])) neverIn(`glance line ${index + 1} (${kind})`, line[kind].fr, line[kind].en);
+    }
+  });
+  if (identity.available_from !== undefined) {
+    need(/^\d{4}-\d{2}-\d{2}$/.test(String(identity.available_from)) && !Number.isNaN(Date.parse(identity.available_from)), 'identity.available_from: a date, YYYY-MM-DD');
+  }
+  (profile.profile_tail ?? []).forEach((item, index) => {
+    const name = `profile_tail ${index + 1}`;
+    if (!bilingual(item)) {
+      errors.push(`${name}: needs fr and en`);
+      return;
+    }
+    neverIn(name, item.fr, item.en);
+    if (item.when !== undefined) need(['freelance', 'permanent'].includes(item.when), `${name}: when is freelance or permanent`);
+    if (item.link !== undefined) {
+      const { text, url } = item.link ?? {};
+      need(typeof text === 'string' && text !== '' && item.fr.includes(text) && item.en.includes(text), `${name}: link text must be in fr and en`);
+      need(typeof url === 'string' && /^https:\/\/[^\s"<>]+$/.test(url), `${name}: link url must be https`);
+    }
+  });
   if (profile.made_by) {
     need(bilingual(profile.made_by), 'made_by: needs fr and en');
     neverIn('made_by', profile.made_by.fr, profile.made_by.en);

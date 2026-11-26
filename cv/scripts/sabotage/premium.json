@@ -60,7 +60,8 @@
     "premium/journal-restore.js",
     "test/premium-journal.test.js",
     "premium/backup-watch.js",
-    "test/premium-backup-watch.test.js"
+    "test/premium-backup-watch.test.js",
+    "src/contract.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {

@@ -11,6 +11,7 @@
 //   6. a lab skill is labelled so.
 
 import { kindOf } from './profile.js';
+import { availability } from './contract.js';
 
 export const LABELS = {
   en: {
@@ -144,7 +145,21 @@ export function unanchored(profile, analysis, rendered) {
   return [...new Set(shown)].filter((id) => matched.has(id) && !told.has(id));
 }
 
-export function buildModel(profile, analysis, { bullets, skillCap = Infinity } = {}) {
+/**
+ * 2026-11-25: the glance lines for the offer's contract (a line's variant for
+ * that kind, else the line), with the date of availability after the first;
+ * the profile's closing sentences for that kind; and the links they hold.
+ */
+function contractParts(profile, analysis, t, now) {
+  const contract = analysis.contract ?? 'any';
+  const glance = (profile.glance ?? []).map((line) => t(line[contract] ?? line));
+  const available = availability(profile.identity?.available_from, analysis.language, now);
+  if (available) glance.splice(Math.min(1, glance.length), 0, available);
+  const tail = (profile.profile_tail ?? []).filter((item) => !item.when || item.when === contract);
+  return { glance, tail: tail.map(t), links: tail.filter((item) => item.link).map((item) => ({ ...item.link })) };
+}
+
+export function buildModel(profile, analysis, { bullets, skillCap = Infinity, now = new Date() } = {}) {
   const lang = analysis.language;
   const t = (value) => value[lang];
   const skills = new Map(profile.skills.map((skill) => [skill.id, skill]));
@@ -186,6 +201,7 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
   if (founder > 0) experiences.unshift(...experiences.splice(founder, 1));
 
   const identity = profile.identity;
+  const parts = contractParts(profile, analysis, t, now);
   return {
     labels: LABELS[lang],
     name: identity.name,
@@ -196,7 +212,7 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
     headline: analysis.headline,
     contact: [identity.email, identity.phone].join('  |  '),
     company_line: [identity.company, t(identity.location)].filter(Boolean).join('  |  '),
-    glance: (profile.glance ?? []).map(t),
+    glance: parts.glance,
     // 2.50: how the CV was made, its footer; the owner's words, empty when none.
     made_by: profile.made_by ? t(profile.made_by) : '',
     skill_groups: analysis.skill_groups
@@ -215,7 +231,8 @@ export function buildModel(profile, analysis, { bullets, skillCap = Infinity } =
     })),
     certifications: (profile.certifications ?? []).map(t),
     languages: (profile.languages ?? []).map(t),
-    profile: analysis.summary,
+    profile: [...analysis.summary, ...parts.tail],
+    links: parts.links,
     experiences,
   };
 }

@@ -79,7 +79,8 @@
     "test/degree.test.js",
     "src/compare.js",
     "src/feedback.js",
-    "src/applications.js"
+    "src/applications.js",
+    "src/contract.js"
   ],
   "defences": {
     "Column: a met skill comes into it": {

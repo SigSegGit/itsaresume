@@ -179,6 +179,18 @@ property it proves.
 | compareRuns: rows line up by the listed requirements they cover, not by each model's names | Comparison (2.38): a row is keyed by the listed requirements it covers |
 | compareRuns: a listed word inside a longer name is not that requirement ("SQL" is not "SQL Server") | Comparison (2.38): a listed word inside a longer name is not that requirement |
 
+## `test/contract.test.js`
+
+| Property (the test name) | Sabotage defences |
+|---|---|
+| the contract is read from the offer: freelance, permanent, or either | Contract: an offer naming both kinds, or neither, is any |
+| the glance line follows the offer contract; an offer that says neither keeps both | Contract: the glance line follows the offer's kind |
+| the date of availability is shown until it has passed | Contract: a passed date of availability is not shown |
+| closing sentences join the profile section for the kinds they name; their link is kept | Contract: a closing sentence shows for its kind only |
+| a link of the profile section is clickable in the docx | Contract: a profile link is clickable |
+| the profile checks the new fields | Contract: a profile link must be https |
+| a run records the contract it read from the offer | Contract: a run reads the contract from the offer |
+
 ## `test/core.test.js`
 
 | Property (the test name) | Sabotage defences |
@@ -1242,6 +1254,6 @@ property it proves.
 | 2.40: a yes is never lowered by the count (an umbrella skill no bullet cites counts 0) | — |
 | 2.40: a requirement stating no number of years is left to the other rules | — |
 
-**823 tests, 648 of them covered by at least one sabotage defence.**
+**830 tests, 655 of them covered by at least one sabotage defence.**
 
 Defences naming a test that does not exist: "Anglais professionnel" is met by the profile's "Anglais — bilingue", and counts, "Compétences obligatoires : Ansible, DevOps.": DevOps is must, "Conteneurisation" marked no by the model comes out yes through Docker, "Cycle de delivery" marked no by the model comes out yes through Jenkins, "Expérience SQL" marked no is met through the profile's expert PostgreSQL, "Idéalement, une première expérience GCP.": GCP is nice, "Il y a plus de 10 serveurs Linux à administrer.": Linux is left to the model, "It would be a big plus to know Sigstore.": Sigstore is nice, "Kafka serait un plus. | Compétences requises : Kafka, Linux.": Kafka is must, "Kubernetes is not required for this role.": Kubernetes is left to the model, "La connaissance d'Ansible n'est pas obligatoire mais sera appréciée.": Ansible is nice, "Maîtrise du SQL" marked no is met through the profile's expert PostgreSQL, "Nice to have: | - Kafka | - Terraform | ": Terraform is nice, "Profil souhaité : | - PostgreSQL | ": PostgreSQL is left to the model, "Scrum Master" asks for no degree, "Un plus grand nombre de clusters PostgreSQL.": PostgreSQL is left to the model, "Une certification AWS est un atout.": AWS is left to the model, "Une connaissance de Kafka, Terraform et Ansible serait appréciée.": Kafka is nice, a Bac+5 in the education meets "Diplôme ingénieur ou Master informatique", a Bac+5 in the education meets "école d'ingénieurs ou équivalent", stem: automation and automated are one word, stem: process and processes are one word, stem: product and production are two words

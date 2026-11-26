@@ -59,7 +59,8 @@
     "src/coverage.js",
     "src/compare.js",
     "src/feedback.js",
-    "src/applications.js"
+    "src/applications.js",
+    "src/contract.js"
   ],
   "defences": {
     "Injection: the analysis prompt fences the offer": {
