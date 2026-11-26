@@ -25,7 +25,7 @@ test('age: an identity and its recipient, in the age encodings; a wrong one refu
   assert.equal(recipientOf(identity), recipient);
   assert.equal(parseRecipient(recipient).length, 32);
   assert.equal(parseIdentity(`# created: now\n# public key: ${recipient}\n${identity}\n`).length, 32, 'an identity file, comments and all');
-  for (const bad of ['age1', `${recipient.slice(0, -1)}q`, recipient.toUpperCase().replace('AGE1', 'age1'), `ag1${recipient.slice(4)}`]) {
+  for (const bad of ['age1', `${recipient.slice(0, -1)}${recipient.endsWith('q') ? 'p' : 'q'}`, recipient.toUpperCase().replace('AGE1', 'age1'), `ag1${recipient.slice(4)}`]) {
     assert.throws(() => parseRecipient(bad), /recipient/, bad);
   }
 });
