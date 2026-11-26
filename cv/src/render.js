@@ -44,12 +44,47 @@ export function render(model, style = {}) {
   doc.render(model);
   const zip = doc.getZip();
   if (model.made_by) addFooter(zip, model.made_by);
+  for (const link of model.links ?? []) addLink(zip, link);
   if (typeof style !== 'string') recolour(zip, resolveStyle(style).palette);
   setProperties(zip, model);
   return zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
 
 const escapeXml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const RUN = /<w:r>(<w:rPr>(?:(?!<\/w:rPr>).)*<\/w:rPr>)?<w:t(?: xml:space="preserve")?>([^<]*)<\/w:t><\/w:r>/gs;
+const LINK_COLOUR = '1F4E79';
+
+/**
+ * 2026-11-25: `link.text`, where the body first shows it, made a hyperlink to
+ * `link.url` (an external relationship): its run is split in three, the link
+ * coloured and underlined, the rest as it was.
+ */
+function addLink(zip, link) {
+  const name = 'word/document.xml';
+  const xml = zip.file(name).asText();
+  const text = escapeXml(link.text);
+  const relsName = 'word/_rels/document.xml.rels';
+  const rels = zip.file(relsName).asText();
+  let id = 1;
+  while (rels.includes(`Id="rIdLink${id}"`)) id += 1;
+  const rid = `rIdLink${id}`;
+  let done = false;
+  const out = xml.replace(RUN, (whole, rPr = '', content) => {
+    const at = done ? -1 : content.indexOf(text);
+    if (at < 0) return whole;
+    done = true;
+    const run = (value, props = rPr) => (value ? `<w:r>${props}<w:t xml:space="preserve">${value}</w:t></w:r>` : '');
+    const base = rPr || '<w:rPr></w:rPr>';
+    const coloured = /<w:color [^>]*\/>/.test(base) ? base.replace(/<w:color [^>]*\/>/, `<w:color w:val="${LINK_COLOUR}"/>`) : base.replace('</w:rPr>', `<w:color w:val="${LINK_COLOUR}"/></w:rPr>`);
+    const linked = coloured.replace('</w:rPr>', '<w:u w:val="single"/></w:rPr>');
+    return `${run(content.slice(0, at))}<w:hyperlink r:id="${rid}" w:history="1">${run(text, linked)}</w:hyperlink>${run(content.slice(at + text.length))}`;
+  });
+  if (!done) return;
+  const withNs = /<w:document[^>]*xmlns:r=/.test(out) ? out : out.replace('<w:document ', '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ');
+  zip.file(name, withNs);
+  zip.file(relsName, rels.replace('</Relationships>', `<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${escapeXml(link.url).replace(/"/g, '&quot;')}" TargetMode="External"/></Relationships>`));
+}
 
 const FOOTER_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
 

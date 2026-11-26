@@ -54,7 +54,8 @@
     "src/feedback.js",
     "test/outreach-admin.test.js",
     "deploy/vm-generator/compose.yaml",
-    "premium/web/admin.html"
+    "premium/web/admin.html",
+    "src/contract.js"
   ],
   "defences": {
     "Premium: a debit at zero credit is refused": {

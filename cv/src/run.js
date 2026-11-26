@@ -7,6 +7,7 @@
 // Failures carry the CLI's exit code: 2 profile or sources, 3 the model's
 // answer stayed invalid, 4 the router unreachable or refusing.
 
+import { offerContract } from './contract.js';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -126,6 +127,8 @@ export async function tailorOffer({ loaded, offer, llm, outDir, useWord = true, 
     throw new RunError(/itsaresume/.test(error.message) ? 4 : 3, error.message, { answers: error.answers, dir: error.answers ? dir : undefined });
   }
   const { analysis, attempts, backend, repairs, calls, listed } = result;
+  // 2026-11-25: the contract the offer is for, read by code: the CV's lines follow it.
+  analysis.contract = offerContract(offer);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'analysis.json'), JSON.stringify(analysis, null, 2));
   writeFileSync(join(dir, 'raw.json'), JSON.stringify({ calls }, null, 2));
